@@ -1013,6 +1013,75 @@ void sdlwindow_video_window_update(running_machine &machine, sdl_window_info *wi
 	}
 }
 
+//============================================================
+//  OZFALCON - LAST OF THE NEW SUB CHAIN. FOR THOSE FOLLOWING, THE PATH IS:
+//  emu/ui.c->ui_set_startup_text CALLS emu/video.c->video_frame_update_hi WHICH CALLS
+//  osd/sdl/video.c->osd_update_hi WHICH CALLS THIS SUB. 
+//  THE ONLY DIFFERENCE BETWEEN THIS SUB AND sdlwindow_video_window_update IS IT DOES NOT
+//  perform PostMessage(window->hwnd, WM_USER_REDRAW, 0, (LPARAM)primlist) OR
+//  SendMessage(window->hwnd, WM_USER_REDRAW, 0, (LPARAM)primlist)
+//  ALL THIS DOES IS ALLOW MAME TO PROPERLY RUN TO CALCULATE THE REFRESHSPEED/ETC. WITHOUT
+//  GIVING THE WHITE BOX THAT SEEMS TO ANNOY SOME PEOPLE!
+//============================================================
+
+void sdlwindow_video_window_update_hi(running_machine &machine, sdl_window_info *window)
+{
+	osd_ticks_t     event_wait_ticks;
+	ASSERT_MAIN_THREAD();
+
+	// adjust the cursor state
+	sdlwindow_update_cursor_state(machine, window);
+
+	// if we're visible and running and not in the middle of a resize, draw
+	if (window->target != NULL)
+	{
+		int tempwidth, tempheight;
+
+		// see if the games video mode has changed
+		window->target->compute_minimum_size(tempwidth, tempheight);
+		if (tempwidth != window->minwidth || tempheight != window->minheight)
+		{
+			window->minwidth = tempwidth;
+			window->minheight = tempheight;
+			if (!window->fullscreen)
+			{
+				sdlwindow_blit_surface_size(window, window->width, window->height);
+				sdlwindow_resize(window, window->blitwidth, window->blitheight);
+			}
+			else if (video_config.switchres)
+			{
+				pick_best_mode(window, &tempwidth, &tempheight);
+				sdlwindow_resize(window, tempwidth, tempheight);
+			}
+		}
+
+
+		if (video_config.waitvsync && video_config.syncrefresh)
+			event_wait_ticks = osd_ticks_per_second(); // block at most a second
+		else
+			event_wait_ticks = 0;
+
+		if (osd_event_wait(window->rendered_event, event_wait_ticks))
+		{
+			worker_param wp;
+			render_primitive_list *primlist;
+
+			clear_worker_param(&wp);
+
+			// ensure the target bounds are up-to-date, and then get the primitives
+		//	primlist = &window->get_primitives(window);
+			(&window->get_primitives(window));
+
+			// and redraw now
+
+		//	wp.list = primlist;
+			wp.window = window;
+			wp.m_machine = &machine;
+
+			execute_async(&draw_video_contents_wt, &wp);
+		}
+	}
+}
 
 //============================================================
 //  set_starting_view

@@ -166,6 +166,9 @@ public:
 
 	// video overridables
 	virtual void *get_slider_list();
+	
+	//MKCHAMP - DECLARING THE NEW osd_update_hi SUB
+ 	virtual void update_hi(bool skip_redraw);
 
 	void init_subsystems();
 
