@@ -220,6 +220,9 @@ public:
 private:
 	virtual void osd_exit();
 
+	//OZFALCON - Declaring hi subroutine
+	virtual void update_hi(bool skip_redraw);
+
 	watchdog *m_watchdog;
 
 };

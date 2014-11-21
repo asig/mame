@@ -128,6 +128,8 @@ void sdlwindow_modify_prescale(running_machine &machine, sdl_window_info *window
 void sdlwindow_resize(sdl_window_info *window, INT32 width, INT32 height);
 void sdlwindow_clear(sdl_window_info *window);
 
+//OZFALCON - DECLARING THE NEW SUB sdlwindow_video_window_update_hi
+void sdlwindow_video_window_update_hi(running_machine &machine, sdl_window_info *window);
 
 //============================================================
 // PROTOTYPES - drawsdl.c

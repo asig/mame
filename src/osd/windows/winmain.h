@@ -281,6 +281,9 @@ public:
 private:
 	void osd_exit();
 
+ 	//MKChamp - Declaring hi subroutine
+ 	virtual void update_hi(bool skip_redraw);
+ 	
 	static const int DEFAULT_FONT_HEIGHT = 200;
 };
 

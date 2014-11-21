@@ -41,6 +41,9 @@ public:
 	running_machine &machine() const { return m_machine; }
 
 	void update();
+	
+	//MKCHAMP
+	void update_hi();
 
 	win_window_info *   m_next;
 	volatile int        m_init_state;
