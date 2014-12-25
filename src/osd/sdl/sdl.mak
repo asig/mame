@@ -24,6 +24,9 @@
 # uncomment and edit next line to specify a distribution
 # supported debian-stable, ubuntu-intrepid
 
+# Force SDL1
+SDL_LIBVER = sdl
+
 # DISTRO = debian-stable
 # DISTRO = ubuntu-intrepid
 # DISTRO = gcc44-generic
