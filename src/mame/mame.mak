@@ -987,6 +987,7 @@ $(MAMEOBJ)/capcom.a: \
 	$(DRIVERS)/1943.o $(VIDEO)/1943.o \
 	$(DRIVERS)/alien.o \
 	$(DRIVERS)/bionicc.o $(VIDEO)/bionicc.o \
+	$(DRIVERS)/supduck.o \
 	$(DRIVERS)/blktiger.o $(VIDEO)/blktiger.o \
 	$(DRIVERS)/cbasebal.o $(VIDEO)/cbasebal.o \
 	$(DRIVERS)/commando.o $(VIDEO)/commando.o \
@@ -2391,6 +2392,7 @@ $(MAMEOBJ)/misc.a: \
 	$(DRIVERS)/potgoldu.o \
 	$(DRIVERS)/proconn.o \
 	$(DRIVERS)/psattack.o \
+	$(DRIVERS)/pse.o \
 	$(DRIVERS)/quizo.o \
 	$(DRIVERS)/quizpun2.o \
 	$(DRIVERS)/rbmk.o \
