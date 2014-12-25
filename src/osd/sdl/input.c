@@ -167,7 +167,7 @@ static UINT8                input_paused;
 static sdl_window_info *    focus_window = NULL;
 
 // input buffer - only for SDLMAME_EVENTS_IN_WORKER_THREAD
-#define MAX_BUF_EVENTS      (500)       /* 100 not enough for SDL 1.3 */
+#define MAX_BUF_EVENTS      (1000)       /* 100 not enough for SDL 1.3 */
 static SDL_Event            event_buf[MAX_BUF_EVENTS];
 static int                  event_buf_count;
 
@@ -757,7 +757,7 @@ static void sdlinput_register_joysticks(running_machine &machine)
 
 		osd_printf_verbose("Joystick: %s\n", devinfo->name.cstr());
 		osd_printf_verbose("Joystick:   ...  %d axes, %d buttons %d hats %d balls\n", SDL_JoystickNumAxes(joy), SDL_JoystickNumButtons(joy), SDL_JoystickNumHats(joy), SDL_JoystickNumBalls(joy));
-		osd_printf_verbose("Joystick:   ...  Physical id %d mapped to logical id %d\n", physical_stick, stick);
+		osd_printf_verbose("Joystick:   ...  Physical id %d mapped to logical id %d\n", physical_stick, stick + 1);
 
 		// loop over all axes
 		for (axis = 0; axis < SDL_JoystickNumAxes(joy); axis++)

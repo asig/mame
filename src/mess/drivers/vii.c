@@ -663,8 +663,6 @@ READ16_MEMBER( vii_state::io_r )
 	static const char *const gpioregs[] = { "GPIO Data Port", "GPIO Buffer Port", "GPIO Direction Port", "GPIO Attribute Port", "GPIO IRQ/Latch Port" };
 	static const char gpioports[] = { 'A', 'B', 'C' };
 
-	offset -= 0x500;
-
 	UINT16 val = m_io_regs[offset];
 
 	switch(offset)
@@ -737,8 +735,6 @@ WRITE16_MEMBER( vii_state::io_w )
 	static const char gpioports[3] = { 'A', 'B', 'C' };
 
 	UINT16 temp = 0;
-
-	offset -= 0x500;
 
 	switch(offset)
 	{
@@ -901,14 +897,14 @@ READ16_MEMBER( vii_state::rom_r )
 }
 
 static ADDRESS_MAP_START( vii_mem, AS_PROGRAM, 16, vii_state )
-	AM_RANGE( 0x000000, 0x004fff ) AM_RAM AM_SHARE("p_ram")
-	AM_RANGE( 0x005000, 0x0051ff ) AM_READWRITE(video_r, video_w)
-	AM_RANGE( 0x005200, 0x0055ff ) AM_RAM AM_SHARE("p_rowscroll")
-	AM_RANGE( 0x005600, 0x0057ff ) AM_RAM AM_SHARE("p_palette")
-	AM_RANGE( 0x005800, 0x005fff ) AM_RAM AM_SHARE("p_spriteram")
-	AM_RANGE( 0x006000, 0x006fff ) AM_READWRITE(audio_r, audio_w)
-	AM_RANGE( 0x007000, 0x007fff ) AM_READWRITE(io_r,    io_w)
-	AM_RANGE( 0x008000, 0x7fffff ) AM_READ(rom_r)
+	AM_RANGE( 0x000000, 0x0027ff ) AM_RAM AM_SHARE("p_ram")
+	AM_RANGE( 0x002800, 0x0028ff ) AM_READWRITE(video_r, video_w)
+	AM_RANGE( 0x002900, 0x002aff ) AM_RAM AM_SHARE("p_rowscroll")
+	AM_RANGE( 0x002b00, 0x002bff ) AM_RAM AM_SHARE("p_palette")
+	AM_RANGE( 0x002c00, 0x002fff ) AM_RAM AM_SHARE("p_spriteram")
+	AM_RANGE( 0x003000, 0x0037ff ) AM_READWRITE(audio_r, audio_w)
+	AM_RANGE( 0x003d00, 0x003eff ) AM_READWRITE(io_r,    io_w)
+	AM_RANGE( 0x004000, 0x3fffff ) AM_READ(rom_r)
 ADDRESS_MAP_END
 
 static INPUT_PORTS_START( vii )
@@ -1218,6 +1214,11 @@ ROM_START( vsmile )
 	ROM_LOAD16_WORD_SWAP( "bios german.bin", 0x000000, 0x200000, CRC(205c5296) SHA1(7fbcf761b5885c8b1524607aabaf364b4559c8cc) )
 ROM_END
 
+ROM_START( vsmilef )
+	ROM_REGION( 0x800000, "maincpu", ROMREGION_ERASEFF )      /* dummy region for u'nSP */
+	ROM_LOAD16_WORD_SWAP( "sysrom_france", 0x000000, 0x200000, CRC(0cd0bdf5) SHA1(5c8d1eada1b6b545555b8d2b09325d7127681af8) )
+ROM_END
+
 ROM_START( walle )
 	ROM_REGION( 0x800000, "maincpu", ROMREGION_ERASEFF )      /* dummy region for u'nSP */
 	ROM_LOAD16_WORD_SWAP( "walle.bin", 0x000000, 0x400000, BAD_DUMP CRC(bd554cba) SHA1(6cd06a036ab12e7b0e1fd8003db873b0bb783868) )
@@ -1228,5 +1229,6 @@ ROM_END
 /*    YEAR  NAME      PARENT    COMPAT    MACHINE   INPUT     INIT      COMPANY                                              FULLNAME      FLAGS */
 CONS( 2004, batmantv, vii,      0,        batman,   batman, vii_state,   batman,   "JAKKS Pacific Inc / HotGen Ltd",                    "The Batman", GAME_NO_SOUND )
 CONS( 2005, vsmile,   0,        0,        vsmile,   vsmile, vii_state,   vsmile,   "V-Tech",                                            "V-Smile (Germany)",    GAME_NO_SOUND | GAME_NOT_WORKING )
+CONS( 2005, vsmilef,  vsmile,   0,        vsmile,   vsmile, vii_state,   vsmile,   "V-Tech",                                            "V-Smile (France)",    GAME_NO_SOUND | GAME_NOT_WORKING )
 CONS( 2007, vii,      0,        0,        vii,      vii, vii_state,      vii,      "Jungle Soft / KenSingTon / Chintendo / Siatronics", "Vii",        GAME_NO_SOUND )
 CONS( 2008, walle,    vii,      0,        batman,   walle, vii_state,    walle,    "JAKKS Pacific Inc",                                 "Wall-E",     GAME_NO_SOUND )

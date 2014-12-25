@@ -496,8 +496,8 @@ static const UINT16 microvision_output_pla_0[0x20] =
 	/* O output PLA configuration currently unknown */
 	0x00, 0x08, 0x04, 0x0C, 0x02, 0x0A, 0x06, 0x0E,
 	0x01, 0x09, 0x05, 0x0D, 0x03, 0x0B, 0x07, 0x0F,
-	0xFF00, 0xFF00, 0xFF00, 0xFF00, 0xFF00, 0xFF00, 0xFF00, 0xFF00,
-	0xFF00, 0xFF00, 0xFF00, 0xFF00, 0xFF00, 0xFF00, 0xFF00, 0xFF00
+	0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
+	0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00
 };
 
 
@@ -507,8 +507,8 @@ static const UINT16 microvision_output_pla_1[0x20] =
 	/* Reversed bit order */
 	0x00, 0x01, 0x02, 0x03, 0x04, 0x05, 0x06, 0x07,
 	0x08, 0x09, 0x0A, 0x0B, 0x0C, 0x0D, 0x0E, 0x0F,
-	0xFF00, 0xFF00, 0xFF00, 0xFF00, 0xFF00, 0xFF00, 0xFF00, 0xFF00,
-	0xFF00, 0xFF00, 0xFF00, 0xFF00, 0xFF00, 0xFF00, 0xFF00, 0xFF00
+	0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
+	0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00
 };
 
 
@@ -655,9 +655,9 @@ static MACHINE_CONFIG_START( microvision, microvision_state )
 	MCFG_CPU_IO_MAP( microvision_8021_io )
 	MCFG_CPU_ADD("maincpu2", TMS1100, 500000)   // most games seem to be running at approximately this speed
 	MCFG_TMS1XXX_OUTPUT_PLA( microvision_output_pla_0 )
-	MCFG_TMS1XXX_READ_K( READ8( microvision_state, tms1100_read_k ) )
-	MCFG_TMS1XXX_WRITE_O( WRITE16( microvision_state, tms1100_write_o ) )
-	MCFG_TMS1XXX_WRITE_R( WRITE16( microvision_state, tms1100_write_r ) )
+	MCFG_TMS1XXX_READ_K_CB( READ8( microvision_state, tms1100_read_k ) )
+	MCFG_TMS1XXX_WRITE_O_CB( WRITE16( microvision_state, tms1100_write_o ) )
+	MCFG_TMS1XXX_WRITE_R_CB( WRITE16( microvision_state, tms1100_write_r ) )
 
 	MCFG_SCREEN_ADD("screen", LCD)
 	MCFG_SCREEN_REFRESH_RATE(60)
@@ -695,6 +695,10 @@ MACHINE_CONFIG_END
 ROM_START( microvsn )
 	ROM_REGION( 0x800, "maincpu1", ROMREGION_ERASE00 )
 	ROM_REGION( 0x800, "maincpu2", ROMREGION_ERASE00 )
+	ROM_REGION( 867, "maincpu2:mpla", 0 )
+	ROM_LOAD( "tms1100_default_mpla.pla", 0, 867, CRC(62445fc9) SHA1(d6297f2a4bc7a870b76cc498d19dbb0ce7d69fec) ) // verified for: pinball, blockbuster, bowling
+
+	ROM_REGION( 365, "maincpu2:opla", ROMREGION_ERASE00 )
 ROM_END
 
 

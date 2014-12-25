@@ -252,17 +252,17 @@ static MACHINE_CONFIG_START( mikrosha, mikrosha_state )
 	MCFG_GENERIC_CARTSLOT_ADD("cartslot", generic_plain_slot, "mikrosha_cart")
 	MCFG_GENERIC_EXTENSIONS("bin,rom")
 
-	MCFG_SOFTWARE_LIST_ADD("cass_list","mikrosha")
-	MCFG_SOFTWARE_LIST_ADD("cart_list","mikrosha_cart")
+	MCFG_SOFTWARE_LIST_ADD("cass_list", "mikrosha_cass")
+	MCFG_SOFTWARE_LIST_ADD("cart_list", "mikrosha_cart")
 MACHINE_CONFIG_END
 
 
 /* ROM definition */
 ROM_START( mikrosha )
 	ROM_REGION( 0x10000, "maincpu", ROMREGION_ERASEFF )
-	ROM_LOAD( "mikrosha.rom", 0xf800, 0x0800, CRC(86A83556) SHA1(94b1baad0a419145939a891ff51f4324e8e4ddd2))
+	ROM_LOAD( "mikrosha.rom", 0xf800, 0x0800, CRC(86a83556) SHA1(94b1baad0a419145939a891ff51f4324e8e4ddd2))
 	ROM_REGION(0x0800, "gfx1",0)
-	ROM_LOAD ("mikrosha.fnt", 0x0000, 0x0800, CRC(B315DA1C) SHA1(b5bf9abc0fff75b1aba709a7f08b23d4a89bb04b))
+	ROM_LOAD ("mikrosha.fnt", 0x0000, 0x0800, CRC(b315da1c) SHA1(b5bf9abc0fff75b1aba709a7f08b23d4a89bb04b))
 ROM_END
 
 ROM_START( m86rk )
@@ -270,7 +270,7 @@ ROM_START( m86rk )
 	ROM_LOAD( "m86rk.bin", 0xf800, 0x0800, CRC(a898d77a) SHA1(c2497bf8434b5028fe0a9fc09be311465d5553a5))
 	ROM_REGION(0x0800, "gfx1",0)
 	/* here should probably be different rom */
-	ROM_LOAD ("mikrosha.fnt", 0x0000, 0x0800, CRC(B315DA1C) SHA1(b5bf9abc0fff75b1aba709a7f08b23d4a89bb04b))
+	ROM_LOAD ("mikrosha.fnt", 0x0000, 0x0800, CRC(b315da1c) SHA1(b5bf9abc0fff75b1aba709a7f08b23d4a89bb04b))
 ROM_END
 
 /* Driver */

@@ -328,6 +328,7 @@ SDLMAIN = $(SDLOBJ)/main.o
 # needed for unidasm
 LDFLAGS += -Wl,--allow-multiple-definition
 SDL_NETWORK = pcap
+INCPATH += -I$(SRC)/lib/winpcap
 
 # enable UNICODE
 DEFS += -Dmain=utf8_main -DUNICODE -D_UNICODE
@@ -506,10 +507,10 @@ else
 
 # files (header files are #include "SDL/something.h", so the extra "/SDL"
 # causes a significant problem)
-INCPATH += `sdl-config --cflags | sed 's:/SDL::'`
+INCPATH += `$(SDL_CONFIG) --cflags | sed 's:/SDL::'`
 CCOMFLAGS += -DNO_SDL_GLEXT
 # Remove libSDLmain, as its symbols conflict with SDLMain_tmpl.m
-LIBS += `sdl-config --libs | sed 's/-lSDLmain//'` -lpthread -framework OpenGL
+LIBS += `$(SDL_CONFIG) --libs | sed 's/-lSDLmain//'` -lpthread -framework Cocoa -framework OpenGL
 DEFS += -DMACOSX_USE_LIBSDL
 endif   # MACOSX_USE_LIBSDL
 
@@ -679,13 +680,17 @@ DEBUGOBJS = \
 	$(OSDOBJ)/modules/debugger/qt/debugqtmainwindow.o \
 	$(OSDOBJ)/modules/debugger/qt/debugqtmemorywindow.o \
 	$(OSDOBJ)/modules/debugger/qt/debugqtbreakpointswindow.o \
+	$(OSDOBJ)/modules/debugger/qt/debugqtdeviceswindow.o \
+	$(OSDOBJ)/modules/debugger/qt/debugqtdeviceinformationwindow.o \
 	$(OSDOBJ)/modules/debugger/qt/debugqtview.moc.o \
 	$(OSDOBJ)/modules/debugger/qt/debugqtwindow.moc.o \
 	$(OSDOBJ)/modules/debugger/qt/debugqtlogwindow.moc.o \
 	$(OSDOBJ)/modules/debugger/qt/debugqtdasmwindow.moc.o \
 	$(OSDOBJ)/modules/debugger/qt/debugqtmainwindow.moc.o \
 	$(OSDOBJ)/modules/debugger/qt/debugqtmemorywindow.moc.o \
-	$(OSDOBJ)/modules/debugger/qt/debugqtbreakpointswindow.moc.o
+	$(OSDOBJ)/modules/debugger/qt/debugqtbreakpointswindow.moc.o \
+	$(OSDOBJ)/modules/debugger/qt/debugqtdeviceswindow.moc.o \
+	$(OSDOBJ)/modules/debugger/qt/debugqtdeviceinformationwindow.moc.o
 endif
 
 ifeq ($(NO_DEBUGGER),1)
@@ -814,6 +819,7 @@ $(SDLOBJ)/draw13.o : $(SDLSRC)/blit13.h
 #$(OSDCOREOBJS): $(SDLSRC)/sdl.mak
 
 #$(OSDOBJS): $(SDLSRC)/sdl.mak
+
 
 $(LIBOCORE): $(OSDCOREOBJS)
 

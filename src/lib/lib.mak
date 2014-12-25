@@ -138,16 +138,20 @@ FORMATSOBJS = \
 	$(LIBOBJ)/formats/d81_dsk.o     \
 	$(LIBOBJ)/formats/d82_dsk.o     \
 	$(LIBOBJ)/formats/d88_dsk.o     \
+	$(LIBOBJ)/formats/dcp_dsk.o     \
 	$(LIBOBJ)/formats/dfi_dsk.o     \
 	$(LIBOBJ)/formats/dim_dsk.o     \
+	$(LIBOBJ)/formats/dip_dsk.o     \
 	$(LIBOBJ)/formats/dmk_dsk.o     \
 	$(LIBOBJ)/formats/dmv_dsk.o     \
 	$(LIBOBJ)/formats/dsk_dsk.o     \
 	$(LIBOBJ)/formats/ep64_dsk.o    \
 	$(LIBOBJ)/formats/esq8_dsk.o    \
 	$(LIBOBJ)/formats/esq16_dsk.o   \
+	$(LIBOBJ)/formats/excali64_dsk.o\
 	$(LIBOBJ)/formats/fc100_cas.o   \
 	$(LIBOBJ)/formats/fdi_dsk.o     \
+	$(LIBOBJ)/formats/fdd_dsk.o     \
 	$(LIBOBJ)/formats/flex_dsk.o    \
 	$(LIBOBJ)/formats/fm7_cas.o     \
 	$(LIBOBJ)/formats/fmsx_cas.o    \
@@ -175,6 +179,7 @@ FORMATSOBJS = \
 	$(LIBOBJ)/formats/nanos_dsk.o   \
 	$(LIBOBJ)/formats/naslite_dsk.o \
 	$(LIBOBJ)/formats/nes_dsk.o     \
+	$(LIBOBJ)/formats/nfd_dsk.o     \
 	$(LIBOBJ)/formats/orao_cas.o    \
 	$(LIBOBJ)/formats/oric_dsk.o    \
 	$(LIBOBJ)/formats/oric_tap.o    \
@@ -389,7 +394,7 @@ $(OBJ)/libflac.a: $(LIBFLACOBJS)
 
 $(LIBOBJ)/libflac/%.o: $(LIBSRC)/libflac/libFLAC/%.c | $(OSPREBUILD)
 	@echo Compiling $<...
-	$(CC) $(CDEFS) $(CONLYFLAGS) $(CCOMFLAGS) $(FLACOPTS) -I$(LIBSRC)/libflac/include -c $< -o $@
+	$(CC) $(CDEFS) $(CONLYFLAGS) $(CCOMFLAGS) $(FLACOPTS) -I$(LIBSRC)/libflac/include -I$(LIBSRC)/libflac/libFLAC/include -c $< -o $@
 
 
 

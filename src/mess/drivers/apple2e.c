@@ -682,6 +682,9 @@ void apple2e_state::machine_start()
 	save_item(NAME(m_exp_liveptr));
 	save_item(NAME(m_exp_bankhior));
 	save_item(NAME(m_exp_addrmask));
+	save_item(NAME(m_lcram));
+	save_item(NAME(m_lcram2));
+	save_item(NAME(m_lcwriteenable));
 }
 
 void apple2e_state::machine_reset()
@@ -826,7 +829,7 @@ UINT32 apple2e_state::screen_update(screen_device &screen, bitmap_ind16 &bitmap,
 		{
 			if (m_video->m_mix)
 			{
-				if (m_video->m_dhires)
+				if ((m_video->m_dhires) && (m_video->m_80col))
 				{
 					m_video->dhgr_update(screen, bitmap, cliprect, 0, 159);
 				}
@@ -838,7 +841,7 @@ UINT32 apple2e_state::screen_update(screen_device &screen, bitmap_ind16 &bitmap,
 			}
 			else
 			{
-				if (m_video->m_dhires)
+				if ((m_video->m_dhires) && (m_video->m_80col))
 				{
 					m_video->dhgr_update(screen, bitmap, cliprect, 0, 191);
 				}
@@ -852,7 +855,7 @@ UINT32 apple2e_state::screen_update(screen_device &screen, bitmap_ind16 &bitmap,
 		{
 			if (m_video->m_mix)
 			{
-				if (m_video->m_dhires)
+				if ((m_video->m_dhires) && (m_video->m_80col))
 				{
 					m_video->dlores_update(screen, bitmap, cliprect, 0, 159);
 				}
@@ -865,7 +868,7 @@ UINT32 apple2e_state::screen_update(screen_device &screen, bitmap_ind16 &bitmap,
 			}
 			else
 			{
-				if (m_video->m_dhires)
+				if ((m_video->m_dhires) && (m_video->m_80col))
 				{
 					m_video->dlores_update(screen, bitmap, cliprect, 0, 191);
 				}
@@ -1260,7 +1263,7 @@ READ8_MEMBER(apple2e_state::c000_r)
 
 		case 0x10:  // read any key down, reset keyboard strobe
 			{
-				UINT8 rv = m_transchar | m_anykeydown;
+				UINT8 rv = m_transchar | (m_anykeydown ? 0x80 : 0x00);
 				m_strobe = 0;
 				return rv;
 			}
@@ -1509,7 +1512,7 @@ READ8_MEMBER(apple2e_state::c000_iic_r)
 
 		case 0x10:  // read any key down, reset keyboard strobe
 			{
-				UINT8 rv = m_transchar | m_anykeydown;
+				UINT8 rv = m_transchar | (m_anykeydown ? 0x80 : 0x00);
 				m_strobe = 0;
 				return rv;
 			}
@@ -3538,7 +3541,7 @@ ROM_START(laser128)
 	ROM_LOAD ( "341-0265-a.chr", 0x1000, 0x1000, BAD_DUMP CRC(2651014d) SHA1(b2b5d87f52693817fc747df087a4aa1ddcdb1f10)) // need to dump real laser rom
 
 	ROM_REGION(0x8000,"maincpu",0)
-	ROM_LOAD("laser128.256", 0x0000, 0x8000, CRC(39E59ED3) SHA1(CBD2F45C923725BFD57F8548E65CC80B13BC18DA))
+	ROM_LOAD("laser128.256", 0x0000, 0x8000, CRC(39e59ed3) SHA1(cbd2f45c923725bfd57f8548e65cc80b13bc18da))
 
 	ROM_REGION( 0x800, "keyboard", ROMREGION_ERASE00 )
 	ROM_LOAD( "342-0132-c.e12", 0x000, 0x800, BAD_DUMP CRC(e47045f4) SHA1(12a2e718f5f4acd69b6c33a45a4a940b1440a481) ) // need to dump real laser rom
@@ -3550,7 +3553,7 @@ ROM_START(las128ex)
 	ROM_LOAD ( "341-0265-a.chr", 0x1000, 0x1000, BAD_DUMP CRC(2651014d) SHA1(b2b5d87f52693817fc747df087a4aa1ddcdb1f10)) // need to dump real laser rom
 
 	ROM_REGION(0x8000,"maincpu",0)
-	ROM_LOAD("las128ex.256", 0x0000, 0x8000, CRC(B67C8BA1) SHA1(8BD5F82A501B1CF9D988C7207DA81E514CA254B0))
+	ROM_LOAD("las128ex.256", 0x0000, 0x8000, CRC(b67c8ba1) SHA1(8bd5f82a501b1cf9d988c7207da81e514ca254b0))
 
 	ROM_REGION( 0x800, "keyboard", ROMREGION_ERASE00 )
 	ROM_LOAD( "342-0132-c.e12", 0x000, 0x800, BAD_DUMP CRC(e47045f4) SHA1(12a2e718f5f4acd69b6c33a45a4a940b1440a481) ) // need to dump real laser rom
