@@ -20,7 +20,7 @@
 
 #include "snap.lh"
 
-
+#include "osdepend.h"
 
 //**************************************************************************
 //  DEBUGGING
@@ -106,7 +106,8 @@ video_manager::video_manager(running_machine &machine)
 		m_avi_file(NULL),
 		m_avi_frame_period(attotime::zero),
 		m_avi_next_frame_time(attotime::zero),
-		m_avi_frame(0)
+		m_avi_frame(0),
+		m_dummy_recording(false)
 {
 	// request a callback upon exiting
 	machine.add_notifier(MACHINE_NOTIFY_EXIT, machine_notify_delegate(FUNC(video_manager::exit), this));
@@ -152,6 +153,10 @@ video_manager::video_manager(running_machine &machine)
 	filename = machine.options().avi_write();
 	if (filename[0] != 0)
 		begin_recording(filename, MF_AVI);
+
+#ifdef MAME_DEBUG
+	m_dummy_recording = machine.options().dummy_write();
+#endif
 
 	// if no screens, create a periodic timer to drive updates
 	if (machine.first_screen() == NULL)
@@ -252,30 +257,30 @@ void video_manager::frame_update(bool debug)
 //  into a string buffer
 //-------------------------------------------------
 
-astring &video_manager::speed_text(astring &string)
+astring &video_manager::speed_text(astring &str)
 {
-	string.reset();
+	str.reset();
 
 	// if we're paused, just display Paused
 	bool paused = machine().paused();
 	if (paused)
-		string.cat("paused");
+		str.cat("paused");
 
 	// if we're fast forwarding, just display Fast-forward
 	else if (m_fastforward)
-		string.cat("fast ");
+		str.cat("fast ");
 
 	// if we're auto frameskipping, display that plus the level
 	else if (effective_autoframeskip())
-		string.catprintf("auto%2d/%d", effective_frameskip(), MAX_FRAMESKIP);
+		str.catprintf("auto%2d/%d", effective_frameskip(), MAX_FRAMESKIP);
 
 	// otherwise, just display the frameskip plus the level
 	else
-		string.catprintf("skip %d/%d", effective_frameskip(), MAX_FRAMESKIP);
+		str.catprintf("skip %d/%d", effective_frameskip(), MAX_FRAMESKIP);
 
 	// append the speed for all cases except paused
 	if (!paused)
-		string.catprintf("%4d%%", (int)(100 * m_speed_percent + 0.5));
+		str.catprintf("%4d%%", (int)(100 * m_speed_percent + 0.5));
 
 	// display the number of partial updates as well
 	int partials = 0;
@@ -283,9 +288,9 @@ astring &video_manager::speed_text(astring &string)
 	for (screen_device *screen = iter.first(); screen != NULL; screen = iter.next())
 		partials += screen->partial_updates();
 	if (partials > 1)
-		string.catprintf("\n%d partial updates", partials);
+		str.catprintf("\n%d partial updates", partials);
 
-	return string;
+	return str;
 }
 
 
@@ -303,11 +308,11 @@ void video_manager::save_snapshot(screen_device *screen, emu_file &file)
 	create_snapshot_bitmap(screen);
 
 	// add two text entries describing the image
-	astring text1(emulator_info::get_appname(), " ", build_version);
-	astring text2(machine().system().manufacturer, " ", machine().system().description);
+	astring text1 = astring(emulator_info::get_appname()).cat(" ").cat(build_version);
+	astring text2 = astring(machine().system().manufacturer).cat(" ").cat(machine().system().description);
 	png_info pnginfo = { 0 };
-	png_add_text(&pnginfo, "Software", text1);
-	png_add_text(&pnginfo, "System", text2);
+	png_add_text(&pnginfo, "Software", text1.c_str());
+	png_add_text(&pnginfo, "System", text2.c_str());
 
 	// now do the actual work
 	const rgb_t *palette = (screen !=NULL && screen->palette() != NULL) ? screen->palette()->palette()->entry_list_adjusted() : NULL;
@@ -412,7 +417,7 @@ void video_manager::begin_recording(const char *name, movie_format format)
 			m_avi_frame_period = attotime::from_seconds(1000) / info.video_timescale;
 
 			// create the file and free the string
-			avi_error avierr = avi_create(fullpath, &info, &m_avi_file);
+			avi_error avierr = avi_create(fullpath.c_str(), &info, &m_avi_file);
 			if (avierr != AVIERR_NONE)
 			{
 				osd_printf_error("Error creating AVI: %s\n", avi_error_string(avierr));
@@ -714,6 +719,9 @@ bool video_manager::finish_screen_updates()
 	for (screen_device *screen = iter.first(); screen != NULL; screen = iter.next())
 		if (screen->update_quads())
 			anything_changed = true;
+
+	// draw HUD from LUA callback (if any)
+	anything_changed |= machine().manager().lua()->frame_hook();
 
 	// update our movie recording and burn-in state
 	if (!machine().paused())
@@ -1105,7 +1113,7 @@ void video_manager::recompute_speed(const attotime &emutime)
 			if (filerr == FILERR_NONE)
 				save_snapshot(machine().first_screen(), file);
 		}
-
+		//printf("Scheduled exit at %f\n", emutime.as_double());
 		// schedule our demise
 		machine().schedule_exit();
 	}
@@ -1178,12 +1186,12 @@ file_error video_manager::open_next(emu_file &file, const char *extension)
 
 	// handle %d in the template (for image devices)
 	astring snapdev("%d_");
-	int pos = snapstr.find(0, snapdev);
+	int pos = snapstr.find(0, snapdev.c_str());
 
 	if (pos != -1)
 	{
 		// if more %d are found, revert to default and ignore them all
-		if (snapstr.find(pos + 3, snapdev) != -1)
+		if (snapstr.find(pos + 3, snapdev.c_str()) != -1)
 			snapstr.cpy("%g/%i");
 		// else if there is a single %d, try to create the correct snapname
 		else
@@ -1210,7 +1218,7 @@ file_error video_manager::open_next(emu_file &file, const char *extension)
 			// copy the device name to an astring
 			astring snapdevname;
 			snapdevname.cpysubstr(snapstr, pos + 3, end - pos - 3);
-			//printf("check template: %s\n", snapdevname.cstr());
+			//printf("check template: %s\n", snapdevname.c_str());
 
 			// verify that there is such a device for this system
 			image_interface_iterator iter(machine().root_device());
@@ -1218,7 +1226,7 @@ file_error video_manager::open_next(emu_file &file, const char *extension)
 			{
 				// get the device name
 				astring tempdevname(image->brief_instance_name());
-				//printf("check device: %s\n", tempdevname.cstr());
+				//printf("check device: %s\n", tempdevname.c_str());
 
 				if (snapdevname.cmp(tempdevname) == 0)
 				{
@@ -1231,9 +1239,9 @@ file_error video_manager::open_next(emu_file &file, const char *extension)
 						filename.substr(0, filename.rchr(0, '.'));
 
 						// setup snapname and remove the %d_
-						snapstr.replace(0, snapdevname, filename);
+						snapstr.replace(0, snapdevname.c_str(), filename.c_str());
 						snapstr.del(pos, 3);
-						//printf("check image: %s\n", filename.cstr());
+						//printf("check image: %s\n", filename.c_str());
 
 						name_found = 1;
 					}
@@ -1267,10 +1275,10 @@ file_error video_manager::open_next(emu_file &file, const char *extension)
 		for (int seq = 0; ; seq++)
 		{
 			// build up the filename
-			fname.cpy(snapstr).replace(0, "%i", seqtext.format("%04d", seq).cstr());
+			fname.cpy(snapstr).replace(0, "%i", seqtext.format("%04d", seq).c_str());
 
 			// try to open the file; stop when we fail
-			file_error filerr = file.open(fname);
+			file_error filerr = file.open(fname.c_str());
 			if (filerr != FILERR_NONE)
 				break;
 		}
@@ -1278,7 +1286,7 @@ file_error video_manager::open_next(emu_file &file, const char *extension)
 
 	// create the final file
 	file.set_openflags(origflags);
-	return file.open(fname);
+	return file.open(fname.c_str());
 }
 
 
@@ -1289,7 +1297,7 @@ file_error video_manager::open_next(emu_file &file, const char *extension)
 void video_manager::record_frame()
 {
 	// ignore if nothing to do
-	if (m_mng_file == NULL && m_avi_file == NULL)
+	if (m_mng_file == NULL && m_avi_file == NULL && !m_dummy_recording)
 		return;
 
 	// start the profiler and get the current time
@@ -1330,10 +1338,10 @@ void video_manager::record_frame()
 			png_info pnginfo = { 0 };
 			if (m_mng_frame == 0)
 			{
-				astring text1(emulator_info::get_appname(), " ", build_version);
-				astring text2(machine().system().manufacturer, " ", machine().system().description);
-				png_add_text(&pnginfo, "Software", text1);
-				png_add_text(&pnginfo, "System", text2);
+				astring text1 = astring(emulator_info::get_appname()).cat(" ").cat(build_version);
+				astring text2 = astring(machine().system().manufacturer).cat(" ").cat(machine().system().description);
+				png_add_text(&pnginfo, "Software", text1.c_str());
+				png_add_text(&pnginfo, "System", text2.c_str());
 			}
 
 			// write the next frame

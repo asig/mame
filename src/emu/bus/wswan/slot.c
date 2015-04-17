@@ -52,7 +52,7 @@ void device_ws_cart_interface::rom_alloc(UINT32 size, const char *tag)
 	{
 		astring tempstring(tag);
 		tempstring.cat(WSSLOT_ROM_REGION_TAG);
-		m_rom = device().machine().memory().region_alloc(tempstring, size, 1, ENDIANNESS_LITTLE)->base();
+		m_rom = device().machine().memory().region_alloc(tempstring.c_str(), size, 1, ENDIANNESS_LITTLE)->base();
 		m_rom_size = size;
 		m_bank_mask = ((m_rom_size >> 16) - 1);
 	}
@@ -316,10 +316,10 @@ void ws_cart_slot_device::get_default_card_software(astring &result)
 		int type;
 		UINT32 nvram;
 
-		core_fread(m_file, rom, size);
+		core_fread(m_file, &rom[0], size);
 
 		// nvram size is not really used here, but we set it up nevertheless
-		type = get_cart_type(rom, size, nvram);
+		type = get_cart_type(&rom[0], size, nvram);
 		slot_string = ws_get_slot(type);
 
 		//printf("type: %s\n", slot_string);

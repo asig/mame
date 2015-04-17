@@ -150,7 +150,7 @@ void nes_aladdin_slot_device::get_default_card_software(astring &result)
 		dynamic_buffer rom(len);
 		UINT8 mapper;
 
-		core_fread(m_file, rom, len);
+		core_fread(m_file, &rom[0], len);
 
 		mapper = (rom[6] & 0xf0) >> 4;
 		mapper |= rom[7] & 0xf0;
@@ -325,8 +325,8 @@ WRITE8_MEMBER(nes_aladdin_device::write_h)
 //-------------------------------------------------
 
 static SLOT_INTERFACE_START(ade_cart)
-	SLOT_INTERFACE("algn", NES_ALGN_ROM)
-	SLOT_INTERFACE("algq", NES_ALGQ_ROM)
+	SLOT_INTERFACE_INTERNAL("algn", NES_ALGN_ROM)
+	SLOT_INTERFACE_INTERNAL("algq", NES_ALGQ_ROM)
 SLOT_INTERFACE_END
 
 

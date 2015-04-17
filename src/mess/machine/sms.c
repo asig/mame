@@ -45,6 +45,9 @@ WRITE_LINE_MEMBER(sms_state::sms_ctrl1_th_input)
 
 WRITE_LINE_MEMBER(sms_state::sms_ctrl2_th_input)
 {
+	if (m_is_gamegear && !(m_cartslot->exists() && m_cartslot->m_cart->get_sms_mode()))
+		return;
+
 	// Check if TH of controller port 2 is set to input (1)
 	if (m_io_ctrl_reg & 0x08)
 	{
@@ -63,9 +66,12 @@ WRITE_LINE_MEMBER(sms_state::sms_ctrl2_th_input)
 }
 
 
-void sms_state::sms_get_inputs( address_space &space )
+void sms_state::sms_get_inputs()
 {
-	UINT8 data1, data2;
+	bool port_dd_has_th_input = true;
+
+	UINT8 data1 = 0xff;
+	UINT8 data2 = 0xff;
 
 	m_port_dc_reg = 0xff;
 	m_port_dd_reg = 0xff;
@@ -74,20 +80,43 @@ void sms_state::sms_get_inputs( address_space &space )
 	// physical pins numbering. For register bits whose order differs,
 	// it's necessary move the equivalent controller bits to match.
 
-	data1 = m_port_ctrl1->port_r();
-	m_port_dc_reg &= ~0x0f | data1; // Up, Down, Left, Right
-	m_port_dc_reg &= ~0x10 | (data1 >> 1); // TL (Button 1)
-	m_port_dc_reg &= ~0x20 | (data1 >> 2); // TR (Button 2)
+	if (m_is_gamegear)
+	{
+		// Assume the Japanese Game Gear behaves as the
+		// Japanese Master System, regarding TH input.
+		if (m_is_gg_region_japan)
+			port_dd_has_th_input = false;
 
-	data2 = m_port_ctrl2->port_r();
+		// For Game Gear, this function is used only if SMS mode is
+		// enabled, else only register $dc receives input data, through
+		// direct read of the m_port_gg_dc I/O port.
+
+		data1 = m_port_gg_dc->read();
+		m_port_dc_reg &= ~0x03f | data1;
+
+		data2 = m_port_gg_ext->port_r();
+	}
+	else
+	{
+		// Sega Mark III does not have TH lines connected.
+		// The Japanese Master System does not set port $dd with TH input.
+		if (m_is_mark_iii || m_is_smsj)
+			port_dd_has_th_input = false;
+
+		data1 = m_port_ctrl1->port_r();
+		m_port_dc_reg &= ~0x0f | data1; // Up, Down, Left, Right
+		m_port_dc_reg &= ~0x10 | (data1 >> 1); // TL (Button 1)
+		m_port_dc_reg &= ~0x20 | (data1 >> 2); // TR (Button 2)
+
+		data2 = m_port_ctrl2->port_r();
+	}
+
 	m_port_dc_reg &= ~0xc0 | (data2 << 6); // Up, Down
 	m_port_dd_reg &= ~0x03 | (data2 >> 2); // Left, Right
 	m_port_dd_reg &= ~0x04 | (data2 >> 3); // TL (Button 1)
 	m_port_dd_reg &= ~0x08 | (data2 >> 4); // TR (Button 2)
 
-	// Sega Mark III does not have TH line connected.
-	// Also, the Japanese Master System does not set port $dd with TH input.
-	if (!m_is_mark_iii && !m_is_smsj)
+	if (port_dd_has_th_input)
 	{
 		m_port_dd_reg &= ~0x40 | data1; // TH ctrl1
 		m_port_dd_reg &= ~0x80 | (data2 << 1); // TH ctrl2
@@ -116,7 +145,7 @@ READ8_MEMBER(sms_state::sms_fm_detect_r)
 		}
 		else
 		{
-			sms_get_inputs(space);
+			sms_get_inputs();
 			return m_port_dc_reg;
 		}
 	}
@@ -128,6 +157,12 @@ WRITE8_MEMBER(sms_state::sms_io_control_w)
 	bool latch_hcount = false;
 	UINT8 ctrl1_port_data = 0xff;
 	UINT8 ctrl2_port_data = 0xff;
+
+	if (m_is_gamegear && !(m_cartslot->exists() && m_cartslot->m_cart->get_sms_mode()))
+	{
+		m_io_ctrl_reg = data;
+		return;
+	}
 
 	// Controller Port 1:
 
@@ -171,12 +206,16 @@ WRITE8_MEMBER(sms_state::sms_io_control_w)
 		}
 		if (!m_is_gamegear)
 			m_port_ctrl2->port_w(ctrl2_port_data);
+		else
+			m_port_gg_ext->port_w(ctrl2_port_data); // not verified
 	}
 	// check if TH is set to input (1).
 	if (data & 0x08)
 	{
 		if (!m_is_gamegear)
 			ctrl2_port_data &= ~0x40 | m_port_ctrl2->port_r();
+		else
+			ctrl2_port_data &= ~0x40 | m_port_gg_ext->port_r(); // not verified
 
 		// check if TH input level is high (1) and was output/low (0)
 		if ((ctrl2_port_data & 0x40) && !(m_io_ctrl_reg & 0x88))
@@ -206,10 +245,30 @@ READ8_MEMBER(sms_state::sms_count_r)
  */
 WRITE_LINE_MEMBER(sms_state::sms_pause_callback)
 {
-	if (m_is_gamegear && m_cartslot->exists() && !m_cartslot->m_cart->get_sms_mode())
-		return;
+	bool pause_pressed = false;
 
-	if ((m_is_gamegear && !(m_port_start->read() & 0x80)) || (!m_is_gamegear && !(m_port_pause->read() & 0x80)))
+	if (!m_is_mark_iii)
+	{
+		// clear TH latch of the controller ports
+		m_ctrl1_th_latch = 0;
+		m_ctrl2_th_latch = 0;
+	}
+
+	if (m_is_gamegear)
+	{
+		if (!(m_cartslot->exists() && m_cartslot->m_cart->get_sms_mode()))
+			return;
+
+		if (!(m_port_start->read() & 0x80))
+			pause_pressed = true;
+	}
+	else
+	{
+		if (!(m_port_pause->read() & 0x80))
+			pause_pressed = true;
+	}
+
+	if (pause_pressed)
 	{
 		if (!m_paused)
 			m_maincpu->set_input_line(INPUT_LINE_NMI, PULSE_LINE);
@@ -218,13 +277,6 @@ WRITE_LINE_MEMBER(sms_state::sms_pause_callback)
 	}
 	else
 		m_paused = 0;
-
-	if (!m_is_mark_iii)
-	{
-		// clear TH latch of the controller ports
-		m_ctrl1_th_latch = 0;
-		m_ctrl2_th_latch = 0;
-	}
 }
 
 
@@ -232,27 +284,35 @@ READ8_MEMBER(sms_state::sms_input_port_dc_r)
 {
 	if (m_is_mark_iii)
 	{
-		sms_get_inputs(space);
+		sms_get_inputs();
 		return m_port_dc_reg;
 	}
 
-	if (m_mem_ctrl_reg & IO_CHIP)
+	if (m_is_gamegear)
 	{
-		return 0xff;
+		// If SMS mode is disabled, just return the data read from the
+		// input port. Its mapped port bits match the bits of register $dc.
+		if (!(m_cartslot->exists() && m_cartslot->m_cart->get_sms_mode()))
+			return m_port_gg_dc->read();
 	}
 	else
 	{
-		sms_get_inputs(space);
-
-		// Check if TR of controller port 1 is set to output (0)
-		if (!(m_io_ctrl_reg & 0x01))
-		{
-			// Read TR state set through IO control port
-			m_port_dc_reg &= ~0x20 | ((m_io_ctrl_reg & 0x10) << 1);
-		}
-
-		return m_port_dc_reg;
+		// Return if the I/O chip is disabled (1). This check isn't performed
+		// for the Game Gear because has no effect on it (even in SMS mode?).
+		if (m_mem_ctrl_reg & IO_CHIP)
+			return 0xff;
 	}
+
+	sms_get_inputs();
+
+	// Check if TR of controller port 1 is set to output (0)
+	if (!(m_io_ctrl_reg & 0x01))
+	{
+		// Read TR state set through IO control port
+		m_port_dc_reg &= ~0x20 | ((m_io_ctrl_reg & 0x10) << 1);
+	}
+
+	return m_port_dc_reg;
 }
 
 
@@ -260,14 +320,24 @@ READ8_MEMBER(sms_state::sms_input_port_dd_r)
 {
 	if (m_is_mark_iii)
 	{
-		sms_get_inputs(space);
+		sms_get_inputs();
 		return m_port_dd_reg;
 	}
 
-	if (m_mem_ctrl_reg & IO_CHIP)
-		return 0xff;
+	if (m_is_gamegear)
+	{
+		if (!(m_cartslot->exists() && m_cartslot->m_cart->get_sms_mode()))
+			return 0xff;
+	}
+	else
+	{
+		// Return if the I/O chip is disabled (1). This check isn't performed
+		// for the Game Gear because has no effect on it (even in SMS mode?).
+		if (m_mem_ctrl_reg & IO_CHIP)
+			return 0xff;
+	}
 
-	sms_get_inputs(space);
+	sms_get_inputs();
 
 	// Check if TR of controller port 2 is set to output (0)
 	if (!(m_io_ctrl_reg & 0x04))
@@ -276,12 +346,13 @@ READ8_MEMBER(sms_state::sms_input_port_dd_r)
 		m_port_dd_reg &= ~0x08 | ((m_io_ctrl_reg & 0x40) >> 3);
 	}
 
-	if (m_is_smsj)
+	if (m_is_smsj || (m_is_gamegear && m_is_gg_region_japan))
 	{
 		// For Japanese Master System, set upper 4 bits with TH/TR
 		// direction bits of IO control register, according to Enri's
 		// docs (http://www43.tok2.com/home/cmpslv/Sms/EnrSms.htm).
 		// This makes the console incapable of using the Light Phaser.
+		// Assume the same for a Japanese Game Gear.
 		m_port_dd_reg &= ~0x10 | ((m_io_ctrl_reg & 0x01) << 4);
 		m_port_dd_reg &= ~0x20 | ((m_io_ctrl_reg & 0x04) << 3);
 		m_port_dd_reg &= ~0x40 | ((m_io_ctrl_reg & 0x02) << 5);
@@ -346,10 +417,17 @@ WRITE8_MEMBER(sms_state::sms_ym2413_data_port_w)
 }
 
 
-READ8_MEMBER(sms_state::gg_input_port_2_r)
+READ8_MEMBER(sms_state::gg_input_port_00_r)
 {
-	//logerror("joy 2 read, val: %02x, pc: %04x\n", (m_is_gg_region_japan ? 0x00 : 0x40) | (m_port_start->read() & 0x80), activecpu_get_pc());
-	return (m_is_gg_region_japan ? 0x00 : 0x40) | (m_port_start->read() & 0x80);
+	if (m_cartslot->exists() && m_cartslot->m_cart->get_sms_mode())
+		return 0xff;
+	else
+	{
+		UINT8 data = (m_is_gg_region_japan ? 0x00 : 0x40) | (m_port_start->read() & 0x80);
+
+		//logerror("port $00 read, val: %02x, pc: %04x\n", data, activecpu_get_pc());
+		return data;
+	}
 }
 
 
@@ -791,8 +869,9 @@ MACHINE_START_MEMBER(sms_state,sms)
 		// a bug in the program code. The only way this cartridge could have run
 		// successfully on a real unit is if the RAM would be initialized with
 		// a F0 pattern on power up; F0 = RET P.
-		// This initialization breaks the some Game Gear games though (e.g.
+		// This initialization breaks some Game Gear games though (e.g.
 		// tempojr), suggesting that not all systems had the same initialization.
+		// This also breaks some homebrew software (e.g. Nine Pixels).
 		// For the moment we apply this to systems that have the Japanese SMS
 		// cartridge slot.
 		if (m_has_jpn_sms_cart_slot)
@@ -1268,7 +1347,7 @@ void sms_state::screen_gg_sms_mode_scaling(screen_device &screen, bitmap_rgb32 &
 					/* Do horizontal scaling */
 					for (int plot_x = plot_min_x; plot_x <= plot_max_x;)
 					{
- 						for (int j = (plot_x - plot_x_group); j <= MIN(1, plot_max_x - plot_x_group); j++)
+						for (int j = (plot_x - plot_x_group); j <= MIN(1, plot_max_x - plot_x_group); j++)
 						{
 							if (sms_x + j >= vdp_bitmap.cliprect().min_x && sms_x + j + 1 <= vdp_bitmap.cliprect().max_x)
 							{
@@ -1335,8 +1414,8 @@ void sms_state::screen_gg_sms_mode_scaling(screen_device &screen, bitmap_rgb32 &
 					rgb_t   c4 = line4[plot_x];
 					p_bitmap[plot_x] =
 						rgb_t( ( c1.r() / 6 + c2.r() / 3 + c3.r() / 3 + c4.r() / 6 ),
-						       ( c1.g() / 6 + c2.g() / 3 + c3.g() / 3 + c4.g() / 6 ),
-						       ( c1.b() / 6 + c2.b() / 3 + c3.b() / 3 + c4.b() / 6 ) );
+								( c1.g() / 6 + c2.g() / 3 + c3.g() / 3 + c4.g() / 6 ),
+								( c1.b() / 6 + c2.b() / 3 + c3.b() / 3 + c4.b() / 6 ) );
 				}
 			}
 		}

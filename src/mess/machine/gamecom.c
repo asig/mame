@@ -26,8 +26,8 @@ void gamecom_state::machine_reset()
 	m_lcdc_reg = 0xb0;
 
 	astring region_tag;
-	m_cart1_rom = memregion(region_tag.cpy(m_cart1->tag()).cat(GENERIC_ROM_REGION_TAG));
-	m_cart2_rom = memregion(region_tag.cpy(m_cart2->tag()).cat(GENERIC_ROM_REGION_TAG));
+	m_cart1_rom = memregion(region_tag.cpy(m_cart1->tag()).cat(GENERIC_ROM_REGION_TAG).c_str());
+	m_cart2_rom = memregion(region_tag.cpy(m_cart2->tag()).cat(GENERIC_ROM_REGION_TAG).c_str());
 }
 
 void gamecom_state::gamecom_set_mmu(UINT8 mmu, UINT8 data)
@@ -500,7 +500,7 @@ WRITE8_MEMBER( gamecom_state::gamecom_handle_dma )
 			UINT16 dest_addr = m_dma.dest_current & m_dma.dest_mask;
 			UINT8 dest_adj = (3 - (m_dma.dest_x_current & 3)) << 1;
 			UINT8 src_adj = (3 - (m_dma.source_x_current & 3)) << 1;
-			
+
 			/* handle DMA for 1 pixel */
 			// Get new pixel
 			UINT8 source_pixel = (m_dma.source_bank[src_addr] >> src_adj) & 3;

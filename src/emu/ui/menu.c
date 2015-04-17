@@ -11,13 +11,12 @@
 
 #include "emu.h"
 #include "emuopts.h"
-#include "ui/ui.h"
 #include "rendutil.h"
-#include "uiinput.h"
 #include "cheat.h"
+#include "uiinput.h"
+#include "ui/ui.h"
 #include "ui/mainmenu.h"
-#include "ui/miscmenu.h"
-#include <ctype.h>
+#include "ui/cheatopt.h"
 
 
 
@@ -186,7 +185,7 @@ void ui_menu::reset(ui_menu_reset_options options)
 
 	// add an item to return
 	if (parent == NULL)
-		item_append(backtext.cstr(), NULL, 0, NULL);
+		item_append(backtext.c_str(), NULL, 0, NULL);
 	else if (parent->is_special_main_menu())
 		item_append("Exit", NULL, 0, NULL);
 	else

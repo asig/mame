@@ -27,14 +27,13 @@ public:
 	required_device<gfxdecode_device> m_gfxdecode;
 	required_device<screen_device> m_screen;
 	required_device<palette_device> m_palette;
-	
+
 	/* memory pointers */
 	required_shared_ptr<UINT16> m_vram_0;
 	required_shared_ptr<UINT16> m_vram_1;
 	required_shared_ptr<UINT16> m_scrollram_0;
 	required_shared_ptr<UINT16> m_scrollram_1;
 	required_shared_ptr<UINT16> m_priorityram;
-//  UINT16 *    m_paletteram; // currently this uses generic palette handling
 	required_shared_ptr<UINT16> m_spriteram;
 
 	/* other video-related elements */
@@ -58,5 +57,4 @@ public:
 	virtual void video_start();
 	UINT32 screen_update_yunsun16(screen_device &screen, bitmap_ind16 &bitmap, const rectangle &cliprect);
 	void draw_sprites( screen_device &screen, bitmap_ind16 &bitmap, const rectangle &cliprect );
-	DECLARE_WRITE_LINE_MEMBER(soundirq);
 };

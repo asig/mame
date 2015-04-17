@@ -10,7 +10,6 @@
 *********************************************************************/
 
 #include "emu.h"
-#include "debugint.h"
 #include "ui/ui.h"
 #include "rendfont.h"
 #include "uiinput.h"
@@ -22,12 +21,36 @@
 #include "debug/debugcon.h"
 #include "debug/debugcpu.h"
 
+#include "debug_module.h"
+#include "modules/osdmodule.h"
+
+class debug_internal : public osd_module, public debug_module
+{
+public:
+	debug_internal()
+	: osd_module(OSD_DEBUG_PROVIDER, "internal"), debug_module(),
+		m_machine(NULL)
+	{
+	}
+
+	virtual ~debug_internal() { }
+
+	virtual int init(const osd_options &options) { return 0; }
+	virtual void exit();
+
+	virtual void init_debugger(running_machine &machine);
+	virtual void wait_for_debugger(device_t &device, bool firststop);
+	virtual void debugger_update();
+
+private:
+	running_machine *m_machine;
+};
+
+
 
 /***************************************************************************
     CONSTANTS
 ***************************************************************************/
-
-const osd_debugger_type OSD_DEBUGGER_INTERNAL = &osd_debugger_creator<debugger_internal>;
 
 #define BORDER_YTHICKNESS 1
 #define BORDER_XTHICKNESS 1
@@ -239,11 +262,11 @@ INLINE void dview_set_state(DView *dv, int state, int onoff)
     LOCAL VARIABLES
 ***************************************************************************/
 
-static render_font *    debug_font;
+static render_font *    debug_font = NULL;
 static int              debug_font_width;
 static int              debug_font_height;
 static float            debug_font_aspect;
-static DView *          list;
+static DView *          list = NULL;
 static DView *          focus_view;
 
 static ui_menu *        menu;
@@ -461,7 +484,7 @@ static void dview_draw_title(DView *dv)
 	if (!dv->title)
 		return;
 
-	for (i=0; i<strlen(dv->title); i++)
+	for (i = 0; i<strlen(dv->title.c_str()); i++)
 	{
 		dview_draw_char(dv, RECT_DVIEW_TITLE, i * debug_font_width + BORDER_XTHICKNESS,
 				BORDER_YTHICKNESS, debug_font_height, //r.max_y - 2 * BORDER_YTHICKNESS,
@@ -841,7 +864,7 @@ static void dview_update(debug_view &dw, void *osdprivate)
 #endif
 }
 
-void debugger_internal::debugger_exit()
+void debug_internal::exit()
 {
 	for (DView *ndv = list; ndv != NULL; )
 	{
@@ -851,18 +874,21 @@ void debugger_internal::debugger_exit()
 	}
 	if (debug_font != NULL)
 	{
-		m_osd.machine().render().font_free(debug_font);
+		m_machine->render().font_free(debug_font);
 		debug_font = NULL;
 	}
 	if (menu)
 		global_free(menu);
 }
 
-void debugger_internal::init_debugger()
+void debug_internal::init_debugger(running_machine &machine)
 {
 	unicode_char ch;
 	int chw;
-	debug_font = m_osd.machine().render().font_alloc("ui.bdf"); //ui_get_font(machine);
+
+	m_machine = &machine;
+
+	debug_font = m_machine->render().font_alloc("ui.bdf"); //ui_get_font(machine);
 	debug_font_width = 0;
 	debug_font_height = 15;
 
@@ -871,7 +897,7 @@ void debugger_internal::init_debugger()
 	list = NULL;
 	focus_view = NULL;
 
-	debug_font_aspect = m_osd.machine().render().ui_aspect();
+	debug_font_aspect = m_machine->render().ui_aspect();
 
 	for (ch=0;ch<=127;ch++)
 	{
@@ -1087,7 +1113,7 @@ static void render_editor(DView_edit *editor)
 
 	editor->container->empty();
 	/* get the size of the text */
-	editor->container->manager().machine().ui().draw_text_full(editor->container, editor->str, 0.0f, 0.0f, 1.0f, JUSTIFY_CENTER, WRAP_TRUNCATE,
+	editor->container->manager().machine().ui().draw_text_full(editor->container, editor->str.c_str(), 0.0f, 0.0f, 1.0f, JUSTIFY_CENTER, WRAP_TRUNCATE,
 						DRAW_NONE, ARGB_WHITE, ARGB_BLACK, &width, NULL);
 	width += 2 * UI_BOX_LR_BORDER;
 	maxwidth = MAX(width, 0.5);
@@ -1108,7 +1134,7 @@ static void render_editor(DView_edit *editor)
 	y2 -= UI_BOX_TB_BORDER;
 
 	/* draw the text within it */
-	editor->container->manager().machine().ui().draw_text_full(editor->container, editor->str, x1, y1, x2 - x1, JUSTIFY_CENTER, WRAP_TRUNCATE,
+	editor->container->manager().machine().ui().draw_text_full(editor->container, editor->str.c_str(), x1, y1, x2 - x1, JUSTIFY_CENTER, WRAP_TRUNCATE,
 						DRAW_NORMAL, UI_TEXT_COLOR, UI_TEXT_BG_COLOR, NULL, NULL);
 
 }
@@ -1154,7 +1180,7 @@ static void CreateMainMenu(running_machine &machine)
 		break;
 	}
 
-	menu->item_append(title.cat(focus_view->title), NULL, MENU_FLAG_DISABLE, NULL);
+	menu->item_append(title.cat(focus_view->title).c_str(), NULL, MENU_FLAG_DISABLE, NULL);
 	menu->item_append(MENU_SEPARATOR_ITEM, NULL, 0, NULL);
 
 	switch (focus_view->type)
@@ -1296,7 +1322,7 @@ static void handle_editor(running_machine &machine)
 			render_editor(cur_editor);
 			if (ui_input_pressed(machine, IPT_UI_SELECT))
 			{
-				process_string(focus_view, focus_view->editor.str);
+				process_string(focus_view, focus_view->editor.str.c_str());
 				focus_view->editor.str = "";
 				cur_editor = NULL;
 			}
@@ -1407,7 +1433,7 @@ static void update_views(void)
 }
 
 
-void debugger_internal::wait_for_debugger(device_t &device, bool firststop)
+void debug_internal::wait_for_debugger(device_t &device, bool firststop)
 {
 	if (firststop && list == NULL)
 	{
@@ -1440,18 +1466,12 @@ void debugger_internal::wait_for_debugger(device_t &device, bool firststop)
 
 }
 
-void debugger_internal::debugger_update()
+void debug_internal::debugger_update()
 {
-	if (!debug_cpu_is_stopped(m_osd.machine()) && m_osd.machine().phase() == MACHINE_PHASE_RUNNING)
+	if ((m_machine != NULL) && (!debug_cpu_is_stopped(*m_machine)) && (m_machine->phase() == MACHINE_PHASE_RUNNING))
 	{
 		update_views();
 	}
 }
 
-//-------------------------------------------------
-//  debugger_internal - constructor
-//-------------------------------------------------
-debugger_internal::debugger_internal(const osd_interface &osd)
-	: osd_debugger_interface(osd)
-{
-}
+MODULE_DEFINITION(DEBUG_INTERNAL, debug_internal)

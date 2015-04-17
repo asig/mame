@@ -199,18 +199,18 @@ void validity_checker::check_all()
 	if (m_errors > 0 || m_warnings > 0)
 	{
 		astring tempstr;
-		output_via_delegate(m_saved_error_output, "Core: %d errors, %d warnings\n", m_errors, m_warnings);
+		output_via_delegate(OSD_OUTPUT_CHANNEL_ERROR, "Core: %d errors, %d warnings\n", m_errors, m_warnings);
 		if (m_errors > 0)
 		{
 			m_error_text.replace("\n", "\n   ");
-			output_via_delegate(m_saved_error_output, "Errors:\n   %s", m_error_text.cstr());
+			output_via_delegate(OSD_OUTPUT_CHANNEL_ERROR, "Errors:\n   %s", m_error_text.c_str());
 		}
 		if (m_warnings > 0)
 		{
 			m_warning_text.replace("\n", "\n   ");
-			output_via_delegate(m_saved_error_output, "Warnings:\n   %s", m_warning_text.cstr());
+			output_via_delegate(OSD_OUTPUT_CHANNEL_ERROR, "Warnings:\n   %s", m_warning_text.c_str());
 		}
-		output_via_delegate(m_saved_error_output, "\n");
+		output_via_delegate(OSD_OUTPUT_CHANNEL_ERROR, "\n");
 	}
 
 	// then iterate over all drivers and check them
@@ -232,8 +232,7 @@ void validity_checker::check_all()
 void validity_checker::validate_begin()
 {
 	// take over error and warning outputs
-	m_saved_error_output = osd_set_output_channel(OSD_OUTPUT_CHANNEL_ERROR, output_delegate(FUNC(validity_checker::error_output), this));
-	m_saved_warning_output = osd_set_output_channel(OSD_OUTPUT_CHANNEL_WARNING, output_delegate(FUNC(validity_checker::warning_output), this));
+	osd_output::push(this);
 
 	// reset all our maps
 	m_names_map.reset();
@@ -257,8 +256,7 @@ void validity_checker::validate_begin()
 void validity_checker::validate_end()
 {
 	// restore the original output callbacks
-	osd_set_output_channel(OSD_OUTPUT_CHANNEL_ERROR, m_saved_error_output);
-	osd_set_output_channel(OSD_OUTPUT_CHANNEL_WARNING, m_saved_warning_output);
+	osd_output::pop(this);
 }
 
 
@@ -301,18 +299,18 @@ void validity_checker::validate_one(const game_driver &driver)
 	if (m_errors > start_errors || m_warnings > start_warnings)
 	{
 		astring tempstr;
-		output_via_delegate(m_saved_error_output, "Driver %s (file %s): %d errors, %d warnings\n", driver.name, core_filename_extract_base(tempstr, driver.source_file).cstr(), m_errors - start_errors, m_warnings - start_warnings);
+		output_via_delegate(OSD_OUTPUT_CHANNEL_ERROR, "Driver %s (file %s): %d errors, %d warnings\n", driver.name, core_filename_extract_base(tempstr, driver.source_file).c_str(), m_errors - start_errors, m_warnings - start_warnings);
 		if (m_errors > start_errors)
 		{
 			m_error_text.replace("\n", "\n   ");
-			output_via_delegate(m_saved_error_output, "Errors:\n   %s", m_error_text.cstr());
+			output_via_delegate(OSD_OUTPUT_CHANNEL_ERROR, "Errors:\n   %s", m_error_text.c_str());
 		}
 		if (m_warnings > start_warnings)
 		{
 			m_warning_text.replace("\n", "\n   ");
-			output_via_delegate(m_saved_error_output, "Warnings:\n   %s", m_warning_text.cstr());
+			output_via_delegate(OSD_OUTPUT_CHANNEL_ERROR, "Warnings:\n   %s", m_warning_text.c_str());
 		}
-		output_via_delegate(m_saved_error_output, "\n");
+		output_via_delegate(OSD_OUTPUT_CHANNEL_ERROR, "\n");
 	}
 
 	// reset the driver/device
@@ -525,14 +523,14 @@ void validity_checker::validate_driver()
 	if (m_names_map.add(m_current_driver->name, m_current_driver, false) == TMERR_DUPLICATE)
 	{
 		const game_driver *match = m_names_map.find(m_current_driver->name);
-		osd_printf_error("Driver name is a duplicate of %s(%s)\n", core_filename_extract_base(tempstr, match->source_file).cstr(), match->name);
+		osd_printf_error("Driver name is a duplicate of %s(%s)\n", core_filename_extract_base(tempstr, match->source_file).c_str(), match->name);
 	}
 
 	// check for duplicate descriptions
 	if (m_descriptions_map.add(m_current_driver->description, m_current_driver, false) == TMERR_DUPLICATE)
 	{
 		const game_driver *match = m_descriptions_map.find(m_current_driver->description);
-		osd_printf_error("Driver description is a duplicate of %s(%s)\n", core_filename_extract_base(tempstr, match->source_file).cstr(), match->name);
+		osd_printf_error("Driver description is a duplicate of %s(%s)\n", core_filename_extract_base(tempstr, match->source_file).c_str(), match->name);
 	}
 
 	// determine if we are a clone
@@ -646,8 +644,8 @@ void validity_checker::validate_roms()
 
 				// attempt to add it to the map, reporting duplicates as errors
 				current_length = ROMREGION_GETLENGTH(romp);
-				if (m_region_map.add(fulltag, current_length, false) == TMERR_DUPLICATE)
-					osd_printf_error("Multiple ROM_REGIONs with the same tag '%s' defined\n", fulltag.cstr());
+				if (m_region_map.add(fulltag.c_str(), current_length, false) == TMERR_DUPLICATE)
+					osd_printf_error("Multiple ROM_REGIONs with the same tag '%s' defined\n", fulltag.c_str());
 			}
 
 			// If this is a system bios, make sure it is using the next available bios number
@@ -665,14 +663,6 @@ void validity_checker::validate_roms()
 				// track the last filename we found
 				last_name = ROM_GETNAME(romp);
 				total_files++;
-
-				// make sure it's all lowercase
-				for (const char *s = last_name; *s != 0; s++)
-					if (tolower((UINT8)*s) != *s)
-					{
-						osd_printf_error("ROM name '%s' contains upper case characters\n", last_name);
-						break;
-					}
 
 				// make sure the hash is valid
 				hash_collection hashes;
@@ -842,10 +832,10 @@ void validity_checker::validate_dip_settings(ioport_field &field)
 	// if we have a coin error, demonstrate the correct way
 	if (coin_error)
 	{
-		output_via_delegate(m_saved_error_output, "   Note proper coin sort order should be:\n");
+		output_via_delegate(OSD_OUTPUT_CHANNEL_ERROR, "   Note proper coin sort order should be:\n");
 		for (int entry = 0; entry < ARRAY_LENGTH(coin_list); entry++)
 			if (coin_list[entry])
-				output_via_delegate(m_saved_error_output, "      %s\n", ioport_string_from_index(__input_string_coinage_start + entry));
+				output_via_delegate(OSD_OUTPUT_CHANNEL_ERROR, "      %s\n", ioport_string_from_index(__input_string_coinage_start + entry));
 	}
 }
 
@@ -862,7 +852,7 @@ void validity_checker::validate_condition(ioport_condition &condition, device_t 
 	device.subtag(porttag, condition.tag());
 
 	// then find a matching port
-	if (port_map.find(porttag) == 0)
+	if (port_map.find(porttag.c_str()) == 0)
 		osd_printf_error("Condition referencing non-existent ioport tag '%s'\n", condition.tag());
 }
 
@@ -893,7 +883,7 @@ void validity_checker::validate_inputs()
 
 		// report any errors during construction
 		if (errorbuf)
-			osd_printf_error("I/O port error during construction:\n%s\n", errorbuf.cstr());
+			osd_printf_error("I/O port error during construction:\n%s\n", errorbuf.c_str());
 
 		// do a first pass over ports to add their names and find duplicates
 		for (ioport_port *port = portlist.first(); port != NULL; port = port->next())
@@ -1020,7 +1010,7 @@ void validity_checker::validate_devices()
 		{
 			astring temptag("_");
 			temptag.cat(option->name());
-			device_t *dev = const_cast<machine_config &>(*m_current_config).device_add(&m_current_config->root_device(), temptag.cstr(), option->devtype(), 0);
+			device_t *dev = const_cast<machine_config &>(*m_current_config).device_add(&m_current_config->root_device(), temptag.c_str(), option->devtype(), 0);
 
 			// notify this device and all its subdevices that they are now configured
 			device_iterator subiter(*dev);
@@ -1033,7 +1023,7 @@ void validity_checker::validate_devices()
 					osd_printf_error("Device '%s' is slot cart device but does not have short name defined\n",dev->name());
 			}
 
-			const_cast<machine_config &>(*m_current_config).device_remove(&m_current_config->root_device(), temptag.cstr());
+			const_cast<machine_config &>(*m_current_config).device_remove(&m_current_config->root_device(), temptag.c_str());
 		}
 	}
 
@@ -1046,18 +1036,18 @@ void validity_checker::validate_devices()
 //  and device
 //-------------------------------------------------
 
-void validity_checker::build_output_prefix(astring &string)
+void validity_checker::build_output_prefix(astring &str)
 {
 	// start empty
-	string.reset();
+	str.reset();
 
 	// if we have a current device, indicate that
 	if (m_current_device != NULL)
-		string.cat(m_current_device->name()).cat(" device '").cat(m_current_device->tag()).cat("': ");
+		str.cat(m_current_device->name()).cat(" device '").cat(m_current_device->tag()).cat("': ");
 
 	// if we have a current port, indicate that as well
 	if (m_current_ioport != NULL)
-		string.cat("ioport '").cat(m_current_ioport).cat("': ");
+		str.cat("ioport '").cat(m_current_ioport).cat("': ");
 }
 
 
@@ -1065,40 +1055,38 @@ void validity_checker::build_output_prefix(astring &string)
 //  error_output - error message output override
 //-------------------------------------------------
 
-void validity_checker::error_output(const char *format, va_list argptr)
+void validity_checker::output_callback(osd_output_channel channel, const char *msg, va_list args)
 {
-	// count the error
-	m_errors++;
-
-	// output the source(driver) device 'tag'
 	astring output;
-	build_output_prefix(output);
+	switch (channel)
+	{
+		case OSD_OUTPUT_CHANNEL_ERROR:
+			// count the error
+			m_errors++;
 
-	// generate the string
-	output.catvprintf(format, argptr);
-	m_error_text.cat(output);
+			// output the source(driver) device 'tag'
+			build_output_prefix(output);
+
+			// generate the string
+			output.catvprintf(msg, args);
+			m_error_text.cat(output);
+			break;
+		case OSD_OUTPUT_CHANNEL_WARNING:
+			// count the error
+			m_warnings++;
+
+			// output the source(driver) device 'tag'
+			build_output_prefix(output);
+
+			// generate the string and output to the original target
+			output.catvprintf(msg, args);
+			m_warning_text.cat(output);
+			break;
+		default:
+			chain_output(channel, msg, args);
+			break;
+	}
 }
-
-
-//-------------------------------------------------
-//  warning_output - warning message output
-//  override
-//-------------------------------------------------
-
-void validity_checker::warning_output(const char *format, va_list argptr)
-{
-	// count the error
-	m_warnings++;
-
-	// output the source(driver) device 'tag'
-	astring output;
-	build_output_prefix(output);
-
-	// generate the string and output to the original target
-	output.catvprintf(format, argptr);
-	m_warning_text.cat(output);
-}
-
 
 //-------------------------------------------------
 //  output_via_delegate - helper to output a
@@ -1106,12 +1094,12 @@ void validity_checker::warning_output(const char *format, va_list argptr)
 //  can be forwarded onto the given delegate
 //-------------------------------------------------
 
-void validity_checker::output_via_delegate(output_delegate &delegate, const char *format, ...)
+void validity_checker::output_via_delegate(osd_output_channel channel, const char *format, ...)
 {
 	va_list argptr;
 
 	// call through to the delegate with the proper parameters
 	va_start(argptr, format);
-	delegate(format, argptr);
+	this->chain_output(channel, format, argptr);
 	va_end(argptr);
 }

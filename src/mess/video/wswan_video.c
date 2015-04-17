@@ -69,6 +69,7 @@ void wswan_video_device::common_save()
 	save_item(NAME(m_timer_hblank_enable));
 	save_item(NAME(m_timer_hblank_mode));
 	save_item(NAME(m_timer_hblank_reload));
+	save_item(NAME(m_timer_hblank_count));
 	save_item(NAME(m_timer_vblank_enable));
 	save_item(NAME(m_timer_vblank_mode));
 	save_item(NAME(m_timer_vblank_reload));
@@ -89,13 +90,15 @@ void wswan_video_device::device_start()
 
 	if (m_vdp_type == VDP_TYPE_WSC)
 	{
-		m_vram.resize_and_clear(0x10000);
-		m_palette_vram = m_vram + 0xfe00;
+		m_vram.resize(0x10000);
+		memset(&m_vram[0], 0, 0x10000);
+		m_palette_vram = &m_vram[0xfe00];
 	}
 	else
 	{
-		m_vram.resize_and_clear(0x4000);
-		m_palette_vram = m_vram;
+		m_vram.resize(0x4000);
+		memset(&m_vram[0], 0, 0x4000);
+		m_palette_vram = &m_vram[0];
 	}
 
 	common_save();
@@ -1153,7 +1156,7 @@ void wswan_video_device::scanline_interrupt()
 			else
 				m_timer_hblank_reload = 0;
 
-			logerror( "trigerring hbltmr interrupt\n" );
+			logerror( "triggering hbltmr interrupt\n" );
 			m_set_irq_cb(WSWAN_VIDEO_IFLAG_HBLTMR);
 		}
 	}

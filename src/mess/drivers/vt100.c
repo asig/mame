@@ -482,8 +482,8 @@ MACHINE_CONFIG_END
         WP keyboard, has 23-094E2 alt charset rom, 23-093E2 AVO rom.
  *     VT100-WY/WZ - has AVO board preinstalled, WP romset?, English
         WP keyboard, has 23-094E2 alt charset rom, 23-093E2 AVO rom.
-       The WP romset supports english, french, dutch and german languages but
-        will only display text properly in the non-english languages if the
+       The WP romset supports English, French, Dutch and German languages but
+        will only display text properly in the non-English languages if the
         23-094E2 alt charset rom AND the foreign language 23-093E2
         AVO rom are populated.
  *    VT100-NA/NB - ? romset with DECFORM keycaps
@@ -557,7 +557,7 @@ MACHINE_CONFIG_END
        23-095e2,096e2,139e2,140e2 set and probably others as well)
  * The vt100/101/102/103/etc 23-018e2-00 character set rom at location e4 is a 24 pin 2316 mask rom with enables as such: pin 18: CS2; pin 20: /CS1; pin 21: /CS3
  * The optional 23-094e2-00 alternate character set rom at location e9 is a 24 pin 2316 mask rom with enables as such: pin 18: /CS2; pin 20: /CS1; pin 21: /CS3
-       Supposedly the 23-094e2 rom is meant for vt100-WC or -WF systems, (which are french canadian and french respectively), implying that it has european language specific accented characters on it. It is probably used in all the -W* systems.
+       Supposedly the 23-094e2 rom is meant for vt100-WC or -WF systems, (which are French Canadian and French respectively), implying that it has European language specific accented characters on it. It is probably used in all the -W* systems.
        Pin 21 can be jumpered to +5v for this socket at location e9 by removing jumper w4 and inserting jumper w5, allowing a normal 2716 eprom to be used.
  * The optional AVO character set roms (see below) have: pin 18: /CS2*; pin 20: /CS1; pin 21: CS3 hence they match a normal 2716
    *(this is marked on the image as if it was CS2 but the input is tied to gnd meaning it must be /CS2)
@@ -753,12 +753,13 @@ ROM_START( vt125 ) // This is from bitsavers and vt100.net, as the vt125 schemat
 	ROM_LOAD( "23-070b1.e71", 0x0300, 0x0100, NO_DUMP) // 82s135, vector prom
 	ROM_LOAD( "23-582a2.e93", 0x0400, 0x0100, NO_DUMP) // 82s129, ras/erase prom
 ROM_END
+#endif
 
 ROM_START( vt101 ) // p/n 5414185-01 'unupgradable/low cost' vt101/vt102/vt131 mainboard
 // does not have integrated STP or AVO populated
 // 8085 based instead of I8080
 	ROM_REGION( 0x10000, "maincpu", ROMREGION_ERASEFF )
-	ROM_LOAD( "23-???e4-00.e71", 0x0000, 0x2000, NO_DUMP) // rom is unique to vt101
+	ROM_LOAD( "23-028e4-00.e71", 0x0000, 0x2000, CRC(fccce02c) SHA1(f3e3e93a857443685b816cab4fb52e34c0bc72b1)) // rom is unique to vt101; "CN55004N 8232 // DEC TP03 // 23-028E4-00" 24-pin mask rom (mc68764 pinout)
 	//e69 socket is empty/unpopulated on vt101?
 	//e67 socket is empty/unpopulated on vt101?
 
@@ -766,15 +767,20 @@ ROM_START( vt101 ) // p/n 5414185-01 'unupgradable/low cost' vt101/vt102/vt131 m
 	ROM_LOAD( "23-018e2-00.e3", 0x0000, 0x0800, CRC(6958458b) SHA1(103429674fc01c215bbc2c91962ae99231f8ae53))
 	ROM_LOAD_OPTIONAL( "23-094e2-00.e4", 0x0800, 0x0800, NO_DUMP) // optional (comes default with some models) alternate character set rom
 ROM_END
-#endif
+
 
 ROM_START( vt102 ) // p/n 5414185-01 'unupgradable/low cost' vt101/vt102/vt131 mainboard
 // has integrated STP and AVO both populated
 // ROMS have the set up page C in them
 // 8085 based instead of I8080
 	ROM_REGION( 0x10000, "maincpu", ROMREGION_ERASEFF )
-	ROM_LOAD( "23-226e4-00.e71", 0x0000, 0x2000, CRC(85c9279a) SHA1(3283d27e9c45d9e384227a7e6e98ee8d54b92bcb)) // shared with vt131
-	ROM_LOAD( "23-225e4-00.e69", 0x8000, 0x2000, CRC(3567c760) SHA1(672473162e9c92cd237e4dbf92c2700a31c5374b)) // shared with vt131
+	ROM_DEFAULT_BIOS( "vt102" )
+	ROM_SYSTEM_BIOS( 0, "vt102o", "VT102 older roms" )
+	ROMX_LOAD( "23-042e4-00.e71", 0x0000, 0x2000, CRC(e8aa006c) SHA1(8ac2a84a8d2a9fa0c6cd583ae35e4c21f863b45b), ROM_BIOS(1)) // shared with vt131
+	ROMX_LOAD( "23-041e4-00.e69", 0x8000, 0x2000, CRC(b11d331e) SHA1(8b0f885c7e032d1d709e3913d279d6950bbd4b6a), ROM_BIOS(1)) // shared with vt131
+	ROM_SYSTEM_BIOS( 1, "vt102", "VT102 newer roms" )
+	ROMX_LOAD( "23-226e4-00.e71", 0x0000, 0x2000, CRC(85c9279a) SHA1(3283d27e9c45d9e384227a7e6e98ee8d54b92bcb), ROM_BIOS(2)) // shared with vt131
+	ROMX_LOAD( "23-225e4-00.e69", 0x8000, 0x2000, CRC(3567c760) SHA1(672473162e9c92cd237e4dbf92c2700a31c5374b), ROM_BIOS(2)) // shared with vt131
 	//e67 socket is empty but populated on vt102
 
 	ROM_REGION(0x1000, "chargen", 0)
@@ -820,7 +826,7 @@ ROM_END
 COMP( 1978, vt100,    0,      0,       vt100,     vt100, driver_device,   0,  "Digital Equipment Corporation", "VT100",GAME_NOT_WORKING)
 //COMP( 1978, vt100wp,  vt100,  0,       vt100,     vt100, driver_device,   0,  "Digital Equipment Corporation", "VT100-Wx", GAME_NOT_WORKING)
 //COMP( 1978, vt100stp, vt100,  0,       vt100,     vt100, driver_device,   0,  "Digital Equipment Corporation", "VT100 w/VT1xx-AC STP", GAME_NOT_WORKING)
-//COMP( 1981, vt101,    0,      0,       vt102,     vt100, driver_device,   0,  "Digital Equipment Corporation", "VT101", GAME_NOT_WORKING)
+COMP( 1981, vt101,    vt102,      0,       vt102,     vt100, driver_device,   0,  "Digital Equipment Corporation", "VT101", GAME_NOT_WORKING)
 COMP( 1981, vt102,    0,      0,       vt102,     vt100, driver_device,   0,  "Digital Equipment Corporation", "VT102", GAME_NOT_WORKING)
 //COMP( 1979, vt103,    vt100,  0,       vt100,     vt100, driver_device,   0,  "Digital Equipment Corporation", "VT103", GAME_NOT_WORKING)
 COMP( 1978, vt105,    vt100,  0,       vt100,     vt100, driver_device,   0,   "Digital Equipment Corporation", "VT105", GAME_NOT_WORKING)

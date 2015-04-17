@@ -10,23 +10,27 @@
 *********************************************************************/
 
 #include "emu.h"
+#include "audit.h"
+#include "crsshair.h"
 #include "osdnet.h"
 #include "emuopts.h"
-#include "ui/ui.h"
 #include "rendutil.h"
 #include "cheat.h"
 #include "uiinput.h"
+#include "ui/ui.h"
 #include "ui/filemngr.h"
 #include "ui/filesel.h"
 #include "ui/barcode.h"
-#include "ui/tapectrl.h"
+#include "ui/cheatopt.h"
+#include "ui/info.h"
+#include "ui/inputmap.h"
 #include "ui/mainmenu.h"
 #include "ui/miscmenu.h"
-#include "ui/imginfo.h"
 #include "ui/selgame.h"
-#include "audit.h"
-#include "crsshair.h"
-#include <ctype.h>
+#include "ui/sliders.h"
+#include "ui/slotopt.h"
+#include "ui/tapectrl.h"
+#include "ui/videoopt.h"
 #include "imagedev/cassette.h"
 #include "imagedev/bitbngr.h"
 #include "machine/bcreader.h"
@@ -52,7 +56,7 @@ void ui_menu_main::populate()
 	item_append("Input (general)", NULL, 0, (void *)INPUT_GROUPS);
 
 	menu_text.printf("Input (this %s)",emulator_info::get_capstartgamenoun());
-	item_append(menu_text.cstr(), NULL, 0, (void *)INPUT_SPECIFIC);
+	item_append(menu_text.c_str(), NULL, 0, (void *)INPUT_SPECIFIC);
 
 	/* add optional input-related menus */
 	if (machine().ioport().has_analog())
@@ -62,7 +66,7 @@ void ui_menu_main::populate()
 	if (machine().ioport().has_configs())
 	{
 		menu_text.printf("%s Configuration",emulator_info::get_capstartgamenoun());
-		item_append(menu_text.cstr(), NULL, 0, (void *)SETTINGS_DRIVER_CONFIG);
+		item_append(menu_text.c_str(), NULL, 0, (void *)SETTINGS_DRIVER_CONFIG);
 	}
 
 	/* add bookkeeping menu */
@@ -70,7 +74,7 @@ void ui_menu_main::populate()
 
 	/* add game info menu */
 	menu_text.printf("%s Information",emulator_info::get_capstartgamenoun());
-	item_append(menu_text.cstr(), NULL, 0, (void *)GAME_INFO);
+	item_append(menu_text.c_str(), NULL, 0, (void *)GAME_INFO);
 
 	image_interface_iterator imgiter(machine().root_device());
 	if (imgiter.first() != NULL)
@@ -84,7 +88,7 @@ void ui_menu_main::populate()
 		/* add tape control menu */
 		cassette_device_iterator cassiter(machine().root_device());
 		if (cassiter.first() != NULL)
-			item_append("Tape Control", NULL, 0, (void *)MESS_MENU_TAPE_CONTROL);
+			item_append("Tape Control", NULL, 0, (void *)TAPE_CONTROL);
 	}
 
 	if (machine().ioport().has_bioses())
@@ -131,7 +135,7 @@ void ui_menu_main::populate()
 
 	/* add reset and exit menus */
 	menu_text.printf("Select New %s",emulator_info::get_capstartgamenoun());
-	item_append(menu_text.cstr(), NULL, 0, (void *)SELECT_GAME);
+	item_append(menu_text.c_str(), NULL, 0, (void *)SELECT_GAME);
 }
 
 ui_menu_main::~ui_menu_main()
@@ -181,11 +185,11 @@ void ui_menu_main::handle()
 			break;
 
 		case IMAGE_MENU_FILE_MANAGER:
-			ui_menu::stack_push(auto_alloc_clear(machine(), ui_menu_file_manager(machine(), container)));
+			ui_menu::stack_push(auto_alloc_clear(machine(), ui_menu_file_manager(machine(), container, NULL)));
 			break;
 
-		case MESS_MENU_TAPE_CONTROL:
-			ui_menu::stack_push(auto_alloc_clear(machine(), ui_menu_mess_tape_control(machine(), container, NULL)));
+		case TAPE_CONTROL:
+			ui_menu::stack_push(auto_alloc_clear(machine(), ui_menu_tape_control(machine(), container, NULL)));
 			break;
 
 		case SLOT_DEVICES:
@@ -229,7 +233,7 @@ void ui_menu_main::handle()
 			break;
 
 		case BARCODE_READ:
-			ui_menu::stack_push(auto_alloc_clear(machine(), ui_menu_barcode_reader(machine(), container)));
+			ui_menu::stack_push(auto_alloc_clear(machine(), ui_menu_barcode_reader(machine(), container, NULL)));
 			break;
 
 		default:

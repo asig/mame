@@ -87,7 +87,7 @@ void device_md_cart_interface::rom_alloc(size_t size, const char *tag)
 	{
 		astring tempstring(tag);
 		tempstring.cat(MDSLOT_ROM_REGION_TAG);
-		m_rom = (UINT16 *)device().machine().memory().region_alloc(tempstring, size, 2, ENDIANNESS_LITTLE)->base();
+		m_rom = (UINT16 *)device().machine().memory().region_alloc(tempstring.c_str(), size, 2, ENDIANNESS_LITTLE)->base();
 		m_rom_size = size;
 	}
 }
@@ -384,7 +384,7 @@ int base_md_cart_slot_device::load_list()
 		m_type = md_get_pcb_id(slot_name);
 
 	// handle mirroring of ROM, unless it's SSF2 or Pier Solar
-	if (m_type != SSF2 && m_type != PSOLAR)
+	if (m_type != SSF2 && m_type != PSOLAR && m_type != CM_2IN1)
 		m_cart->rom_map_setup(length);
 
 	return IMAGE_INIT_PASS;
@@ -471,7 +471,7 @@ int base_md_cart_slot_device::load_nonlist()
 	dynamic_buffer tmpROM(tmplen);
 
 	// STEP 1: store a (possibly headered) copy of the file and determine its type (SMD? MD? BIN?)
-	fread(tmpROM, tmplen);
+	fread(&tmpROM[0], tmplen);
 	is_smd = genesis_is_SMD(&tmpROM[0x200], tmplen - 0x200);
 	is_md = (tmpROM[0x80] == 'E') && (tmpROM[0x81] == 'A') && (tmpROM[0x82] == 'M' || tmpROM[0x82] == 'G');
 
@@ -909,12 +909,12 @@ void base_md_cart_slot_device::get_default_card_software(astring &result)
 		dynamic_buffer rom(len);
 		int type;
 
-		core_fread(m_file, rom, len);
+		core_fread(m_file, &rom[0], len);
 
 		if (genesis_is_SMD(&rom[0x200], len - 0x200))
 				offset = 0x200;
 
-		type = get_cart_type(rom + offset, len - offset);
+		type = get_cart_type(&rom[offset], len - offset);
 		slot_string = md_get_slot(type);
 
 		clear();
@@ -1082,10 +1082,10 @@ void base_md_cart_slot_device::file_logging(UINT8 *ROM8, UINT32 rom_len, UINT32 
 	}
 	logerror("Checksum: %X\n", checksum);
 	logerror(" - Calculated Checksum: %X\n", csum);
-	logerror("Supported I/O Devices: %.16s\n%s", io, ctrl.cstr());
+	logerror("Supported I/O Devices: %.16s\n%s", io, ctrl.c_str());
 	logerror("Modem: %.12s\n", modem);
 	logerror("Memo: %.40s\n", memo);
-	logerror("Country: %.16s\n%s", country, reg.cstr());
+	logerror("Country: %.16s\n%s", country, reg.c_str());
 	logerror("ROM Start:  0x%.8X\n", rom_start);
 	logerror("ROM End:    0x%.8X\n", rom_end);
 	logerror("RAM Start:  0x%.8X\n", ram_start);

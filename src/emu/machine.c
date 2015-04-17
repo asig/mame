@@ -87,7 +87,7 @@
 
 #include <time.h>
 
-#ifdef SDLMAME_EMSCRIPTEN
+#if defined(EMSCRIPTEN)
 #include <emscripten.h>
 
 void js_set_main_loop(running_machine * machine);
@@ -107,6 +107,11 @@ static char giant_string_buffer[65536] = { 0 };
 //**************************************************************************
 //  RUNNING MACHINE
 //**************************************************************************
+
+osd_interface &running_machine::osd() const
+{
+	return m_manager.osd();
+}
 
 //-------------------------------------------------
 //  running_machine - constructor
@@ -141,6 +146,7 @@ running_machine::running_machine(const machine_config &_config, machine_manager 
 		m_save(*this),
 		m_memory(*this),
 		m_ioport(*this),
+		m_parameters(*this),
 		m_scheduler(*this)
 {
 	memset(&m_base_time, 0, sizeof(m_base_time));
@@ -198,7 +204,7 @@ const char *running_machine::describe_context()
 	else
 		m_context.cpy("(no context)");
 
-	return m_context;
+	return m_context.c_str();
 }
 
 TIMER_CALLBACK_MEMBER(running_machine::autoboot_callback)
@@ -209,8 +215,8 @@ TIMER_CALLBACK_MEMBER(running_machine::autoboot_callback)
 	else if (strlen(options().autoboot_command())!=0) {
 		astring cmd = astring(options().autoboot_command());
 		cmd.replace("'","\\'");
-		astring val = astring("emu.keypost('",cmd,"')");
-		manager().lua()->load_string(val);
+		astring val = astring("emu.keypost('").cat(cmd.c_str()).cat("')").c_str();
+		manager().lua()->load_string(val.c_str());
 	}
 }
 
@@ -264,10 +270,10 @@ void running_machine::start()
 		primary_screen->register_vblank_callback(vblank_state_delegate(FUNC(running_machine::watchdog_vblank), this));
 	save().save_item(NAME(m_watchdog_enabled));
 	save().save_item(NAME(m_watchdog_counter));
-	
+
 	// save the random seed or save states might be broken in drivers that use the rand() method
 	save().save_item(NAME(m_rand_seed));
-	
+
 	// initialize image devices
 	image_init(*this);
 	m_tilemap.reset(global_alloc(tilemap_manager(*this)));
@@ -392,10 +398,10 @@ int running_machine::run(bool firstrun)
 		{
 			g_profiler.start(PROFILER_EXTRA);
 
-			#ifdef SDLMAME_EMSCRIPTEN
+#if defined(EMSCRIPTEN)
 			//break out to our async javascript loop and halt
 			js_set_main_loop(this);
-			#endif
+#endif
 
 			manager().web()->serve();
 
@@ -567,12 +573,12 @@ astring running_machine::get_statename(const char *option)
 
 	// handle %d in the template (for image devices)
 	astring statename_dev("%d_");
-	int pos = statename_str.find(0, statename_dev);
+	int pos = statename_str.find(0, statename_dev.c_str());
 
 	if (pos != -1)
 	{
 		// if more %d are found, revert to default and ignore them all
-		if (statename_str.find(pos + 3, statename_dev) != -1)
+		if (statename_str.find(pos + 3, statename_dev.c_str()) != -1)
 			statename_str.cpy("%g");
 		// else if there is a single %d, try to create the correct snapname
 		else
@@ -599,7 +605,7 @@ astring running_machine::get_statename(const char *option)
 			// copy the device name to an astring
 			astring devname_str;
 			devname_str.cpysubstr(statename_str, pos + 3, end - pos - 3);
-			//printf("check template: %s\n", devname_str.cstr());
+			//printf("check template: %s\n", devname_str.c_str());
 
 			// verify that there is such a device for this system
 			image_interface_iterator iter(root_device());
@@ -607,7 +613,7 @@ astring running_machine::get_statename(const char *option)
 			{
 				// get the device name
 				astring tempdevname(image->brief_instance_name());
-				//printf("check device: %s\n", tempdevname.cstr());
+				//printf("check device: %s\n", tempdevname.c_str());
 
 				if (devname_str.cmp(tempdevname) == 0)
 				{
@@ -617,9 +623,9 @@ astring running_machine::get_statename(const char *option)
 						astring filename(image->basename_noext());
 
 						// setup snapname and remove the %d_
-						statename_str.replace(0, devname_str, filename);
+						statename_str.replace(0, devname_str.c_str(), filename.c_str());
 						statename_str.del(pos, 3);
-						//printf("check image: %s\n", filename.cstr());
+						//printf("check image: %s\n", filename.c_str());
 
 						name_found = 1;
 					}
@@ -658,7 +664,7 @@ void running_machine::set_saveload_filename(const char *filename)
 		// take into account the statename option
 		const char *stateopt = options().state_name();
 		astring statename = get_statename(stateopt);
-		m_saveload_pending_file.cpy(statename.cstr()).cat(PATH_SEPARATOR).cat(filename).cat(".sta");
+		m_saveload_pending_file.cpy(statename.c_str()).cat(PATH_SEPARATOR).cat(filename).cat(".sta");
 	}
 }
 
@@ -916,7 +922,7 @@ void running_machine::handle_saveload()
 	}
 
 	// open the file
-	filerr = file.open(m_saveload_pending_file);
+	filerr = file.open(m_saveload_pending_file.c_str());
 	if (filerr == FILERR_NONE)
 	{
 		// read/write the save state
@@ -1224,11 +1230,11 @@ astring &running_machine::nvram_filename(astring &result, device_t &device)
 		const char *software = image_parent_basename(&device);
 		if (software!=NULL && strlen(software)>0)
 		{
-			result.cat('\\').cat(software);
+			result.cat(PATH_SEPARATOR).cat(software);
 		}
 		astring tag(device.tag());
 		tag.del(0, 1).replacechr(':', '_');
-		result.cat('\\').cat(tag);
+		result.cat(PATH_SEPARATOR).cat(tag);
 	}
 	return result;
 }
@@ -1244,7 +1250,7 @@ void running_machine::nvram_load()
 	{
 		astring filename;
 		emu_file file(options().nvram_directory(), OPEN_FLAG_READ);
-		if (file.open(nvram_filename(filename, nvram->device())) == FILERR_NONE)
+		if (file.open(nvram_filename(filename, nvram->device()).c_str()) == FILERR_NONE)
 		{
 			nvram->nvram_load(file);
 			file.close();
@@ -1266,7 +1272,7 @@ void running_machine::nvram_save()
 	{
 		astring filename;
 		emu_file file(options().nvram_directory(), OPEN_FLAG_WRITE | OPEN_FLAG_CREATE | OPEN_FLAG_CREATE_PATHS);
-		if (file.open(nvram_filename(filename, nvram->device())) == FILERR_NONE)
+		if (file.open(nvram_filename(filename, nvram->device()).c_str()) == FILERR_NONE)
 		{
 			nvram->nvram_save(file);
 			file.close();
@@ -1351,7 +1357,7 @@ void system_time::full_time::set(struct tm &t)
 //  JAVASCRIPT PORT-SPECIFIC
 //**************************************************************************
 
-#ifdef SDLMAME_EMSCRIPTEN
+#if defined(EMSCRIPTEN)
 
 static running_machine * jsmess_machine;
 
@@ -1384,4 +1390,4 @@ sound_manager * js_get_sound() {
 	return &(jsmess_machine->sound());
 }
 
-#endif /* SDLMAME_EMSCRIPTEN */
+#endif /* defined(EMSCRIPTEN) */

@@ -11,20 +11,20 @@
 
 /*
 
-	value   error description
+    value   error description
 
-	01      no sync pulse detected
-	02      no header track
-	03      checksum error in header
-	04      not right track
-	05      not right sector
-	06      not a data block
-	07      data checksum error
-	08      sync too long
-	99      not a system disc
+    01      no sync pulse detected
+    02      no header track
+    03      checksum error in header
+    04      not right track
+    05      not right sector
+    06      not a data block
+    07      data checksum error
+    08      sync too long
+    99      not a system disc
 
-	11      Noise on sync
-	FF      No sync (bad or unformatted disk)
+    11      Noise on sync
+    FF      No sync (bad or unformatted disk)
 
 */
 
@@ -32,9 +32,11 @@
 
     TODO:
 
-	- communication error with SCP after loading boot sector
-		- bp ff1a8
-		- patch ff1ab=c3
+    - write protect
+    - separate read/write methods
+    - communication error with SCP after loading boot sector
+        - bp ff1a8
+        - patch ff1ab=c3
     - single/double sided jumper
     - header sync length unknown (6 is too short)
     - 8048 spindle speed control
@@ -52,6 +54,7 @@
 #define LOG 0
 #define LOG_VIA 0
 #define LOG_SCP 0
+#define LOG_BITS 0
 
 #define I8048_TAG       "5d"
 #define M6522_4_TAG     "1f"
@@ -60,17 +63,17 @@
 
 // this is exactly the same decode/encode as used in the Commodore 4040/8050 series drives
 #define GCR_DECODE(_e, _i) \
-    ((BIT(_e, 6) << 7) | (BIT(_i, 7) << 6) | (_e & 0x33) | (BIT(_e, 2) << 3) | (_i & 0x04))
+	((BIT(_e, 6) << 7) | (BIT(_i, 7) << 6) | (_e & 0x33) | (BIT(_e, 2) << 3) | (_i & 0x04))
 
 // E7 E6 I7 E5 E4 E3 E2 I2 E1 E0
 #define GCR_ENCODE(_e, _i) \
-    ((_e & 0xc0) << 2 | (_i & 0x80) | (_e & 0x3c) << 1 | (_i & 0x04) | (_e & 0x03))
+	((_e & 0xc0) << 2 | (_i & 0x80) | (_e & 0x3c) << 1 | (_i & 0x04) | (_e & 0x03))
 
 // Tandon TM-100 spindle @ 300RPM, measured TACH 12VAC 256Hz
 // TACH = RPM / 60 * SPINDLE RATIO * MOTOR POLES
 // 256 = 300 / 60 * 6.4 * 8
-#define SPINDLE_RATIO 	6.4
-#define MOTOR_POLES		8
+#define SPINDLE_RATIO   6.4
+#define MOTOR_POLES     8
 
 // TODO wrong values here! motor speed is controlled by an LM2917, with help from the spindle TACH and a DAC0808 whose value is set by the SCP 8048
 const int victor_9000_fdc_t::rpm[] = { 252, 252, 252, 252, 252, 252, 252, 252, 252, 252, 252, 252, 252, 252, 252, 252, 252, 252, 252, 252, 252, 252, 252, 252, 252, 252, 252, 252, 252, 252, 252, 252, 252, 252, 252, 252, 252, 252, 252, 252, 252, 252, 252, 252, 252, 252, 252, 252, 252, 252, 252, 252, 252, 252, 252, 252, 252, 252, 252, 252, 252, 252, 252, 252, 252, 252, 254, 255, 257, 259, 260, 262, 264, 266, 267, 269, 271, 273, 275, 276, 278, 280, 282, 284, 286, 288, 290, 291, 293, 295, 297, 299, 301, 303, 305, 307, 309, 311, 313, 315, 318, 320, 322, 324, 326, 328, 330, 333, 335, 337, 339, 342, 344, 346, 348, 351, 353, 355, 358, 360, 362, 365, 367, 370, 372, 375, 377, 380, 382, 385, 387, 390, 392, 395, 398, 400, 403, 406, 408, 411, 414, 416, 419, 422, 425, 428, 430, 433, 436, 439, 442, 445, 448, 451, 454, 457, 460, 463, 466, 469, 472, 475, 478, 482, 485, 488, 491, 494, 498, 501, 504, 508, 511, 514, 518, 521, 525, 528, 532, 535, 539, 542, 546, 550, 553, 557, 561, 564, 568, 572, 576, 579, 583, 587, 591, 595, 599, 603, 607, 611, 615, 619, 623, 627, 631, 636, 640, 644, 648, 653, 657, 661, 666, 670, 674, 679, 683, 688, 693, 697, 702, 706, 711, 716, 721, 725, 730, 735, 740, 745, 750, 755, 760, 765, 770, 775, 780, 785, 790, 796, 801, 806, 812, 817, 822, 828, 833, 839, 844, 850, 856, 861, 867, 873, 878, 884 };
@@ -258,8 +261,6 @@ victor_9000_fdc_t::victor_9000_fdc_t(const machine_config &mconfig, const char *
 	cur_live.tm = attotime::never;
 	cur_live.state = IDLE;
 	cur_live.next_state = -1;
-	cur_live.write_position = 0;
-	cur_live.write_start_time = attotime::never;
 }
 
 
@@ -269,6 +270,11 @@ victor_9000_fdc_t::victor_9000_fdc_t(const machine_config &mconfig, const char *
 
 void victor_9000_fdc_t::device_start()
 {
+	// resolve callbacks
+	m_irq_cb.resolve_safe();
+	m_syn_cb.resolve_safe();
+	m_lbrdy_cb.resolve_safe();
+
 	// allocate timer
 	t_gen = timer_alloc(TM_GEN);
 	t_tach0 = timer_alloc(TM_TACH0);
@@ -311,11 +317,6 @@ void victor_9000_fdc_t::device_start()
 void victor_9000_fdc_t::device_reset()
 {
 	live_abort();
-
-	// resolve callbacks
-	m_irq_cb.resolve_safe();
-	m_syn_cb.resolve_safe();
-	m_lbrdy_cb.resolve_safe();
 
 	// reset devices
 	m_via4->reset();
@@ -1069,22 +1070,23 @@ void victor_9000_fdc_t::live_start()
 	cur_live.wrsync = m_wrsync;
 	cur_live.erase = m_erase;
 
-	pll_reset(cur_live.tm, attotime::from_nsec(2130));
+	pll_reset(cur_live.tm);
 	checkpoint_live = cur_live;
 	pll_save_checkpoint();
 
 	live_run();
 }
 
-void victor_9000_fdc_t::pll_reset(const attotime &when, const attotime clock)
+void victor_9000_fdc_t::pll_reset(const attotime &when)
 {
 	cur_pll.reset(when);
-	cur_pll.set_clock(clock);
+	cur_pll.set_clock(attotime::from_nsec(2130));
 }
 
 void victor_9000_fdc_t::pll_start_writing(const attotime &tm)
 {
 	cur_pll.start_writing(tm);
+	pll_reset(cur_live.tm);
 }
 
 void victor_9000_fdc_t::pll_commit(floppy_image_device *floppy, const attotime &tm)
@@ -1095,6 +1097,7 @@ void victor_9000_fdc_t::pll_commit(floppy_image_device *floppy, const attotime &
 void victor_9000_fdc_t::pll_stop_writing(floppy_image_device *floppy, const attotime &tm)
 {
 	cur_pll.stop_writing(floppy, tm);
+	pll_reset(cur_live.tm);
 }
 
 void victor_9000_fdc_t::pll_save_checkpoint()
@@ -1114,7 +1117,7 @@ int victor_9000_fdc_t::pll_get_next_bit(attotime &tm, floppy_image_device *flopp
 
 bool victor_9000_fdc_t::pll_write_next_bit(bool bit, attotime &tm, floppy_image_device *floppy, const attotime &limit)
 {
-	return cur_pll.write_next_bit_prev_cell(bit, tm, floppy, limit);
+	return cur_pll.write_next_bit(bit, tm, floppy, limit);
 }
 
 void victor_9000_fdc_t::checkpoint()
@@ -1174,8 +1177,6 @@ void victor_9000_fdc_t::live_abort()
 	cur_live.tm = attotime::never;
 	cur_live.state = IDLE;
 	cur_live.next_state = -1;
-	cur_live.write_position = 0;
-	cur_live.write_start_time = attotime::never;
 
 	cur_live.brdy = 1;
 	cur_live.lbrdy_changed = true;
@@ -1199,10 +1200,22 @@ void victor_9000_fdc_t::live_run(const attotime &limit)
 				return;
 
 			// read bit
-			int bit = pll_get_next_bit(cur_live.tm, get_floppy(), limit);
-			if(bit < 0)
-				return;
+			int bit = 0;
+			if (cur_live.drw) {
+				bit = pll_get_next_bit(cur_live.tm, get_floppy(), limit);
+				if(bit < 0)
+					return;
+			}
 
+			// write bit
+			int write_bit = 0;
+			if (!cur_live.drw) { // TODO WPS
+				write_bit = BIT(cur_live.shift_reg_write, 9);
+				if (pll_write_next_bit(write_bit, cur_live.tm, get_floppy(), limit))
+					return;
+			}
+
+			// clock read shift register
 			cur_live.shift_reg <<= 1;
 			cur_live.shift_reg |= bit;
 			cur_live.shift_reg &= 0x3ff;
@@ -1247,12 +1260,12 @@ void victor_9000_fdc_t::live_run(const attotime &limit)
 
 			// GCR decoder
 			if (cur_live.drw) {
-				cur_live.i = cur_live.shift_reg;
+				cur_live.i = cur_live.drw << 10 | cur_live.shift_reg;
 			} else {
-				cur_live.i = 0x200 | ((cur_live.wd & 0xf0) << 1) | cur_live.wrsync << 4 | (cur_live.wd & 0x0f);
+				cur_live.i = cur_live.drw << 10 | 0x200 | ((cur_live.wd & 0xf0) << 1) | cur_live.wrsync << 4 | (cur_live.wd & 0x0f);
 			}
 
-			cur_live.e = m_gcr_rom->base()[cur_live.drw << 10 | cur_live.i];
+			cur_live.e = m_gcr_rom->base()[cur_live.i];
 
 			attotime next = cur_live.tm + m_period;
 			if (LOG) logerror("%s:%s cyl %u bit %u sync %u bc %u sr %03x sbc %u sBC %u syn %u i %03x e %02x\n",cur_live.tm.as_string(),next.as_string(),get_floppy()->get_cyl(),bit,sync,cur_live.bit_counter,cur_live.shift_reg,cur_live.sync_bit_counter,cur_live.sync_byte_counter,syn,cur_live.i,cur_live.e);
@@ -1263,11 +1276,12 @@ void victor_9000_fdc_t::live_run(const attotime &limit)
 			// GCR error
 			int gcr_err = !(brdy || BIT(cur_live.e, 3));
 
-			// write bit
-			if (!cur_live.drw) { // TODO WPS
-				int write_bit = BIT(cur_live.shift_reg_write, 9);
-				if (LOG) logerror("%s writing bit %u sr %03x\n",cur_live.tm.as_string(),write_bit,cur_live.shift_reg_write);
-				pll_write_next_bit(write_bit, cur_live.tm, get_floppy(), limit);
+			if (LOG_BITS) {
+				if (cur_live.drw) {
+					logerror("%s cyl %u bit %u sync %u bc %u sr %03x i %03x e %02x\n",cur_live.tm.as_string(),get_floppy()->get_cyl(),bit,sync,cur_live.bit_counter,cur_live.shift_reg,cur_live.i,cur_live.e);
+				} else {
+					logerror("%s cyl %u writing bit %u bc %u sr %03x i %03x e %02x\n",cur_live.tm.as_string(),get_floppy()->get_cyl(),write_bit,cur_live.bit_counter,cur_live.shift_reg_write,cur_live.i,cur_live.e);
+				}
 			}
 
 			if (!brdy) {

@@ -290,7 +290,7 @@ void msx_slot_cartridge_device::get_default_card_software(astring &result)
 		if (hashfile_extrainfo(*this, extrainfo))
 		{
 			int extrainfo_type = -1;
-			if (1 == sscanf(extrainfo.cstr(), "%d", &extrainfo_type))
+			if (1 == sscanf(extrainfo.c_str(), "%d", &extrainfo_type))
 			{
 				static const struct { int extrainfo; int mapper; } extrainfo_map[] = {
 					//{ 0, NOMAPPER },
@@ -326,7 +326,7 @@ void msx_slot_cartridge_device::get_default_card_software(astring &result)
 		if (type == NOMAPPER)
 		{
 			// Not identified through hashfile, try automatic detection
-			type = get_cart_type(rom, length);
+			type = get_cart_type(&rom[0], length);
 		}
 
 		if (type > NOMAPPER)

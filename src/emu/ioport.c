@@ -99,6 +99,8 @@
 #include "uiinput.h"
 #include "debug/debugcon.h"
 
+#include "osdepend.h"
+
 #include <ctype.h>
 #include <time.h>
 
@@ -783,7 +785,7 @@ void digital_joystick::frame_update()
 		//
 		//  If joystick is pointing at a diagonal, acknowledge that the player moved
 		//  the joystick by favoring a direction change.  This minimizes frustration
-		//  when using a keyboard for input, and maximizes responsiveness.
+		//  and maximizes responsiveness.
 		//
 		//  For example, if you are holding "left" then switch to "up" (where both left
 		//  and up are briefly pressed at the same time), we'll transition immediately
@@ -1095,7 +1097,7 @@ void natural_keyboard::build_codes(ioport_manager &manager)
 								newcode.field[1] = field;
 							}
 							newcode.ch = code;
-							m_keycode_map.append(newcode);
+							m_keycode_map.push_back(newcode);
 
 							if (LOG_NATURAL_KEYBOARD)
 							{
@@ -1188,9 +1190,9 @@ void natural_keyboard::internal_post(unicode_char ch)
 
 	// add to the buffer, resizing if necessary
 	m_buffer[m_bufend++] = ch;
-	if ((m_bufend + 1) % m_buffer.count() == m_bufbegin)
-		m_buffer.resize_keep(m_buffer.count() + KEY_BUFFER_SIZE);
-	m_bufend %= m_buffer.count();
+	if ((m_bufend + 1) % m_buffer.size() == m_bufbegin)
+		m_buffer.resize(m_buffer.size() + KEY_BUFFER_SIZE);
+	m_bufend %= m_buffer.size();
 }
 
 
@@ -1206,7 +1208,7 @@ void natural_keyboard::timer(void *ptr, int param)
 	{
 		while (!empty() && m_queue_chars(&m_buffer[m_bufbegin], 1))
 		{
-			m_bufbegin = (m_bufbegin + 1) % m_buffer.count();
+			m_bufbegin = (m_bufbegin + 1) % m_buffer.size();
 			if (m_current_rate != attotime::zero)
 				break;
 		}
@@ -1216,7 +1218,7 @@ void natural_keyboard::timer(void *ptr, int param)
 	else
 	{
 		if (m_status_keydown)
-			m_bufbegin = (m_bufbegin + 1) % m_buffer.count();
+			m_bufbegin = (m_bufbegin + 1) % m_buffer.size();
 		m_status_keydown = !m_status_keydown;
 	}
 
@@ -1262,7 +1264,7 @@ const char *natural_keyboard::unicode_to_string(astring &buffer, unicode_char ch
 				buffer.format("U+%04X", unsigned(ch));
 			break;
 	}
-	return buffer;
+	return buffer.c_str();
 }
 
 
@@ -1272,7 +1274,7 @@ const char *natural_keyboard::unicode_to_string(astring &buffer, unicode_char ch
 
 const natural_keyboard::keycode_map_entry *natural_keyboard::find_code(unicode_char ch) const
 {
-	for (int index = 0; index < m_keycode_map.count(); index++)
+	for (unsigned int index = 0; index < m_keycode_map.size(); index++)
 	{
 		if (m_keycode_map[index].ch == ch)
 			return &m_keycode_map[index];
@@ -1305,13 +1307,13 @@ void natural_keyboard::frame_update(ioport_port &port, ioport_value &digital)
 //  key_name - returns the name of a specific key
 //-------------------------------------------------
 
-const char *natural_keyboard::key_name(astring &string, unicode_char ch)
+const char *natural_keyboard::key_name(astring &str, unicode_char ch)
 {
 	// attempt to get the string from the character info table
 	const char_info *ci = char_info::find(ch);
 	const char *result = (ci != NULL) ? ci->name : NULL;
 	if (result != NULL)
-		string.cpy(result);
+		str.cpy(result);
 
 	// if that doesn't work, convert to UTF-8
 	else if (ch > 0x7F || isprint(ch))
@@ -1319,13 +1321,13 @@ const char *natural_keyboard::key_name(astring &string, unicode_char ch)
 		char buf[10];
 		int count = utf8_from_uchar(buf, ARRAY_LENGTH(buf), ch);
 		buf[count] = 0;
-		string.cpy(buf);
+		str.cpy(buf);
 	}
 
 	// otherwise, opt for question marks
 	else
-		string.cpy("???");
-	return string;
+		str.cpy("???");
+	return str.c_str();
 }
 
 
@@ -1339,7 +1341,7 @@ astring natural_keyboard::dump()
 	const size_t left_column_width = 24;
 
 	// loop through all codes
-	for (int index = 0; index < m_keycode_map.count(); index++)
+	for (unsigned int index = 0; index < m_keycode_map.size(); index++)
 	{
 		// describe the character code
 		const natural_keyboard::keycode_map_entry &code = m_keycode_map[index];
@@ -1518,7 +1520,7 @@ const char *ioport_field::name() const
 {
 	// if we have a non-default name, use that
 	if (m_live != NULL && m_live->name)
-		return m_live->name;
+		return m_live->name.c_str();
 	if (m_name != NULL)
 		return m_name;
 
@@ -2064,13 +2066,13 @@ void ioport_field::expand_diplocation(const char *location, astring &errorbuf)
 		tempstr.cpy(curentry, comma - curentry);
 
 		// first extract the switch name if present
-		const char *number = tempstr;
-		const char *colon = strchr(tempstr, ':');
+		const char *number = tempstr.c_str();
+		const char *colon = strchr(tempstr.c_str(), ':');
 
 		// allocate and copy the name if it is present
 		if (colon != NULL)
 		{
-			lastname = name.cpy(number, colon - number);
+			lastname = name.cpy(number, colon - number).c_str();
 			number = colon + 1;
 		}
 
@@ -2099,7 +2101,7 @@ void ioport_field::expand_diplocation(const char *location, astring &errorbuf)
 			errorbuf.catprintf("Switch location '%s' has invalid format!\n", location);
 
 		// allocate a new entry
-		m_diploclist.append(*global_alloc(ioport_diplocation(name, swnum, invert)));
+		m_diploclist.append(*global_alloc(ioport_diplocation(name.c_str(), swnum, invert)));
 		entries++;
 
 		// advance to the next item
@@ -2480,7 +2482,7 @@ time_t ioport_manager::initialize()
 		astring errors;
 		m_portlist.append(*device, errors);
 		if (errors)
-			osd_printf_error("Input port errors:\n%s", errors.cstr());
+			osd_printf_error("Input port errors:\n%s", errors.c_str());
 	}
 
 	// renumber player numbers for controller ports
@@ -2517,14 +2519,14 @@ time_t ioport_manager::initialize()
 	init_autoselect_devices(IPT_TRACKBALL_X, IPT_TRACKBALL_Y,  0,              OPTION_TRACKBALL_DEVICE,  "trackball");
 	init_autoselect_devices(IPT_MOUSE_X,     IPT_MOUSE_Y,      0,              OPTION_MOUSE_DEVICE,      "mouse");
 
-	// look for 4-way joysticks and change the default map if we find any
+	// look for 4-way diagonal joysticks and change the default map if we find any
 	const char *joystick_map_default = machine().options().joystick_map();
 	if (joystick_map_default[0] == 0 || strcmp(joystick_map_default, "auto") == 0)
 		for (ioport_port *port = first_port(); port != NULL; port = port->next())
 			for (ioport_field *field = port->first_field(); field != NULL; field = field->next())
-				if (field->live().joystick != NULL && field->way() == 4)
+				if (field->live().joystick != NULL && field->rotated())
 				{
-					machine().input().set_global_joystick_map(field->rotated() ? joystick_map_4way_diagonal : joystick_map_4way_sticky);
+					machine().input().set_global_joystick_map(joystick_map_4way_diagonal);
 					break;
 				}
 
@@ -3029,8 +3031,8 @@ void ioport_manager::load_remap_table(xml_data_node *parentnode)
 	if (count > 0)
 	{
 		// allocate tables
-		dynamic_array<input_code> oldtable(count);
-		dynamic_array<input_code> newtable(count);
+		std::vector<input_code> oldtable(count);
+		std::vector<input_code> newtable(count);
 
 		// build up the remap table
 		count = 0;
@@ -3174,7 +3176,7 @@ void ioport_manager::save_sequence(xml_data_node *parentnode, input_seq_type typ
 		machine().input().seq_to_tokens(seqstring, seq);
 
 	// add the new node
-	xml_data_node *seqnode = xml_add_child(parentnode, "newseq", seqstring);
+	xml_data_node *seqnode = xml_add_child(parentnode, "newseq", seqstring.c_str());
 	if (seqnode != NULL)
 		xml_set_attribute(seqnode, "type", seqtypestrings[type]);
 }
@@ -3683,7 +3685,7 @@ void ioport_configurer::port_alloc(const char *tag)
 	m_owner.subtag(fulltag, tag);
 
 	// add it to the list, and reset current field/setting
-	m_curport = &m_portlist.append(fulltag, *global_alloc(ioport_port(m_owner, fulltag)));
+	m_curport = &m_portlist.append(fulltag.c_str(), *global_alloc(ioport_port(m_owner, fulltag.c_str())));
 	m_curfield = NULL;
 	m_cursetting = NULL;
 }
@@ -3701,9 +3703,9 @@ void ioport_configurer::port_modify(const char *tag)
 	m_owner.subtag(fulltag, tag);
 
 	// find the existing port
-	m_curport = m_portlist.find(fulltag.cstr());
+	m_curport = m_portlist.find(fulltag.c_str());
 	if (m_curport == NULL)
-		throw emu_fatalerror("Requested to modify nonexistent port '%s'", fulltag.cstr());
+		throw emu_fatalerror("Requested to modify nonexistent port '%s'", fulltag.c_str());
 
 	// bump the modification count, and reset current field/setting
 	m_curport->m_modcount++;
@@ -4395,15 +4397,15 @@ ioport_type ioport_manager::token_to_input_type(const char *string, int &player)
 //  type and player to a string token
 //-------------------------------------------------
 
-const char *ioport_manager::input_type_to_token(astring &string, ioport_type type, int player)
+const char *ioport_manager::input_type_to_token(astring &str, ioport_type type, int player)
 {
 	// look up the port and return the token
 	input_type_entry *entry = m_type_to_entry[type][player];
 	if (entry != NULL)
-		return string.cpy(entry->token());
+		return str.cpy(entry->token()).c_str();
 
 	// if that fails, carry on
-	return string.format("TYPE_OTHER(%d,%d)", type, player);
+	return str.format("TYPE_OTHER(%d,%d)", type, player).c_str();
 }
 
 

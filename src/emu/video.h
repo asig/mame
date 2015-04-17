@@ -84,7 +84,7 @@ public:
   void frame_update_hi(bool debug = false);
 
 	// current speed helpers
-	astring &speed_text(astring &string);
+	astring &speed_text(astring &str);
 	double speed_percent() const { return m_speed_percent; }
 
 	// snapshots
@@ -179,6 +179,9 @@ private:
 	attotime            m_avi_frame_period;         // period of a single movie frame
 	attotime            m_avi_next_frame_time;      // time of next frame
 	UINT32              m_avi_frame;                // current movie frame number
+
+	// movie recording - dummy
+	bool                m_dummy_recording;          // indicates if snapshot should be created of every frame
 
 	static const UINT8      s_skiptable[FRAMESKIP_LEVELS][FRAMESKIP_LEVELS];
 

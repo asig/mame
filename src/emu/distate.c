@@ -49,8 +49,9 @@ const UINT64 device_state_entry::k_decimal_divisor[] =
 //  device_state_entry - constructor
 //-------------------------------------------------
 
-device_state_entry::device_state_entry(int index, const char *symbol, void *dataptr, UINT8 size)
-	: m_next(NULL),
+device_state_entry::device_state_entry(int index, const char *symbol, void *dataptr, UINT8 size, device_state_interface *dev)
+	: m_device_state(dev),
+		m_next(NULL),
 		m_index(index),
 		m_dataptr(dataptr),
 		m_datamask(0),
@@ -86,8 +87,9 @@ device_state_entry::device_state_entry(int index, const char *symbol, void *data
 		m_symbol.cpy("CURFLAGS");
 }
 
-device_state_entry::device_state_entry(int index)
-	: m_next(NULL),
+device_state_entry::device_state_entry(int index, device_state_interface *dev)
+	: m_device_state(dev),
+		m_next(NULL),
 		m_index(index),
 		m_dataptr(NULL),
 		m_datamask(0),
@@ -173,7 +175,7 @@ astring &device_state_entry::format(astring &dest, const char *string, bool maxo
 	bool hitnonzero = false;
 	bool reset = true;
 	int width = 0;
-	for (const char *fptr = m_format; *fptr != 0; fptr++)
+	for (const char *fptr = m_format.c_str(); *fptr != 0; fptr++)
 	{
 		// reset any accumulated state
 		if (reset)
@@ -447,7 +449,7 @@ astring &device_state_interface::state_string(int index, astring &dest)
 		state_string_export(*entry, custom);
 
 	// ask the entry to format itself
-	return entry->format(dest, custom);
+	return entry->format(dest, custom.c_str());
 }
 
 
@@ -523,7 +525,7 @@ device_state_entry &device_state_interface::state_add(int index, const char *sym
 	assert(symbol != NULL);
 
 	// allocate new entry
-	device_state_entry *entry = global_alloc(device_state_entry(index, symbol, data, size));
+	device_state_entry *entry = global_alloc(device_state_entry(index, symbol, data, size, this));
 
 	// append to the end of the list
 	m_state_list.append(*entry);
@@ -543,7 +545,7 @@ device_state_entry &device_state_interface::state_add(int index, const char *sym
 device_state_entry &device_state_interface::state_add_divider(int index)
 {
 	// allocate new entry
-	device_state_entry *entry = global_alloc(device_state_entry(index));
+	device_state_entry *entry = global_alloc(device_state_entry(index, this));
 
 	// append to the end of the list
 	m_state_list.append(*entry);
@@ -578,7 +580,7 @@ void device_state_interface::state_export(const device_state_entry &entry)
 //  written to perform any post-processing
 //-------------------------------------------------
 
-void device_state_interface::state_string_import(const device_state_entry &entry, astring &string)
+void device_state_interface::state_string_import(const device_state_entry &entry, astring &str)
 {
 	// do nothing by default
 }
@@ -589,7 +591,7 @@ void device_state_interface::state_string_import(const device_state_entry &entry
 //  written to perform any post-processing
 //-------------------------------------------------
 
-void device_state_interface::state_string_export(const device_state_entry &entry, astring &string)
+void device_state_interface::state_string_export(const device_state_entry &entry, astring &str)
 {
 	// do nothing by default
 }

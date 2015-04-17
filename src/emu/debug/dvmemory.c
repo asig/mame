@@ -138,14 +138,14 @@ void debug_view_memory::enumerate_sources()
 				{
 					address_space &space = memintf->space(spacenum);
 					name.printf("%s '%s' %s space memory", memintf->device().name(), memintf->device().tag(), space.name());
-					m_source_list.append(*global_alloc(debug_view_memory_source(name, space)));
+					m_source_list.append(*global_alloc(debug_view_memory_source(name.c_str(), space)));
 				}
 
 	// then add all the memory regions
 	for (memory_region *region = machine().memory().first_region(); region != NULL; region = region->next())
 	{
 		name.printf("Region '%s'", region->name());
-		m_source_list.append(*global_alloc(debug_view_memory_source(name, *region)));
+		m_source_list.append(*global_alloc(debug_view_memory_source(name.c_str(), *region)));
 	}
 
 	// finally add all global array symbols
@@ -163,7 +163,7 @@ void debug_view_memory::enumerate_sources()
 		if (strncmp(itemname, "timer/", 6))
 		{
 			name.cpy(itemname);
-			m_source_list.append(*global_alloc(debug_view_memory_source(name, base, valsize, valcount)));
+			m_source_list.append(*global_alloc(debug_view_memory_source(name.c_str(), base, valsize, valcount)));
 		}
 	}
 
@@ -217,7 +217,7 @@ void debug_view_memory::view_update()
 	// loop over visible rows
 	for (UINT32 row = 0; row < m_visible.y; row++)
 	{
-		debug_view_char *destmin = m_viewdata + row * m_visible.x;
+		debug_view_char *destmin = &m_viewdata[row * m_visible.x];
 		debug_view_char *destmax = destmin + m_visible.x;
 		debug_view_char *destrow = destmin - m_topleft.x;
 		UINT32 effrow = m_topleft.y + row;
@@ -245,7 +245,7 @@ void debug_view_memory::view_update()
 			char addrtext[20];
 
 			// generate the address
-			sprintf(addrtext, m_addrformat, address);
+			sprintf(addrtext, m_addrformat.c_str(), address);
 			dest = destrow + m_section[0].m_pos + 1;
 			for (int ch = 0; addrtext[ch] != 0 && ch < m_section[0].m_width - 1; ch++, dest++)
 				if (dest >= destmin && dest < destmax)
@@ -749,6 +749,8 @@ void debug_view_memory::set_bytes_per_chunk(UINT8 chunkbytes)
 
 	m_bytes_per_chunk = chunkbytes;
 	m_chunks_per_row = m_bytes_per_row / chunkbytes;
+	if (m_chunks_per_row < 1)
+		m_chunks_per_row = 1;
 	m_recompute = m_update_pending = true;
 
 	pos.m_shift += 8 * ((pos.m_address % m_bytes_per_chunk) ^ ((source.m_endianness == ENDIANNESS_LITTLE) ? 0 : (m_bytes_per_chunk - 1)));

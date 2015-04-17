@@ -816,8 +816,8 @@ public:
 	// getters and queries
 	running_machine &machine() const { return m_machine; }
 	bool empty() const { return (m_bufbegin == m_bufend); }
-	bool full() const { return ((m_bufend + 1) % m_buffer.count()) == m_bufbegin; }
-	bool can_post() const { return (!m_queue_chars.isnull() || m_keycode_map.count() != 0); }
+	bool full() const { return ((m_bufend + 1) % m_buffer.size()) == m_bufbegin; }
+	bool can_post() const { return (!m_queue_chars.isnull() || !m_keycode_map.empty()); }
 	bool is_posting() const { return (!empty() || (!m_charqueue_empty.isnull() && !m_charqueue_empty())); }
 
 	// configuration
@@ -830,7 +830,7 @@ public:
 	void post_coded(const char *text, size_t length = 0, const attotime &rate = attotime::zero);
 
 	void frame_update(ioport_port &port, ioport_value &digital);
-	const char *key_name(astring &string, unicode_char ch);
+	const char *key_name(astring &str, unicode_char ch);
 
 	// debugging
 	astring dump();
@@ -857,7 +857,7 @@ private:
 	running_machine &       m_machine;              // reference to our machine
 	UINT32                  m_bufbegin;             // index of starting character
 	UINT32                  m_bufend;               // index of ending character
-	dynamic_array<unicode_char> m_buffer;           // actual buffer
+	std::vector<unicode_char> m_buffer;           // actual buffer
 	bool                    m_status_keydown;       // current keydown status
 	bool                    m_last_cr;              // was the last char a CR?
 	emu_timer *             m_timer;                // timer for posting characters
@@ -865,7 +865,7 @@ private:
 	ioport_queue_chars_delegate m_queue_chars;      // queue characters callback
 	ioport_accept_char_delegate m_accept_char;      // accept character callback
 	ioport_charqueue_empty_delegate m_charqueue_empty; // character queue empty callback
-	dynamic_array<keycode_map_entry> m_keycode_map; // keycode map
+	std::vector<keycode_map_entry> m_keycode_map; // keycode map
 };
 
 
@@ -969,7 +969,7 @@ public:
 
 	// getters
 	ioport_diplocation *next() const { return m_next; }
-	const char *name() const { return m_name; }
+	const char *name() const { return m_name.c_str(); }
 	UINT8 number() const { return m_number; }
 	bool inverted() const { return m_invert; }
 
@@ -992,14 +992,14 @@ class ioport_field
 	friend class dynamic_field;
 
 	// flags for ioport_fields
-	static const int FIELD_FLAG_UNUSED = 0x01;      // set if this field is unused but relevant to other games on the same hw
-	static const int FIELD_FLAG_COCKTAIL = 0x02;    // set if this field is relevant only for cocktail cabinets
-	static const int FIELD_FLAG_TOGGLE = 0x04;      // set if this field should behave as a toggle
-	static const int FIELD_FLAG_ROTATED = 0x08;     // set if this field represents a rotated control
-	static const int ANALOG_FLAG_REVERSE = 0x10;    // analog only: reverse the sense of the axis
-	static const int ANALOG_FLAG_RESET = 0x20;      // analog only: always preload in->default for relative axes, returning only deltas
-	static const int ANALOG_FLAG_WRAPS = 0x40;      // analog only: positional count wraps around
-	static const int ANALOG_FLAG_INVERT = 0x80;     // analog only: bitwise invert bits
+	static const int FIELD_FLAG_UNUSED =   0x0001;    // set if this field is unused but relevant to other games on the same hw
+	static const int FIELD_FLAG_COCKTAIL = 0x0002;    // set if this field is relevant only for cocktail cabinets
+	static const int FIELD_FLAG_TOGGLE =   0x0004;    // set if this field should behave as a toggle
+	static const int FIELD_FLAG_ROTATED =  0x0008;    // set if this field represents a rotated control
+	static const int ANALOG_FLAG_REVERSE = 0x0010;    // analog only: reverse the sense of the axis
+	static const int ANALOG_FLAG_RESET =   0x0020;    // analog only: always preload in->default for relative axes, returning only deltas
+	static const int ANALOG_FLAG_WRAPS =   0x0040;    // analog only: positional count wraps around
+	static const int ANALOG_FLAG_INVERT =  0x0080;    // analog only: bitwise invert bits
 
 public:
 	// construction/destruction
@@ -1197,7 +1197,7 @@ public:
 	device_t &device() const { return m_device; }
 	running_machine &machine() const;
 	ioport_field *first_field() const { return m_fieldlist.first(); }
-	const char *tag() const { return m_tag; }
+	const char *tag() const { return m_tag.c_str(); }
 	int modcount() const { return m_modcount; }
 	ioport_value active() const { return m_active; }
 	ioport_value active_safe(ioport_value defval) const { return (this == NULL) ? defval : active(); }
@@ -1397,7 +1397,7 @@ public:
 	void setup_natural_keyboard(ioport_queue_chars_delegate queue_chars, ioport_accept_char_delegate accept_char, ioport_charqueue_empty_delegate charqueue_empty);
 	INT32 frame_interpolate(INT32 oldval, INT32 newval);
 	ioport_type token_to_input_type(const char *string, int &player) const;
-	const char *input_type_to_token(astring &string, ioport_type type, int player);
+	const char *input_type_to_token(astring &str, ioport_type type, int player);
 
 private:
 	// internal helpers

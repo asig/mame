@@ -1436,7 +1436,7 @@ void i960_cpu_device::execute_op(UINT32 opcode)
 			case 0xd: // cosr
 				m_icount -= 406;
 				t1f = get_1_rif(opcode);
-				set_rif(opcode, sin(t1f));
+				set_rif(opcode, cos(t1f));
 				break;
 
 			case 0xe: // tanr
@@ -2078,7 +2078,7 @@ void i960_cpu_device::device_start()
 	m_icountptr = &m_icount;
 }
 
-void i960_cpu_device::state_string_export(const device_state_entry &entry, astring &string)
+void i960_cpu_device::state_string_export(const device_state_entry &entry, astring &str)
 {
 	static const char *const conditions[8] =
 	{
@@ -2088,7 +2088,7 @@ void i960_cpu_device::state_string_export(const device_state_entry &entry, astri
 	switch (entry.index())
 	{
 		case STATE_GENFLAGS:
-			string.printf("%s", conditions[m_AC & 7]);
+			str.printf("%s", conditions[m_AC & 7]);
 			break;
 	}
 }

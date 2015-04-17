@@ -19,7 +19,8 @@
 
 #include <time.h>
 
-
+// forward declaration instead of osdepend.h
+class osd_interface;
 
 //**************************************************************************
 //  CONSTANTS
@@ -157,13 +158,14 @@ public:
 	const machine_config &config() const { return m_config; }
 	device_t &root_device() const { return m_config.root_device(); }
 	const game_driver &system() const { return m_system; }
-	osd_interface &osd() const { return m_manager.osd(); }
+	osd_interface &osd() const;
 	machine_manager &manager() const { return m_manager; }
 	resource_pool &respool() { return m_respool; }
 	device_scheduler &scheduler() { return m_scheduler; }
 	save_manager &save() { return m_save; }
 	memory_manager &memory() { return m_memory; }
 	ioport_manager &ioport() { return m_ioport; }
+	parameters_manager &parameters() { return m_parameters; }
 	cheat_manager &cheat() const { assert(m_cheat != NULL); return *m_cheat; }
 	render_manager &render() const { assert(m_render != NULL); return *m_render; }
 	input_manager &input() const { assert(m_input != NULL); return *m_input; }
@@ -178,7 +180,7 @@ public:
 	bool paused() const { return m_paused || (m_current_phase != MACHINE_PHASE_RUNNING); }
 	bool exit_pending() const { return m_exit_pending; }
 	bool ui_active() const { return m_ui_active; }
-	const char *basename() const { return m_basename; }
+	const char *basename() const { return m_basename.c_str(); }
 	int sample_rate() const { return m_sample_rate; }
 	bool save_or_load_pending() const { return m_saveload_pending_file; }
 	screen_device *first_screen() const { return primary_screen; }
@@ -357,6 +359,7 @@ private:
 	save_manager            m_save;                 // save manager
 	memory_manager          m_memory;               // memory manager
 	ioport_manager          m_ioport;               // I/O port manager
+	parameters_manager      m_parameters;           // parameters manager
 	device_scheduler        m_scheduler;            // scheduler object
 	emu_timer               *m_autoboot_timer;      // autoboot timer
 };

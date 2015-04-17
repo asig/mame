@@ -8,15 +8,15 @@
 
 ***************************************************************************/
 
-#include "web/mongoose.h"
-#include "web/json/json.h"
+#include "mongoose/mongoose.h"
+#include "jsoncpp/include/json/json.h"
 #include "emu.h"
 #include "emuopts.h"
 #include "ui/ui.h"
 #include "webengine.h"
-#include "lua/lua.hpp"
+#include "lua.hpp"
 
-
+#include "osdepend.h"
 
 //**************************************************************************
 //  WEB ENGINE
@@ -260,11 +260,11 @@ static int filename_endswith(const char *str, const char *suffix)
 // This function will be called by mongoose on every new request.
 int web_engine::begin_request_handler(struct mg_connection *conn)
 {
-	astring file_path(mg_get_option(m_server, "document_root"), PATH_SEPARATOR, conn->uri);
-	if (filename_endswith(file_path,".lp"))
+	astring file_path = astring(mg_get_option(m_server, "document_root")).cat(PATH_SEPARATOR).cat(conn->uri);
+	if (filename_endswith(file_path.c_str(), ".lp"))
 	{
 		FILE *fp = NULL;
-		if ((fp = fopen(file_path, "rb")) != NULL) {
+		if ((fp = fopen(file_path.c_str(), "rb")) != NULL) {
 		fseek (fp, 0, SEEK_END);
 		size_t size = ftell(fp);
 		fseek (fp, 0, SEEK_SET);
@@ -442,7 +442,7 @@ int web_engine::begin_request_handler(struct mg_connection *conn)
 
 		astring fname("screenshot.png");
 		emu_file file(m_machine->options().snapshot_directory(), OPEN_FLAG_WRITE | OPEN_FLAG_CREATE | OPEN_FLAG_CREATE_PATHS);
-		file_error filerr = file.open(fname);
+		file_error filerr = file.open(fname.c_str());
 
 		if (filerr != FILERR_NONE)
 		{
@@ -455,7 +455,7 @@ int web_engine::begin_request_handler(struct mg_connection *conn)
 		mg_send_header(conn, "Cache-Control", "no-cache, no-store, must-revalidate");
 		mg_send_header(conn, "Pragma", "no-cache");
 		mg_send_header(conn, "Expires", "0");
-		mg_send_file(conn, fullpath.cstr());
+		mg_send_file(conn, fullpath.c_str(), NULL);
 		return MG_MORE; // It is important to return MG_MORE after mg_send_file!
 	}
 	return 0;
@@ -531,16 +531,15 @@ void web_engine::serve()
 	if (m_http) mg_poll_server(m_server, 0);
 }
 
-static int websocket_callback(struct mg_connection *c, enum mg_event ev) {
-	if (c->is_websocket) {
-	const char *message = (const char *)c->callback_param;
-	mg_websocket_write(c, 1, message, strlen(message));
-	}
-	return MG_TRUE;
-}
-
 void web_engine::push_message(const char *message)
 {
-	if (m_server!=NULL)
-		mg_iterate_over_connections(m_server, websocket_callback, (void*)message);
+	struct mg_connection *c;
+	if (m_server!=NULL) {
+		// Iterate over all connections, and push current time message to websocket ones.
+		for (c = mg_next(m_server, NULL); c != NULL; c = mg_next(m_server, c)) {
+			if (c->is_websocket) {
+				mg_websocket_write(c, 1, message, strlen(message));
+			}
+		}
+	}
 }

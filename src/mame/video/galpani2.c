@@ -90,10 +90,12 @@ void galpani2_state::video_start()
 
 // based on videos these 8-bit layers actually get *blended* against the RGB555 layer
 // it should be noted that in the layer at 0x500000 the upper 8 bits are set too, this could be related
+
+// scrolling is based on sync between sprite and this layer during the 'keyhole viewer' between rounds (use cheats)
 void galpani2_state::copybg8(screen_device &screen, bitmap_rgb32 &bitmap, const rectangle &cliprect, int layer)
 {
-	int x = - ( *m_bg8_scrollx[layer] + 0x200 - 0x0f5 );
-	int y = - ( *m_bg8_scrolly[layer] + 0x200 - 0x1be );
+	int x = + ( *m_bg8_scrollx[layer] + 0x200 - 0x1be );
+	int y = + ( *m_bg8_scrolly[layer] + 0x200 - 0x0f5 );
 	UINT16* ram = m_bg8[layer];
 
 	const pen_t *clut = &m_bg8palette->pen(0);
@@ -115,7 +117,7 @@ void galpani2_state::copybg8(screen_device &screen, bitmap_rgb32 &bitmap, const 
 void galpani2_state::copybg15(screen_device &screen, bitmap_rgb32 &bitmap, const rectangle &cliprect)
 {
 	UINT16* ram = m_bg15 + 0x40000/2;
-	
+
 	//int x = 0;
 	//int y = 0;
 

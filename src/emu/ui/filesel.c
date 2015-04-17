@@ -54,7 +54,7 @@ static void input_character(char *buffer, size_t buffer_length, unicode_char uni
 {
 	size_t buflen = strlen(buffer);
 
-	if ((unichar == 8) && (buflen > 0))
+	if ((unichar == 8 || unichar == 0x7f) && (buflen > 0))
 	{
 		*(char *)utf8_previous_char(&buffer[buflen]) = 0;
 	}
@@ -64,7 +64,6 @@ static void input_character(char *buffer, size_t buffer_length, unicode_char uni
 		buffer[buflen] = 0;
 	}
 }
-
 
 //-------------------------------------------------
 //  extra_text_draw_box - generically adds header
@@ -220,12 +219,14 @@ static int is_valid_filename_char(unicode_char unichar)
 //  ctor
 //-------------------------------------------------
 
-ui_menu_file_create::ui_menu_file_create(running_machine &machine, render_container *container, device_image_interface *image, astring &current_directory, astring &current_file)
+ui_menu_file_create::ui_menu_file_create(running_machine &machine, render_container *container, device_image_interface *image, astring &current_directory, astring &current_file, bool *ok)
 	: ui_menu(machine, container),
 		m_current_directory(current_directory),
 		m_current_file(current_file)
 {
 	m_image = image;
+	m_ok = ok;
+	*m_ok = true;
 }
 
 
@@ -245,7 +246,7 @@ ui_menu_file_create::~ui_menu_file_create()
 void ui_menu_file_create::custom_render(void *selectedref, float top, float bottom, float origx1, float origy1, float origx2, float origy2)
 {
 	extra_text_render(container, top, bottom, origx1, origy1, origx2, origy2,
-		m_current_directory,
+		m_current_directory.c_str(),
 		NULL);
 }
 
@@ -264,7 +265,7 @@ void ui_menu_file_create::populate()
 	if (get_selection() == ITEMREF_NEW_IMAGE_NAME)
 	{
 		buffer.cat(m_filename_buffer).cat("_");
-		new_image_name = buffer;
+		new_image_name = buffer.c_str();
 	}
 	else
 	{
@@ -328,11 +329,12 @@ void ui_menu_file_create::handle()
 					reset(UI_MENU_RESET_REMEMBER_POSITION);
 				}
 				break;
+			case IPT_UI_CANCEL:
+				*m_ok = false;
+				break;
 		}
 	}
 }
-
-
 
 /***************************************************************************
     FILE SELECTOR MENU
@@ -372,7 +374,7 @@ void ui_menu_file_selector::custom_render(void *selectedref, float top, float bo
 {
 	extra_text_render(container, top, bottom,
 		origx1, origy1, origx2, origy2,
-		m_current_directory,
+		m_current_directory.c_str(),
 		NULL);
 }
 
@@ -474,13 +476,13 @@ ui_menu_file_selector::file_selector_entry *ui_menu_file_selector::append_dirent
 	}
 
 	// determine the full path
-	zippath_combine(buffer, m_current_directory, dirent->name);
+	zippath_combine(buffer, m_current_directory.c_str(), dirent->name);
 
 	// create the file selector entry
 	entry = append_entry(
 		entry_type,
 		dirent->name,
-		buffer);
+		buffer.c_str());
 
 	return entry;
 }
@@ -542,7 +544,7 @@ void ui_menu_file_selector::populate()
 	const file_selector_entry *selected_entry = NULL;
 	int i;
 	const char *volume_name;
-	const char *path = m_current_directory;
+	const char *path = m_current_directory.c_str();
 
 	// open the directory
 	err = zippath_opendir(path, &directory);
@@ -592,7 +594,7 @@ void ui_menu_file_selector::populate()
 					selected_entry = entry;
 
 				// do we have to select this file?
-				if (!core_stricmp(m_current_file, dirent->name))
+				if (!core_stricmp(m_current_file.c_str(), dirent->name))
 					selected_entry = entry;
 			}
 		}

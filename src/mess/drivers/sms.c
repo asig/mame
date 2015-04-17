@@ -13,8 +13,8 @@
  To do:
 
  - SIO interface for Game Gear (needs netplay, I guess)
- - Gear to Gear Port SMS Controller Adaptor
  - Sega Demo Unit II (kiosk expansion device)
+ - SMS 8 slot game changer (kiosk expansion device)
  - SMS Disk System (floppy disk drive expansion device) - unreleased
  - Rapid button of Japanese Master System
  - Keyboard support for Sega Mark III (sg1000m3 driver)
@@ -24,7 +24,7 @@
  - Software compatibility flags, by region and/or BIOS
  - Emulate SRAM cartridges? (for use with Bock's dump tool)
  - Support for other DE-9 compatible controllers, like the Mega Drive 6-Button
-   that has software support (at least a test tool made by Charles MacDonald)
+   that has homebrew software support
 
  The Game Gear SIO hardware is not emulated but has some
  placeholders in 'machine/sms.c'
@@ -44,6 +44,29 @@
     Jun 27, 02 - Version bits for Game Gear (bits 6 of port 00) (ML)
     Nov-Dec, 05 - Numerous cleanups, fixes, updates (WP)
     Mar, 07 - More cleanups, fixes, mapper additions, etc (WP)
+
+--------------------------------------------------------------------------------
+
+General compatibility issues on real hardware (not emulation bugs):
+
+- Some ROMs have issues or don't work when running on a console of different
+  region;
+- Many Japanese/Korean or homebrew ROMs don't have the signature required by
+  BIOSes of consoles sold overseas;
+- Paddle games need to detect the system region as Japanese to work with the
+  Paddle controller;
+- Few games of the ones with FM support need to detect the system region as
+  Japanese to play FM sound;
+- The Light Phaser gun doesn't work with the Japanese SMS;
+- There are reports about Light Phaser working on the second Korean SMS
+  version, and a Korean advert shows support on the first version (Gam*Boy I,
+  although based on Japanese SMS);
+- The Korean SMS versions have Japanese-format cartridge slot, but only on the
+  first (Gam*Boy I) the region is detected as Japanese;
+- Some SMS ROMs don't run when are plugged-in to SMS expansion slot, through
+  the gender adapter;
+- Some SMS ROMs don't run or have issues when are plugged-in to a Game Gear,
+  through the Master Gear adapter;
 
 --------------------------------------------------------------------------------
 
@@ -324,7 +347,7 @@ ADDRESS_MAP_END
 static ADDRESS_MAP_START( gg_io, AS_IO, 8, sms_state )
 	ADDRESS_MAP_GLOBAL_MASK(0xff)
 	ADDRESS_MAP_UNMAP_HIGH
-	AM_RANGE(0x00, 0x00)                 AM_READ(gg_input_port_2_r)
+	AM_RANGE(0x00, 0x00)                 AM_READ(gg_input_port_00_r)
 	AM_RANGE(0x01, 0x05)                 AM_READWRITE(gg_sio_r, gg_sio_w)
 	AM_RANGE(0x06, 0x06)                 AM_DEVWRITE("gamegear", gamegear_device, stereo_w)
 	AM_RANGE(0x07, 0x07)                 AM_WRITE(sms_io_control_w)
@@ -338,10 +361,10 @@ static ADDRESS_MAP_START( gg_io, AS_IO, 8, sms_state )
 	AM_RANGE(0x40, 0x7f)                 AM_DEVWRITE("gamegear", gamegear_device, write)
 	AM_RANGE(0x80, 0x80) AM_MIRROR(0x3e) AM_DEVREADWRITE("sms_vdp", sega315_5124_device, vram_read, vram_write)
 	AM_RANGE(0x81, 0x81) AM_MIRROR(0x3e) AM_DEVREADWRITE("sms_vdp", sega315_5124_device, register_read, register_write)
-	AM_RANGE(0xc0, 0xc0)                 AM_READ_PORT("GG_PORT_DC")
-	AM_RANGE(0xc1, 0xc1)                 AM_READ_PORT("GG_PORT_DD")
-	AM_RANGE(0xdc, 0xdc)                 AM_READ_PORT("GG_PORT_DC")
-	AM_RANGE(0xdd, 0xdd)                 AM_READ_PORT("GG_PORT_DD")
+	AM_RANGE(0xc0, 0xc0)                 AM_READ(sms_input_port_dc_r)
+	AM_RANGE(0xc1, 0xc1)                 AM_READ(sms_input_port_dd_r)
+	AM_RANGE(0xdc, 0xdc)                 AM_READ(sms_input_port_dc_r)
+	AM_RANGE(0xdd, 0xdd)                 AM_READ(sms_input_port_dd_r)
 ADDRESS_MAP_END
 
 
@@ -383,6 +406,13 @@ static INPUT_PORTS_START( smsj )
 INPUT_PORTS_END
 
 static INPUT_PORTS_START( smssdisp )
+	// For each peripheral port (for controllers or 3-D glasses), there are sets
+	// of two connectors wired in parallel on the real hardware. This allows to
+	// have different controllers, like a pad and a Light Phaser, plugged together
+	// for a player input, what avoids having to re-plug them every time a game is
+	// changed to another that requires a different controller. Also, this allows
+	// 3-D games to be properly watched by two persons at same time.
+	// For now the driver just uses single input ports.
 	PORT_INCLUDE( sms1 )
 
 	PORT_START("DSW")
@@ -438,9 +468,6 @@ static INPUT_PORTS_START( gg )
 	PORT_BIT( 0x10, IP_ACTIVE_LOW, IPT_BUTTON1 ) PORT_PLAYER(1)
 	PORT_BIT( 0x20, IP_ACTIVE_LOW, IPT_BUTTON2 ) PORT_PLAYER(1)
 	PORT_BIT( 0xc0, IP_ACTIVE_LOW, IPT_UNUSED )
-
-	PORT_START("GG_PORT_DD")
-	PORT_BIT( 0xff, IP_ACTIVE_LOW, IPT_UNUSED )
 
 	PORT_START("START")
 	PORT_BIT( 0x7f, IP_ACTIVE_LOW, IPT_UNUSED )
@@ -501,16 +528,9 @@ MACHINE_CONFIG_END
     the current timeslice. Depending on this amount of CPU cycles, when the core divides the
     elapsed time by the pixel time, the obtained pixel count may be less than expected. Flubba's
     VDPTest ROM relies on exact results. A workaround is to use an additional macro, for each
-    driver, that resets the refresh rate, and by consequence the pixel time, without discard
-    the remainder of the division. Considered a hack, it's not applied. The line that would be
-    added, after MCFG_SCREEN_RAW_PARAMS(), is one of the following, according to the TV system
-    of the driver.
-
-    - For NTSC drivers:
-    MCFG_SCREEN_REFRESH_RATE((double) XTAL_53_693175MHz/10 / (SEGA315_5124_WIDTH * SEGA315_5124_HEIGHT_NTSC))
-
-    - For PAL drivers:
-    MCFG_SCREEN_REFRESH_RATE((double) MASTER_CLOCK_PAL/10 / (SEGA315_5124_WIDTH * SEGA315_5124_HEIGHT_PAL))
+    driver, that resets the refresh rate, and by consequence the pixel time, without discarding
+    the remainder of the division. If the core is fixed in the future, the MCFG_SCREEN_REFRESH_RATE
+    lines after each MCFG_SCREEN_RAW_PARAMS call below can be removed.
 */
 
 static MACHINE_CONFIG_DERIVED( sms2_ntsc, sms_ntsc_base )
@@ -519,6 +539,7 @@ static MACHINE_CONFIG_DERIVED( sms2_ntsc, sms_ntsc_base )
 	MCFG_SCREEN_RAW_PARAMS(XTAL_53_693175MHz/10, \
 		SEGA315_5124_WIDTH , SEGA315_5124_LBORDER_START + SEGA315_5124_LBORDER_WIDTH - 2, SEGA315_5124_LBORDER_START + SEGA315_5124_LBORDER_WIDTH + 256 + 10, \
 		SEGA315_5124_HEIGHT_NTSC, SEGA315_5124_TBORDER_START + SEGA315_5124_NTSC_224_TBORDER_HEIGHT, SEGA315_5124_TBORDER_START + SEGA315_5124_NTSC_224_TBORDER_HEIGHT + 224)
+	MCFG_SCREEN_REFRESH_RATE((double) XTAL_53_693175MHz/10 / (SEGA315_5124_WIDTH * SEGA315_5124_HEIGHT_NTSC))
 	MCFG_SCREEN_UPDATE_DRIVER(sms_state, screen_update_sms)
 
 	MCFG_DEVICE_ADD("sms_vdp", SEGA315_5246, 0)
@@ -540,18 +561,21 @@ static MACHINE_CONFIG_DERIVED( sms1_ntsc, sms_ntsc_base )
 	MCFG_SCREEN_RAW_PARAMS(XTAL_53_693175MHz/10, \
 		SEGA315_5124_WIDTH, SEGA315_5124_LBORDER_START + SEGA315_5124_LBORDER_WIDTH - 2, SEGA315_5124_LBORDER_START + SEGA315_5124_LBORDER_WIDTH + 256 + 10, \
 		SEGA315_5124_HEIGHT_NTSC, SEGA315_5124_TBORDER_START + SEGA315_5124_NTSC_224_TBORDER_HEIGHT, SEGA315_5124_TBORDER_START + SEGA315_5124_NTSC_224_TBORDER_HEIGHT + 224)
+	MCFG_SCREEN_REFRESH_RATE((double) XTAL_53_693175MHz/10 / (SEGA315_5124_WIDTH * SEGA315_5124_HEIGHT_NTSC))
 	MCFG_SCREEN_UPDATE_DRIVER(sms_state, screen_update_sms1)
 
 	MCFG_SCREEN_ADD("left_lcd", LCD)    // This is needed for SegaScope Left LCD
 	MCFG_SCREEN_RAW_PARAMS(XTAL_53_693175MHz/10, \
 		SEGA315_5124_WIDTH, SEGA315_5124_LBORDER_START + SEGA315_5124_LBORDER_WIDTH - 2, SEGA315_5124_LBORDER_START + SEGA315_5124_LBORDER_WIDTH + 256 + 10, \
 		SEGA315_5124_HEIGHT_NTSC, SEGA315_5124_TBORDER_START + SEGA315_5124_NTSC_224_TBORDER_HEIGHT, SEGA315_5124_TBORDER_START + SEGA315_5124_NTSC_224_TBORDER_HEIGHT + 224)
+	MCFG_SCREEN_REFRESH_RATE((double) XTAL_53_693175MHz/10 / (SEGA315_5124_WIDTH * SEGA315_5124_HEIGHT_NTSC))
 	MCFG_SCREEN_UPDATE_DRIVER(sms_state, screen_update_sms1)
 
 	MCFG_SCREEN_ADD("right_lcd", LCD)   // This is needed for SegaScope Right LCD
 	MCFG_SCREEN_RAW_PARAMS(XTAL_53_693175MHz/10, \
 		SEGA315_5124_WIDTH, SEGA315_5124_LBORDER_START + SEGA315_5124_LBORDER_WIDTH - 2, SEGA315_5124_LBORDER_START + SEGA315_5124_LBORDER_WIDTH + 256 + 10, \
 		SEGA315_5124_HEIGHT_NTSC, SEGA315_5124_TBORDER_START + SEGA315_5124_NTSC_224_TBORDER_HEIGHT, SEGA315_5124_TBORDER_START + SEGA315_5124_NTSC_224_TBORDER_HEIGHT + 224)
+	MCFG_SCREEN_REFRESH_RATE((double) XTAL_53_693175MHz/10 / (SEGA315_5124_WIDTH * SEGA315_5124_HEIGHT_NTSC))
 	MCFG_SCREEN_UPDATE_DRIVER(sms_state, screen_update_sms1)
 
 	MCFG_SCREEN_VBLANK_DRIVER(sms_state, screen_vblank_sms1)
@@ -656,6 +680,7 @@ static MACHINE_CONFIG_DERIVED( sms2_pal, sms_pal_base )
 	MCFG_SCREEN_RAW_PARAMS(MASTER_CLOCK_PAL/10, \
 		SEGA315_5124_WIDTH, SEGA315_5124_LBORDER_START + SEGA315_5124_LBORDER_WIDTH - 2, SEGA315_5124_LBORDER_START + SEGA315_5124_LBORDER_WIDTH + 256 + 10, \
 		SEGA315_5124_HEIGHT_PAL, SEGA315_5124_TBORDER_START + SEGA315_5124_PAL_240_TBORDER_HEIGHT, SEGA315_5124_TBORDER_START + SEGA315_5124_PAL_240_TBORDER_HEIGHT + 240)
+	MCFG_SCREEN_REFRESH_RATE((double) MASTER_CLOCK_PAL/10 / (SEGA315_5124_WIDTH * SEGA315_5124_HEIGHT_PAL))
 	MCFG_SCREEN_UPDATE_DRIVER(sms_state, screen_update_sms)
 
 	MCFG_DEVICE_ADD("sms_vdp", SEGA315_5246, 0)
@@ -676,18 +701,21 @@ static MACHINE_CONFIG_DERIVED( sms1_pal, sms_pal_base )
 	MCFG_SCREEN_RAW_PARAMS(MASTER_CLOCK_PAL/10, \
 		SEGA315_5124_WIDTH, SEGA315_5124_LBORDER_START + SEGA315_5124_LBORDER_WIDTH - 2, SEGA315_5124_LBORDER_START + SEGA315_5124_LBORDER_WIDTH + 256 + 10, \
 		SEGA315_5124_HEIGHT_PAL, SEGA315_5124_TBORDER_START + SEGA315_5124_PAL_240_TBORDER_HEIGHT, SEGA315_5124_TBORDER_START + SEGA315_5124_PAL_240_TBORDER_HEIGHT + 240)
+	MCFG_SCREEN_REFRESH_RATE((double) MASTER_CLOCK_PAL/10 / (SEGA315_5124_WIDTH * SEGA315_5124_HEIGHT_PAL))
 	MCFG_SCREEN_UPDATE_DRIVER(sms_state, screen_update_sms1)
 
 	MCFG_SCREEN_ADD("left_lcd", LCD)    // This is needed for SegaScope Left LCD
 	MCFG_SCREEN_RAW_PARAMS(MASTER_CLOCK_PAL/10, \
 		SEGA315_5124_WIDTH, SEGA315_5124_LBORDER_START + SEGA315_5124_LBORDER_WIDTH - 2, SEGA315_5124_LBORDER_START + SEGA315_5124_LBORDER_WIDTH + 256 + 10, \
 		SEGA315_5124_HEIGHT_PAL, SEGA315_5124_TBORDER_START + SEGA315_5124_PAL_240_TBORDER_HEIGHT, SEGA315_5124_TBORDER_START + SEGA315_5124_PAL_240_TBORDER_HEIGHT + 240)
+	MCFG_SCREEN_REFRESH_RATE((double) MASTER_CLOCK_PAL/10 / (SEGA315_5124_WIDTH * SEGA315_5124_HEIGHT_PAL))
 	MCFG_SCREEN_UPDATE_DRIVER(sms_state, screen_update_sms1)
 
 	MCFG_SCREEN_ADD("right_lcd", LCD)   // This is needed for SegaScope Right LCD
 	MCFG_SCREEN_RAW_PARAMS(MASTER_CLOCK_PAL/10, \
 		SEGA315_5124_WIDTH, SEGA315_5124_LBORDER_START + SEGA315_5124_LBORDER_WIDTH - 2, SEGA315_5124_LBORDER_START + SEGA315_5124_LBORDER_WIDTH + 256 + 10, \
 		SEGA315_5124_HEIGHT_PAL, SEGA315_5124_TBORDER_START + SEGA315_5124_PAL_240_TBORDER_HEIGHT, SEGA315_5124_TBORDER_START + SEGA315_5124_PAL_240_TBORDER_HEIGHT + 240)
+	MCFG_SCREEN_REFRESH_RATE((double) MASTER_CLOCK_PAL/10 / (SEGA315_5124_WIDTH * SEGA315_5124_HEIGHT_PAL))
 	MCFG_SCREEN_UPDATE_DRIVER(sms_state, screen_update_sms1)
 
 	MCFG_SCREEN_VBLANK_DRIVER(sms_state, screen_vblank_sms1)
@@ -763,6 +791,7 @@ static MACHINE_CONFIG_START( gamegear, sms_state )
 	MCFG_SCREEN_RAW_PARAMS(XTAL_53_693175MHz/10, \
 		SEGA315_5124_WIDTH, SEGA315_5124_LBORDER_START + SEGA315_5124_LBORDER_WIDTH + 6*8, SEGA315_5124_LBORDER_START + SEGA315_5124_LBORDER_WIDTH + 26*8, \
 		SEGA315_5124_HEIGHT_NTSC, SEGA315_5124_TBORDER_START + SEGA315_5124_NTSC_192_TBORDER_HEIGHT + 3*8, SEGA315_5124_TBORDER_START + SEGA315_5124_NTSC_192_TBORDER_HEIGHT + 21*8 )
+	MCFG_SCREEN_REFRESH_RATE((double) XTAL_53_693175MHz/10 / (SEGA315_5124_WIDTH * SEGA315_5124_HEIGHT_NTSC))
 	MCFG_SCREEN_UPDATE_DRIVER(sms_state, screen_update_gamegear)
 
 	MCFG_VIDEO_START_OVERRIDE(sms_state,gamegear)
@@ -785,6 +814,10 @@ static MACHINE_CONFIG_START( gamegear, sms_state )
 	MCFG_GG_CARTRIDGE_ADD("slot", gg_cart, NULL)
 
 	MCFG_SOFTWARE_LIST_ADD("cart_list", "gamegear")
+
+	MCFG_GG_EXT_PORT_ADD("ext", gg_ext_port_devices, NULL)
+	MCFG_GG_EXT_PORT_TH_INPUT_HANDLER(WRITELINE(sms_state, sms_ctrl2_th_input)) // not verified
+	//MCFG_GG_EXT_PORT_PIXEL_HANDLER(READ32(sms_state, sms_pixel_color)) // only for GG-TV mod
 MACHINE_CONFIG_END
 
 
@@ -794,7 +827,7 @@ ROM_START(sms1)
 
 	ROM_REGION(0x20000, "user1", 0)
 	ROM_SYSTEM_BIOS( 0, "bios13", "US/European BIOS v1.3 (1986)" )
-	ROMX_LOAD("bios13fx.rom", 0x0000, 0x2000, CRC(0072ed54) SHA1(c315672807d8ddb8d91443729405c766dd95cae7), ROM_BIOS(1))
+	ROMX_LOAD("mpr-10052.rom", 0x0000, 0x2000, CRC(0072ed54) SHA1(c315672807d8ddb8d91443729405c766dd95cae7), ROM_BIOS(1))
 	ROM_SYSTEM_BIOS( 1, "hangonsh", "US/European BIOS v2.4 with Hang On and Safari Hunt (1988)" )
 	ROMX_LOAD("mpr-11459a.rom", 0x0000, 0x20000, CRC(91e93385) SHA1(9e179392cd416af14024d8f31c981d9ee9a64517), ROM_BIOS(2))
 	ROM_SYSTEM_BIOS( 2, "hangon", "US/European BIOS v3.4 with Hang On (1988)" )
@@ -833,13 +866,15 @@ ROM_START(sms1pal)
 
 	ROM_REGION(0x20000, "user1", 0)
 	ROM_SYSTEM_BIOS( 0, "bios13", "US/European BIOS v1.3 (1986)" )
-	ROMX_LOAD("bios13fx.rom", 0x0000, 0x2000, CRC(0072ed54) SHA1(c315672807d8ddb8d91443729405c766dd95cae7), ROM_BIOS(1))
-	ROM_SYSTEM_BIOS( 1, "hangonsh", "US/European BIOS v2.4 with Hang On and Safari Hunt (1988)" )
-	ROMX_LOAD("mpr-11459a.rom", 0x0000, 0x20000, CRC(91e93385) SHA1(9e179392cd416af14024d8f31c981d9ee9a64517), ROM_BIOS(2))
-	ROM_SYSTEM_BIOS( 2, "hangon", "Sega Master System - US/European BIOS v3.4 with Hang On (1988)" )
-	ROMX_LOAD("mpr-11458.rom", 0x0000, 0x20000, CRC(8edf7ac6) SHA1(51fd6d7990f62cd9d18c9ecfc62ed7936169107e), ROM_BIOS(3))
-	ROM_SYSTEM_BIOS( 3, "missiled", "US/European BIOS v4.4 with Missile Defense 3D (1988)" )
-	ROMX_LOAD("missiled.rom", 0x0000, 0x20000, CRC(e79bb689) SHA1(aa92ae576ca670b00855e278378d89e9f85e0351), ROM_BIOS(4))
+	ROMX_LOAD("mpr-10052.rom", 0x0000, 0x2000, CRC(0072ed54) SHA1(c315672807d8ddb8d91443729405c766dd95cae7), ROM_BIOS(1))
+	ROM_SYSTEM_BIOS( 1, "bios20", "European BIOS v2.0 (198?)" )
+	ROMX_LOAD("mpr-10883.rom", 0x0000, 0x2000, CRC(b3d854f8) SHA1(fc7eb9141f38c92bf98d9134816f64b45e811112), ROM_BIOS(2))
+	ROM_SYSTEM_BIOS( 2, "hangonsh", "US/European BIOS v2.4 with Hang On and Safari Hunt (1988)" )
+	ROMX_LOAD("mpr-11459a.rom", 0x0000, 0x20000, CRC(91e93385) SHA1(9e179392cd416af14024d8f31c981d9ee9a64517), ROM_BIOS(3))
+	ROM_SYSTEM_BIOS( 3, "hangon", "Sega Master System - US/European BIOS v3.4 with Hang On (1988)" )
+	ROMX_LOAD("mpr-11458.rom", 0x0000, 0x20000, CRC(8edf7ac6) SHA1(51fd6d7990f62cd9d18c9ecfc62ed7936169107e), ROM_BIOS(4))
+	ROM_SYSTEM_BIOS( 4, "missiled", "US/European BIOS v4.4 with Missile Defense 3D (1988)" )
+	ROMX_LOAD("missiled.rom", 0x0000, 0x20000, CRC(e79bb689) SHA1(aa92ae576ca670b00855e278378d89e9f85e0351), ROM_BIOS(5))
 ROM_END
 
 ROM_START(smspal)
@@ -962,6 +997,10 @@ ROM_END
    - Sega Mark III Soft Desk 5
    - Sega Mark III Soft Desk 10
    - Sega Shooting Zone
+
+   The SMS Store Display Unit is labeled PD-W UNIT. Pictures found on Internet
+   show cartridges with a label where a not-for-sale message is written along
+   the information that it is for use on the Product Display-Working Unit.
 
 ***************************************************************************/
 

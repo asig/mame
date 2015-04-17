@@ -19,7 +19,6 @@ Notes:
 
 ToDo:
 - Colours are approximate.
-- Disk controller, works with old wd17xx but crashes on new wd.
 - Hardware supports 20cm and 13cm floppies, but we only support 13cm as this
   is the only software that exists.
 - The schematic shows the audio counter connected to 2MHz, but this produces
@@ -29,7 +28,7 @@ ToDo:
 
 ****************************************************************************/
 
-#define NEWFDC 0
+#define NEWFDC 1
 
 
 #include "emu.h"
@@ -101,7 +100,7 @@ public:
 	DECLARE_WRITE8_MEMBER(motor_w);
 	DECLARE_MACHINE_RESET(excali64);
 	required_device<palette_device> m_palette;
-	
+
 private:
 	const UINT8 *m_p_chargen;
 	UINT8 *m_p_videoram;
@@ -252,7 +251,8 @@ FLOPPY_FORMATS_MEMBER( excali64_state::floppy_formats )
 FLOPPY_FORMATS_END
 
 static SLOT_INTERFACE_START( excali64_floppies )
-	SLOT_INTERFACE( "525dd", FLOPPY_525_DD )
+	SLOT_INTERFACE( "drive0", FLOPPY_525_QD )
+	SLOT_INTERFACE( "drive1", FLOPPY_525_QD )
 SLOT_INTERFACE_END
 #else
 static LEGACY_FLOPPY_OPTIONS_START(excali64)
@@ -302,11 +302,10 @@ WRITE8_MEMBER( excali64_state::porte4_w )
 	if (BIT(data, 1))
 		floppy = m_floppy1->get_device();
 
+	m_fdc->set_floppy(floppy);
 	if (floppy)
-	{
-		m_fdc->set_floppy(floppy);
 		floppy->ss_w(BIT(data, 4));
-	}
+
 #else
 	if BIT(data, 0)
 		m_fdc->set_drive(0);
@@ -586,7 +585,7 @@ MC6845_UPDATE_ROW( excali64_state::update_row )
 		}
 		else
 			gfx = m_p_chargen[(chr<<4) | ra]; // normal character
-		
+
 		gfx ^= (x == cursor_x) ? 0xff : 0;
 
 		/* Display a scanline of a character */
@@ -654,10 +653,9 @@ static MACHINE_CONFIG_START( excali64, excali64_state )
 	MCFG_CASSETTE_ADD( "cassette" )
 #if NEWFDC
 	MCFG_WD2793x_ADD("fdc", XTAL_16MHz / 16)
-	MCFG_WD_FDC_FORCE_READY
 	MCFG_WD_FDC_DRQ_CALLBACK(DEVWRITELINE("dma", z80dma_device, rdy_w))
-	MCFG_FLOPPY_DRIVE_ADD("fdc:0", excali64_floppies, "525dd", floppy_image_device::default_floppy_formats)// excali64_state::floppy_formats)
-	MCFG_FLOPPY_DRIVE_ADD("fdc:1", excali64_floppies, "525dd", floppy_image_device::default_floppy_formats)
+	MCFG_FLOPPY_DRIVE_ADD("fdc:0", excali64_floppies, "drive0", excali64_state::floppy_formats)
+	MCFG_FLOPPY_DRIVE_ADD("fdc:1", excali64_floppies, "drive1", excali64_state::floppy_formats)
 #else
 	MCFG_DEVICE_ADD("fdc", WD2793, 0)
 	MCFG_WD17XX_DEFAULT_DRIVE2_TAGS
@@ -695,6 +693,8 @@ ROM_START( excali64 )
 	ROM_FILL(0x4ef, 1, 8)
 	ROM_FILL(0x4f6, 1, 0)
 	ROM_FILL(0x4f7, 1, 8)
+	// patch out the protection
+	ROM_FILL(0x3ce7, 1, 0)
 
 	ROM_REGION(0x10000, "rambank", ROMREGION_ERASE00)
 	ROM_REGION(0xA000, "videoram", ROMREGION_ERASE00)

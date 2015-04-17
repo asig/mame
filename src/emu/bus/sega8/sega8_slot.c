@@ -78,7 +78,7 @@ void device_sega8_cart_interface::rom_alloc(UINT32 size, const char *tag)
 	{
 		astring tempstring(tag);
 		tempstring.cat(S8SLOT_ROM_REGION_TAG);
-		m_rom = device().machine().memory().region_alloc(tempstring, size, 1, ENDIANNESS_LITTLE)->base();
+		m_rom = device().machine().memory().region_alloc(tempstring.c_str(), size, 1, ENDIANNESS_LITTLE)->base();
 		m_rom_size = size;
 		m_rom_page_count = size / 0x4000;
 		if (!m_rom_page_count)
@@ -253,20 +253,15 @@ void sega8_cart_slot_device::set_lphaser_xoffset( UINT8 *rom, int size )
 	{
 		if (!memcmp(&rom[0x7ff0], signatures[0], 16) || !memcmp(&rom[0x7ff0], signatures[1], 16))
 			xoff = 26;
-
-		if (!memcmp(&rom[0x7ff0], signatures[2], 16))
+		else if (!memcmp(&rom[0x7ff0], signatures[2], 16))
 			xoff = 36;
-
-		if (!memcmp(&rom[0x7ff0], signatures[3], 16))
+		else if (!memcmp(&rom[0x7ff0], signatures[3], 16))
 			xoff = 32;
-
-		if (!memcmp(&rom[0x7ff0], signatures[4], 16))
+		else if (!memcmp(&rom[0x7ff0], signatures[4], 16))
 			xoff = 30;
-
-		if (!memcmp(&rom[0x7ff0], signatures[5], 16))
+		else if (!memcmp(&rom[0x7ff0], signatures[5], 16))
 			xoff = 39;
-
-		if (!memcmp(&rom[0x7ff0], signatures[6], 16))
+		else if (!memcmp(&rom[0x7ff0], signatures[6], 16))
 			xoff = 38;
 	}
 
@@ -617,12 +612,12 @@ void sega8_cart_slot_device::get_default_card_software(astring &result)
 		dynamic_buffer rom(len);
 		int type;
 
-		core_fread(m_file, rom, len);
+		core_fread(m_file, &rom[0], len);
 
 		if ((len % 0x4000) == 512)
 			offset = 512;
 
-		type = get_cart_type(rom + offset, len - offset);
+		type = get_cart_type(&rom[offset], len - offset);
 		slot_string = sega8_get_slot(type);
 
 		//printf("type: %s\n", slot_string);

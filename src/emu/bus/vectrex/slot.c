@@ -51,7 +51,7 @@ void device_vectrex_cart_interface::rom_alloc(UINT32 size, const char *tag)
 	{
 		astring tempstring(tag);
 		tempstring.cat(VECSLOT_ROM_REGION_TAG);
-		m_rom = device().machine().memory().region_alloc(tempstring, size, 1, ENDIANNESS_LITTLE)->base();
+		m_rom = device().machine().memory().region_alloc(tempstring.c_str(), size, 1, ENDIANNESS_LITTLE)->base();
 		m_rom_size = size;
 	}
 }
@@ -228,9 +228,9 @@ void vectrex_cart_slot_device::get_default_card_software(astring &result)
 		dynamic_buffer rom(size);
 		int type = VECTREX_STD;
 
-		core_fread(m_file, rom, size);
+		core_fread(m_file, &rom[0], size);
 
-		if (!memcmp(rom + 0x06, "SRAM", 4))
+		if (!memcmp(&rom[0x06], "SRAM", 4))
 			type = VECTREX_SRAM;
 		if (size > 0x8000)
 			type = VECTREX_64K;

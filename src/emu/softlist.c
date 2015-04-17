@@ -12,6 +12,7 @@
 #include "softlist.h"
 #include "clifront.h"
 #include "validity.h"
+#include "expat.h"
 
 #include <ctype.h>
 
@@ -148,14 +149,14 @@ bool software_part::is_compatible(const software_list_device &swlistdev) const
 		return true;
 
 	// copy the comma-delimited strings and ensure they end with a final comma
-	astring comp(compatibility, ",");
-	astring filt(filter, ",");
+	astring comp = astring(compatibility).cat(",");
+	astring filt = astring(filter).cat(",");
 
 	// iterate over filter items and see if they exist in the compatibility list; if so, return true
 	for (int start = 0, end = filt.chr(start, ','); end != -1; start = end + 1, end = filt.chr(start, ','))
 	{
 		astring token(filt, start, end - start + 1);
-		if (comp.find(0, token) != -1)
+		if (comp.find(0, token.c_str()) != -1)
 			return true;
 	}
 	return false;
@@ -174,11 +175,11 @@ bool software_part::matches_interface(const char *interface_list) const
 		return true;
 
 	// copy the comma-delimited interface list and ensure it ends with a final comma
-	astring interfaces(interface_list, ",");
+	astring interfaces = astring(interface_list).cat(",");
 
 	// then add a comma to the end of our interface and return true if we find it in the list string
-	astring our_interface(m_interface, ",");
-	return (interfaces.find(0, our_interface) != -1);
+	astring our_interface = astring(m_interface).cat(",");
+	return (interfaces.find(0, our_interface.c_str()) != -1);
 }
 
 
@@ -264,98 +265,6 @@ bool software_info::has_multiple_parts(const char *interface) const
 
 
 //**************************************************************************
-//  CONST STRING POOL
-//**************************************************************************
-
-//-------------------------------------------------
-//  const_string_pool - constructor
-//-------------------------------------------------
-
-const_string_pool::const_string_pool()
-{
-}
-
-
-//-------------------------------------------------
-//  add - add a string to the string pool
-//-------------------------------------------------
-
-const char *const_string_pool::add(const char *string)
-{
-	// if NULL or a small number (for some hash strings), just return as-is
-	if (FPTR(string) < 0x100)
-		return string;
-
-	// scan to find space
-	for (pool_chunk *chunk = m_chunklist.first(); chunk != NULL; chunk = chunk->next())
-	{
-		const char *result = chunk->add(string);
-		if (result != NULL)
-			return result;
-	}
-
-	// no space anywhere, create a new pool and prepend it (so it gets used first)
-	const char *result = m_chunklist.prepend(*global_alloc(pool_chunk)).add(string);
-	assert(result != NULL);
-	return result;
-}
-
-
-//-------------------------------------------------
-//  contains - determine if the given string
-//  pointer lives in the pool
-//-------------------------------------------------
-
-bool const_string_pool::contains(const char *string)
-{
-	// if NULL or a small number (for some hash strings), then yes, effectively
-	if (FPTR(string) < 0x100)
-		return true;
-
-	// scan to find it
-	for (pool_chunk *chunk = m_chunklist.first(); chunk != NULL; chunk = chunk->next())
-		if (chunk->contains(string))
-			return true;
-
-	return false;
-}
-
-
-//-------------------------------------------------
-//  pool_chunk - constructor
-//-------------------------------------------------
-
-const_string_pool::pool_chunk::pool_chunk()
-	: m_next(NULL),
-		m_used(0)
-{
-}
-
-
-//-------------------------------------------------
-//  add - add a string to this pool
-//-------------------------------------------------
-
-const char *const_string_pool::pool_chunk::add(const char *string)
-{
-	// get the length of the string (no string can be longer than a full pool)
-	int bytes = strlen(string) + 1;
-	assert(bytes < POOL_SIZE);
-
-	// if too big, return NULL
-	if (m_used + bytes > POOL_SIZE)
-		return NULL;
-
-	// allocate, copy, and return the memory
-	char *dest = &m_buffer[m_used];
-	m_used += bytes;
-	memcpy(dest, string, bytes);
-	return dest;
-}
-
-
-
-//**************************************************************************
 //  SOFTWARE LIST DEVICE
 //**************************************************************************
 
@@ -419,7 +328,7 @@ void software_list_device::find_approx_matches(const char *name, int matches, so
 		return;
 
 	// initialize everyone's states
-	dynamic_array<int> penalty(matches);
+	std::vector<int> penalty(matches);
 	for (int matchnum = 0; matchnum < matches; matchnum++)
 	{
 		penalty[matchnum] = 9999;
@@ -567,7 +476,7 @@ void software_list_device::parse()
 	m_errors.reset();
 
 	// attempt to open the file
-	file_error filerr = m_file.open(m_list_name, ".xml");
+	file_error filerr = m_file.open(m_list_name.c_str(), ".xml");
 	if (filerr == FILERR_NONE)
 	{
 		// parse if no error
@@ -591,7 +500,7 @@ void software_list_device::device_validity_check(validity_checker &valid) const
 {
 	// add to the global map whenever we check a list so we don't re-check
 	// it in the future
-	if (valid.already_checked(astring("softlist/", m_list_name.cstr())))
+	if (valid.already_checked(astring("softlist/").cat(m_list_name.c_str()).c_str()))
 		return;
 
 	// do device validation only in case of validate command
@@ -656,7 +565,7 @@ void software_list_device::internal_validity_check(validity_checker &valid)
 		}
 
 		// check for duplicate descriptions
-		if (descriptions.add(astring(swinfo->longname()).makelower().cstr(), swinfo, false) == TMERR_DUPLICATE)
+		if (descriptions.add(astring(swinfo->longname()).makelower().c_str(), swinfo, false) == TMERR_DUPLICATE)
 			osd_printf_error("%s: %s is a duplicate description (%s)\n", filename(), swinfo->longname(), swinfo->shortname());
 
 		bool is_clone = false;
@@ -872,17 +781,19 @@ void softlist_parser::add_rom_entry(const char *name, const char *hashdata, UINT
 
 	// make sure we don't add duplicate regions
 	if (name != NULL && (flags & ROMENTRY_TYPEMASK) == ROMENTRYTYPE_REGION)
-		for (int romentry = 0; romentry < m_current_part->m_romdata.count(); romentry++)
+		for (unsigned int romentry = 0; romentry < m_current_part->m_romdata.size(); romentry++)
 			if (m_current_part->m_romdata[romentry]._name != NULL && strcmp(m_current_part->m_romdata[romentry]._name, name) == 0)
 				parse_error("Duplicated dataarea %s in software %s", name, infoname());
 
 	// create the new entry and append it
-	rom_entry &entry = m_current_part->m_romdata.append();
+	rom_entry entry;
 	entry._name = m_list.add_string(name);
 	entry._hashdata = m_list.add_string(hashdata);
 	entry._offset = offset;
 	entry._length = length;
 	entry._flags = flags;
+
+	m_current_part->m_romdata.push_back(entry);
 }
 
 
@@ -1263,7 +1174,7 @@ void softlist_parser::parse_data_start(const char *tagname, const char **attribu
 				else if (loadflag != NULL && strcmp(loadflag, "load32_byte") == 0)
 					romflags = ROM_SKIP(3);
 
-				add_rom_entry(name, hashdata, offset, length, ROMENTRYTYPE_ROM | romflags);
+				add_rom_entry(name, hashdata.c_str(), offset, length, ROMENTRYTYPE_ROM | romflags);
 			}
 			else
 				parse_error("Rom name missing");
@@ -1291,7 +1202,7 @@ void softlist_parser::parse_data_start(const char *tagname, const char **attribu
 			astring hashdata;
 			hashdata.printf( "%c%s%s", hash_collection::HASH_SHA1, sha1, (nodump ? NO_DUMP : (baddump ? BAD_DUMP : "")));
 
-			add_rom_entry(name, hashdata, 0, 0, ROMENTRYTYPE_ROM | (writeable ? DISK_READWRITE : DISK_READONLY));
+			add_rom_entry(name, hashdata.c_str(), 0, 0, ROMENTRYTYPE_ROM | (writeable ? DISK_READWRITE : DISK_READONLY));
 		}
 		else if (status == NULL || !strcmp(status, "nodump")) // a no_dump chd is not an incomplete entry
 			parse_error("Incomplete disk definition");
@@ -1316,15 +1227,15 @@ void softlist_parser::parse_soft_end(const char *tagname)
 
 	// <description>
 	if (strcmp(tagname, "description") == 0)
-		m_current_info->m_longname = m_list.add_string(m_data_accum);
+		m_current_info->m_longname = m_list.add_string(m_data_accum.c_str());
 
 	// <year>
 	else if (strcmp(tagname, "year") == 0)
-		m_current_info->m_year = m_list.add_string(m_data_accum);
+		m_current_info->m_year = m_list.add_string(m_data_accum.c_str());
 
 	// <publisher>
 	else if (strcmp(tagname, "publisher") == 0)
-		m_current_info->m_publisher = m_list.add_string(m_data_accum);
+		m_current_info->m_publisher = m_list.add_string(m_data_accum.c_str());
 
 	// </part>
 	else if (strcmp(tagname, "part") == 0)

@@ -143,7 +143,7 @@ static int write_config(emu_options &options, const char *filename, const game_d
 	{
 		astring inistring;
 		options.output_ini(inistring);
-		file.puts(inistring);
+		file.puts(inistring.c_str());
 		retval = 0;
 	}
 	return retval;
@@ -210,7 +210,7 @@ void image_device_init(running_machine &machine)
 	for (device_image_interface *image = iter.first(); image != NULL; image = iter.next())
 	{
 		/* is an image specified for this image */
-		image_name = machine.options().device_option(*image);
+		image_name = machine.options().value(image->instance_name());
 
 		if ((image_name != NULL) && (image_name[0] != '\0'))
 		{
@@ -232,26 +232,29 @@ void image_device_init(running_machine &machine)
 
 				fatalerror_exitcode(machine, MAMERR_DEVICE, "Device %s load (%s) failed: %s",
 					image->device().name(),
-					image_basename.cstr(),
-					image_err.cstr());
+					image_basename.c_str(),
+					image_err.c_str());
 			}
 		}
 	}
+}
 
+/*-------------------------------------------------
+ image_mandatory_scan - search for devices which
+ need an image to be loaded
+ -------------------------------------------------*/
+
+astring &image_mandatory_scan(running_machine &machine, astring &mandatory)
+{
+	mandatory.reset();
+	// make sure that any required image has a mounted file
+	image_interface_iterator iter(machine.root_device());
 	for (device_image_interface *image = iter.first(); image != NULL; image = iter.next())
 	{
-		/* is an image specified for this image */
-		image_name = image->filename();
-
-		if (!((image_name != NULL) && (image_name[0] != '\0')))
-		{
-			/* no image... must this device be loaded? */
-			if (image->must_be_loaded())
-			{
-				fatalerror_exitcode(machine, MAMERR_DEVICE, "Driver requires that device \"%s\" must have an image to load", image->instance_name());
-			}
-		}
+		if (image->filename() == NULL && image->must_be_loaded())
+			mandatory.cat("\"").cat(image->instance_name()).cat("\", ");
 	}
+	return mandatory;
 }
 
 /*-------------------------------------------------
@@ -277,7 +280,7 @@ void image_postdevice_init(running_machine &machine)
 
 				fatalerror_exitcode(machine, MAMERR_DEVICE, "Device %s load failed: %s",
 					image->device().name(),
-					image_err.cstr());
+					image_err.c_str());
 			}
 	}
 

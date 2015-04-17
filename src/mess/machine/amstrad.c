@@ -2842,7 +2842,7 @@ void amstrad_state::enumerate_roms()
 	int i;
 	bool slot3 = false,slot7 = false;
 
-	if(m_system_type == SYSTEM_PLUS || m_system_type == SYSTEM_GX4000)
+	if (m_system_type == SYSTEM_PLUS || m_system_type == SYSTEM_GX4000)
 	{
 		UINT8 *crt = m_region_cart->base();
 		int bank_mask = (m_cart->get_rom_size() / 0x4000) - 1;
@@ -2918,7 +2918,7 @@ void amstrad_state::enumerate_roms()
 
 void amstrad_state::amstrad_common_init()
 {
-	address_space &space = m_maincpu->space(AS_PROGRAM);
+//  address_space &space = m_maincpu->space(AS_PROGRAM);
 
 	m_aleste_mode = 0;
 
@@ -2928,30 +2928,30 @@ void amstrad_state::amstrad_common_init()
 	m_GateArray_RamConfiguration = 0;
 	m_gate_array.hsync_counter = 2;
 
-	space.install_read_bank(0x0000, 0x1fff, "bank1");
-	space.install_read_bank(0x2000, 0x3fff, "bank2");
+/*  space.install_read_bank(0x0000, 0x1fff, "bank1");
+    space.install_read_bank(0x2000, 0x3fff, "bank2");
 
-	space.install_read_bank(0x4000, 0x5fff, "bank3");
-	space.install_read_bank(0x6000, 0x7fff, "bank4");
+    space.install_read_bank(0x4000, 0x5fff, "bank3");
+    space.install_read_bank(0x6000, 0x7fff, "bank4");
 
-	space.install_read_bank(0x8000, 0x9fff, "bank5");
-	space.install_read_bank(0xa000, 0xbfff, "bank6");
+    space.install_read_bank(0x8000, 0x9fff, "bank5");
+    space.install_read_bank(0xa000, 0xbfff, "bank6");
 
-	space.install_read_bank(0xc000, 0xdfff, "bank7");
-	space.install_read_bank(0xe000, 0xffff, "bank8");
+    space.install_read_bank(0xc000, 0xdfff, "bank7");
+    space.install_read_bank(0xe000, 0xffff, "bank8");
 
-	space.install_write_bank(0x0000, 0x1fff, "bank9");
-	space.install_write_bank(0x2000, 0x3fff, "bank10");
+    space.install_write_bank(0x0000, 0x1fff, "bank9");
+    space.install_write_bank(0x2000, 0x3fff, "bank10");
 
-	space.install_write_bank(0x4000, 0x5fff, "bank11");
-	space.install_write_bank(0x6000, 0x7fff, "bank12");
+    space.install_write_bank(0x4000, 0x5fff, "bank11");
+    space.install_write_bank(0x6000, 0x7fff, "bank12");
 
-	space.install_write_bank(0x8000, 0x9fff, "bank13");
-	space.install_write_bank(0xa000, 0xbfff, "bank14");
+    space.install_write_bank(0x8000, 0x9fff, "bank13");
+    space.install_write_bank(0xa000, 0xbfff, "bank14");
 
-	space.install_write_bank(0xc000, 0xdfff, "bank15");
-	space.install_write_bank(0xe000, 0xffff, "bank16");
-
+    space.install_write_bank(0xc000, 0xdfff, "bank15");
+    space.install_write_bank(0xe000, 0xffff, "bank16");
+*/
 	enumerate_roms();
 
 	m_maincpu->reset();
@@ -3033,7 +3033,9 @@ MACHINE_START_MEMBER(amstrad_state,plus)
 	m_centronics->write_data7(0);
 
 	astring region_tag;
-	m_region_cart = memregion(region_tag.cpy(m_cart->tag()).cat(GENERIC_ROM_REGION_TAG));
+	m_region_cart = memregion(region_tag.cpy(m_cart->tag()).cat(GENERIC_ROM_REGION_TAG).c_str());
+	if (!m_region_cart) // this should never happen, since we make carts mandatory!
+		m_region_cart = memregion("maincpu");
 }
 
 
@@ -3075,7 +3077,9 @@ MACHINE_START_MEMBER(amstrad_state,gx4000)
 	m_system_type = SYSTEM_GX4000;
 
 	astring region_tag;
-	m_region_cart = memregion(region_tag.cpy(m_cart->tag()).cat(GENERIC_ROM_REGION_TAG));
+	m_region_cart = memregion(region_tag.cpy(m_cart->tag()).cat(GENERIC_ROM_REGION_TAG).c_str());
+	if (!m_region_cart) // this should never happen, since we make carts mandatory!
+		m_region_cart = memregion("maincpu");
 }
 
 MACHINE_RESET_MEMBER(amstrad_state,gx4000)
@@ -3165,14 +3169,14 @@ SNAPSHOT_LOAD_MEMBER( amstrad_state,amstrad)
 	snapshot.resize(snapshot_size);
 
 	/* read whole file */
-	image.fread(snapshot, snapshot_size);
+	image.fread(&snapshot[0], snapshot_size);
 
-	if (memcmp(snapshot, "MV - SNA", 8))
+	if (memcmp(&snapshot[0], "MV - SNA", 8))
 	{
 		return IMAGE_INIT_FAIL;
 	}
 
-	amstrad_handle_snapshot(snapshot);
+	amstrad_handle_snapshot(&snapshot[0]);
 	return IMAGE_INIT_PASS;
 }
 
@@ -3234,7 +3238,7 @@ DEVICE_IMAGE_LOAD_MEMBER(amstrad_state, amstrad_plus_cartridge)
 		UINT8 *crt = m_cart->get_rom_base();
 		dynamic_buffer temp_copy;
 		temp_copy.resize(size);
-		image.fread(temp_copy, size);
+		image.fread(&temp_copy[0], size);
 
 		// RIFF chunk bits
 		char chunkid[4];              // chunk ID (4 character code - cb00, cb01, cb02... upto cb31 (max 512kB), other chunks are ignored)
@@ -3256,11 +3260,11 @@ DEVICE_IMAGE_LOAD_MEMBER(amstrad_state, amstrad_plus_cartridge)
 		// read some chunks
 		while (bytes_to_read > 0)
 		{
-			memcpy(chunkid, temp_copy + offset, 4);
+			memcpy(chunkid, &temp_copy[offset], 4);
 			bytes_to_read -= 4;
 			offset += 4;
 
-			memcpy(chunklen, temp_copy + offset, 4);
+			memcpy(chunklen, &temp_copy[offset], 4);
 			bytes_to_read -= 4;
 			offset += 4;
 
@@ -3281,7 +3285,7 @@ DEVICE_IMAGE_LOAD_MEMBER(amstrad_state, amstrad_plus_cartridge)
 					if (chunksize > 0x4000)
 						chunksize = 0x4000;
 
-					memcpy(crt + 0x4000 * ramblock, temp_copy + offset, chunksize);
+					memcpy(crt + 0x4000 * ramblock, &temp_copy[offset], chunksize);
 					bytes_to_read -= chunksize;
 					offset += chunksize;
 					logerror("CPR: Loaded %i-byte chunk into RAM block %i\n", chunksize, ramblock);

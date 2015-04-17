@@ -27,6 +27,8 @@
  *
  */
 
+	#include <assert.h>
+
 #include "flopimg.h"
 #include "imageutl.h"
 
@@ -389,7 +391,6 @@ FLOPPY_CONSTRUCT(d88_dsk_construct)
 
 *********************************************************************/
 
-#include "emu.h"
 #include "d88_dsk.h"
 
 d88_format::d88_format()

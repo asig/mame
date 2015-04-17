@@ -82,13 +82,20 @@ char *osd_get_clipboard_text(void)
 	return NULL;
 }
 
-
 //============================================================
-//  osd_get_slider_list
+//  osd_getenv
 //============================================================
 
-const void *osd_get_slider_list()
+const char *osd_getenv(const char *name)
 {
-	// nothing to slide in mini OSD
 	return NULL;
+}
+
+//============================================================
+//  osd_setenv
+//============================================================
+
+int osd_setenv(const char *name, const char *value, int overwrite)
+{
+	return 0;
 }

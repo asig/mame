@@ -40,64 +40,64 @@
     cell 2.13 usec
 
 
-	Boot Disc Label Format
-	Track 0 Sector 0
+    Boot Disc Label Format
+    Track 0 Sector 0
 
-	Byte
-	Offset         Name                Description
+    Byte
+    Offset         Name                Description
 
-	0              System disc ID      literally, ff,00h for a system
-	                                   disc
+    0              System disc ID      literally, ff,00h for a system
+                                       disc
 
-	2              Load address        paragraph   to   load   booted
-	                                   program at. If zero then  boot
-	                                   loads in high memory.
+    2              Load address        paragraph   to   load   booted
+                                       program at. If zero then  boot
+                                       loads in high memory.
 
-	4              Length              paragraph count to load.
+    4              Length              paragraph count to load.
 
-	6              Entry offset        I.P.  value  for  transfer  of
-	                                   control.
+    6              Entry offset        I.P.  value  for  transfer  of
+                                       control.
 
-	8              Entry segment       C.S.  value  for  transfer  of
-	                                   control.
+    8              Entry segment       C.S.  value  for  transfer  of
+                                       control.
 
-	10             I.D.                disc identifier.
+    10             I.D.                disc identifier.
 
-	18             Part number         system identifier  - displayed
-	                                   by early versions of boot.
+    18             Part number         system identifier  - displayed
+                                       by early versions of boot.
 
-	26             Sector size         byte count for sectors.
+    26             Sector size         byte count for sectors.
 
-	28             Data start          first   data  sector  on  disc
-	                                   (absolute sectors).
+    28             Data start          first   data  sector  on  disc
+                                       (absolute sectors).
 
-	30             Boot start          first   absolute   sector   of
-	                                   program  for boot to  load  at
-	                                   'load  address'  for  'length'
-	                                   paragraphs.
+    30             Boot start          first   absolute   sector   of
+                                       program  for boot to  load  at
+                                       'load  address'  for  'length'
+                                       paragraphs.
 
-	32             Flags               indicators:
-	                                        bit  meaning
-	                                       15-12 interleave    factor
-	                                             (0-15)
-	                                         0   0=single sided
-	                                             1=double sided
+    32             Flags               indicators:
+                                            bit  meaning
+                                           15-12 interleave    factor
+                                                 (0-15)
+                                             0   0=single sided
+                                                 1=double sided
 
-	34             Disc type           00 = CP/M
-	                                   01 = MS-DOS
+    34             Disc type           00 = CP/M
+                                       01 = MS-DOS
 
-	35             Reserved
+    35             Reserved
 
-	38             Speed table         information  for speed control
-	                                   proc.
+    38             Speed table         information  for speed control
+                                       proc.
 
-	56             Zone table          high track for each zone.
+    56             Zone table          high track for each zone.
 
-	71             Sector/track        sectors  per  track  for  each
-	                                   zone.
+    71             Sector/track        sectors  per  track  for  each
+                                       zone.
 */
 
-#include "emu.h"
+#include "emu.h" // logerror, BIT, emu_fatalerror
 #include "formats/victor9k_dsk.h"
 
 victor9k_format::victor9k_format()
@@ -237,7 +237,7 @@ floppy_image_format_t::desc_e* victor9k_format::get_sector_desc(const format &f,
 	return desc;
 }
 
-void victor9k_format::build_sector_description(const format &f, UINT8 *sectdata, offs_t sect_offs, desc_s *sectors, int sector_count) const
+void victor9k_format::build_sector_description(const format &f, UINT8 *sectdata, UINT32 sect_offs, desc_s *sectors, int sector_count) const
 {
 	for (int i = 0; i < sector_count; i++) {
 		sectors[i].data = sectdata + sect_offs;
@@ -260,9 +260,9 @@ bool victor9k_format::load(io_generic *io, UINT32 form_factor, floppy_image *ima
 	dynamic_buffer img;
 	img.resize(size);
 
-	io_generic_read(io, img, 0, size);
+	io_generic_read(io, &img[0], 0, size);
 
-	log_boot_sector(img);
+	log_boot_sector(&img[0]);
 
 	int track_offset = 0;
 
@@ -286,7 +286,7 @@ bool victor9k_format::load(io_generic *io, UINT32 form_factor, floppy_image *ima
 
 			desc_s sectors[40];
 
-			build_sector_description(f, img, track_offset, sectors, sector_count);
+			build_sector_description(f, &img[0], track_offset, sectors, sector_count);
 			generate_track(desc, track, head, sectors, sector_count, total_size, image);
 
 			track_offset += track_size;

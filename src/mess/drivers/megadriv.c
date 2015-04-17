@@ -479,28 +479,28 @@ DEVICE_IMAGE_LOAD_MEMBER( md_cons_state, _32x_cart )
 	{
 		length = image.length();
 		temp_copy.resize(length);
-		image.fread(temp_copy, length);
+		image.fread(&temp_copy[0], length);
 	}
 	else
 	{
 		length = image.get_software_region_length("rom");
 		temp_copy.resize(length);
-		memcpy(temp_copy, image.get_software_region("rom"), length);
+		memcpy(&temp_copy[0], image.get_software_region("rom"), length);
 	}
 
 	/* Copy the cart image in the locations the driver expects */
 	// Notice that, by using pick_integer, we are sure the code works on both LE and BE machines
 	ROM16 = (UINT16 *) memregion("gamecart")->base();
 	for (i = 0; i < length; i += 2)
-		ROM16[i / 2] = pick_integer_be(temp_copy, i, 2);
+		ROM16[i / 2] = pick_integer_be(&temp_copy[0], i, 2);
 
 	ROM32 = (UINT32 *) memregion("gamecart_sh2")->base();
 	for (i = 0; i < length; i += 4)
-		ROM32[i / 4] = pick_integer_be(temp_copy, i, 4);
+		ROM32[i / 4] = pick_integer_be(&temp_copy[0], i, 4);
 
 	ROM16 = (UINT16 *) memregion("maincpu")->base();
 	for (i = 0x00; i < length; i += 2)
-		ROM16[i / 2] = pick_integer_be(temp_copy, i, 2);
+		ROM16[i / 2] = pick_integer_be(&temp_copy[0], i, 2);
 
 	return IMAGE_INIT_PASS;
 }
@@ -769,7 +769,7 @@ ROM_END
 
 ROM_START( megacdj )
 	ROM_REGION16_BE( 0x400000, "maincpu", ROMREGION_ERASE00 )
-	ROM_DEFAULT_BIOS("v100g")	// this seems the only revision where the cursor in CD menu works, allowing to boot games
+	ROM_DEFAULT_BIOS("v100g")   // this seems the only revision where the cursor in CD menu works, allowing to boot games
 	/* Confirmed by ElBarto */
 	ROM_SYSTEM_BIOS(0, "v100s", "v1.00S")
 	ROMX_LOAD( "mpr-14088h.bin", 0x000000,  0x020000, CRC(3773d5aa) SHA1(bbf729a1aaa1667b783749299e1ad932aaf5f253), ROM_BIOS(1) | ROM_GROUPWORD | ROM_REVERSE)
@@ -782,7 +782,7 @@ ROM_START( megacdj )
 	/* Confirmed by ElBarto */
 	ROM_SYSTEM_BIOS(3, "v100o", "v1.00O")
 	ROMX_LOAD( "epr-14088d.bin", 0x000000,  0x020000, CRC(dfa95ee9) SHA1(e13666c76fa0a2e94e2f651b26b0fd625bf55f07), ROM_BIOS(4) | ROM_GROUPWORD | ROM_REVERSE)
-	ROM_SYSTEM_BIOS(4, "v100p", "v1.00P")	// CRC: e2e70bc8 when byteswapped
+	ROM_SYSTEM_BIOS(4, "v100p", "v1.00P")   // CRC: e2e70bc8 when byteswapped
 	ROMX_LOAD( "epr-14088e.bin", 0x000000,  0x020000, CRC(9d2da8f2) SHA1(4846f448160059a7da0215a5df12ca160f26dd69), ROM_BIOS(5) )
 ROM_END
 

@@ -352,8 +352,8 @@ public:
 	chd_error read_metadata(chd_metadata_tag searchtag, UINT32 searchindex, void *output, UINT32 outputlen, UINT32 &resultlen);
 	chd_error read_metadata(chd_metadata_tag searchtag, UINT32 searchindex, dynamic_buffer &output, chd_metadata_tag &resulttag, UINT8 &resultflags);
 	chd_error write_metadata(chd_metadata_tag metatag, UINT32 metaindex, const void *inputbuf, UINT32 inputlen, UINT8 flags = CHD_MDFLAGS_CHECKSUM);
-	chd_error write_metadata(chd_metadata_tag metatag, UINT32 metaindex, const astring &input, UINT8 flags = CHD_MDFLAGS_CHECKSUM) { return write_metadata(metatag, metaindex, input.cstr(), input.len() + 1, flags); }
-	chd_error write_metadata(chd_metadata_tag metatag, UINT32 metaindex, const dynamic_buffer &input, UINT8 flags = CHD_MDFLAGS_CHECKSUM) { return write_metadata(metatag, metaindex, input, input.count(), flags); }
+	chd_error write_metadata(chd_metadata_tag metatag, UINT32 metaindex, const astring &input, UINT8 flags = CHD_MDFLAGS_CHECKSUM) { return write_metadata(metatag, metaindex, input.c_str(), input.len() + 1, flags); }
+	chd_error write_metadata(chd_metadata_tag metatag, UINT32 metaindex, const dynamic_buffer &input, UINT8 flags = CHD_MDFLAGS_CHECKSUM) { return write_metadata(metatag, metaindex, &input[0], input.size(), flags); }
 	chd_error delete_metadata(chd_metadata_tag metatag, UINT32 metaindex);
 	chd_error clone_all_metadata(chd_file &source);
 
@@ -530,14 +530,16 @@ private:
 
 		osd_work_item *     m_osd;              // OSD work item running on this block
 		chd_file_compressor *m_compressor;      // pointer back to the compressor
-		volatile work_status m_status;          // current status of this item
+		// TODO: had to change this to be able to use atomic_* functions on this
+		//volatile work_status m_status;          // current status of this item
+		volatile INT32      m_status;           // current status of this item
 		UINT32              m_hunknum;          // number of the hunk we're working on
 		UINT8 *             m_data;             // pointer to the data we are working on
 		UINT8 *             m_compressed;       // pointer to the compressed data
 		UINT32              m_complen;          // compressed data length
 		INT8                m_compression;      // type of compression used
 		chd_compressor_group *m_codecs;         // codec instance
-		dynamic_array<hash_pair> m_hash;        // array of hashes
+		std::vector<hash_pair> m_hash;        // array of hashes
 	};
 
 	// internal helpers
