@@ -1065,64 +1065,57 @@ void sdl_window_info::update()
 //  GIVING THE WHITE BOX THAT SEEMS TO ANNOY SOME PEOPLE!
 //============================================================
 
-void sdlwindow_video_window_update_hi(running_machine &machine, sdl_window_info *window)
+void sdl_window_info::update_hi()
 {
 	osd_ticks_t     event_wait_ticks;
 	ASSERT_MAIN_THREAD();
 
 	// adjust the cursor state
-	sdlwindow_update_cursor_state(machine, window);
+	//sdlwindow_update_cursor_state(machine, window);
+
+	execute_async(&update_cursor_state_wt, worker_param(this));
 
 	// if we're visible and running and not in the middle of a resize, draw
-	if (window->target != NULL)
+	if (m_target != NULL)
 	{
 		int tempwidth, tempheight;
 
 		// see if the games video mode has changed
-		window->target->compute_minimum_size(tempwidth, tempheight);
-		if (tempwidth != window->minwidth || tempheight != window->minheight)
+		m_target->compute_minimum_size(tempwidth, tempheight);
+		if (osd_dim(tempwidth, tempheight) != m_minimum_dim)
 		{
-			window->minwidth = tempwidth;
-			window->minheight = tempheight;
-			if (!window->fullscreen)
+			m_minimum_dim = osd_dim(tempwidth, tempheight);
+
+			if (!this->m_fullscreen)
 			{
-				sdlwindow_blit_surface_size(window, window->width, window->height);
-				sdlwindow_resize(window, window->blitwidth, window->blitheight);
+				//Don't resize window without user interaction;
+				//window_resize(blitwidth, blitheight);
 			}
 			else if (video_config.switchres)
 			{
-				pick_best_mode(window, &tempwidth, &tempheight);
-				sdlwindow_resize(window, tempwidth, tempheight);
+				osd_dim tmp = this->pick_best_mode();
+				resize(tmp.width(), tmp.height());
 			}
 		}
-
 
 		if (video_config.waitvsync && video_config.syncrefresh)
 			event_wait_ticks = osd_ticks_per_second(); // block at most a second
 		else
 			event_wait_ticks = 0;
 
-		if (osd_event_wait(window->rendered_event, event_wait_ticks))
+		if (osd_event_wait(m_rendered_event, event_wait_ticks))
 		{
-			worker_param wp;
-			render_primitive_list *primlist;
-
-			clear_worker_param(&wp);
-
 			// ensure the target bounds are up-to-date, and then get the primitives
-		//	primlist = &window->get_primitives(window);
-			(&window->get_primitives(window));
+
+			render_primitive_list &primlist = *m_renderer->get_primitives();
 
 			// and redraw now
 
-		//	wp.list = primlist;
-			wp.window = window;
-			wp.m_machine = &machine;
-
-			execute_async(&draw_video_contents_wt, &wp);
+			execute_async(&draw_video_contents_wt, worker_param(this, primlist));
 		}
 	}
 }
+
 
 //============================================================
 //  set_starting_view
