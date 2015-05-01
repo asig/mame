@@ -104,20 +104,18 @@ const device_type COP445 = &device_creator<cop445_cpu_device>;
 #define ROM(a)          m_direct->read_decrypted_byte(a)
 #define RAM_R(a)        m_data->read_byte(a)
 #define RAM_W(a, v)     m_data->write_byte(a, v)
-#define IN(a)           m_io->read_byte(a)
-#define OUT(a, v)       m_io->write_byte(a, v)
 
-#define IN_G()          (IN(COP400_PORT_G) & m_g_mask)
-#define IN_L()          IN(COP400_PORT_L)
-#define IN_SI()         BIT(IN(COP400_PORT_SIO), 0)
-#define IN_CKO()        BIT(IN(COP400_PORT_CKO), 0)
-#define IN_IN()         (m_in_mask ? IN(COP400_PORT_IN) : 0)
+#define IN_G()          (m_read_g(0, 0xff) & m_g_mask)
+#define IN_L()          m_read_l(0, 0xff)
+#define IN_SI()         BIT(m_read_si(), 0)
+#define IN_CKO()        BIT(m_read_cko(), 0)
+#define IN_IN()         (m_in_mask ? m_read_in(0, 0xff) : 0)
 
-#define OUT_G(v)        OUT(COP400_PORT_G, (v) & m_g_mask)
-#define OUT_L(v)        OUT(COP400_PORT_L, (v))
-#define OUT_D(v)        OUT(COP400_PORT_D, (v) & m_d_mask)
-#define OUT_SK(v)       OUT(COP400_PORT_SK, (v))
-#define OUT_SO(v)       OUT(COP400_PORT_SIO, (v))
+#define OUT_G(v)        m_write_g(0, (v) & m_g_mask, 0xff)
+#define OUT_L(v)        m_write_l(0, v, 0xff)
+#define OUT_D(v)        m_write_d(0, (v) & m_d_mask, 0xff)
+#define OUT_SK(v)       m_write_sk(v)
+#define OUT_SO(v)       m_write_so(v)
 
 #define PC              m_pc
 #define A               m_a
@@ -176,7 +174,16 @@ cop400_cpu_device::cop400_cpu_device(const machine_config &mconfig, device_type 
 	: cpu_device(mconfig, type, name, tag, owner, clock, shortname, source)
 	, m_program_config("program", ENDIANNESS_LITTLE, 8, program_addr_bits, 0, internal_map_program)
 	, m_data_config("data", ENDIANNESS_LITTLE, 8, data_addr_bits, 0, internal_map_data) // data width is really 4
-	, m_io_config("io", ENDIANNESS_LITTLE, 8, 9, 0)
+	, m_read_l(*this)
+	, m_write_l(*this)
+	, m_read_g(*this)
+	, m_write_g(*this)
+	, m_write_d(*this)
+	, m_read_in(*this)
+	, m_read_si(*this)
+	, m_write_so(*this)
+	, m_write_sk(*this)
+	, m_read_cko(*this)
 	, m_cki(COP400_CKI_DIVISOR_16)
 	, m_cko(COP400_CKO_OSCILLATOR_OUTPUT)
 	, m_microbus(COP400_MICROBUS_DISABLED)
@@ -952,12 +959,24 @@ void cop400_cpu_device::device_start()
 	m_program = &space(AS_PROGRAM);
 	m_direct = &m_program->direct();
 	m_data = &space(AS_DATA);
-	m_io = &space(AS_IO);
+
+	/* find i/o handlers */
+
+	m_read_l.resolve_safe(0);
+	m_write_l.resolve_safe();
+	m_read_g.resolve_safe(0);
+	m_write_g.resolve_safe();
+	m_write_d.resolve_safe();
+	m_read_in.resolve_safe(0);
+	m_read_si.resolve_safe(0);
+	m_write_so.resolve_safe();
+	m_write_sk.resolve_safe();
+	m_read_cko.resolve_safe(0);
 
 	/* allocate serial timer */
 
 	m_serial_timer = timer_alloc(TIMER_SERIAL);
-	m_serial_timer->adjust(attotime::zero, 0, attotime::from_hz(clock() / 16));
+	m_serial_timer->adjust(attotime::zero, 0, attotime::from_ticks(16, clock()));
 
 	/* allocate counter timer */
 
@@ -965,7 +984,7 @@ void cop400_cpu_device::device_start()
 	if (m_has_counter)
 	{
 		m_counter_timer = timer_alloc(TIMER_COUNTER);
-		m_counter_timer->adjust(attotime::zero, 0, attotime::from_hz(clock() / 16 / 4));
+		m_counter_timer->adjust(attotime::zero, 0, attotime::from_ticks(16 * 4, clock()));
 	}
 
 	/* allocate IN latch timer */
@@ -974,7 +993,7 @@ void cop400_cpu_device::device_start()
 	if (m_has_inil)
 	{
 		m_inil_timer = timer_alloc(TIMER_INIL);
-		m_inil_timer->adjust(attotime::zero, 0, attotime::from_hz(clock() / 16));
+		m_inil_timer->adjust(attotime::zero, 0, attotime::from_ticks(16, clock()));
 	}
 
 	/* allocate Microbus timer */
@@ -983,7 +1002,7 @@ void cop400_cpu_device::device_start()
 	if (m_microbus == COP400_MICROBUS_ENABLED)
 	{
 		m_microbus_timer = timer_alloc(TIMER_MICROBUS);
-		m_microbus_timer->adjust(attotime::zero, 0, attotime::from_hz(clock() / 16));
+		m_microbus_timer->adjust(attotime::zero, 0, attotime::from_ticks(16, clock()));
 	}
 
 	/* register for state saving */
@@ -1239,12 +1258,12 @@ void cop400_cpu_device::state_export(const device_state_entry &entry)
 	}
 }
 
-void cop400_cpu_device::state_string_export(const device_state_entry &entry, astring &str)
+void cop400_cpu_device::state_string_export(const device_state_entry &entry, std::string &str)
 {
 	switch (entry.index())
 	{
 		case STATE_GENFLAGS:
-			str.printf("%c%c%c",
+			strprintf(str, "%c%c%c",
 							m_c ? 'C' : '.',
 							m_skl ? 'S' : '.',
 							m_skt_latch ? 'T' : '.');

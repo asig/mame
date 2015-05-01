@@ -12,6 +12,7 @@
 
 #include "osdcore.h"
 #include "corealloc.h"
+#include "eminline.h"
 #include <math.h>
 #include <exception>
 #include <typeinfo>
@@ -37,7 +38,7 @@
 
 #define USE_DEACTIVE_DEVICE     (0)
 
-#define USE_TRUTHTABLE			(0)
+#define USE_TRUTHTABLE          (0)
 
 // The following adds about 10% performance ...
 
@@ -105,8 +106,8 @@
 #if NL_KEEP_STATISTICS
 #define add_to_stat(v,x)        do { v += (x); } while (0)
 #define inc_stat(v)             add_to_stat(v, 1)
-#define begin_timing(v)         do { (v) -= get_profile_ticks(); } while (0)
-#define end_timing(v)           do { (v) += get_profile_ticks(); } while (0)
+#define begin_timing(v)         do { v -= get_profile_ticks(); } while (0)
+#define end_timing(v)           do { v += get_profile_ticks(); } while (0)
 #else
 #define add_to_stat(v,x)        do { } while (0)
 #define inc_stat(v)             add_to_stat(v, 1)
