@@ -424,11 +424,7 @@ void ui_manager::set_startup_text(const char *text, bool force)
 	if (force || (curtime - lastupdatetime) > osd_ticks_per_second() / 4)
 	{
 		lastupdatetime = curtime;
-		//MKCHAMP - CALLING NEW SUB CALLED video_frame_update_hi SO WHITE BOX DOES NOT SHOW BUT REFRESHSPEED IS STILL CALCULATED
-		if (!machine().options().disable_loading_patch())
-			machine().video().frame_update_hi();
-		else
-			machine().video().frame_update();
+		machine().video().frame_update(false /* debug */, !machine().options().disable_loading_patch() /* dont_draw */);
 	}
 }
 

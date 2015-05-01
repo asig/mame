@@ -72,8 +72,7 @@ public:
 
 	int window_init();
 
-	void update();
-	void update_hi();
+	void update(bool dont_draw);
 	void toggle_full_screen();
 	void modify_prescale(int dir);
 	void resize(INT32 width, INT32 height);

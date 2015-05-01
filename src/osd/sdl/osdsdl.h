@@ -148,8 +148,7 @@ public:
 
 	// general overridables
 	virtual void init(running_machine &machine);
-	virtual void update(bool skip_redraw);
-	virtual void update_hi(bool skip_redraw);
+	virtual void update(bool skip_redraw, bool dont_draw = false);
 
 	// input overridables
 	virtual void customize_input_type_list(simple_list<input_type_entry> &typelist);

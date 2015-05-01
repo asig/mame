@@ -78,11 +78,8 @@ public:
 	void toggle_record_movie();
 
 	// render a frame
-	void frame_update(bool debug = false);
+	void frame_update(bool debug = false, bool dont_draw = false);
 	
-	// MKCHAMP - DECLARING THE NEW video_frame_update_hi SUB
-  void frame_update_hi(bool debug = false);
-
 	// current speed helpers
 	astring &speed_text(astring &str);
 	double speed_percent() const { return m_speed_percent; }

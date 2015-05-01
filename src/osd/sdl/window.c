@@ -107,19 +107,19 @@ static osd_draw_callbacks draw;
 
 struct worker_param {
 	worker_param()
-	: m_window(NULL), m_list(NULL), m_resize_new_width(0), m_resize_new_height(0)
+	: m_window(NULL), m_list(NULL), m_resize_new_width(0), m_resize_new_height(0), m_dont_draw(false)
 	{
 	}
-	worker_param(sdl_window_info *awindow, render_primitive_list &alist)
-	: m_window(awindow), m_list(&alist), m_resize_new_width(0), m_resize_new_height(0)
+	worker_param(sdl_window_info *awindow, render_primitive_list &alist, bool dont_draw)
+	: m_window(awindow), m_list(&alist), m_resize_new_width(0), m_resize_new_height(0), m_dont_draw(dont_draw)
 	{
 	}
 	worker_param(sdl_window_info *awindow, int anew_width, int anew_height)
-	: m_window(awindow), m_list(NULL), m_resize_new_width(anew_width), m_resize_new_height(anew_height)
+	: m_window(awindow), m_list(NULL), m_resize_new_width(anew_width), m_resize_new_height(anew_height), m_dont_draw(false)
 	{
 	}
 	worker_param(sdl_window_info *awindow)
-	: m_window(awindow), m_list(NULL), m_resize_new_width(0), m_resize_new_height(0)
+	: m_window(awindow), m_list(NULL), m_resize_new_width(0), m_resize_new_height(0), m_dont_draw(false)
 	{
 	}
 	sdl_window_info *window() const { assert(m_window != NULL); return m_window; }
@@ -128,11 +128,13 @@ struct worker_param {
 	int new_height() const { return m_resize_new_height; }
 	// FIXME: only needed for window set-up which returns an error.
 	void set_window(sdl_window_info *window) { m_window = window; }
+	bool dont_draw() const { return m_dont_draw; }
 private:
 	sdl_window_info *m_window;
 	render_primitive_list *m_list;
 	int m_resize_new_width;
 	int m_resize_new_height;
+	bool m_dont_draw;
 };
 
 
@@ -1003,7 +1005,7 @@ osd_dim sdl_window_info::pick_best_mode()
 //  (main thread)
 //============================================================
 
-void sdl_window_info::update()
+void sdl_window_info::update(bool dont_draw)
 {
 	osd_ticks_t     event_wait_ticks;
 	ASSERT_MAIN_THREAD();
@@ -1048,70 +1050,7 @@ void sdl_window_info::update()
 			render_primitive_list &primlist = *m_renderer->get_primitives();
 
 			// and redraw now
-
-			execute_async(&draw_video_contents_wt, worker_param(this, primlist));
-		}
-	}
-}
-
-//============================================================
-//  OZFALCON - LAST OF THE NEW SUB CHAIN. FOR THOSE FOLLOWING, THE PATH IS:
-//  emu/ui.c->ui_set_startup_text CALLS emu/video.c->video_frame_update_hi WHICH CALLS
-//  osd/sdl/video.c->osd_update_hi WHICH CALLS THIS SUB. 
-//  THE ONLY DIFFERENCE BETWEEN THIS SUB AND sdlwindow_video_window_update IS IT DOES NOT
-//  perform PostMessage(window->hwnd, WM_USER_REDRAW, 0, (LPARAM)primlist) OR
-//  SendMessage(window->hwnd, WM_USER_REDRAW, 0, (LPARAM)primlist)
-//  ALL THIS DOES IS ALLOW MAME TO PROPERLY RUN TO CALCULATE THE REFRESHSPEED/ETC. WITHOUT
-//  GIVING THE WHITE BOX THAT SEEMS TO ANNOY SOME PEOPLE!
-//============================================================
-
-void sdl_window_info::update_hi()
-{
-	osd_ticks_t     event_wait_ticks;
-	ASSERT_MAIN_THREAD();
-
-	// adjust the cursor state
-	//sdlwindow_update_cursor_state(machine, window);
-
-	execute_async(&update_cursor_state_wt, worker_param(this));
-
-	// if we're visible and running and not in the middle of a resize, draw
-	if (m_target != NULL)
-	{
-		int tempwidth, tempheight;
-
-		// see if the games video mode has changed
-		m_target->compute_minimum_size(tempwidth, tempheight);
-		if (osd_dim(tempwidth, tempheight) != m_minimum_dim)
-		{
-			m_minimum_dim = osd_dim(tempwidth, tempheight);
-
-			if (!this->m_fullscreen)
-			{
-				//Don't resize window without user interaction;
-				//window_resize(blitwidth, blitheight);
-			}
-			else if (video_config.switchres)
-			{
-				osd_dim tmp = this->pick_best_mode();
-				resize(tmp.width(), tmp.height());
-			}
-		}
-
-		if (video_config.waitvsync && video_config.syncrefresh)
-			event_wait_ticks = osd_ticks_per_second(); // block at most a second
-		else
-			event_wait_ticks = 0;
-
-		if (osd_event_wait(m_rendered_event, event_wait_ticks))
-		{
-			// ensure the target bounds are up-to-date, and then get the primitives
-
-			render_primitive_list &primlist = *m_renderer->get_primitives();
-
-			// and redraw now
-
-			execute_async(&draw_video_contents_wt, worker_param(this, primlist));
+			execute_async(&draw_video_contents_wt, worker_param(this, primlist, dont_draw));
 		}
 	}
 }
@@ -1439,7 +1378,8 @@ OSDWORK_CALLBACK( sdl_window_info::draw_video_contents_wt )
 		if( video_config.perftest )
 			window->measure_fps(update);
 		else
-			window->renderer().draw(update);
+			if (!wp->dont_draw())
+				window->renderer().draw(update);
 	}
 
 	/* all done, ready for next */
