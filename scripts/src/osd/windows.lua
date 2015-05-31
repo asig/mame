@@ -1,7 +1,10 @@
+-- license:BSD-3-Clause
+-- copyright-holders:MAMEdev Team
+
 dofile("modules.lua")
 
 
-function maintargetosdoptions(_target)
+function maintargetosdoptions(_target,_subtarget)
 	osdmodulestargetconf()
 
 	configuration { "mingw*-gcc" }
@@ -87,7 +90,7 @@ end
 
 project ("osd_" .. _OPTIONS["osd"])
 	uuid (os.uuid("osd_" .. _OPTIONS["osd"]))
-	kind "StaticLib"
+	kind (LIBTYPE)
 
 	dofile("windows_cfg.lua")
 	osdmodulesbuild()
@@ -150,7 +153,7 @@ project ("osd_" .. _OPTIONS["osd"])
 
 project ("ocore_" .. _OPTIONS["osd"])
 	uuid (os.uuid("ocore_" .. _OPTIONS["osd"]))
-	kind "StaticLib"
+	kind (LIBTYPE)
 
 	options {
 		"ForceCPP",

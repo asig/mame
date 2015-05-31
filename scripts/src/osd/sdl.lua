@@ -1,7 +1,10 @@
+-- license:BSD-3-Clause
+-- copyright-holders:MAMEdev Team
+
 dofile("modules.lua")
 
 
-function maintargetosdoptions(_target)
+function maintargetosdoptions(_target,_subtarget)
 	osdmodulestargetconf()
 
 	if _OPTIONS["USE_DISPATCH_GL"]~="1" and _OPTIONS["MESA_INSTALL_ROOT"] then
@@ -290,8 +293,9 @@ end
 
 
 project ("osd_" .. _OPTIONS["osd"])
+	targetsubdir(_OPTIONS["target"] .."_" .._OPTIONS["subtarget"])
 	uuid (os.uuid("osd_" .. _OPTIONS["osd"]))
-	kind "StaticLib"
+	kind (LIBTYPE)
 
 	dofile("sdl_cfg.lua")
 	osdmodulesbuild()
@@ -358,8 +362,9 @@ project ("osd_" .. _OPTIONS["osd"])
 
 
 project ("ocore_" .. _OPTIONS["osd"])
+	targetsubdir(_OPTIONS["target"] .."_" .. _OPTIONS["subtarget"])
 	uuid (os.uuid("ocore_" .. _OPTIONS["osd"]))
-	kind "StaticLib"
+	kind (LIBTYPE)
 
 	options {
 		"ForceCPP",

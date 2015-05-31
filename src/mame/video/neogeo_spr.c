@@ -1,3 +1,5 @@
+// license:???
+// copyright-holders:Bryan McPhail,Fuzz,Ernesto Corvi,Andrew Prime,Zsolt Vasvari
 /* NeoGeo sprites (and fixed text layer) */
 
 #include "emu.h"
