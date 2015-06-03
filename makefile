@@ -83,6 +83,11 @@
 
 -include useroptions.mak
 
+# SDL 2 seems to have problems with joystick events if there is no window
+# manager running (see https://github.com/Aloshi/EmulationStation/issues/254).
+# Use SDL1 instead.
+SDL_LIBVER = sdl
+
 ###########################################################################
 ##################   END USER-CONFIGURABLE OPTIONS   ######################
 ###########################################################################
@@ -161,7 +166,7 @@ endif
 ifdef VERBOSE
 MAKEPARAMS += verbose=1
 else
-SILENT := @
+#SILENT := @
 MAKEPARAMS += --no-print-directory
 endif
 
