@@ -383,6 +383,7 @@ static void defines_verbose(void)
 	MACRO_VERBOSE(SDLMAME_SOLARIS);
 	MACRO_VERBOSE(SDLMAME_IRIX);
 	MACRO_VERBOSE(SDLMAME_BSD);
+	MACRO_VERBOSE(SDLMAME_SDL2);
 	osd_printf_verbose("\n");
 	osd_printf_verbose("Build defines 1:    ");
 	MACRO_VERBOSE(LSB_FIRST);
