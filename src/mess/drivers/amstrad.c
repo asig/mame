@@ -563,25 +563,25 @@ static INPUT_PORTS_START( plus )
 	The connectors' description for both CPCs and CPC+'s can be found at http://www.hardwarebook.info/Category:Computer */
 
 	PORT_START("analog.0")
-	PORT_BIT(0x3f , 0, IPT_TRACKBALL_X)
+	PORT_BIT(0x3f , 0, IPT_AD_STICK_X)
 	PORT_SENSITIVITY(100)
 	PORT_KEYDELTA(10)
 	PORT_PLAYER(1)
 
 	PORT_START("analog.1")
-	PORT_BIT(0x3f , 0, IPT_TRACKBALL_Y)
+	PORT_BIT(0x3f , 0, IPT_AD_STICK_Y)
 	PORT_SENSITIVITY(100)
 	PORT_KEYDELTA(10)
 	PORT_PLAYER(1)
 
 	PORT_START("analog.2")
-	PORT_BIT(0x3f , 0, IPT_TRACKBALL_X)
+	PORT_BIT(0x3f , 0, IPT_AD_STICK_X)
 	PORT_SENSITIVITY(100)
 	PORT_KEYDELTA(10)
 	PORT_PLAYER(2)
 
 	PORT_START("analog.3")
-	PORT_BIT(0x3f , 0, IPT_TRACKBALL_Y)
+	PORT_BIT(0x3f , 0, IPT_AD_STICK_Y)
 	PORT_SENSITIVITY(100)
 	PORT_KEYDELTA(10)
 	PORT_PLAYER(2)
@@ -780,6 +780,7 @@ speed of 3.8 MHz */
 
 static SLOT_INTERFACE_START( amstrad_floppies )
 	SLOT_INTERFACE( "3ssdd", FLOPPY_3_SSDD )
+	SLOT_INTERFACE( "35ssdd", FLOPPY_35_DD )
 SLOT_INTERFACE_END
 
 static SLOT_INTERFACE_START( aleste_floppies )
@@ -808,6 +809,7 @@ SLOT_INTERFACE_START(cpc_exp_cards)
 	SLOT_INTERFACE("playcity", CPC_PLAYCITY)
 	SLOT_INTERFACE("smartwatch", CPC_SMARTWATCH)
 	SLOT_INTERFACE("brunword4", CPC_BRUNWORD_MK4)
+	SLOT_INTERFACE("hd20", CPC_HD20)
 SLOT_INTERFACE_END
 
 SLOT_INTERFACE_START(cpcplus_exp_cards)
@@ -821,6 +823,7 @@ SLOT_INTERFACE_START(cpcplus_exp_cards)
 	SLOT_INTERFACE("amdrum", CPC_AMDRUM)
 	SLOT_INTERFACE("playcity", CPC_PLAYCITY)
 	SLOT_INTERFACE("smartwatch", CPC_SMARTWATCH)
+	SLOT_INTERFACE("hd20", CPC_HD20)
 SLOT_INTERFACE_END
 
 SLOT_INTERFACE_START(amstrad_centronics_devices)
@@ -911,7 +914,7 @@ static MACHINE_CONFIG_DERIVED( amstrad, amstrad_nofdc )
 	MCFG_UPD765A_ADD("upd765", true, true)
 
 	MCFG_FLOPPY_DRIVE_ADD("upd765:0", amstrad_floppies, "3ssdd", floppy_image_device::default_floppy_formats)
-	MCFG_FLOPPY_DRIVE_ADD("upd765:1", amstrad_floppies, "3ssdd", floppy_image_device::default_floppy_formats)
+	MCFG_FLOPPY_DRIVE_ADD("upd765:1", amstrad_floppies, "35ssdd", floppy_image_device::default_floppy_formats)
 
 	MCFG_SOFTWARE_LIST_ADD("flop_list","cpc_flop")
 MACHINE_CONFIG_END
@@ -989,7 +992,7 @@ static MACHINE_CONFIG_START( cpcplus, amstrad_state )
 	MCFG_FRAGMENT_ADD(cpcplus_cartslot)
 
 	MCFG_FLOPPY_DRIVE_ADD("upd765:0", amstrad_floppies, "3ssdd", floppy_image_device::default_floppy_formats)
-	MCFG_FLOPPY_DRIVE_ADD("upd765:1", amstrad_floppies, "3ssdd", floppy_image_device::default_floppy_formats)
+	MCFG_FLOPPY_DRIVE_ADD("upd765:1", amstrad_floppies, "35ssdd", floppy_image_device::default_floppy_formats)
 
 	MCFG_DEVICE_ADD("exp", CPC_EXPANSION_SLOT, 0)
 	MCFG_DEVICE_SLOT_INTERFACE(cpcplus_exp_cards, NULL, false)

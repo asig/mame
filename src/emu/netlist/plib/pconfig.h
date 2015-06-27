@@ -50,7 +50,8 @@
 #if defined(__GNUC__)
 	/* does not work in versions over 4.7.x of 32bit MINGW  */
 	#if defined(__MINGW32__) && !defined(__x86_64) && defined(__i386__) && ((__GNUC__ > 4) || ((__GNUC__ == 4) && (__GNUC_MINOR__ >= 7)))
-		#define PHAS_PMF_INTERNAL 0
+		#define PHAS_PMF_INTERNAL 1
+		#define MEMBER_ABI __thiscall
 	#elif defined(EMSCRIPTEN)
 		#define PHAS_PMF_INTERNAL 0
 	#elif defined(__arm__) || defined(__ARMEL__)
@@ -62,6 +63,9 @@
 #define USE_DELEGATE_TYPE PHAS_PMF_INTERNAL 0
 #endif
 
+#ifndef MEMBER_ABI
+	#define MEMBER_ABI
+#endif
 
 /* not supported in GCC prior to 4.4.x */
 /* ATTR_HOT and ATTR_COLD cause performance degration in 5.1 */
@@ -134,17 +138,17 @@ typedef int64_t      INT64;
  * It derives a pointer to a member function.
  */
 
-#if 1 || (PHAS_PMF_INTERNAL)
+#if (PHAS_PMF_INTERNAL)
 class pmfp
 {
 public:
 	// construct from any member function pointer
 	class generic_class;
 	typedef void (*generic_function)();
-	
+
 	#if (PSTANDALONE)
 	typedef std::size_t FPTR;
-	#endif 
+	#endif
 
 	template<typename _MemberFunctionType>
 	pmfp(_MemberFunctionType mfp)

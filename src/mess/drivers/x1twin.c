@@ -15,7 +15,6 @@
 ************************************************************************************************/
 
 #include "includes/x1.h"
-#include "formats/x1_dsk.h"
 
 #include "includes/pce.h"
 //#include "cpu/h6280/h6280.h"
@@ -458,7 +457,7 @@ static MACHINE_CONFIG_START( x1twin, x1twin_state )
 
 	MCFG_VIDEO_START_OVERRIDE(x1twin_state,x1)
 
-	MCFG_MB8877x_ADD("fdc", MAIN_CLOCK / 16)
+	MCFG_MB8877_ADD("fdc", MAIN_CLOCK / 16)
 
 	MCFG_FLOPPY_DRIVE_ADD("fdc:0", x1_floppies, "dd", x1_state::floppy_formats)
 	MCFG_FLOPPY_DRIVE_ADD("fdc:1", x1_floppies, "dd", x1_state::floppy_formats)

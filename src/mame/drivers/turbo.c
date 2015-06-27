@@ -539,7 +539,6 @@ ADDRESS_MAP_END
 
 static ADDRESS_MAP_START( buckrog_map, AS_PROGRAM, 8, turbo_state )
 	AM_RANGE(0x0000, 0x7fff) AM_ROM
-	AM_RANGE(0x8000, 0xbfff) AM_ROM
 	AM_RANGE(0xc000, 0xc7ff) AM_RAM_WRITE(turbo_videoram_w) AM_SHARE("videoram")    // FIX PAGE
 	AM_RANGE(0xc800, 0xc803) AM_MIRROR(0x07fc) AM_DEVREAD("i8255_0", i8255_device, read) AM_WRITE(buckrog_i8255_0_w)    // 8255
 	AM_RANGE(0xd000, 0xd003) AM_MIRROR(0x07fc) AM_DEVREADWRITE("i8255_1", i8255_device, read, write)            // 8255
@@ -555,6 +554,9 @@ static ADDRESS_MAP_START( buckrog_map, AS_PROGRAM, 8, turbo_state )
 	AM_RANGE(0xf800, 0xffff) AM_RAM                                                 // SCRATCH
 ADDRESS_MAP_END
 
+static ADDRESS_MAP_START( decrypted_opcodes_map, AS_DECRYPTED_OPCODES, 8, turbo_state )
+	AM_RANGE(0x0000, 0x7fff) AM_ROM AM_SHARE("decrypted_opcodes")
+ADDRESS_MAP_END
 
 static ADDRESS_MAP_START( buckrog_cpu2_map, AS_PROGRAM, 8, turbo_state )
 	AM_RANGE(0x0000, 0x1fff) AM_ROM
@@ -919,6 +921,7 @@ static MACHINE_CONFIG_START( buckrog, turbo_state )
 	/* basic machine hardware */
 	MCFG_CPU_ADD("maincpu", Z80, MASTER_CLOCK/4)
 	MCFG_CPU_PROGRAM_MAP(buckrog_map)
+	MCFG_CPU_DECRYPTED_OPCODES_MAP(decrypted_opcodes_map)
 	MCFG_CPU_VBLANK_INT_DRIVER("screen", turbo_state,  irq0_line_hold)
 
 	MCFG_CPU_ADD("subcpu", Z80, MASTER_CLOCK/4)
@@ -960,7 +963,10 @@ static MACHINE_CONFIG_START( buckrog, turbo_state )
 	MCFG_FRAGMENT_ADD(buckrog_samples)
 MACHINE_CONFIG_END
 
-
+static MACHINE_CONFIG_DERIVED( buckrogu, buckrog )
+	MCFG_CPU_MODIFY("maincpu")
+	MCFG_DEVICE_REMOVE_ADDRESS_MAP(AS_DECRYPTED_OPCODES)
+MACHINE_CONFIG_END
 
 /*************************************
  *
@@ -1178,7 +1184,7 @@ ROM_END
 
 
 ROM_START( buckrog ) /* CPU BOARD Sega ID#  834-5158-01, ROM BOARD Sega ID# 834-5152-01 */
-	ROM_REGION( 0xc000, "maincpu", 0 )
+	ROM_REGION( 0x8000, "maincpu", 0 )
 	ROM_LOAD( "epr-5265.cpu-ic3", 0x0000, 0x4000, CRC(f0055e97) SHA1(f6ee2afd6fef710949087d1cb04cbc242d1fa9f5) ) /* encrypted Z80 code, SEGA 315-5014 CPU */
 	ROM_LOAD( "epr-5266.cpu-ic4", 0x4000, 0x4000, CRC(7d084c39) SHA1(ef2c0a2a59e14d9e196fd3837139fc5acf0f63be) ) /* encrypted Z80 code, SEGA 315-5014 CPU */
 
@@ -1584,7 +1590,28 @@ DRIVER_INIT_MEMBER(turbo_state,turbo_enc)
 
 DRIVER_INIT_MEMBER(turbo_state,buckrog_enc)
 {
-	buckrog_decode(machine(), "maincpu");
+	static const UINT8 convtable[32][4] =
+	{
+		/*       opcode                   data                     address      */
+		/*  A    B    C    D         A    B    C    D                           */
+		{ 0x80,0x00,0x88,0x08 }, { 0x28,0x20,0xa8,0xa0 },   /* ...0...0...0...0 */
+		{ 0x88,0xa8,0x80,0xa0 }, { 0xa0,0x80,0x20,0x00 },   /* ...0...0...0...1 */
+		{ 0x28,0xa8,0x08,0x88 }, { 0xa8,0xa0,0x88,0x80 },   /* ...0...0...1...0 */
+		{ 0x80,0x00,0x88,0x08 }, { 0x28,0x20,0xa8,0xa0 },   /* ...0...0...1...1 */
+		{ 0x88,0xa8,0x80,0xa0 }, { 0xa0,0x80,0x20,0x00 },   /* ...0...1...0...0 */
+		{ 0x80,0x00,0x88,0x08 }, { 0x28,0x20,0xa8,0xa0 },   /* ...0...1...0...1 */
+		{ 0x28,0xa8,0x08,0x88 }, { 0xa8,0xa0,0x88,0x80 },   /* ...0...1...1...0 */
+		{ 0x88,0xa8,0x80,0xa0 }, { 0xa0,0x80,0x20,0x00 },   /* ...0...1...1...1 */
+		{ 0x28,0xa8,0x08,0x88 }, { 0xa8,0xa0,0x88,0x80 },   /* ...1...0...0...0 */
+		{ 0x80,0x00,0x88,0x08 }, { 0x28,0x20,0xa8,0xa0 },   /* ...1...0...0...1 */
+		{ 0x80,0x00,0x88,0x08 }, { 0x28,0x20,0xa8,0xa0 },   /* ...1...0...1...0 */
+		{ 0x88,0xa8,0x80,0xa0 }, { 0xa0,0x80,0x20,0x00 },   /* ...1...0...1...1 */
+		{ 0x80,0x00,0x88,0x08 }, { 0x28,0x20,0xa8,0xa0 },   /* ...1...1...0...0 */
+		{ 0x88,0xa8,0x80,0xa0 }, { 0xa0,0x80,0x20,0x00 },   /* ...1...1...0...1 */
+		{ 0x88,0xa8,0x80,0xa0 }, { 0xa0,0x80,0x20,0x00 },   /* ...1...1...1...0 */
+		{ 0x28,0xa8,0x08,0x88 }, { 0xa8,0xa0,0x88,0x80 }    /* ...1...1...1...1 */
+	};
+	sega_decode(memregion("maincpu")->base(), m_decrypted_opcodes, 0x8000, convtable);
 }
 
 
@@ -1595,11 +1622,11 @@ DRIVER_INIT_MEMBER(turbo_state,buckrog_enc)
  *
  *************************************/
 
-GAMEL( 1981, turbo,    0,       turbo,    turbo,    driver_device, 0,           ROT270,             "Sega", "Turbo", GAME_IMPERFECT_SOUND , layout_turbo )
-GAMEL( 1981, turboa,   turbo,   turbo,    turbo,    turbo_state,   turbo_enc,   ROT270,             "Sega", "Turbo (encrypted set 1)", GAME_IMPERFECT_SOUND , layout_turbo )
-GAMEL( 1981, turbob,   turbo,   turbo,    turbo,    turbo_state,   turbo_enc,   ROT270,             "Sega", "Turbo (encrypted set 2)", GAME_IMPERFECT_SOUND , layout_turbo )
-GAMEL( 1982, subroc3d, 0,       subroc3d, subroc3d, driver_device, 0,           ORIENTATION_FLIP_X, "Sega", "Subroc-3D", GAME_IMPERFECT_SOUND , layout_subroc3d )
-GAMEL( 1982, buckrog,  0,       buckrog,  buckrog,  turbo_state,   buckrog_enc, ROT0,               "Sega", "Buck Rogers: Planet of Zoom", GAME_IMPERFECT_SOUND , layout_buckrog )
-GAMEL( 1982, buckrogn, buckrog, buckrog,  buckrog,  driver_device, 0,           ROT0,               "Sega", "Buck Rogers: Planet of Zoom (not encrypted, set 1)", GAME_IMPERFECT_SOUND , layout_buckrog )
-GAMEL( 1982, buckrogn2,buckrog, buckrog,  buckrog,  driver_device, 0,           ROT0,               "Sega", "Buck Rogers: Planet of Zoom (not encrypted, set 2)", GAME_IMPERFECT_SOUND , layout_buckrog )
-GAMEL( 1982, zoom909,  buckrog, buckrog,  buckrog,  turbo_state,   buckrog_enc, ROT0,               "Sega", "Zoom 909", GAME_IMPERFECT_SOUND, layout_buckrog )
+GAMEL( 1981, turbo,    0,       turbo,     turbo,    driver_device, 0,           ROT270,             "Sega", "Turbo", GAME_IMPERFECT_SOUND , layout_turbo )
+GAMEL( 1981, turboa,   turbo,   turbo,     turbo,    turbo_state,   turbo_enc,   ROT270,             "Sega", "Turbo (encrypted set 1)", GAME_IMPERFECT_SOUND , layout_turbo )
+GAMEL( 1981, turbob,   turbo,   turbo,     turbo,    turbo_state,   turbo_enc,   ROT270,             "Sega", "Turbo (encrypted set 2)", GAME_IMPERFECT_SOUND , layout_turbo )
+GAMEL( 1982, subroc3d, 0,       subroc3d,  subroc3d, driver_device, 0,           ORIENTATION_FLIP_X, "Sega", "Subroc-3D", GAME_IMPERFECT_SOUND , layout_subroc3d )
+GAMEL( 1982, buckrog,  0,       buckrog,   buckrog,  turbo_state,   buckrog_enc, ROT0,               "Sega", "Buck Rogers: Planet of Zoom", GAME_IMPERFECT_SOUND , layout_buckrog )
+GAMEL( 1982, buckrogn, buckrog, buckrogu,  buckrog,  driver_device, 0,           ROT0,               "Sega", "Buck Rogers: Planet of Zoom (not encrypted, set 1)", GAME_IMPERFECT_SOUND , layout_buckrog )
+GAMEL( 1982, buckrogn2,buckrog, buckrogu,  buckrog,  driver_device, 0,           ROT0,               "Sega", "Buck Rogers: Planet of Zoom (not encrypted, set 2)", GAME_IMPERFECT_SOUND , layout_buckrog )
+GAMEL( 1982, zoom909,  buckrog, buckrog,   buckrog,  turbo_state,   buckrog_enc, ROT0,               "Sega", "Zoom 909", GAME_IMPERFECT_SOUND, layout_buckrog )

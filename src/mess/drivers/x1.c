@@ -206,7 +206,7 @@
 ************************************************************************************************/
 
 #include "includes/x1.h"
-#include "formats/x1_dsk.h"
+#include "formats/2d_dsk.h"
 
 #define MAIN_CLOCK XTAL_16MHz
 #define VDP_CLOCK  XTAL_42_9545MHz
@@ -2431,7 +2431,7 @@ PALETTE_INIT_MEMBER(x1_state,x1)
 }
 
 FLOPPY_FORMATS_MEMBER( x1_state::floppy_formats )
-	FLOPPY_X1_FORMAT
+	FLOPPY_2D_FORMAT
 FLOPPY_FORMATS_END
 
 static SLOT_INTERFACE_START( x1_floppies )
@@ -2483,7 +2483,7 @@ static MACHINE_CONFIG_START( x1, x1_state )
 
 	MCFG_VIDEO_START_OVERRIDE(x1_state,x1)
 
-	MCFG_MB8877x_ADD("fdc", MAIN_CLOCK / 16)
+	MCFG_MB8877_ADD("fdc", MAIN_CLOCK / 16)
 
 	MCFG_FLOPPY_DRIVE_ADD("fdc:0", x1_floppies, "dd", x1_state::floppy_formats)
 	MCFG_FLOPPY_DRIVE_ADD("fdc:1", x1_floppies, "dd", x1_state::floppy_formats)
