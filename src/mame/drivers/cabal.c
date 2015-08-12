@@ -197,7 +197,7 @@ static ADDRESS_MAP_START( sound_map, AS_PROGRAM, 8, cabal_state )
 	AM_RANGE(0x401b, 0x401b) AM_DEVWRITE("seibu_sound", seibu_sound_device, coin_w)
 	AM_RANGE(0x6005, 0x6006) AM_DEVWRITE("adpcm2", seibu_adpcm_device, adr_w)
 	AM_RANGE(0x601a, 0x601a) AM_DEVWRITE("adpcm2", seibu_adpcm_device, ctl_w)
-	AM_RANGE(0x8000, 0xffff) AM_ROM
+	AM_RANGE(0x8000, 0xffff) AM_ROMBANK("seibu_bank1")
 ADDRESS_MAP_END
 
 static ADDRESS_MAP_START( cabalbl_sound_map, AS_PROGRAM, 8, cabal_state )
@@ -855,10 +855,10 @@ DRIVER_INIT_MEMBER(cabal_state,cabalbl2)
 }
 
 
-GAME( 1988, cabal,   0,     cabal,   cabalj, cabal_state,   cabal,   ROT0, "TAD Corporation", "Cabal (World, Joystick version)", GAME_SUPPORTS_SAVE )
-GAME( 1989, cabala,  cabal, cabal,   cabalj, cabal_state,   cabal,   ROT0, "TAD Corporation (Alpha Trading license)", "Cabal (Alpha Trading)", GAME_SUPPORTS_SAVE ) // korea?
-GAME( 1988, cabalbl, cabal, cabalbl, cabalbl, driver_device,  0,       ROT0, "bootleg (Red Corporation)", "Cabal (bootleg of Joystick version, set 1, alternate sound hardware)", GAME_IMPERFECT_SOUND | GAME_SUPPORTS_SAVE )
-GAME( 1988, cabalbl2,cabal, cabalbl2,cabalj, cabal_state,   cabalbl2,ROT0, "bootleg", "Cabal (bootleg of Joystick version, set 2)", GAME_SUPPORTS_SAVE )
+GAME( 1988, cabal,   0,     cabal,   cabalj, cabal_state,   cabal,   ROT0, "TAD Corporation", "Cabal (World, Joystick version)", MACHINE_SUPPORTS_SAVE )
+GAME( 1989, cabala,  cabal, cabal,   cabalj, cabal_state,   cabal,   ROT0, "TAD Corporation (Alpha Trading license)", "Cabal (Alpha Trading)", MACHINE_SUPPORTS_SAVE ) // korea?
+GAME( 1988, cabalbl, cabal, cabalbl, cabalbl, driver_device,  0,       ROT0, "bootleg (Red Corporation)", "Cabal (bootleg of Joystick version, set 1, alternate sound hardware)", MACHINE_IMPERFECT_SOUND | MACHINE_SUPPORTS_SAVE )
+GAME( 1988, cabalbl2,cabal, cabalbl2,cabalj, cabal_state,   cabalbl2,ROT0, "bootleg", "Cabal (bootleg of Joystick version, set 2)", MACHINE_SUPPORTS_SAVE )
 
-GAME( 1988, cabalus, cabal, cabal,   cabalt, cabal_state,   cabal,  ROT0, "TAD Corporation (Fabtek license)", "Cabal (US set 1, Trackball version)", GAME_SUPPORTS_SAVE )
-GAME( 1988, cabalus2,cabal, cabal,   cabalt, cabal_state,   cabal,  ROT0, "TAD Corporation (Fabtek license)", "Cabal (US set 2, Trackball version)", GAME_SUPPORTS_SAVE )
+GAME( 1988, cabalus, cabal, cabal,   cabalt, cabal_state,   cabal,  ROT0, "TAD Corporation (Fabtek license)", "Cabal (US set 1, Trackball version)", MACHINE_SUPPORTS_SAVE )
+GAME( 1988, cabalus2,cabal, cabal,   cabalt, cabal_state,   cabal,  ROT0, "TAD Corporation (Fabtek license)", "Cabal (US set 2, Trackball version)", MACHINE_SUPPORTS_SAVE )

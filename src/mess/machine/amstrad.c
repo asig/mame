@@ -1901,22 +1901,25 @@ The exception is the case where none of b7-b0 are reset (i.e. port &FBFF), which
  */
 	if ( m_system_type != SYSTEM_GX4000 )
 	{
-		if ( ( offset & (1<<10) ) == 0 )
+		if(m_fdc)  // if FDC is present (it isn't on a 464)
 		{
 			if ( ( offset & (1<<10) ) == 0 )
 			{
-				int b8b0 = ( ( offset & (1<<8) ) >> (8 - 1) ) | ( offset & 0x01 );
-
-				switch (b8b0)
+				if ( ( offset & (1<<10) ) == 0 )
 				{
-				case 0x02:
-					data = m_fdc->msr_r(space, 0);
-					break;
-				case 0x03:
-					data = m_fdc->fifo_r(space, 0);
-					break;
-				default:
-					break;
+					int b8b0 = ( ( offset & (1<<8) ) >> (8 - 1) ) | ( offset & 0x01 );
+
+					switch (b8b0)
+					{
+					case 0x02:
+						data = m_fdc->msr_r(space, 0);
+						break;
+					case 0x03:
+						data = m_fdc->fifo_r(space, 0);
+						break;
+					default:
+						break;
+					}
 				}
 			}
 		}
@@ -2094,34 +2097,37 @@ The exception is the case where none of b7-b0 are reset (i.e. port &FBFF), which
 */
 		if(m_system_type != SYSTEM_GX4000)
 		{
-			if ((offset & (1<<7)) == 0)
+			if(m_fdc)  // if FDC is present (it isn't on a 464)
 			{
-				unsigned int b8b0 = ((offset & 0x0100) >> (8 - 1)) | (offset & 0x01);
-
-				switch (b8b0)
+				if ((offset & (1<<7)) == 0)
 				{
-				case 0x00:
-				case 0x01:
+					unsigned int b8b0 = ((offset & 0x0100) >> (8 - 1)) | (offset & 0x01);
+
+					switch (b8b0)
 					{
-						/* FDC Motor Control - Bit 0 defines the state of the FDD motor:
-						 * "1" the FDD motor will be active.
-						 * "0" the FDD motor will be in-active.*/
-						floppy_image_device *floppy;
-						floppy = machine().device<floppy_connector>(":upd765:0")->get_device();
-						if(floppy)
-							floppy->mon_w(!BIT(data, 0));
-						floppy = machine().device<floppy_connector>(":upd765:1")->get_device();
-						if(floppy)
-							floppy->mon_w(!BIT(data, 0));
+					case 0x00:
+					case 0x01:
+						{
+							/* FDC Motor Control - Bit 0 defines the state of the FDD motor:
+							 * "1" the FDD motor will be active.
+							 * "0" the FDD motor will be in-active.*/
+							floppy_image_device *floppy;
+							floppy = machine().device<floppy_connector>(":upd765:0")->get_device();
+							if(floppy)
+								floppy->mon_w(!BIT(data, 0));
+							floppy = machine().device<floppy_connector>(":upd765:1")->get_device();
+							if(floppy)
+								floppy->mon_w(!BIT(data, 0));
+							break;
+						}
+
+					case 0x03: /* Write Data register of FDC */
+						m_fdc->fifo_w(space, 0,data);
+						break;
+
+					default:
 						break;
 					}
-
-				case 0x03: /* Write Data register of FDC */
-					m_fdc->fifo_w(space, 0,data);
-					break;
-
-				default:
-					break;
 				}
 			}
 		}
@@ -2654,17 +2660,17 @@ READ8_MEMBER(amstrad_state::amstrad_psg_porta_read)
 		{
 			if(m_system_type != SYSTEM_GX4000)
 			{
-				if((m_io_ctrltype->read_safe(0) == 1) && (m_ppi_port_outputs[amstrad_ppi_PortC] & 0x0F) == 9)
+				if(m_io_ctrltype && (m_io_ctrltype->read() == 1) && (m_ppi_port_outputs[amstrad_ppi_PortC] & 0x0F) == 9)
 				{
 					return m_amx_mouse_data;
 				}
-				if((m_io_ctrltype->read_safe(0) == 2) && (m_ppi_port_outputs[amstrad_ppi_PortC] & 0x0F) == 9)
+				if(m_io_ctrltype && (m_io_ctrltype->read() == 2) && (m_ppi_port_outputs[amstrad_ppi_PortC] & 0x0F) == 9)
 				{
-					return (m_io_kbrow[m_ppi_port_outputs[amstrad_ppi_PortC] & 0x0F]->read_safe(0) & 0x80) | 0x7f;
+					return (m_io_kbrow[m_ppi_port_outputs[amstrad_ppi_PortC] & 0x0F] ? m_io_kbrow[m_ppi_port_outputs[amstrad_ppi_PortC] & 0x0F]->read() & 0x80 : 0) | 0x7f;
 				}
 			}
 
-			return m_io_kbrow[m_ppi_port_outputs[amstrad_ppi_PortC] & 0x0F]->read_safe(0) & 0xFF;
+			return m_io_kbrow[m_ppi_port_outputs[amstrad_ppi_PortC] & 0x0F] ? m_io_kbrow[m_ppi_port_outputs[amstrad_ppi_PortC] & 0x0F]->read() : 0;
 		}
 		return 0xFF;
 	}
@@ -2699,14 +2705,14 @@ IRQ_CALLBACK_MEMBER(amstrad_state::amstrad_cpu_acknowledge_int)
 	if(m_system_type != SYSTEM_GX4000)
 		{
 			// update AMX mouse inputs (normally done every 1/300th of a second)
-			if(m_io_ctrltype->read_safe(0) == 1)
+			if(m_io_ctrltype && m_io_ctrltype->read() == 1)
 			{
 				static UINT8 prev_x,prev_y;
 				UINT8 data_x, data_y;
 
 				m_amx_mouse_data = 0x0f;
-				data_x = m_io_mouse1->read_safe(0) & 0xff;
-				data_y = m_io_mouse2->read_safe(0) & 0xff;
+				data_x = m_io_mouse1 ? m_io_mouse1->read() : 0;
+				data_y = m_io_mouse2 ? m_io_mouse2->read() : 0;
 
 				if(data_x > prev_x)
 					m_amx_mouse_data &= ~0x08;
@@ -2716,11 +2722,11 @@ IRQ_CALLBACK_MEMBER(amstrad_state::amstrad_cpu_acknowledge_int)
 					m_amx_mouse_data &= ~0x02;
 				if(data_y < prev_y)
 					m_amx_mouse_data &= ~0x01;
-				m_amx_mouse_data |= (m_io_mouse3->read_safe(0) << 4);
+				m_amx_mouse_data |= ((m_io_mouse3 ? m_io_mouse3->read() : 0) << 4);
 				prev_x = data_x;
 				prev_y = data_y;
 
-				m_amx_mouse_data |= (m_io_kbrow[9]->read_safe(0) & 0x80);  // DEL key
+				m_amx_mouse_data |= ((m_io_kbrow[9] ? m_io_kbrow[9]->read() : 0) & 0x80);  // DEL key
 			}
 		}
 	return 0xFF;

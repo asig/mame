@@ -7,18 +7,27 @@
 
 #include <algorithm>
 #include <cstdio>
+#include <cmath>
 #include "nl_convert.h"
+
+
+// for now, make buggy GCC/Mingw STFU about I64FMT
+#if (defined(__MINGW32__) && (__GNUC__ >= 5))
+#pragma GCC diagnostic push
+#pragma GCC diagnostic ignored "-Wformat"
+#pragma GCC diagnostic ignored "-Wformat-extra-args"
+#endif
 
 template<typename Class>
 static plist_t<int> bubble(const pnamedlist_t<Class *> &sl)
 {
 	plist_t<int> ret(sl.size());
-	for (int i=0; i<sl.size(); i++)
+	for (unsigned i=0; i<sl.size(); i++)
 		ret[i] = i;
 
-	for(int i=0; i < sl.size()-1;i++)
+	for(unsigned i=0; i < sl.size(); i++)
 	{
-		for(int j=i+1; j < sl.size(); j++)
+		for(unsigned j=i+1; j < sl.size(); j++)
 		{
 			if(sl[ret[i]]->name() > sl[ret[j]]->name())
 			{
@@ -44,7 +53,7 @@ void nl_convert_base_t::out(const char *format, ...)
 
 void nl_convert_base_t::add_pin_alias(const pstring &devname, const pstring &name, const pstring &alias)
 {
-	m_pins.add(palloc(pin_alias_t, devname + "." + name, devname + "." + alias), false);
+	m_pins.add(palloc(pin_alias_t(devname + "." + name, devname + "." + alias)), false);
 }
 
 void nl_convert_base_t::add_ext_alias(const pstring &alias)
@@ -54,15 +63,15 @@ void nl_convert_base_t::add_ext_alias(const pstring &alias)
 
 void nl_convert_base_t::add_device(const pstring &atype, const pstring &aname, const pstring &amodel)
 {
-	m_devs.add(palloc(dev_t, atype, aname, amodel), false);
+	m_devs.add(palloc(dev_t(atype, aname, amodel)), false);
 }
 void nl_convert_base_t::add_device(const pstring &atype, const pstring &aname, double aval)
 {
-	m_devs.add(palloc(dev_t, atype, aname, aval), false);
+	m_devs.add(palloc(dev_t(atype, aname, aval)), false);
 }
 void nl_convert_base_t::add_device(const pstring &atype, const pstring &aname)
 {
-	m_devs.add(palloc(dev_t, atype, aname), false);
+	m_devs.add(palloc(dev_t(atype, aname)), false);
 }
 
 void nl_convert_base_t::add_term(pstring netname, pstring termname)
@@ -70,7 +79,7 @@ void nl_convert_base_t::add_term(pstring netname, pstring termname)
 	net_t * net = m_nets.find_by_name(netname);
 	if (net == NULL)
 	{
-		net = palloc(net_t, netname);
+		net = palloc(net_t(netname));
 		m_nets.add(net, false);
 	}
 
@@ -136,11 +145,11 @@ const pstring nl_convert_base_t::get_nl_val(const double val)
 		int i = 0;
 		while (m_units[i].m_unit != "-" )
 		{
-			if (m_units[i].m_mult <= nl_math::abs(val))
+			if (m_units[i].m_mult <= std::abs(val))
 				break;
 			i++;
 		}
-		return pstring::sprintf(m_units[i].m_func.cstr(), val / m_units[i].m_mult);
+		return pformat(m_units[i].m_func.cstr())(val / m_units[i].m_mult);
 	}
 }
 double nl_convert_base_t::get_sp_unit(const pstring &unit)
@@ -172,21 +181,21 @@ double nl_convert_base_t::get_sp_val(const pstring &sin)
 nl_convert_base_t::unit_t nl_convert_base_t::m_units[] = {
 		{"T",   "",      1.0e12 },
 		{"G",   "",      1.0e9  },
-		{"MEG", "RES_M(%g)", 1.0e6  },
-		{"k",   "RES_K(%g)", 1.0e3  }, /* eagle */
-		{"K",   "RES_K(%g)", 1.0e3  },
-		{"",    "%g",        1.0e0  },
-		{"M",   "CAP_M(%g)", 1.0e-3 },
-		{"u",   "CAP_U(%g)", 1.0e-6 }, /* eagle */
-		{"U",   "CAP_U(%g)", 1.0e-6 },
-		{"μ",   "CAP_U(%g)", 1.0e-6    },
-		{"N",   "CAP_N(%g)", 1.0e-9 },
-		{"P",   "CAP_P(%g)", 1.0e-12},
-		{"F",   "%ge-15",    1.0e-15},
+		{"MEG", "RES_M(%1)", 1.0e6  },
+		{"k",   "RES_K(%1)", 1.0e3  }, /* eagle */
+		{"K",   "RES_K(%1)", 1.0e3  },
+		{"",    "%1",        1.0e0  },
+		{"M",   "CAP_M(%1)", 1.0e-3 },
+		{"u",   "CAP_U(%1)", 1.0e-6 }, /* eagle */
+		{"U",   "CAP_U(%1)", 1.0e-6 },
+		{"??",   "CAP_U(%1)", 1.0e-6    },
+		{"N",   "CAP_N(%1)", 1.0e-9 },
+		{"P",   "CAP_P(%1)", 1.0e-12},
+		{"F",   "%1e-15",    1.0e-15},
 
-		{"MIL", "%e",  25.4e-6},
+		{"MIL", "%1",  25.4e-6},
 
-		{"-",   "%g",  1.0  }
+		{"-",   "%1",  1.0  }
 };
 
 
@@ -226,7 +235,7 @@ void nl_convert_spice_t::process_line(const pstring &line)
 	{
 		pstring_list_t tt(line, " ", true);
 		double val = 0.0;
-		switch (tt[0].cstr()[0])
+		switch (tt[0].code_at(0))
 		{
 			case ';':
 				out("// %s\n", line.substr(1).cstr());
@@ -271,9 +280,9 @@ void nl_convert_spice_t::process_line(const pstring &line)
 					pins = m[1].left(3);
 				}
 				add_device("QBJT_EB", tt[0], m[0]);
-				add_term(tt[1], tt[0] + "." + pins[0]);
-				add_term(tt[2], tt[0] + "." + pins[1]);
-				add_term(tt[3], tt[0] + "." + pins[2]);
+				add_term(tt[1], tt[0] + "." + pins.code_at(0));
+				add_term(tt[2], tt[0] + "." + pins.code_at(1));
+				add_term(tt[3], tt[0] + "." + pins.code_at(2));
 			}
 				break;
 			case 'R':
@@ -336,7 +345,7 @@ void nl_convert_spice_t::process_line(const pstring &line)
 				add_device(tname, xname);
 				for (std::size_t i=1; i < tt.size() - 1; i++)
 				{
-					pstring term = pstring::sprintf("%s.%" SIZETFMT, xname.cstr(), i);
+					pstring term = pformat("%1.%2")(xname)(i);
 					add_term(tt[i], term);
 				}
 				break;
@@ -347,11 +356,11 @@ void nl_convert_spice_t::process_line(const pstring &line)
 	}
 }
 
-
+//FIXME: should accept a stream as well
 void nl_convert_eagle_t::convert(const pstring &contents)
 {
-	eagle_tokenizer tok(*this);
-	tok.reset(contents.cstr());
+	pistringstream istrm(contents);
+	eagle_tokenizer tok(*this, istrm);
 
 	out("NETLIST_START(dummy)\n");
 	add_term("GND", "GND");
@@ -388,7 +397,7 @@ void nl_convert_eagle_t::convert(const pstring &contents)
 				tok.require_token(tok.m_tok_SEMICOLON);
 				token = tok.get_token();
 			}
-			switch (name.cstr()[0])
+			switch (name.code_at(0))
 			{
 				case 'Q':
 				{
@@ -454,3 +463,7 @@ void nl_convert_eagle_t::convert(const pstring &contents)
 	}
 
 }
+
+#if (defined(__MINGW32__) && (__GNUC__ >= 5))
+#pragma GCC diagnostic pop
+#endif

@@ -44,7 +44,6 @@
 #define MCFG_UCOM4_WRITE_I_CB(_devcb) \
 	ucom4_cpu_device::set_write_i_callback(*device, DEVCB_##_devcb);
 
-
 enum
 {
 	NEC_UCOM4_PORTA = 0,
@@ -56,6 +55,13 @@ enum
 	NEC_UCOM4_PORTG,
 	NEC_UCOM4_PORTH,
 	NEC_UCOM4_PORTI
+};
+
+enum
+{
+	NEC_UCOM43 = 0,
+	NEC_UCOM44,
+	NEC_UCOM45
 };
 
 
@@ -201,6 +207,9 @@ protected:
 	devcb_write8 m_write_h;
 	devcb_write8 m_write_i;
 
+	virtual UINT8 input_r(int index);
+	virtual void output_w(int index, UINT8 data);
+
 	// misc internal helpers
 	void increment_pc();
 	void fetch_arg();
@@ -210,8 +219,6 @@ protected:
 	void ram_w(UINT8 data);
 	void pop_stack();
 	void push_stack();
-	UINT8 input_r(int index);
-	void output_w(int index, UINT8 data);
 
 	bool check_op_43();
 	TIMER_CALLBACK_MEMBER( simple_timer_cb );
@@ -312,6 +319,17 @@ public:
 };
 
 
+class upd557l_cpu_device : public ucom4_cpu_device
+{
+public:
+	upd557l_cpu_device(const machine_config &mconfig, const char *tag, device_t *owner, UINT32 clock);
+
+protected:
+	virtual UINT8 input_r(int index);
+	virtual void output_w(int index, UINT8 data);
+};
+
+
 class upd650_cpu_device : public ucom4_cpu_device
 {
 public:
@@ -328,6 +346,7 @@ public:
 
 
 extern const device_type NEC_D553;
+extern const device_type NEC_D557L;
 extern const device_type NEC_D650;
 extern const device_type NEC_D552;
 

@@ -5,6 +5,13 @@
  *
  */
 
+// for now, make buggy GCC/Mingw STFU about I64FMT
+#if (defined(__MINGW32__) && (__GNUC__ >= 5))
+#pragma GCC diagnostic push
+#pragma GCC diagnostic ignored "-Wformat"
+#pragma GCC diagnostic ignored "-Wformat-extra-args"
+#endif
+
 #ifndef PCONFIG_H_
 #define PCONFIG_H_
 
@@ -24,8 +31,19 @@
 
 #else
 #include <stdint.h>
-#include <cstddef>
 #endif
+#include <cstddef>
+
+
+//============================================================
+//  Standard defines
+//============================================================
+
+// prevent implicit copying
+#define P_PREVENT_COPYING(_name)                \
+	private:                                    \
+		_name(const _name &);                   \
+		_name &operator=(const _name &);
 
 //============================================================
 //  Compiling standalone
@@ -35,6 +53,11 @@
 
 #undef ATTR_COLD
 #define ATTR_COLD
+
+static inline std::size_t SIZET_PRINTF(const std::size_t &v)
+{
+	return (unsigned) v;
+}
 
 /* use MAME */
 #if (USE_DELEGATE_TYPE == DELEGATE_TYPE_INTERNAL)
@@ -136,6 +159,11 @@ typedef int64_t      INT64;
 #endif
 #endif
 
+static inline std::size_t SIZET_PRINTF(const std::size_t &v)
+{
+	return (unsigned) v;
+}
+
 #endif
 
 /*
@@ -201,3 +229,7 @@ private:
 #endif
 
 #endif /* PCONFIG_H_ */
+
+#if (defined(__MINGW32__) && (__GNUC__ >= 5))
+#pragma GCC diagnostic pop
+#endif

@@ -27,6 +27,10 @@
 #define WAVERAM1_WIDTH      512
 #define WAVERAM1_HEIGHT     512
 
+#define BLEND_OPAQUE		0x00000000
+#define BLEND_OPAQUE2		0x4b23cb00
+#define BLEND_ADD			0x40b68800
+#define BLEND_SUB			0x4093c800
 
 
 /*************************************
@@ -35,7 +39,7 @@
  *
  *************************************/
 
-struct poly_extra_data
+struct mz_poly_extra_data
 {
 	const void *    palbase;
 	const void *    texbase;
@@ -46,6 +50,8 @@ struct poly_extra_data
 	UINT16          texwidth;
 	UINT16          color;
 	UINT32          alpha;
+	bool			blend_enable;
+	UINT32			blend;
 	UINT8           (*get_texel)(const void *, int, int, int);
 };
 
@@ -75,7 +81,6 @@ static UINT32 *waveram[2];
 static int yoffs;
 static int texel_width;
 static int is_mk4b;
-
 
 
 /*************************************
@@ -260,7 +265,7 @@ VIDEO_START_MEMBER(midzeus_state,midzeus)
 		m_palette->set_pen_color(i, pal5bit(i >> 10), pal5bit(i >> 5), pal5bit(i >> 0));
 
 	/* initialize polygon engine */
-	poly = poly_alloc(machine(), 10000, sizeof(poly_extra_data), POLYFLAG_ALLOW_QUADS);
+	poly = poly_alloc(machine(), 10000, sizeof(mz_poly_extra_data), POLYFLAG_ALLOW_QUADS);
 
 	/* we need to cleanup on exit */
 	machine().add_notifier(MACHINE_NOTIFY_EXIT, machine_notify_delegate(FUNC(midzeus_state::exit_handler), this));
@@ -623,7 +628,7 @@ void midzeus_state::zeus_register_update(offs_t offset)
 					// m_zeusbase[0x46] = ??? = 0x00000000
 					// m_zeusbase[0x4c] = ??? = 0x00808080 (brightness?)
 					// m_zeusbase[0x4e] = ??? = 0x00808080 (brightness?)
-					poly_extra_data *extra = (poly_extra_data *)poly_get_extra_data(poly);
+					mz_poly_extra_data *extra = (mz_poly_extra_data *)poly_get_extra_data(poly);
 					poly_vertex vert[4];
 
 					vert[0].x = (INT16)m_zeusbase[0x08];
@@ -1084,7 +1089,7 @@ void midzeus_state::zeus_draw_model(UINT32 texdata, int logit)
 void midzeus_state::zeus_draw_quad(int long_fmt, const UINT32 *databuffer, UINT32 texdata, int logit)
 {
 	poly_draw_scanline_func callback;
-	poly_extra_data *extra;
+	mz_poly_extra_data *extra;
 	poly_vertex clipvert[8];
 	poly_vertex vert[4];
 	float uscale, vscale;
@@ -1212,7 +1217,7 @@ void midzeus_state::zeus_draw_quad(int long_fmt, const UINT32 *databuffer, UINT3
 			clipvert[i].y += 0.0005f;
 	}
 
-	extra = (poly_extra_data *)poly_get_extra_data(poly);
+	extra = (mz_poly_extra_data *)poly_get_extra_data(poly);
 
 	if ((ctrl_word & 0x000c0000) == 0x000c0000)
 	{
@@ -1253,6 +1258,8 @@ void midzeus_state::zeus_draw_quad(int long_fmt, const UINT32 *databuffer, UINT3
 	extra->solidcolor = m_zeusbase[0x00] & 0x7fff;
 	extra->zoffset = m_zeusbase[0x7e] >> 16;
 	extra->alpha = m_zeusbase[0x4e];
+	extra->blend = m_zeusbase[0x5c];
+	extra->blend_enable = m_zeusbase[0x5c] == BLEND_ADD || m_zeusbase[0x5c] == BLEND_SUB;
 	extra->transcolor = ((ctrl_word >> 16) & 1) ? 0 : 0x100;
 	extra->palbase = waveram0_ptr_from_block_addr(zeus_palbase);
 
@@ -1269,7 +1276,7 @@ void midzeus_state::zeus_draw_quad(int long_fmt, const UINT32 *databuffer, UINT3
 
 static void render_poly_texture(void *dest, INT32 scanline, const poly_extent *extent, const void *extradata, int threadid)
 {
-	const poly_extra_data *extra = (const poly_extra_data *)extradata;
+	const mz_poly_extra_data *extra = (const mz_poly_extra_data *)extradata;
 	INT32 curz = extent->param[0].start;
 	INT32 curu = extent->param[1].start;
 	INT32 curv = extent->param[2].start;
@@ -1310,7 +1317,42 @@ static void render_poly_texture(void *dest, INT32 scanline, const poly_extent *e
 				color2 = ((color2 & 0x7fe0) << 6) | (color2 & 0x1f);
 				color3 = ((color3 & 0x7fe0) << 6) | (color3 & 0x1f);
 				rgb_t filtered = rgbaint_t::bilinear_filter(color0, color1, color2, color3, curu, curv);
-				WAVERAM_WRITEPIX(zeus_renderbase, scanline, x, ((filtered >> 6) & 0x7fe0) | (filtered & 0x1f));
+
+				if (extra->blend_enable)
+				{
+					UINT16 dst = WAVERAM_READPIX(zeus_renderbase, scanline, x);
+					INT32 dst_r = (dst >> 10) & 0x1f;
+					INT32 dst_g = (dst >> 5) & 0x1f;
+					INT32 dst_b = dst & 0x1f;
+
+					INT32 src_r = filtered.r();
+					INT32 src_g = filtered.g() >> 3;
+					INT32 src_b = filtered.b();
+
+					if (extra->blend == BLEND_ADD)
+					{
+						dst_r += src_r;
+						dst_g += src_g;
+						dst_b += src_b;
+						dst_r = ((dst_r > 0x1f) ? 0x1f : dst_r);
+						dst_g = ((dst_g > 0x1f) ? 0x1f : dst_g);
+						dst_b = ((dst_b > 0x1f) ? 0x1f : dst_b);
+					}
+					else if (extra->blend == BLEND_SUB)
+					{
+						dst_r -= src_r;
+						dst_g -= src_g;
+						dst_b -= src_b;
+						dst_r = ((dst_r < 0) ? 0 : dst_r);
+						dst_g = ((dst_g < 0) ? 0 : dst_g);
+						dst_b = ((dst_b < 0) ? 0 : dst_b);
+					}
+					WAVERAM_WRITEPIX(zeus_renderbase, scanline, x, (dst_r << 10) | (dst_g << 5) | dst_b);
+				}
+				else
+				{
+					WAVERAM_WRITEPIX(zeus_renderbase, scanline, x, ((filtered >> 6) & 0x7fe0) | (filtered & 0x1f));
+				}
 				*depthptr = depth;
 			}
 		}
@@ -1324,7 +1366,7 @@ static void render_poly_texture(void *dest, INT32 scanline, const poly_extent *e
 
 static void render_poly_shade(void *dest, INT32 scanline, const poly_extent *extent, const void *extradata, int threadid)
 {
-	const poly_extra_data *extra = (const poly_extra_data *)extradata;
+	const mz_poly_extra_data *extra = (const mz_poly_extra_data *)extradata;
 	int x;
 
 	for (x = extent->startx; x < extent->stopx; x++)
@@ -1351,7 +1393,7 @@ static void render_poly_shade(void *dest, INT32 scanline, const poly_extent *ext
 
 static void render_poly_solid(void *dest, INT32 scanline, const poly_extent *extent, const void *extradata, int threadid)
 {
-	const poly_extra_data *extra = (const poly_extra_data *)extradata;
+	const mz_poly_extra_data *extra = (const mz_poly_extra_data *)extradata;
 	UINT16 color = extra->solidcolor;
 	INT32 curz = (INT32)(extent->param[0].start);
 	INT32 curv = extent->param[2].start;
@@ -1377,7 +1419,7 @@ static void render_poly_solid(void *dest, INT32 scanline, const poly_extent *ext
 
 static void render_poly_solid_fixedz(void *dest, INT32 scanline, const poly_extent *extent, const void *extradata, int threadid)
 {
-	const poly_extra_data *extra = (const poly_extra_data *)extradata;
+	const mz_poly_extra_data *extra = (const mz_poly_extra_data *)extradata;
 	UINT16 color = extra->solidcolor;
 	UINT16 depth = extra->zoffset;
 	int x;

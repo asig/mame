@@ -106,10 +106,9 @@ Some bugs left :
 #include "imagedev/snapquik.h"
 #include "imagedev/cassette.h"
 #include "formats/tzx_cas.h"
+#include "formats/msx_dsk.h"
 
 #include "machine/ram.h"
-
-
 
 #define MANUFACTURER_NAME 0x07
 #define TV_REFRESH_RATE 0x10
@@ -784,8 +783,12 @@ static SLOT_INTERFACE_START( amstrad_floppies )
 SLOT_INTERFACE_END
 
 static SLOT_INTERFACE_START( aleste_floppies )
-	SLOT_INTERFACE( "525hd", FLOPPY_525_HD )
+	SLOT_INTERFACE( "35dd", FLOPPY_35_DD )
 SLOT_INTERFACE_END
+
+FLOPPY_FORMATS_MEMBER( amstrad_state::aleste_floppy_formats )
+	FLOPPY_MSX_FORMAT
+FLOPPY_FORMATS_END
 
 static MACHINE_CONFIG_FRAGMENT( cpcplus_cartslot )
 	MCFG_GENERIC_CARTSLOT_ADD("cartslot", generic_plain_slot, "gx4000_cart")
@@ -795,6 +798,23 @@ static MACHINE_CONFIG_FRAGMENT( cpcplus_cartslot )
 
 	MCFG_SOFTWARE_LIST_ADD("cart_list", "gx4000")
 MACHINE_CONFIG_END
+
+SLOT_INTERFACE_START(cpc464_exp_cards)
+	SLOT_INTERFACE("ddi1", CPC_DDI1)
+	SLOT_INTERFACE("ssa1", CPC_SSA1)
+	SLOT_INTERFACE("dkspeech", CPC_DKSPEECH)
+	SLOT_INTERFACE("rom", CPC_ROM)
+	SLOT_INTERFACE("multiface2", CPC_MFACE2)
+	SLOT_INTERFACE("pds", CPC_PDS)
+	SLOT_INTERFACE("rs232", CPC_RS232)
+	SLOT_INTERFACE("amsrs232", CPC_RS232_AMS)
+	SLOT_INTERFACE("sf2", CPC_SYMBIFACE2)
+	SLOT_INTERFACE("amdrum", CPC_AMDRUM)
+	SLOT_INTERFACE("playcity", CPC_PLAYCITY)
+	SLOT_INTERFACE("smartwatch", CPC_SMARTWATCH)
+	SLOT_INTERFACE("brunword4", CPC_BRUNWORD_MK4)
+	SLOT_INTERFACE("hd20", CPC_HD20)
+SLOT_INTERFACE_END
 
 SLOT_INTERFACE_START(cpc_exp_cards)
 	SLOT_INTERFACE("ssa1", CPC_SSA1)
@@ -836,7 +856,7 @@ SLOT_INTERFACE_START(amstrad_centronics_devices)
 	SLOT_INTERFACE("digiblst", CENTRONICS_DIGIBLASTER)
 SLOT_INTERFACE_END
 
-static MACHINE_CONFIG_START( amstrad_nofdc, amstrad_state )
+static MACHINE_CONFIG_START( amstrad_base, amstrad_state )
 	/* Machine hardware */
 	MCFG_CPU_ADD("maincpu", Z80, XTAL_16MHz / 4)
 	MCFG_CPU_PROGRAM_MAP(amstrad_mem)
@@ -897,6 +917,47 @@ static MACHINE_CONFIG_START( amstrad_nofdc, amstrad_state )
 
 	MCFG_SOFTWARE_LIST_ADD("cass_list","cpc_cass")
 
+MACHINE_CONFIG_END
+
+static MACHINE_CONFIG_DERIVED( cpc464, amstrad_base )
+	MCFG_DEVICE_ADD("exp", CPC_EXPANSION_SLOT, 0)
+	MCFG_DEVICE_SLOT_INTERFACE(cpc464_exp_cards, NULL, false)
+	MCFG_CPC_EXPANSION_SLOT_OUT_IRQ_CB(INPUTLINE("maincpu", 0))
+	MCFG_CPC_EXPANSION_SLOT_OUT_NMI_CB(INPUTLINE("maincpu", INPUT_LINE_NMI))
+	MCFG_CPC_EXPANSION_SLOT_OUT_ROMDIS_CB(WRITELINE(amstrad_state, cpc_romdis))  // ROMDIS
+	MCFG_CPC_EXPANSION_SLOT_ROM_SELECT(WRITE8(amstrad_state,rom_select))
+
+	/* internal ram */
+	MCFG_RAM_ADD(RAM_TAG)
+	MCFG_RAM_DEFAULT_SIZE("64K")
+	MCFG_RAM_EXTRA_OPTIONS("128K,320K,576K")
+MACHINE_CONFIG_END
+
+static MACHINE_CONFIG_DERIVED( cpc664, amstrad_base )
+	MCFG_UPD765A_ADD("upd765", true, true)
+	MCFG_FLOPPY_DRIVE_ADD("upd765:0", amstrad_floppies, "3ssdd", floppy_image_device::default_floppy_formats)
+	MCFG_FLOPPY_DRIVE_ADD("upd765:1", amstrad_floppies, "35ssdd", floppy_image_device::default_floppy_formats)
+	MCFG_SOFTWARE_LIST_ADD("flop_list","cpc_flop")
+
+	MCFG_DEVICE_ADD("exp", CPC_EXPANSION_SLOT, 0)
+	MCFG_DEVICE_SLOT_INTERFACE(cpc_exp_cards, NULL, false)
+	MCFG_CPC_EXPANSION_SLOT_OUT_IRQ_CB(INPUTLINE("maincpu", 0))
+	MCFG_CPC_EXPANSION_SLOT_OUT_NMI_CB(INPUTLINE("maincpu", INPUT_LINE_NMI))
+	MCFG_CPC_EXPANSION_SLOT_OUT_ROMDIS_CB(WRITELINE(amstrad_state, cpc_romdis))  // ROMDIS
+	MCFG_CPC_EXPANSION_SLOT_ROM_SELECT(WRITE8(amstrad_state,rom_select))
+
+	/* internal ram */
+	MCFG_RAM_ADD(RAM_TAG)
+	MCFG_RAM_DEFAULT_SIZE("64K")
+	MCFG_RAM_EXTRA_OPTIONS("128K,320K,576K")
+MACHINE_CONFIG_END
+
+static MACHINE_CONFIG_DERIVED( cpc6128, amstrad_base )
+	MCFG_UPD765A_ADD("upd765", true, true)
+	MCFG_FLOPPY_DRIVE_ADD("upd765:0", amstrad_floppies, "3ssdd", floppy_image_device::default_floppy_formats)
+	MCFG_FLOPPY_DRIVE_ADD("upd765:1", amstrad_floppies, "35ssdd", floppy_image_device::default_floppy_formats)
+	MCFG_SOFTWARE_LIST_ADD("flop_list","cpc_flop")
+
 	MCFG_DEVICE_ADD("exp", CPC_EXPANSION_SLOT, 0)
 	MCFG_DEVICE_SLOT_INTERFACE(cpc_exp_cards, NULL, false)
 	MCFG_CPC_EXPANSION_SLOT_OUT_IRQ_CB(INPUTLINE("maincpu", 0))
@@ -907,20 +968,11 @@ static MACHINE_CONFIG_START( amstrad_nofdc, amstrad_state )
 	/* internal ram */
 	MCFG_RAM_ADD(RAM_TAG)
 	MCFG_RAM_DEFAULT_SIZE("128K")
-	MCFG_RAM_EXTRA_OPTIONS("64K,320K,576K")
-MACHINE_CONFIG_END
-
-static MACHINE_CONFIG_DERIVED( amstrad, amstrad_nofdc )
-	MCFG_UPD765A_ADD("upd765", true, true)
-
-	MCFG_FLOPPY_DRIVE_ADD("upd765:0", amstrad_floppies, "3ssdd", floppy_image_device::default_floppy_formats)
-	MCFG_FLOPPY_DRIVE_ADD("upd765:1", amstrad_floppies, "35ssdd", floppy_image_device::default_floppy_formats)
-
-	MCFG_SOFTWARE_LIST_ADD("flop_list","cpc_flop")
+	MCFG_RAM_EXTRA_OPTIONS("320K,576K")
 MACHINE_CONFIG_END
 
 
-static MACHINE_CONFIG_DERIVED( kccomp, amstrad )
+static MACHINE_CONFIG_DERIVED( kccomp, cpc6128 )
 	MCFG_MACHINE_START_OVERRIDE(amstrad_state,kccomp)
 	MCFG_MACHINE_RESET_OVERRIDE(amstrad_state,kccomp)
 
@@ -1060,7 +1112,7 @@ static MACHINE_CONFIG_START( gx4000, amstrad_state )
 MACHINE_CONFIG_END
 
 
-static MACHINE_CONFIG_DERIVED( aleste, amstrad )
+static MACHINE_CONFIG_DERIVED( aleste, cpc6128 )
 	MCFG_MACHINE_START_OVERRIDE(amstrad_state,aleste)
 	MCFG_MACHINE_RESET_OVERRIDE(amstrad_state,aleste)
 
@@ -1076,8 +1128,8 @@ static MACHINE_CONFIG_DERIVED( aleste, amstrad )
 	MCFG_DEVICE_REMOVE("upd765")
 	MCFG_I8272A_ADD("upd765", true)
 
-	MCFG_FLOPPY_DRIVE_ADD("upd765:0", aleste_floppies, "525hd", floppy_image_device::default_floppy_formats)
-	MCFG_FLOPPY_DRIVE_ADD("upd765:1", aleste_floppies, "525hd", floppy_image_device::default_floppy_formats)
+	MCFG_FLOPPY_DRIVE_ADD("upd765:0", aleste_floppies, "35dd", amstrad_state::aleste_floppy_formats)
+	MCFG_FLOPPY_DRIVE_ADD("upd765:1", aleste_floppies, "35dd", amstrad_state::aleste_floppy_formats)
 
 	MCFG_DEVICE_REMOVE("flop_list")
 	MCFG_SOFTWARE_LIST_ADD("flop_list", "aleste")
@@ -1198,13 +1250,13 @@ ROM_END
  *************************************/
 
 /*    YEAR  NAME      PARENT    COMPAT  MACHINE        INPUT     INIT     COMPANY                FULLNAME                                     FLAGS */
-COMP( 1984, cpc464,   0,        0,      amstrad_nofdc, cpc464, driver_device,   0,       "Amstrad plc",         "Amstrad CPC464",                            0 )
-COMP( 1985, cpc664,   cpc464,   0,      amstrad,       cpc664, driver_device,   0,       "Amstrad plc",         "Amstrad CPC664",                            0 )
-COMP( 1985, cpc6128,  cpc464,   0,      amstrad,       cpc6128, driver_device,  0,       "Amstrad plc",         "Amstrad CPC6128",                           0 )
-COMP( 1985, cpc6128f, cpc464,   0,      amstrad,       cpc6128f, driver_device, 0,       "Amstrad plc",         "Amstrad CPC6128 (France, AZERTY Keyboard)", 0 )
-COMP( 1985, cpc6128s, cpc464,   0,      amstrad,       cpc6128s, driver_device, 0,       "Amstrad plc",         "Amstrad CPC6128 (Sweden/Finland)",            0 )
+COMP( 1984, cpc464,   0,        0,      cpc464,        cpc464, driver_device,   0,       "Amstrad plc",         "Amstrad CPC464",                            0 )
+COMP( 1985, cpc664,   cpc464,   0,      cpc664,       cpc664, driver_device,   0,       "Amstrad plc",         "Amstrad CPC664",                            0 )
+COMP( 1985, cpc6128,  cpc464,   0,      cpc6128,       cpc6128, driver_device,  0,       "Amstrad plc",         "Amstrad CPC6128",                           0 )
+COMP( 1985, cpc6128f, cpc464,   0,      cpc6128,       cpc6128f, driver_device, 0,       "Amstrad plc",         "Amstrad CPC6128 (France, AZERTY Keyboard)", 0 )
+COMP( 1985, cpc6128s, cpc464,   0,      cpc6128,       cpc6128s, driver_device, 0,       "Amstrad plc",         "Amstrad CPC6128 (Sweden/Finland)",            0 )
 COMP( 1990, cpc464p,  0,        0,      cpcplus,       plus, driver_device,     0,       "Amstrad plc",         "Amstrad CPC464+",                           0 )
 COMP( 1990, cpc6128p, 0,        0,      cpcplus,       plus, driver_device,     0,       "Amstrad plc",         "Amstrad CPC6128+",                          0 )
 CONS( 1990, gx4000,   0,        0,      gx4000,        gx4000, driver_device,   0,       "Amstrad plc",         "Amstrad GX4000",                            0 )
 COMP( 1989, kccomp,   cpc464,   0,      kccomp,        kccomp, driver_device,   0,       "VEB Mikroelektronik", "KC Compact",                                0 )
-COMP( 1993, al520ex,  cpc464,   0,      aleste,        aleste, driver_device,   0,       "Patisonic",           "Aleste 520EX",                              GAME_IMPERFECT_SOUND )
+COMP( 1993, al520ex,  cpc464,   0,      aleste,        aleste, driver_device,   0,       "Patisonic",           "Aleste 520EX",                              MACHINE_IMPERFECT_SOUND )

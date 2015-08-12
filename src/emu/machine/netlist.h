@@ -68,13 +68,13 @@ public:
 	{
 	}
 
-	bool parse(netlist::setup_t *setup, const pstring name);
+	bool parse(netlist::setup_t &setup, const pstring &name);
 private:
 	pstring m_name;
 };
 
 #define MEMREGION_SOURCE(_name) \
-		setup.register_source(palloc(netlist_source_memregion_t, _name));
+		setup.register_source(palloc(netlist_source_memregion_t(_name)));
 
 #define NETDEV_ANALOG_CALLBACK_MEMBER(_name) \
 	void _name(const double data, const attotime &time)
@@ -642,15 +642,15 @@ public:
 		register_output("Q", m_Q);
 		register_input("FB", m_feedback);
 
-		connect(m_feedback, m_Q);
+		connect_late(m_feedback, m_Q);
 		m_inc = netlist::netlist_time::from_nsec(1);
 
 
 		for (int i = 0; i < MAX_INPUT_CHANNELS; i++)
 		{
-			register_param(pstring::sprintf("CHAN%d", i), m_param_name[i], "");
-			register_param(pstring::sprintf("MULT%d", i), m_param_mult[i], 1.0);
-			register_param(pstring::sprintf("OFFSET%d", i), m_param_offset[i], 0.0);
+			register_param(pformat("CHAN%1")(i), m_param_name[i], "");
+			register_param(pformat("MULT%1")(i), m_param_mult[i], 1.0);
+			register_param(pformat("OFFSET%1")(i), m_param_offset[i], 0.0);
 		}
 		m_num_channel = 0;
 	}

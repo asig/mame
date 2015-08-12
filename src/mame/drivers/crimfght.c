@@ -266,7 +266,7 @@ static MACHINE_CONFIG_START( crimfght, crimfght_state )
 	MCFG_SCREEN_REFRESH_RATE(59.17)             /* verified on pcb */
 	MCFG_SCREEN_VBLANK_TIME(ATTOSECONDS_IN_USEC(0))
 	MCFG_SCREEN_SIZE(64*8, 32*8)
-	MCFG_SCREEN_VISIBLE_AREA(13*8, (64-13)*8-1, 2*8, 30*8-1 )
+	MCFG_SCREEN_VISIBLE_AREA(12*8-2, (64-12)*8-3, 2*8, 30*8-1 )
 	MCFG_SCREEN_UPDATE_DRIVER(crimfght_state, screen_update_crimfght)
 	MCFG_SCREEN_PALETTE("palette")
 
@@ -379,6 +379,6 @@ ROM_END
 
 ***************************************************************************/
 
-GAME( 1989, crimfght,  0,        crimfght, crimfght, driver_device, 0, ROT0, "Konami", "Crime Fighters (US 4 players)", GAME_SUPPORTS_SAVE )
-GAME( 1989, crimfght2, crimfght, crimfght, crimfghtj, driver_device,0, ROT0, "Konami", "Crime Fighters (World 2 Players)", GAME_SUPPORTS_SAVE )
-GAME( 1989, crimfghtj, crimfght, crimfght, crimfghtj, driver_device,0, ROT0, "Konami", "Crime Fighters (Japan 2 Players)", GAME_SUPPORTS_SAVE )
+GAME( 1989, crimfght,  0,        crimfght, crimfght, driver_device, 0, ROT0, "Konami", "Crime Fighters (US 4 players)", MACHINE_SUPPORTS_SAVE )
+GAME( 1989, crimfght2, crimfght, crimfght, crimfghtj, driver_device,0, ROT0, "Konami", "Crime Fighters (World 2 Players)", MACHINE_SUPPORTS_SAVE )
+GAME( 1989, crimfghtj, crimfght, crimfght, crimfghtj, driver_device,0, ROT0, "Konami", "Crime Fighters (Japan 2 Players)", MACHINE_SUPPORTS_SAVE )

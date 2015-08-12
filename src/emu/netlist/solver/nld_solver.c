@@ -9,6 +9,14 @@
  * the vectorizations fast-math enables pretty expensive
  */
 
+// for now, make buggy GCC/Mingw STFU about I64FMT
+#if (defined(__MINGW32__) && (__GNUC__ >= 5))
+#pragma GCC diagnostic push
+#pragma GCC diagnostic ignored "-Wformat"
+#pragma GCC diagnostic ignored "-Wformat-extra-args"
+#endif
+
+
 //#pragma GCC optimize "-ffast-math"
 #if 0
 #pragma GCC optimize "-ffast-math"
@@ -36,7 +44,7 @@
 #include "nld_ms_sor_mat.h"
 #include "nld_ms_gmres.h"
 //#include "nld_twoterm.h"
-#include "../nl_lists.h"
+#include "nl_lists.h"
 
 #if HAS_OPENMP
 #include "omp.h"
@@ -126,19 +134,19 @@ ATTR_COLD void matrix_solver_t::setup(analog_net_t::list_t &nets)
 			switch (p->type())
 			{
 				case terminal_t::TERMINAL:
-					switch (p->netdev().family())
+					switch (p->device().family())
 					{
 						case device_t::CAPACITOR:
-							if (!m_step_devices.contains(&p->netdev()))
-								m_step_devices.add(&p->netdev());
+							if (!m_step_devices.contains(&p->device()))
+								m_step_devices.add(&p->device());
 							break;
 						case device_t::BJT_EB:
 						case device_t::DIODE:
-						//case device_t::VCVS:
+						case device_t::LVCCS:
 						case device_t::BJT_SWITCH:
-							NL_VERBOSE_OUT(("found BJT/Diode\n"));
-							if (!m_dynamic_devices.contains(&p->netdev()))
-								m_dynamic_devices.add(&p->netdev());
+							NL_VERBOSE_OUT(("found BJT/Diode/LVCCS\n"));
+							if (!m_dynamic_devices.contains(&p->device()))
+								m_dynamic_devices.add(&p->device());
 							break;
 						default:
 							break;
@@ -162,7 +170,7 @@ ATTR_COLD void matrix_solver_t::setup(analog_net_t::list_t &nets)
 						if (net_proxy_output == NULL)
 						{
 							net_proxy_output = palloc(analog_output_t);
-							net_proxy_output->init_object(*this, this->name() + "." + pstring::sprintf("m%" SIZETFMT, m_inps.size()));
+							net_proxy_output->init_object(*this, this->name() + "." + pformat("m%1")(m_inps.size()));
 							m_inps.add(net_proxy_output);
 							net_proxy_output->m_proxied_net = &p->net().as_analog();
 						}
@@ -202,7 +210,7 @@ ATTR_COLD void matrix_solver_t::start()
 {
 	register_output("Q_sync", m_Q_sync);
 	register_input("FB_sync", m_fb_sync);
-	connect(m_fb_sync, m_Q_sync);
+	connect_direct(m_fb_sync, m_Q_sync);
 
 	save(NLNAME(m_last_step));
 	save(NLNAME(m_cur_ts));
@@ -262,7 +270,7 @@ void matrix_solver_t::solve_base(C *p)
 		// reschedule ....
 		if (this_resched > 1 && !m_Q_sync.net().is_queued())
 		{
-			netlist().warning("NEWTON_LOOPS exceeded ... reschedule");
+			netlist().warning("NEWTON_LOOPS exceeded on net %s... reschedule", this->name().cstr());
 			m_Q_sync.net().reschedule_in_queue(m_params.m_nt_sync_delay);
 		}
 	}
@@ -279,8 +287,7 @@ ATTR_HOT nl_double matrix_solver_t::solve()
 
 	// We are already up to date. Avoid oscillations.
 	// FIXME: Make this a parameter!
-	//if (delta < netlist_time::from_nsec(1)) // 20000
-	if (delta < netlist_time::from_nsec(20000)) // 20000
+	if (delta < netlist_time::from_nsec(1)) // 20000
 		return -1.0;
 
 	/* update all terminals for new time step */
@@ -346,7 +353,7 @@ NETLIB_START(solver)
 	// internal staff
 
 	register_input("FB_step", m_fb_step);
-	connect(m_fb_step, m_Q_step);
+	connect_late(m_fb_step, m_Q_step);
 
 }
 
@@ -425,9 +432,9 @@ template <int m_N, int _storage_N>
 matrix_solver_t * NETLIB_NAME(solver)::create_solver(int size, const bool use_specific)
 {
 	if (use_specific && m_N == 1)
-		return palloc(matrix_solver_direct1_t, &m_params);
+		return palloc(matrix_solver_direct1_t(&m_params));
 	else if (use_specific && m_N == 2)
-		return palloc(matrix_solver_direct2_t, &m_params);
+		return palloc(matrix_solver_direct2_t(&m_params));
 	else
 	{
 		if (size >= m_gs_threshold)
@@ -435,17 +442,17 @@ matrix_solver_t * NETLIB_NAME(solver)::create_solver(int size, const bool use_sp
 			if (pstring("SOR_MAT").equals(m_iterative_solver))
 			{
 				typedef matrix_solver_SOR_mat_t<m_N,_storage_N> solver_mat;
-				return palloc(solver_mat, &m_params, size);
+				return palloc(solver_mat(&m_params, size));
 			}
 			else if (pstring("SOR").equals(m_iterative_solver))
 			{
 				typedef matrix_solver_SOR_t<m_N,_storage_N> solver_GS;
-				return palloc(solver_GS, &m_params, size);
+				return palloc(solver_GS(&m_params, size));
 			}
 			else if (pstring("GMRES").equals(m_iterative_solver))
 			{
 				typedef matrix_solver_GMRES_t<m_N,_storage_N> solver_GMRES;
-				return palloc(solver_GMRES, &m_params, size);
+				return palloc(solver_GMRES(&m_params, size));
 			}
 			else
 			{
@@ -456,7 +463,7 @@ matrix_solver_t * NETLIB_NAME(solver)::create_solver(int size, const bool use_sp
 		else
 		{
 			typedef matrix_solver_direct_t<m_N,_storage_N> solver_D;
-			return palloc(solver_D, &m_params, size);
+			return palloc(solver_D(&m_params, size));
 		}
 	}
 }
@@ -512,7 +519,7 @@ ATTR_COLD void NETLIB_NAME(solver)::post_start()
 	}
 
 	// setup the solvers
-	netlist().log("Found %d net groups in %" SIZETFMT " nets\n", cur_group + 1, netlist().m_nets.size());
+	netlist().log("Found %d net groups in %" SIZETFMT " nets\n", cur_group + 1, SIZET_PRINTF(netlist().m_nets.size()));
 	for (int i = 0; i <= cur_group; i++)
 	{
 		matrix_solver_t *ms;
@@ -577,19 +584,19 @@ ATTR_COLD void NETLIB_NAME(solver)::post_start()
 				break;
 		}
 
-		register_sub(pstring::sprintf("Solver_%" SIZETFMT,m_mat_solvers.size()), *ms);
+		register_sub(pformat("Solver_%1")(m_mat_solvers.size()), *ms);
 
 		ms->vsetup(groups[i]);
 
 		m_mat_solvers.add(ms);
 
 		netlist().log("Solver %s", ms->name().cstr());
-		netlist().log("       # %d ==> %" SIZETFMT " nets", i, groups[i].size()); //, (*(*groups[i].first())->m_core_terms.first())->name().cstr());
+		netlist().log("       # %d ==> %" SIZETFMT " nets", i, SIZET_PRINTF(groups[i].size())); //, (*(*groups[i].first())->m_core_terms.first())->name().cstr());
 		netlist().log("       has %s elements", ms->is_dynamic() ? "dynamic" : "no dynamic");
 		netlist().log("       has %s elements", ms->is_timestep() ? "timestep" : "no timestep");
 		for (std::size_t j=0; j<groups[i].size(); j++)
 		{
-			netlist().log("Net %" SIZETFMT ": %s", j, groups[i][j]->name().cstr());
+			netlist().log("Net %" SIZETFMT ": %s", SIZET_PRINTF(j), groups[i][j]->name().cstr());
 			net_t *n = groups[i][j];
 			for (std::size_t k = 0; k < n->m_core_terms.size(); k++)
 			{
@@ -601,3 +608,7 @@ ATTR_COLD void NETLIB_NAME(solver)::post_start()
 }
 
 NETLIB_NAMESPACE_DEVICES_END()
+
+#if (defined(__MINGW32__) && (__GNUC__ >= 5))
+#pragma GCC diagnostic pop
+#endif

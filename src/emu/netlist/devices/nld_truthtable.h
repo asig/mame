@@ -10,8 +10,8 @@
 #ifndef NLD_TRUTHTABLE_H_
 #define NLD_TRUTHTABLE_H_
 
-#include "../nl_base.h"
-#include "../nl_factory.h"
+#include "nl_base.h"
+#include "nl_factory.h"
 
 #define NETLIB_TRUTHTABLE(_name, _nIN, _nOUT, _state)                               \
 	class NETLIB_NAME(_name) : public nld_truthtable_t<_nIN, _nOUT, _state>         \
@@ -36,7 +36,7 @@
 	ttd->m_desc.add(_x);
 
 #define TT_FAMILY(_x) \
-	ttd->m_family = netlist::logic_family_desc_t::from_model(_x);
+	ttd->m_family = setup.family_from_model(_x);
 
 #define TRUTHTABLE_END() \
 	setup.factory().register_device(ttd); \
@@ -158,7 +158,7 @@ public:
 			if (idx>=0)
 			{
 				//printf("connecting %s %d\n", out[i].cstr(), idx);
-				connect(m_Q[i], m_I[idx]);
+				connect_late(m_Q[i], m_I[idx]);
 				// disable ignore for this inputs altogether.
 				// FIXME: This shouldn't be necessary
 				disabled_ignore |= (1<<idx);
@@ -269,13 +269,15 @@ public:
 		 */
 		if (m_NI < 2)
 			return;
-		if (has_state == 0)
+		else if (has_state == 0)
+		{
 			if (--m_active == 0)
 			{
 				for (unsigned i = 0; i< m_NI; i++)
 					m_I[i].inactivate();
 				m_ign = (1<<m_NI)-1;
 			}
+		}
 	}
 
 	logic_input_t m_I[m_NI];
@@ -293,7 +295,7 @@ private:
 
 class netlist_base_factory_truthtable_t : public base_factory_t
 {
-	NETLIST_PREVENT_COPYING(netlist_base_factory_truthtable_t)
+	P_PREVENT_COPYING(netlist_base_factory_truthtable_t)
 public:
 	netlist_base_factory_truthtable_t(const pstring &name, const pstring &classname,
 			const pstring &def_param)
@@ -314,7 +316,7 @@ public:
 template<unsigned m_NI, unsigned m_NO, int has_state>
 class netlist_factory_truthtable_t : public netlist_base_factory_truthtable_t
 {
-	NETLIST_PREVENT_COPYING(netlist_factory_truthtable_t)
+	P_PREVENT_COPYING(netlist_factory_truthtable_t)
 public:
 	netlist_factory_truthtable_t(const pstring &name, const pstring &classname,
 			const pstring &def_param)
@@ -323,7 +325,7 @@ public:
 	device_t *Create()
 	{
 		typedef nld_truthtable_t<m_NI, m_NO, has_state> tt_type;
-		device_t *r = palloc(tt_type, &m_ttbl, m_desc);
+		device_t *r = palloc(tt_type(&m_ttbl, m_desc));
 		r->set_logic_family(m_family);
 		//r->init(setup, name);
 		return r;

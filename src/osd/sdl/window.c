@@ -1563,6 +1563,10 @@ osd_dim sdl_window_info::get_min_bounds(int constrain)
 		}
 	}
 
+	// remove extra window stuff
+	minwidth -= wnd_extra_width();
+	minheight -= wnd_extra_height();
+
 	return osd_dim(minwidth, minheight);
 }
 

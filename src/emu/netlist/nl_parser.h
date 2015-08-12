@@ -16,15 +16,17 @@ namespace netlist
 {
 	class parser_t : public ptokenizer
 	{
-		NETLIST_PREVENT_COPYING(parser_t)
+		P_PREVENT_COPYING(parser_t)
 	public:
-		parser_t(setup_t &setup)
-		: ptokenizer(), m_setup(setup), m_buf(NULL) {}
+		parser_t(pistream &strm, setup_t &setup)
+		: ptokenizer(strm), m_setup(setup), m_buf(NULL) {}
 
-		bool parse(const char *buf, const pstring nlname = "");
+		bool parse(const pstring nlname = "");
 
+	protected:
 		void parse_netlist(const pstring &nlname);
 		void net_alias();
+		void dippins();
 		void netdev_param();
 		void net_c();
 		void frontier();
@@ -37,7 +39,6 @@ namespace netlist
 		void net_local_source();
 		void net_truthtable_start();
 
-	protected:
 		/* for debugging messages */
 		netlist_t &netlist() { return m_setup.netlist(); }
 
@@ -51,6 +52,7 @@ namespace netlist
 		token_id_t m_tok_comma;
 		token_id_t m_tok_ALIAS;
 		token_id_t m_tok_NET_C;
+		token_id_t m_tok_DIPPINS;
 		token_id_t m_tok_FRONTIER;
 		token_id_t m_tok_PARAM;
 		token_id_t m_tok_NET_MODEL;
@@ -59,10 +61,12 @@ namespace netlist
 		token_id_t m_tok_SUBMODEL;
 		token_id_t m_tok_INCLUDE;
 		token_id_t m_tok_LOCAL_SOURCE;
+		token_id_t m_tok_LOCAL_LIB_ENTRY;
 		token_id_t m_tok_TRUTHTABLE_START;
 		token_id_t m_tok_TRUTHTABLE_END;
 		token_id_t m_tok_TT_HEAD;
 		token_id_t m_tok_TT_LINE;
+		token_id_t m_tok_TT_FAMILY;
 
 		setup_t &m_setup;
 
