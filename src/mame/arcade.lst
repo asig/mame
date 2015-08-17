@@ -3038,6 +3038,7 @@ whizz           // (c) 1989 Philko (NOT A CAPCOM GAME but runs on modified Sidea
 avengers        //  2/1987 (c) 1987 (US)
 avengers2       //  2/1987 (c) 1987 (US)
 buraiken        //  2/1987 (c) 1987 (Japan)
+buraikenb		//  2/1987 (c) 1987 (Japan)
 bionicc         //  3/1987 (c) 1987 (Euro)
 bionicc1        //  3/1987 (c) 1987 (US)
 bionicc2        //  3/1987 (c) 1987 (US)
@@ -6143,10 +6144,11 @@ ragtimea        // MBD (c) 1992 (Japan, v1.3)
 dblewing        // MBE (c) 1993 Mitchell
 fghthist        // MBF (c) 1993 Data East Corporation (World) DE-0380-2 PCB
 fghthista       // MBF (c) 1993 Data East Corporation (World) DE-0380-2 PCB
-fghthistu       // MBF (c) 1993 Data East Corporation (US)    DE-0395-1 PCB
+fghthistu       // MBF (c) 1993 Data East Corporation (US)    DE-0396-0 PCB
 fghthistua      // MBF (c) 1993 Data East Corporation (US)    DE-0395-1 PCB
+fghthistub      // MBF (c) 1993 Data East Corporation (US)    DE-0395-1 PCB
+fghthistuc      // MBF (c) 1993 Data East Corporation (US)    DE-0380-2 PCB
 fghthistj       // MBF (c) 1993 Data East Corporation (Japan) DE-0395-1 PCB
-fghthistub      // MBF (c) 1993 Data East Corporation (US)    DE-0380-2 PCB
 fghthistja      // MBF (c) 1993 Data East Corporation (Japan) DE-0380-2 PCB
 fghthistjb      // MBF (c) 1993 Data East Corporation (Japan) DE-0380-1 PCB
 hvysmsh         // MBG (c) 1993 Data East Corporation (World)
@@ -9529,6 +9531,7 @@ puzzlet         // (c) 2000 Yunizu Corporation (Japan)
 spcforce        // (c) 1980 Venture Line
 spcforc2        // bootleg
 meteor          // (c) 1981 Venture Line
+meteors			// (c) 1981 Amusement World
 looping         // (c) 1982 Video Games GmbH
 loopingv        // (c) 1982 Video Games GmbH (Venture Line license)
 loopingva       // (c) 1982 Video Games GmbH (Venture Line license)
@@ -9899,6 +9902,7 @@ starzan         // (c) 2000?
 
 // IGS027A Cpu Games
 slqz3           // (c) 1999
+fruitpar        // (c) 200?
 zhongguo        // (c) 2000
 sdwx            // (c) 2002
 sddz            // (c) 200?
@@ -10718,6 +10722,7 @@ riviera         // (c) 1987 Merit
 rivieraa        // (c) 1986 Merit
 rivierab        // (c) 1986 Merit
 americna        // (c) 1987 Merit
+americnaa       // (c) 1987 Merit
 meritjp         // (c) 1987 Merit
 dodgecty        // (c) 1988 Merit
 dodgectya       // (c) 1986 Merit
@@ -11792,6 +11797,7 @@ showhand        // (c) 2000  Astro Corp.
 showhanc        // (c) 2000  Astro Corp.
 skilldrp        // (c) 2002  Astro Corp.
 speeddrp        // (c) 2003  Astro Corp.
+dinodino        // (c) 2003? Astro Corp.
 astoneag        // (c) 2004? Astro Corp.
 winbingo        // (c) 2005? Astro Corp.
 winbingoa       // (c) 2005? Astro Corp.
@@ -32171,3 +32177,5 @@ amusco     // 1987, Amusco.
 cocoloco   // 198?, Petaco S.A.
 
 alinvade
+
+joystand   // 1997 Yuvo

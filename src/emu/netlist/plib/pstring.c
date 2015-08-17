@@ -342,7 +342,7 @@ const pstring::type_t pstring::vprintf(va_list args) const
 	char tempbuf[4096];
 	std::vsprintf(tempbuf, cstr(), args);
 
-	return pstring_t(tempbuf);
+	return type_t(tempbuf);
 }
 
 
@@ -350,7 +350,7 @@ const pstring::type_t pstring::sprintf(const char *format, ...)
 {
 	va_list ap;
 	va_start(ap, format);
-	pstring_t ret = pstring(format).vprintf(ap);
+	type_t ret = pstring(format).vprintf(ap);
 	va_end(ap);
 	return ret;
 }
@@ -517,15 +517,16 @@ pformat::pformat(const char *fmt)
 	m_str[sizeof(m_str) - 1] = 0;
 }
 
-pformat &pformat::update(const char *f, const char *l, ...)
+void pformat::format_element(const char *f, const char *l, const char *fmt_spec,  ...)
 {
 	va_list ap;
-	va_start(ap, l);
+	va_start(ap, fmt_spec);
 	char fmt[30] = "%";
 	char search[10] = "";
 	char buf[1024];
 	strcat(fmt, f);
 	strcat(fmt, l);
+	strcat(fmt, fmt_spec);
 	int nl = vsprintf(buf, fmt, ap);
 	m_arg++;
 	int sl = sprintf(search, "%%%d", m_arg);
@@ -537,7 +538,6 @@ pformat &pformat::update(const char *f, const char *l, ...)
 		memcpy(p, buf, nl);
 	}
 	va_end(ap);
-	return *this;
 }
 
 
