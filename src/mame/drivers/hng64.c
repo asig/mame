@@ -1,9 +1,8 @@
 // license:LGPL-2.1+
-// copyright-holders:David Haywood, Angelo Salese, ElSemi, Andrew Gardner, Andrew Zaferakis
+// copyright-holders:David Haywood, Angelo Salese, ElSemi, Andrew Gardner
 /* Hyper NeoGeo 64
 
 Driver by David Haywood, ElSemi, Andrew Gardner and Angelo Salese
-Rasterizing code provided in part by Andrew Zaferakis.
 
 
 Notes:
@@ -531,7 +530,7 @@ READ32_MEMBER(hng64_state::hng64_sysregs_r)
 		//case 0x108c:
 		case 0x1104: return m_irq_level;
 		case 0x111c:
-			printf("Read to IRQ ACK?\n");
+			//printf("Read to IRQ ACK?\n");
 			break;
 		case 0x1254: return 0x00000000; //dma status, 0x800
 	}
@@ -594,7 +593,7 @@ WRITE32_MEMBER(hng64_state::hng64_sysregs_w)
 			break;
 		//0x110c global irq mask?
 		/* irq ack */
-		case 0x111c: m_irq_pending &= ~m_sysregs[offset]; m_set_irq(0x0000); break;
+		case 0x111c: m_irq_pending &= ~m_sysregs[offset]; set_irq(0x0000); break;
 		case 0x1204: m_dma_start = m_sysregs[offset]; break;
 		case 0x1214: m_dma_dst = m_sysregs[offset]; break;
 		case 0x1224:
@@ -917,7 +916,7 @@ READ16_MEMBER(hng64_state::main_sound_comms_r)
 		case 0x06:
 			return sound_latch[1];
 		default:
-			printf("%08x R\n",offset*2);
+			//printf("%08x R\n",offset*2);
 			break;
 	}
 	return 0;
@@ -936,10 +935,10 @@ WRITE16_MEMBER(hng64_state::main_sound_comms_w)
 		case 0x08:
 			m_audiocpu->set_input_line(5, (data & 1) ? ASSERT_LINE : CLEAR_LINE);
 			if(data & 0xfe)
-				printf("IRQ send %02x?\n",data);
+				//printf("IRQ send %02x?\n",data);
 			break;
 		default:
-			printf("%02x %04x\n",offset*2,data);
+			//printf("%02x %04x\n",offset*2,data);
 			break;
 	}
 }
@@ -1301,7 +1300,6 @@ static const gfx_layout hng64_16x16x4_tilelayout =
 	32*32
 };
 
-
 static const gfx_layout hng64_16x16x8_tilelayout =
 {
 	16,16,
@@ -1355,9 +1353,7 @@ static const gfx_layout hng64_texlayout =
 	texlayout_yoffset
 };
 
-
 static GFXDECODE_START( hng64 )
-
 	/* tilemap tiles */
 	GFXDECODE_ENTRY( "scrtile", 0, hng64_8x8x4_tilelayout,  0x0, 0x100 )
 	GFXDECODE_ENTRY( "scrtile", 0, hng64_8x8x8_tilelayout,  0x0, 0x10 )
@@ -1375,12 +1371,11 @@ static void hng64_reorder( UINT8* gfxregion, size_t gfxregionsize)
 {
 	// by default 2 4bpp tiles are stored in each 8bpp tile, this makes decoding in MAME harder than it needs to be
 	// reorder them
-	int i;
 	UINT8 tilesize = 4*8; // 4 bytes per line, 8 lines
 
 	dynamic_buffer buffer(gfxregionsize);
 
-	for (i=0;i<gfxregionsize/2;i+=tilesize)
+	for (int i = 0; i < gfxregionsize/2; i += tilesize)
 	{
 		memcpy(&buffer[i*2+tilesize], gfxregion+i,                   tilesize);
 		memcpy(&buffer[i*2],          gfxregion+i+(gfxregionsize/2), tilesize);
@@ -1393,7 +1388,6 @@ DRIVER_INIT_MEMBER(hng64_state,hng64_reorder_gfx)
 {
 	hng64_reorder(memregion("scrtile")->base(), memregion("scrtile")->bytes());
 }
-
 
 DRIVER_INIT_MEMBER(hng64_state,hng64)
 {
@@ -1446,8 +1440,7 @@ DRIVER_INIT_MEMBER(hng64_state,hng64_shoot)
 	DRIVER_INIT_CALL(hng64);
 }
 
-
-void hng64_state::m_set_irq(UINT32 irq_vector)
+void hng64_state::set_irq(UINT32 irq_vector)
 {
 	/*
 	    TODO:
@@ -1475,8 +1468,7 @@ void hng64_state::m_set_irq(UINT32 irq_vector)
 
 	if(m_irq_pending)
 	{
-		int i;
-		for(i=0;i<31;i++)
+		for(int i = 0; i < 31; i++)
 		{
 			if(m_irq_pending & 1 << i)
 			{
@@ -1497,14 +1489,13 @@ TIMER_DEVICE_CALLBACK_MEMBER(hng64_state::hng64_irq)
 
 	switch(scanline)
 	{
-		case 224*2: m_set_irq(0x0001);  break; // lv 0 vblank irq
-//      case 0*2:   m_set_irq(0x0002);  break; // lv 1
-//      case 32*2:  m_set_irq(0x0008);  break; // lv 2
-//      case 64*2:  m_set_irq(0x0008);  break; // lv 2
-		case 128*2: m_set_irq(0x0800);  break; // lv 11 network irq?
+		case 224*2: set_irq(0x0001);  break; // lv 0 vblank irq
+//      case 0*2:   set_irq(0x0002);  break; // lv 1
+//      case 32*2:  set_irq(0x0008);  break; // lv 2
+//      case 64*2:  set_irq(0x0008);  break; // lv 2
+		case 128*2: set_irq(0x0800);  break; // lv 11 network irq?
 	}
 }
-
 
 void hng64_state::machine_start()
 {
@@ -1519,20 +1510,14 @@ void hng64_state::machine_start()
 	m_comm_rom = memregion("user2")->base();
 	m_comm_ram = auto_alloc_array(machine(),UINT8,0x10000);
 
-
 	for (int i = 0; i < 0x38 / 4; i++)
 	{
 		m_videoregs[i] = 0xdeadbeef;
 	}
-
 }
-
 
 void hng64_state::machine_reset()
 {
-	// "Display List" init - ugly
-//  m_activeBuffer = 0;
-
 	/* For simulate MCU stepping */
 	m_mcu_fake_time = 0;
 	m_mcu_en = 0;
@@ -1552,9 +1537,6 @@ static MACHINE_CONFIG_START(hng64, hng64_state)
 	MCFG_CPU_PROGRAM_MAP(hng_map)
 	MCFG_TIMER_DRIVER_ADD_SCANLINE("scantimer", hng64_state, hng64_irq, "screen", 0, 1)
 
-
-
-
 	MCFG_NVRAM_ADD_0FILL("nvram")
 
 	MCFG_DEVICE_ADD("rtc", MSM6242, XTAL_32_768kHz)
@@ -1571,8 +1553,8 @@ static MACHINE_CONFIG_START(hng64, hng64_state)
 
 	MCFG_FRAGMENT_ADD( hng64_audio )
 	MCFG_FRAGMENT_ADD( hng64_network )
-
 MACHINE_CONFIG_END
+
 
 #define ROM_LOAD_HNG64_BIOS(bios,name,offset,length,hash) \
 		ROMX_LOAD(name, offset, length, hash,  ROM_BIOS(bios+1)) /* Note '+1' */
@@ -1583,11 +1565,11 @@ MACHINE_CONFIG_END
 	ROM_SYSTEM_BIOS( 0, "japan", "Japan" ) \
 	ROM_LOAD_HNG64_BIOS( 0, "brom1.bin",         0x00000, 0x080000, CRC(a30dd3de) SHA1(3e2fd0a56214e6f5dcb93687e409af13d065ea30) ) \
 	ROM_SYSTEM_BIOS( 1, "us", "USA" ) \
-	ROM_LOAD_HNG64_BIOS( 1, "bios_us.bin",        0x00000, 0x080000,  CRC(ab5948d6) SHA1(f8b940c1ae5ce2d3b2cd0c9bfaf6e5b063cec06e) ) \
+	ROM_LOAD_HNG64_BIOS( 1, "bios_us.bin",       0x00000, 0x080000,  CRC(ab5948d6) SHA1(f8b940c1ae5ce2d3b2cd0c9bfaf6e5b063cec06e) ) \
 	ROM_SYSTEM_BIOS( 2, "export", "Export" ) \
-	ROM_LOAD_HNG64_BIOS( 2, "bios_export.bin",        0x00000, 0x080000, CRC(bbf07ec6) SHA1(5656aa077f6a6d43953f15b5123eea102a9d5313) ) \
+	ROM_LOAD_HNG64_BIOS( 2, "bios_export.bin",   0x00000, 0x080000, CRC(bbf07ec6) SHA1(5656aa077f6a6d43953f15b5123eea102a9d5313) ) \
 	ROM_SYSTEM_BIOS( 3, "korea", "Korea" ) \
-	ROM_LOAD_HNG64_BIOS( 3, "bios_korea.bin",        0x00000, 0x080000, CRC(ac953e2e) SHA1(f502188ef252b7c9d04934c4b525730a116de48b) ) \
+	ROM_LOAD_HNG64_BIOS( 3, "bios_korea.bin",    0x00000, 0x080000, CRC(ac953e2e) SHA1(f502188ef252b7c9d04934c4b525730a116de48b) ) \
 	ROM_REGION( 0x0100000, "user2", 0 ) /* KL5C80 BIOS */ \
 	ROM_LOAD ( "from1.bin", 0x000000, 0x080000,  CRC(6b933005) SHA1(e992747f46c48b66e5509fe0adf19c91250b00c7) ) \
 	ROM_REGION( 0x0100000, "fpga", 0 ) /* FPGA data  */ \
@@ -2009,13 +1991,13 @@ ROM_START( buriki )
 ROM_END
 
 /* Bios */
-GAME( 1997, hng64,    0,      hng64, hng64, hng64_state,  hng64,       ROT0, "SNK", "Hyper NeoGeo 64 Bios", MACHINE_NOT_WORKING|MACHINE_NO_SOUND|MACHINE_IS_BIOS_ROOT )
+GAME( 1997, hng64,    0,      hng64, hng64,    hng64_state,  hng64,       ROT0, "SNK", "Hyper NeoGeo 64 Bios", MACHINE_NOT_WORKING|MACHINE_NO_SOUND|MACHINE_IS_BIOS_ROOT )
 
 /* Games */
-GAME( 1997, roadedge, hng64,  hng64, roadedge, hng64_state,  hng64_race,  ROT0, "SNK", "Roads Edge / Round Trip (rev.B)",        MACHINE_NOT_WORKING|MACHINE_NO_SOUND )  /* 001 */
-GAME( 1998, sams64,   hng64,  hng64, hng64, hng64_state,  ss64,        ROT0, "SNK", "Samurai Shodown 64 / Samurai Spirits 64", MACHINE_NOT_WORKING|MACHINE_NO_SOUND ) /* 002 */
-GAME( 1998, xrally,   hng64,  hng64, roadedge, hng64_state,  hng64_race,  ROT0, "SNK", "Xtreme Rally / Off Beat Racer!",         MACHINE_NOT_WORKING|MACHINE_NO_SOUND )  /* 003 */
-GAME( 1998, bbust2,   hng64,  hng64, bbust2, hng64_state, hng64_shoot, ROT0, "SNK", "Beast Busters 2nd Nightmare",            MACHINE_NOT_WORKING|MACHINE_NO_SOUND )  /* 004 */
-GAME( 1998, sams64_2, hng64,  hng64, hng64, hng64_state,  ss64,        ROT0, "SNK", "Samurai Shodown: Warrior's Rage / Samurai Spirits 2: Asura Zanmaden", MACHINE_NOT_WORKING|MACHINE_NO_SOUND ) /* 005 */
-GAME( 1998, fatfurwa, hng64,  hng64, hng64, hng64_state,  fatfurwa,    ROT0, "SNK", "Fatal Fury: Wild Ambition (rev.A)",          MACHINE_NOT_WORKING|MACHINE_NO_SOUND )  /* 006 */
-GAME( 1999, buriki,   hng64,  hng64, hng64, hng64_state,  buriki,      ROT0, "SNK", "Buriki One (rev.B)",                     MACHINE_NOT_WORKING|MACHINE_NO_SOUND )  /* 007 */
+GAME( 1997, roadedge, hng64,  hng64, roadedge, hng64_state,  hng64_race,  ROT0, "SNK", "Roads Edge / Round Trip (rev.B)", MACHINE_NOT_WORKING|MACHINE_NO_SOUND )  /* 001 */
+GAME( 1998, sams64,   hng64,  hng64, hng64,    hng64_state,  ss64,        ROT0, "SNK", "Samurai Shodown 64 / Samurai Spirits 64", MACHINE_NOT_WORKING|MACHINE_NO_SOUND ) /* 002 */
+GAME( 1998, xrally,   hng64,  hng64, roadedge, hng64_state,  hng64_race,  ROT0, "SNK", "Xtreme Rally / Off Beat Racer!", MACHINE_NOT_WORKING|MACHINE_NO_SOUND )  /* 003 */
+GAME( 1998, bbust2,   hng64,  hng64, bbust2,   hng64_state,  hng64_shoot, ROT0, "SNK", "Beast Busters 2nd Nightmare", MACHINE_NOT_WORKING|MACHINE_NO_SOUND )  /* 004 */
+GAME( 1998, sams64_2, hng64,  hng64, hng64,    hng64_state,  ss64,        ROT0, "SNK", "Samurai Shodown: Warrior's Rage / Samurai Spirits 2: Asura Zanmaden", MACHINE_NOT_WORKING|MACHINE_NO_SOUND ) /* 005 */
+GAME( 1998, fatfurwa, hng64,  hng64, hng64,    hng64_state,  fatfurwa,    ROT0, "SNK", "Fatal Fury: Wild Ambition (rev.A)", MACHINE_NOT_WORKING|MACHINE_NO_SOUND )  /* 006 */
+GAME( 1999, buriki,   hng64,  hng64, hng64,    hng64_state,  buriki,      ROT0, "SNK", "Buriki One (rev.B)", MACHINE_NOT_WORKING|MACHINE_NO_SOUND )  /* 007 */
