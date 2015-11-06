@@ -17,6 +17,7 @@
 #include "rendfont.h"
 #include "uiinput.h"
 #include "ui/ui.h"
+#include "ui/menu.h"
 #include "ui/cheatopt.h"
 #include "ui/mainmenu.h"
 #include "ui/miscmenu.h"
@@ -24,6 +25,7 @@
 #include "ui/sliders.h"
 #include "ui/viewgfx.h"
 #include "imagedev/cassette.h"
+#include "image.h"
 
 
 /***************************************************************************
@@ -124,7 +126,9 @@ static INT32 slider_overyscale(running_machine &machine, void *arg, std::string 
 static INT32 slider_overxoffset(running_machine &machine, void *arg, std::string *str, INT32 newval);
 static INT32 slider_overyoffset(running_machine &machine, void *arg, std::string *str, INT32 newval);
 static INT32 slider_flicker(running_machine &machine, void *arg, std::string *str, INT32 newval);
-static INT32 slider_beam(running_machine &machine, void *arg, std::string *str, INT32 newval);
+static INT32 slider_beam_width_min(running_machine &machine, void *arg, std::string *str, INT32 newval);
+static INT32 slider_beam_width_max(running_machine &machine, void *arg, std::string *str, INT32 newval);
+static INT32 slider_beam_intensity_weight(running_machine &machine, void *arg, std::string *str, INT32 newval);
 static char *slider_get_screen_desc(screen_device &screen);
 #ifdef MAME_DEBUG
 static INT32 slider_crossscale(running_machine &machine, void *arg, std::string *str, INT32 newval);
@@ -381,7 +385,6 @@ void ui_manager::display_startup_screens(bool first_time, bool show_disclaimer)
 		// loop while we have a handler
 		while (m_handler_callback != handler_ingame && !machine().scheduled_event_pending() && !ui_menu::stack_has_special_main_menu())
 		{
-			machine().manager().web()->serve();
 			//MKChamp Disabling of whitebox
  			if (machine().options().disable_nagscreen_patch())
  			{
@@ -1722,9 +1725,9 @@ UINT32 ui_manager::handler_load_save(running_machine &machine, render_container 
 	{
 		// display a popup indicating things were cancelled
 		if (state == LOADSAVE_SAVE)
-			popmessage("Save cancelled");
+			machine.popmessage("Save cancelled");
 		else
-			popmessage("Load cancelled");
+			machine.popmessage("Load cancelled");
 
 		// reset the state
 		machine.resume();
@@ -1750,12 +1753,12 @@ UINT32 ui_manager::handler_load_save(running_machine &machine, render_container 
 	sprintf(filename, "%c", file);
 	if (state == LOADSAVE_SAVE)
 	{
-		popmessage("Save to position %c", file);
+		machine.popmessage("Save to position %c", file);
 		machine.schedule_save(filename);
 	}
 	else
 	{
-		popmessage("Load from position %c", file);
+		machine.popmessage("Load from position %c", file);
 		machine.schedule_load(filename);
 	}
 
@@ -1983,10 +1986,14 @@ static slider_state *slider_init(running_machine &machine)
 	for (screen_device *screen = scriter.first(); screen != NULL; screen = scriter.next())
 		if (screen->screen_type() == SCREEN_TYPE_VECTOR)
 		{
-			// add flicker control
+			// add vector control
 			*tailptr = slider_alloc(machine, "Vector Flicker", 0, 0, 1000, 10, slider_flicker, NULL);
 			tailptr = &(*tailptr)->next;
-			*tailptr = slider_alloc(machine, "Beam Width", 10, 100, 1000, 10, slider_beam, NULL);
+			*tailptr = slider_alloc(machine, "Beam Width Minimum", 1, 100, 1000, 1, slider_beam_width_min, NULL);
+			tailptr = &(*tailptr)->next;
+			*tailptr = slider_alloc(machine, "Beam Width Maximum", 1, 100, 1000, 1, slider_beam_width_max, NULL);
+			tailptr = &(*tailptr)->next;
+			*tailptr = slider_alloc(machine, "Beam Intensity Weight", -1000, 0, 1000, 10, slider_beam_intensity_weight, NULL);
 			tailptr = &(*tailptr)->next;
 			break;
 		}
@@ -2359,26 +2366,58 @@ static INT32 slider_flicker(running_machine &machine, void *arg, std::string *st
 {
 	vector_device *vector = NULL;
 	if (newval != SLIDER_NOCHANGE)
-		vector->set_flicker((float)newval * 0.1f);
+		vector->set_flicker((float)newval * 0.001f);
 	if (str != NULL)
 		strprintf(*str,"%1.2f", (double) vector->get_flicker());
-	return floor(vector->get_flicker() * 10.0f + 0.5f);
+	return floor(vector->get_flicker() * 1000.0f + 0.5f);
 }
 
 
 //-------------------------------------------------
-//  slider_beam - vector beam width slider
+//  slider_beam_width_min - minimum vector beam width slider
 //  callback
 //-------------------------------------------------
 
-static INT32 slider_beam(running_machine &machine, void *arg, std::string *str, INT32 newval)
+static INT32 slider_beam_width_min(running_machine &machine, void *arg, std::string *str, INT32 newval)
 {
 	vector_device *vector = NULL;
 	if (newval != SLIDER_NOCHANGE)
-		vector->set_beam((float)newval * 0.01f);
+		vector->set_beam_width_min(MIN((float)newval * 0.01f, vector->get_beam_width_max()));
 	if (str != NULL)
-		strprintf(*str,"%1.2f", (double) vector->get_beam());
-	return floor(vector->get_beam() * 100.0f + 0.5f);
+		strprintf(*str,"%1.2f", (double) vector->get_beam_width_min());
+	return floor(vector->get_beam_width_min() * 100.0f + 0.5f);
+}
+
+
+//-------------------------------------------------
+//  slider_beam_width_max - maximum vector beam width slider
+//  callback
+//-------------------------------------------------
+
+static INT32 slider_beam_width_max(running_machine &machine, void *arg, std::string *str, INT32 newval)
+{
+	vector_device *vector = NULL;
+	if (newval != SLIDER_NOCHANGE)
+		vector->set_beam_width_max(MAX((float)newval * 0.01f, vector->get_beam_width_min()));
+	if (str != NULL)
+		strprintf(*str,"%1.2f", (double) vector->get_beam_width_max());
+	return floor(vector->get_beam_width_max() * 100.0f + 0.5f);
+}
+
+
+//-------------------------------------------------
+//  slider_beam_intensity_weight - vector beam intensity weight slider
+//  callback
+//-------------------------------------------------
+
+static INT32 slider_beam_intensity_weight(running_machine &machine, void *arg, std::string *str, INT32 newval)
+{
+	vector_device *vector = NULL;
+	if (newval != SLIDER_NOCHANGE)
+		vector->set_beam_intensity_weight((float)newval * 0.001f);
+	if (str != NULL)
+		strprintf(*str,"%1.2f", (double) vector->get_beam_intensity_weight());
+	return floor(vector->get_beam_intensity_weight() * 1000.0f + 0.5f);
 }
 
 

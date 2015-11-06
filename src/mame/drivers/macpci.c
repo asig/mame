@@ -41,6 +41,7 @@
 #include "cpu/powerpc/ppc.h"
 #include "imagedev/chd_cd.h"
 #include "sound/cdda.h"
+#include "softlist.h"
 
 READ64_MEMBER( macpci_state::unk1_r )
 {
@@ -110,6 +111,8 @@ static MACHINE_CONFIG_START( pippin, macpci_state )
 	MCFG_SOUND_ROUTE( 1, "rspeaker", 1.00 )
 
 	MCFG_CDROM_ADD("cdrom")
+	MCFG_CDROM_INTERFACE("pippin_cdrom")
+	MCFG_SOFTWARE_LIST_ADD("cd_list","pippin")
 
 	MCFG_RAM_ADD(RAM_TAG)
 	MCFG_RAM_DEFAULT_SIZE("32M")

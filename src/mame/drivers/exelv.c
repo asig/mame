@@ -60,7 +60,7 @@ TODO:
 #include "bus/generic/slot.h"
 #include "bus/generic/carts.h"
 //#include "imagedev/cassette.h"
-
+#include "softlist.h"
 
 class exelv_state : public driver_device
 {
@@ -523,7 +523,7 @@ static MACHINE_CONFIG_START( exl100, exelv_state )
 	MCFG_GENERIC_CARTSLOT_ADD("cartslot", generic_linear_slot, "exelvision_cart")
 	MCFG_GENERIC_EXTENSIONS("bin,rom")
 
-	MCFG_SOFTWARE_LIST_ADD("cart_list", "exl100_cart")
+	MCFG_SOFTWARE_LIST_ADD("cart_list", "exl100")
 MACHINE_CONFIG_END
 
 

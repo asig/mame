@@ -81,6 +81,8 @@ II Plus: RAM options reduced to 16/32/48 KB.
 #include "bus/a2bus/ramcard128k.h"
 #include "bus/a2bus/ezcgi.h"
 
+#include "softlist.h"
+
 #define A2_CPU_TAG "maincpu"
 #define A2_KBDC_TAG "ay3600"
 #define A2_BUS_TAG "a2bus"
@@ -324,9 +326,6 @@ TIMER_DEVICE_CALLBACK_MEMBER(napple2_state::apple2_interrupt)
 {
 	int scanline = param;
 
-	if((scanline % 8) == 0)
-		machine().first_screen()->update_partial(machine().first_screen()->vpos());
-
 	// update the video system's shadow copy of the system config at the end of the frame
 	if (scanline == 192)
 	{
@@ -450,31 +449,39 @@ void napple2_state::do_io(address_space &space, int offset)
 			break;
 
 		case 0x50:  // graphics mode
+			machine().first_screen()->update_now();
 			m_video->m_graphics = true; break;
 
 		case 0x51:  // text mode
+			machine().first_screen()->update_now();
 			m_video->m_graphics = false; break;
 
 		case 0x52:  // no mix
+			machine().first_screen()->update_now();
 			m_video->m_mix = false; break;
 
 		case 0x53:  // mixed mode
+			machine().first_screen()->update_now();
 			m_video->m_mix = true; break;
 
 		case 0x54:  // set page 1
+			machine().first_screen()->update_now();
 			m_page2 = false;
 			m_video->m_page2 = false;
 			break;
 
 		case 0x55:  // set page 2
+			machine().first_screen()->update_now();
 			m_page2 = true;
 			m_video->m_page2 = true;
 			break;
 
 		case 0x56: // select lo-res
+			machine().first_screen()->update_now();
 			m_video->m_hires = false; break;
 
 		case 0x57: // select hi-res
+			machine().first_screen()->update_now();
 			m_video->m_hires = true; break;
 
 		case 0x58: // AN0 off

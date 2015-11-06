@@ -10,20 +10,36 @@ TODO:
 
 ***************************************************************************/
 
+// the new RIOT does not work with the SuperCharger
+// for example "mame64 a2600 scharger -cass offifrog" fails to load after playing the tape
+#define USE_NEW_RIOT 0
+
+
 #include "emu.h"
-#include "machine/mos6530n.h"
-#include "cpu/m6502/m6502.h"
+
+#include "cpu/m6502/m6507.h"
 #include "sound/tiaintf.h"
 #include "video/tia.h"
 #include "bus/vcs/vcs_slot.h"
 #include "bus/vcs/rom.h"
 #include "bus/vcs/dpc.h"
+#include "bus/vcs/harmony_melody.h"
 #include "bus/vcs/scharger.h"
 #include "bus/vcs/compumat.h"
 #include "bus/vcs_ctrl/ctrl.h"
+#include "softlist.h"
+
+
+#if USE_NEW_RIOT
+#include "machine/mos6530n.h"
+#else
+#include "machine/6532riot.h"
+#endif
+
 
 #define CONTROL1_TAG    "joyport1"
 #define CONTROL2_TAG    "joyport2"
+
 
 
 class a2600_state : public driver_device
@@ -38,7 +54,8 @@ public:
 		m_tia(*this, "tia_video"),
 		m_maincpu(*this, "maincpu"),
 		m_screen(*this, "screen"),
-		m_swb(*this, "SWB")
+		m_swb(*this, "SWB"),
+		m_riot(*this,"riot")
 	{ }
 
 	required_shared_ptr<UINT8> m_riot_ram;
@@ -58,6 +75,8 @@ public:
 	// investigate how the carts mapped here (Mapper JVP) interact with the RIOT device
 	DECLARE_READ8_MEMBER(cart_over_riot_r);
 	DECLARE_WRITE8_MEMBER(cart_over_riot_w);
+	DECLARE_READ8_MEMBER(cart_over_all_r);
+	DECLARE_WRITE8_MEMBER(cart_over_all_w);
 
 protected:
 	required_device<vcs_control_port_device> m_joy1;
@@ -66,9 +85,15 @@ protected:
 	required_device<tia_video_device> m_tia;
 
 	unsigned long detect_2600controllers();
-	required_device<m6502_device> m_maincpu;
+	required_device<m6507_device> m_maincpu;
 	required_device<screen_device> m_screen;
 	required_ioport m_swb;
+#if USE_NEW_RIOT
+	required_device<mos6532_t> m_riot;
+#else
+	required_device<riot6532_device> m_riot;
+#endif
+	
 };
 
 
@@ -80,13 +105,89 @@ protected:
 static const UINT16 supported_screen_heights[4] = { 262, 312, 328, 342 };
 
 
-static ADDRESS_MAP_START(a2600_mem, AS_PROGRAM, 8, a2600_state )
-	ADDRESS_MAP_GLOBAL_MASK(0x1fff)
+static ADDRESS_MAP_START(a2600_mem, AS_PROGRAM, 8, a2600_state ) // 6507 has 13-bit address space, 0x0000 - 0x1fff
 	AM_RANGE(0x0000, 0x007f) AM_MIRROR(0x0f00) AM_DEVREADWRITE("tia_video", tia_video_device, read, write)
 	AM_RANGE(0x0080, 0x00ff) AM_MIRROR(0x0d00) AM_RAM AM_SHARE("riot_ram")
+#if USE_NEW_RIOT
 	AM_RANGE(0x0280, 0x029f) AM_MIRROR(0x0d00) AM_DEVICE("riot", mos6532_t, io_map)
+#else
+	AM_RANGE(0x0280, 0x029f) AM_MIRROR(0x0d00) AM_DEVREADWRITE("riot", riot6532_device, read, write)
+#endif
 	// AM_RANGE(0x1000, 0x1fff) is cart data and it is configured at reset time, depending on the mounted cart!
 ADDRESS_MAP_END
+
+
+READ8_MEMBER(a2600_state::cart_over_all_r)
+{
+	if (!space.debugger_access())
+		m_cart->write_bank(space, offset, 0);
+
+	int masked_offset = offset &~ 0x0d00;
+	UINT8 ret = 0x00;
+
+	if (masked_offset < 0x80)
+	{
+		ret = m_tia->read(space, masked_offset&0x7f);
+	}
+	else if (masked_offset < 0x100)
+	{
+		ret = m_riot_ram[masked_offset & 0x7f];
+	}
+	/* 0x100 - 0x1ff already masked out */
+	else if (masked_offset < 0x280)
+	{
+		ret = m_tia->read(space, masked_offset&0x7f);
+	}
+	else if (masked_offset < 0x2a0)
+	{
+#if USE_NEW_RIOT
+		ret = m_riot->io_r(space, masked_offset);
+#else
+		ret = m_riot->read(space, masked_offset);
+#endif
+	}
+	else if (masked_offset < 0x300)
+	{
+		/* 0x2a0 - 0x2ff nothing? */
+	}
+	/* 0x300 - 0x3ff already masked out */
+
+	return ret;
+}
+
+WRITE8_MEMBER(a2600_state::cart_over_all_w)
+{
+	m_cart->write_bank(space, offset, 0);
+
+	int masked_offset = offset &~ 0x0d00;
+
+	if (masked_offset < 0x80)
+	{
+		m_tia->write(space, masked_offset & 0x7f, data);
+	}
+	else if (masked_offset < 0x100)
+	{
+		m_riot_ram[masked_offset & 0x7f] = data;
+	}
+	/* 0x100 - 0x1ff already masked out */
+	else if (masked_offset < 0x280)
+	{
+		m_tia->write(space, masked_offset & 0x7f, data);
+	}
+	else if (masked_offset < 0x2a0)
+	{
+#if USE_NEW_RIOT
+		m_riot->io_w(space, masked_offset, data);
+#else
+		m_riot->write(space, masked_offset, data);
+#endif
+	}
+	else if (masked_offset < 0x300)
+	{
+		/* 0x2a0 - 0x2ff nothing? */
+	}
+	/* 0x300 - 0x3ff already masked out */
+}
 
 WRITE8_MEMBER(a2600_state::switch_A_w)
 {
@@ -317,6 +418,13 @@ MACHINE_START_MEMBER(a2600_state,a2600)
 		case A26_CM:
 			m_maincpu->space(AS_PROGRAM).install_read_handler(0x1000, 0x1fff, read8_delegate(FUNC(vcs_cart_slot_device::read_rom),(vcs_cart_slot_device*)m_cart));
 			break;
+		case A26_X07:
+			m_maincpu->space(AS_PROGRAM).install_readwrite_handler(0x1000, 0x1fff, read8_delegate(FUNC(vcs_cart_slot_device::read_rom),(vcs_cart_slot_device*)m_cart), write8_delegate(FUNC(vcs_cart_slot_device::write_bank),(vcs_cart_slot_device*)m_cart));
+			m_maincpu->space(AS_PROGRAM).install_readwrite_handler(0x0000, 0x0fff, read8_delegate(FUNC(a2600_state::cart_over_all_r), this), write8_delegate(FUNC(a2600_state::cart_over_all_w), this));
+			break;
+		case A26_HARMONY:
+			m_maincpu->space(AS_PROGRAM).install_readwrite_handler(0x1000, 0x1fff, read8_delegate(FUNC(vcs_cart_slot_device::read_rom),(vcs_cart_slot_device*)m_cart), write8_delegate(FUNC(vcs_cart_slot_device::write_bank),(vcs_cart_slot_device*)m_cart));
+			break;
 	}
 
 	/* Banks may have changed, reset the cpu so it uses the correct reset vector */
@@ -450,6 +558,8 @@ static SLOT_INTERFACE_START(a2600_cart)
 	SLOT_INTERFACE_INTERNAL("a26_4in1",  A26_ROM_4IN1)
 	SLOT_INTERFACE_INTERNAL("a26_8in1",  A26_ROM_8IN1)
 	SLOT_INTERFACE_INTERNAL("a26_32in1", A26_ROM_32IN1)
+	SLOT_INTERFACE_INTERNAL("a26_x07",    A26_ROM_X07)
+	SLOT_INTERFACE_INTERNAL("a26_harmony",   A26_ROM_HARMONY)
 SLOT_INTERFACE_END
 
 static MACHINE_CONFIG_FRAGMENT(a2600_cartslot)
@@ -462,7 +572,7 @@ MACHINE_CONFIG_END
 
 static MACHINE_CONFIG_START( a2600, a2600_state )
 	/* basic machine hardware */
-	MCFG_CPU_ADD("maincpu", M6502, MASTER_CLOCK_NTSC / 3)   /* actually M6507 */
+	MCFG_CPU_ADD("maincpu", M6507, MASTER_CLOCK_NTSC / 3) 
 	MCFG_M6502_DISABLE_DIRECT()
 	MCFG_CPU_PROGRAM_MAP(a2600_mem)
 
@@ -485,12 +595,21 @@ static MACHINE_CONFIG_START( a2600, a2600_state )
 	MCFG_SOUND_ROUTE(ALL_OUTPUTS, "mono", 0.90)
 
 	/* devices */
+#if USE_NEW_RIOT
 	MCFG_DEVICE_ADD("riot", MOS6532n, MASTER_CLOCK_NTSC / 3)
-	MCFG_MOS6530n_IN_PA_CB(READ8(a2600_state, switch_A_r))
-	MCFG_MOS6530n_OUT_PA_CB(WRITE8(a2600_state, switch_A_w))
-	MCFG_MOS6530n_IN_PB_CB(READ8(a2600_state, riot_input_port_8_r))
-	MCFG_MOS6530n_OUT_PB_CB(WRITE8(a2600_state, switch_B_w))
-	MCFG_MOS6530n_IRQ_CB(WRITELINE(a2600_state, irq_callback))
+    MCFG_MOS6530n_IN_PA_CB(READ8(a2600_state, switch_A_r))
+    MCFG_MOS6530n_OUT_PA_CB(WRITE8(a2600_state, switch_A_w))
+    MCFG_MOS6530n_IN_PB_CB(READ8(a2600_state, riot_input_port_8_r))
+    MCFG_MOS6530n_OUT_PB_CB(WRITE8(a2600_state, switch_B_w))
+    MCFG_MOS6530n_IRQ_CB(WRITELINE(a2600_state, irq_callback))
+#else
+	MCFG_DEVICE_ADD("riot", RIOT6532, MASTER_CLOCK_NTSC / 3)	
+	MCFG_RIOT6532_IN_PA_CB(READ8(a2600_state, switch_A_r))
+	MCFG_RIOT6532_OUT_PA_CB(WRITE8(a2600_state, switch_A_w))
+	MCFG_RIOT6532_IN_PB_CB(READ8(a2600_state, riot_input_port_8_r))
+	MCFG_RIOT6532_OUT_PB_CB(WRITE8(a2600_state, switch_B_w))
+	MCFG_RIOT6532_IRQ_CB(WRITELINE(a2600_state, irq_callback))
+#endif
 
 	MCFG_VCS_CONTROL_PORT_ADD(CONTROL1_TAG, vcs_control_port_devices, "joy")
 	MCFG_VCS_CONTROL_PORT_ADD(CONTROL2_TAG, vcs_control_port_devices, NULL)
@@ -502,7 +621,7 @@ MACHINE_CONFIG_END
 
 static MACHINE_CONFIG_START( a2600p, a2600_state )
 	/* basic machine hardware */
-	MCFG_CPU_ADD("maincpu", M6502, MASTER_CLOCK_PAL / 3)    /* actually M6507 */
+	MCFG_CPU_ADD("maincpu", M6507, MASTER_CLOCK_PAL / 3) 
 	MCFG_CPU_PROGRAM_MAP(a2600_mem)
 	MCFG_M6502_DISABLE_DIRECT()
 
@@ -526,12 +645,21 @@ static MACHINE_CONFIG_START( a2600p, a2600_state )
 	MCFG_SOUND_ROUTE(ALL_OUTPUTS, "mono", 0.90)
 
 	/* devices */
-	MCFG_DEVICE_ADD("riot", MOS6532n, MASTER_CLOCK_PAL / 3)
-	MCFG_MOS6530n_IN_PA_CB(READ8(a2600_state, switch_A_r))
-	MCFG_MOS6530n_OUT_PA_CB(WRITE8(a2600_state, switch_A_w))
-	MCFG_MOS6530n_IN_PB_CB(READ8(a2600_state, riot_input_port_8_r))
-	MCFG_MOS6530n_OUT_PB_CB(WRITE8(a2600_state, switch_B_w))
-	MCFG_MOS6530n_IRQ_CB(WRITELINE(a2600_state, irq_callback))
+#if USE_NEW_RIOT
+    MCFG_DEVICE_ADD("riot", MOS6532n, MASTER_CLOCK_PAL / 3)
+    MCFG_MOS6530n_IN_PA_CB(READ8(a2600_state, switch_A_r))
+    MCFG_MOS6530n_OUT_PA_CB(WRITE8(a2600_state, switch_A_w))
+    MCFG_MOS6530n_IN_PB_CB(READ8(a2600_state, riot_input_port_8_r))
+    MCFG_MOS6530n_OUT_PB_CB(WRITE8(a2600_state, switch_B_w))
+    MCFG_MOS6530n_IRQ_CB(WRITELINE(a2600_state, irq_callback))
+#else
+	MCFG_DEVICE_ADD("riot", RIOT6532, MASTER_CLOCK_PAL / 3)
+	MCFG_RIOT6532_IN_PA_CB(READ8(a2600_state, switch_A_r))
+	MCFG_RIOT6532_OUT_PA_CB(WRITE8(a2600_state, switch_A_w))
+	MCFG_RIOT6532_IN_PB_CB(READ8(a2600_state, riot_input_port_8_r))
+	MCFG_RIOT6532_OUT_PB_CB(WRITE8(a2600_state, switch_B_w))
+	MCFG_RIOT6532_IRQ_CB(WRITELINE(a2600_state, irq_callback))
+#endif
 
 	MCFG_VCS_CONTROL_PORT_ADD(CONTROL1_TAG, vcs_control_port_devices, "joy")
 	MCFG_VCS_CONTROL_PORT_ADD(CONTROL2_TAG, vcs_control_port_devices, NULL)

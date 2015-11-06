@@ -13,6 +13,7 @@ To build mame, you need to install the following packages:
 sudo apt-get install --no-install-recommends \
     make \
     gcc \
+    libsdl-ttf2.0-dev \
     libsdl2-dev \
     libsdl2-ttf-dev \
     libx11-dev \

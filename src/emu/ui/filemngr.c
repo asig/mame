@@ -13,10 +13,12 @@
 
 #include "emu.h"
 #include "ui/ui.h"
+#include "ui/menu.h"
 #include "ui/swlist.h"
 #include "ui/filemngr.h"
 #include "ui/filesel.h"
 #include "ui/miscmenu.h"
+#include "softlist.h"
 
 
 /***************************************************************************
@@ -104,7 +106,6 @@ void ui_menu_file_manager::populate()
 {
 	std::string buffer, tmp_inst, tmp_name;
 	bool first_entry = true;
-	std::string prev_owner;
 
 	if (!m_warnings.empty())
 	{

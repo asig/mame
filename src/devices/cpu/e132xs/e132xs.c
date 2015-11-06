@@ -1562,7 +1562,6 @@ void hyperstone_device::init(int scale_mask)
 	m_clock_scale_mask = scale_mask;
 
 	// register our state for the debugger
-	std::string tempstr;
 	state_add(STATE_GENPC,    "GENPC",     m_global_regs[0]).noshow();
 	state_add(STATE_GENFLAGS, "GENFLAGS",  m_global_regs[1]).callimport().callexport().formatstr("%40s").noshow();
 	state_add(E132XS_PC,      "PC", m_global_regs[0]).mask(0xffffffff);
@@ -3142,7 +3141,7 @@ void hyperstone_device::hyperstone_ldxx1(struct hyperstone_device::regs_decode *
 
 			case 2:
 
-				load = READ_HW(EXTRA_S & ~1);
+				load = READ_HW(EXTRA_S);
 
 				if( EXTRA_S & 1 ) // LDHS.A
 				{
@@ -3418,7 +3417,7 @@ void hyperstone_device::hyperstone_stxx1(struct hyperstone_device::regs_decode *
 
 			case 2:
 
-				WRITE_HW(EXTRA_S & ~1, SREG & 0xffff);
+				WRITE_HW(EXTRA_S, SREG & 0xffff);
 
 				/*
 				if( EXTRA_S & 1 ) // STHS.A

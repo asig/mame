@@ -31,7 +31,7 @@ enum
 	OPTION_PRIORITY_DEBUG_INI,
 	OPTION_PRIORITY_ORIENTATION_INI,
 	OPTION_PRIORITY_SYSTYPE_INI,
-	OPTION_PRIORITY_VECTOR_INI,
+	OPTION_PRIORITY_SCREEN_INI,
 	OPTION_PRIORITY_SOURCE_INI,
 	OPTION_PRIORITY_GPARENT_INI,
 	OPTION_PRIORITY_PARENT_INI,
@@ -121,7 +121,9 @@ enum
 
 // core vector options
 #define OPTION_ANTIALIAS            "antialias"
-#define OPTION_BEAM                 "beam"
+#define OPTION_BEAM_WIDTH_MIN       "beam_width_min"
+#define OPTION_BEAM_WIDTH_MAX       "beam_width_max"
+#define OPTION_BEAM_INTENSITY_WEIGHT   "beam_intensity_weight"
 #define OPTION_FLICKER              "flicker"
 
 // core sound options
@@ -193,11 +195,6 @@ enum
 #define OPTION_DISABLE_HISCORE_PATCH		"disable_hiscore_patch"
 #define OPTION_DISABLE_NAGSCREEN_PATCH		"disable_nagscreen_patch"
 #define OPTION_DISABLE_LOADING_PATCH		"disable_loading_patch"
-
-#define OPTION_HTTP                 "http"
-#define OPTION_HTTP_PORT            "http_port"
-#define OPTION_HTTP_PATH            "http_path"
-#define OPTION_CONSOLE              "console"
 
 //**************************************************************************
 //  TYPE DEFINITIONS
@@ -306,7 +303,9 @@ public:
 
 	// core vector options
 	bool antialias() const { return bool_value(OPTION_ANTIALIAS); }
-	float beam() const { return float_value(OPTION_BEAM); }
+	float beam_width_min() const { return float_value(OPTION_BEAM_WIDTH_MIN); }
+	float beam_width_max() const { return float_value(OPTION_BEAM_WIDTH_MAX); }
+	float beam_intensity_weight() const { return float_value(OPTION_BEAM_INTENSITY_WEIGHT); }
 	float flicker() const { return float_value(OPTION_FLICKER); }
 
 	// core sound options
@@ -376,11 +375,6 @@ public:
 	const char *autoboot_command() const { return value(OPTION_AUTOBOOT_COMMAND); }
 	int autoboot_delay() const { return int_value(OPTION_AUTOBOOT_DELAY); }
 	const char *autoboot_script() const { return value(OPTION_AUTOBOOT_SCRIPT); }
-
-	bool http() const { return bool_value(OPTION_HTTP); }
-	const char *http_port() const { return value(OPTION_HTTP_PORT); }
-	const char *http_path() const { return value(OPTION_HTTP_PATH); }
-	bool console() const { return bool_value(OPTION_CONSOLE); }
 
 	// FIXME: Couriersud: This should be in image_device_exit
 	void remove_device_options();

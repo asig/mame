@@ -51,21 +51,9 @@
 #include <math.h>
 
 
-
 //**************************************************************************
 //  CONSTANTS
 //**************************************************************************
-
-// texture formats
-enum texture_format
-{
-	TEXFORMAT_UNDEFINED = 0,                            // require a format to be specified
-	TEXFORMAT_PALETTE16,                                // 16bpp palettized, alpha ignored
-	TEXFORMAT_PALETTEA16,                               // 16bpp palettized, alpha respected
-	TEXFORMAT_RGB32,                                    // 32bpp 8-8-8 RGB
-	TEXFORMAT_ARGB32,                                   // 32bpp 8-8-8-8 ARGB
-	TEXFORMAT_YUY16                                     // 16bpp 8-8 Y/Cb, Y/Cr in sequence
-};
 
 // blending modes
 enum
@@ -605,6 +593,7 @@ public:
 	float max_update_rate() const { return m_max_refresh; }
 	int orientation() const { return m_orientation; }
 	render_layer_config layer_config() const { return m_layerconfig; }
+	layout_view *current_view() const { return m_curview; }
 	int view() const { return view_index(*m_curview); }
 	bool hidden() const { return ((m_flags & RENDER_CREATE_HIDDEN) != 0); }
 	bool is_ui_target() const;

@@ -456,6 +456,7 @@
 #include "machine/nvram.h"
 #include "cpu/z80/z80.h"
 #include "sound/2610intf.h"
+#include "softlist.h"
 #include "neogeo.lh"
 
 
@@ -642,7 +643,7 @@ CUSTOM_INPUT_MEMBER(neogeo_state::multiplexed_controller_r)
 		{ "IN0-0", "IN0-1" }, { "IN1-0", "IN1-1" }
 	};
 
-	return ioport(cntrl[port][m_controller_select & 0x01])->read_safe(0x00);
+	return read_safe(ioport(cntrl[port][m_controller_select & 0x01]), 0x00);
 }
 
 CUSTOM_INPUT_MEMBER(neogeo_state::kizuna4p_controller_r)
@@ -654,7 +655,7 @@ CUSTOM_INPUT_MEMBER(neogeo_state::kizuna4p_controller_r)
 		{ "IN0-0", "IN0-1" }, { "IN1-0", "IN1-1" }
 	};
 
-	int ret = ioport(cntrl[port][m_controller_select & 0x01])->read_safe(0x00);
+	int ret = read_safe(ioport(cntrl[port][m_controller_select & 0x01]), 0x00);
 	if (m_controller_select & 0x04) ret &= ((m_controller_select & 0x01) ? ~0x20 : ~0x10);
 
 	return ret;

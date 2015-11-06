@@ -22,6 +22,8 @@
 #include "bus/generic/slot.h"
 #include "bus/generic/carts.h"
 
+#include "softlist.h"
+
 class pcjr_state : public driver_device
 {
 public:
@@ -117,6 +119,7 @@ DRIVER_INIT_MEMBER(pcjr_state, pcjr)
 	m_pc_int_delay_timer = timer_alloc(TIMER_IRQ_DELAY);
 	m_pcjr_watchdog = timer_alloc(TIMER_WATCHDOG);
 	m_keyb_signal_timer = timer_alloc(TIMER_KB_SIGNAL);
+	membank( "bank10" )->set_base( m_ram->pointer() );
 }
 
 void pcjr_state::machine_reset()

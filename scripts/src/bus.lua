@@ -1161,6 +1161,8 @@ if (BUSES["VCS"]~=null) then
 		MAME_DIR .. "src/devices/bus/vcs/compumat.h",
 		MAME_DIR .. "src/devices/bus/vcs/dpc.c",
 		MAME_DIR .. "src/devices/bus/vcs/dpc.h",
+		MAME_DIR .. "src/devices/bus/vcs/harmony_melody.c",
+		MAME_DIR .. "src/devices/bus/vcs/harmony_melody.h",
 		MAME_DIR .. "src/devices/bus/vcs/scharger.c",
 		MAME_DIR .. "src/devices/bus/vcs/scharger.h",
 	}
@@ -1548,6 +1550,8 @@ if (BUSES["RS232"]~=null) then
 		MAME_DIR .. "src/devices/bus/rs232/printer.h",
 		MAME_DIR .. "src/devices/bus/rs232/rs232.c",
 		MAME_DIR .. "src/devices/bus/rs232/rs232.h",
+		MAME_DIR .. "src/devices/bus/rs232/pty.c",
+		MAME_DIR .. "src/devices/bus/rs232/pty.h",
 		MAME_DIR .. "src/devices/bus/rs232/ser_mouse.c",
 		MAME_DIR .. "src/devices/bus/rs232/ser_mouse.h",
 		MAME_DIR .. "src/devices/bus/rs232/terminal.c",
@@ -2199,6 +2203,8 @@ if (BUSES["CPC"]~=null) then
 		MAME_DIR .. "src/devices/bus/cpc/ddi1.h",
 		MAME_DIR .. "src/devices/bus/cpc/magicsound.c",
 		MAME_DIR .. "src/devices/bus/cpc/magicsound.h",
+		MAME_DIR .. "src/devices/bus/cpc/doubler.c",
+		MAME_DIR .. "src/devices/bus/cpc/doubler.h",
 	}
 end
 

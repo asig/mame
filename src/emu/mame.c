@@ -84,6 +84,7 @@
 #include "crsshair.h"
 #include "validity.h"
 #include "debug/debugcon.h"
+#include "luaengine.h"
 #include <time.h>
 
 //**************************************************************************
@@ -119,7 +120,7 @@ machine_manager* machine_manager::instance()
 machine_manager::machine_manager(emu_options &options,osd_interface &osd)
 		: m_osd(osd),
 		m_options(options),
-		m_web(options),
+		m_lua(global_alloc(lua_engine)),
 		m_new_driver_pending(NULL),
 		m_machine(NULL)
 {
@@ -156,9 +157,7 @@ void machine_manager::schedule_new_driver(const game_driver &driver)
 ***************************************************************************/
 void machine_manager::update_machine()
 {
-	m_lua.set_machine(m_machine);
-	m_web.set_machine(m_machine);
-	if (m_machine!=NULL) m_web.push_message("update_machine");
+	m_lua->set_machine(m_machine);
 }
 
 /*-------------------------------------------------
@@ -176,10 +175,7 @@ int machine_manager::execute()
 	bool exit_pending = false;
 	int error = MAMERR_NONE;
 
-	m_lua.initialize();
-	if (m_options.console()) {
-		m_lua.start_console();
-	}
+	m_lua->initialize();
 	while (error == MAMERR_NONE && !exit_pending)
 	{
 		m_new_driver_pending = NULL;
@@ -254,73 +250,4 @@ int machine_manager::execute()
 	}
 	// return an error
 	return error;
-}
-
-
-/***************************************************************************
-    MISCELLANEOUS
-***************************************************************************/
-
-/*-------------------------------------------------
-    popmessage - pop up a user-visible message
--------------------------------------------------*/
-
-void CLIB_DECL popmessage(const char *format, ...)
-{
-	if (machine_manager::instance()==NULL || machine_manager::instance()->machine() == NULL) return;
-
-	// if the format is NULL, it is a signal to clear the popmessage
-	if (format == NULL)
-		machine_manager::instance()->machine()->ui().popup_time(0, " ");
-
-	// otherwise, generate the buffer and call the UI to display the message
-	else
-	{
-		std::string temp;
-		va_list arg;
-
-		// dump to the buffer
-		va_start(arg, format);
-		strvprintf(temp,format, arg);
-		va_end(arg);
-
-		// pop it in the UI
-		machine_manager::instance()->machine()->ui().popup_time(temp.length() / 40 + 2, "%s", temp.c_str());
-
-		/*
-		// also write to error.log
-		logerror("popmessage: %s\n", temp.c_str());
-
-#ifdef MAME_DEBUG
-		// and to command-line in a DEBUG build
-		osd_printf_info("popmessage: %s\n", temp.c_str());
-#endif
-		*/
-	}
-}
-
-
-/*-------------------------------------------------
-    logerror - log to the debugger and any other
-    OSD-defined output streams
--------------------------------------------------*/
-
-void CLIB_DECL logerror(const char *format, ...)
-{
-	va_list arg;
-	va_start(arg, format);
-	vlogerror(format, arg);
-	va_end(arg);
-}
-
-
-/*-------------------------------------------------
-    vlogerror - log to the debugger and any other
-    OSD-defined output streams
--------------------------------------------------*/
-
-void CLIB_DECL vlogerror(const char *format, va_list arg)
-{
-	if (machine_manager::instance()!=NULL && machine_manager::instance()->machine() != NULL)
-		machine_manager::instance()->machine()->vlogerror(format, arg);
 }

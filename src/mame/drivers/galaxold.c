@@ -33,270 +33,6 @@ TODO:
 - $4800-4bff in Streaking/Ghost Muncher
 
 
-
-Moon Cresta versions supported:
-------------------------------
-
-mooncrst    Nichibutsu     - later revision with better demo mode and
-                         text for docking. Encrypted. No ROM/RAM check
-mooncrsu    Nichibutsu USA - later revision with better demo mode and
-                         text for docking. Unencrypted. No ROM/RAM check
-mooncrsa    Nichibutsu     - older revision with better demo mode and
-                         text for docking. Encrypted. No ROM/RAM check
-mooncrs2    Nichibutsu     - probably first revision (no patches) and ROM/RAM check code.
-                             This came from a bootleg board, with the logos erased
-                         from the graphics
-mooncrsg    Gremlin        - same docking text as mooncrst
-mooncrsb    bootleg of mooncrs2. ROM/RAM check erased.
-
-
-Stephh's additional notes (based on the games Z80 code and some tests) for "Moon Cresta" and its numerous clones :
-
-a) 'mooncrst'
-
-  - made by Nichibutsu
-  - inputs :
-      * player 1 controls are used by player 1
-      * player 2 controls are used by player 2, even in an "upright" cabinet
-  - 2 coins slots with different settings :
-      * coin A : 1C_1C / 2C_1C / 3C_1C / 4C_1C
-      * coin B : 1C_1C / 1C_2C / 1C_3C / "Free Play"
-  - no writes to 0xa003, so no coin counters
-  - bonus life at 30000 or 50000 based on a Dip Switch
-  - possible partial Japanese text based on a Dip Switch
-  - hi-score : 11 chars (even if only 10 will be displayed), 60 seconds to enter
-  - players bullet speed : 4 pixels - lower limit : 0x04
-  - ingame bug : if you reset the game when screen is flipped, it isn't flipped back
-  - driver possible bug (which occurs for all "Moon Cresta" sets but 'mooncrgx') :
-    when the screen is flipped, sprites are too shifted (see for example player 2
-    score which misses ending '0') while bullets shall be good
-    as a consequence, square around letters is wrong when entering player name
-    for hi-score table when screen is flipped
-
-b) 'mooncrsu'
-
-  - made by Nichibutsu
-  - very similar to 'mooncrst' with the only following differences :
-      * additional "USA" display after "Nichibutsu" (which is shifted left)
-      * writes to 0xb000 to 0xb0ff on reset ('mooncrst' only writes to 0xb000),
-        so there is no screen flipped ingame bug as in 'mooncrst'
-
-c) 'mooncrsa'
-
-  - made by Nichibutsu
-  - additional "(c)" display before "Nichibutsu"
-  - "(c) 1980 NIHON BUSSAN CO. , LTD" display replaced with "May 1980" in yellow
-  - code at 0x1f00 has been removed ! I can't determine was is was supposed to do,
-    but it's based on number of enemies left (stored at 0x823c) and possible time
-    spent on the level (stored at 0x8226). Any hint is fully welcome !
-  - this version is easier than 'mooncrst' : look at high nibbles that are stored
-    at 0x809b and 0x809c via code at 0x0cb8 (0x01 and 0x02 instead of 0x11 and 0x12).
-  - 2 coins slots, but same settings : 1C_1C / 1C_2C / 1C_3C / "Free Play"
-  - same other infos as in 'mooncrst'
-  - same ingame bug as in 'mooncrst'
-
-d) 'mooncrs2'
-
-  - bootleg (possibily based on a Gremlin version we don't have)
-  - heavily based on 'mooncrsa' with additional RAM/ROM check routine at 0x3ea1
-  - some "chars" have been erased from the GFX ROMS but some routines which
-    "prints" them are still there (but there are less than in 'mooncrsa')
-  - same other infos as in 'mooncrst'
-  - due to numerous writes in the RAM/ROM check routine, there is no screen flipped
-    ingame bug as in 'mooncrst'
-
-e) 'mooncrsb'
-
-  - bootleg (possibily based on a Gremlin version we don't have)
-  - the only difference with 'mooncrs2' is that RAM/ROM check routine at 0x3ea1
-    has completely been "noped" and the jump at address 0x0004 has been changed
-  - all "chars" from the GFX ROMS haven't been erased, so you can see the top
-    of the "Gremlin" logo as copyright and hi-scores names
-  - same ingame bug as in 'mooncrst'
-
-f) 'mooncrs3'
-
-  - bootleg
-  - very similar to 'mooncrs2' with the only following differences :
-      * checksum of ROM area 0x0000-0x3fff is computed, but the result is discarded
-        (see "xor a" operation at 0x3fc0 instead of "and a")
-      * coins stuff is different (see below)
-  - 2 coins slots with different settings (same as 'mooncrst') :
-      * coin A : 1C_1C / 2C_1C / 3C_1C / 4C_1C
-      * coin B : 1C_1C / 1C_2C / 1C_3C / "Free Play"
-  - there are writes to 0xa003 (check code at 0x1b8e and 0x1b9e) which occur
-    when you insert a coin, but I can't confirm it's related to coin counters
-    as the same value is written when you press COIN1 or COIN2
-
-g) 'mooncrsg'
-
-  - made by Gremlin
-  - there are MANY changes and additions, and I wonder if there's such a Nichibutsu set;
-    anyway, closest set to this one seems to be 'mooncrst'
-  - Gremin "logo" on 2 lines instead of Nichibutsu copyright messages (2 lines)
-  - additional test for IN0 bit 7 (code at 0x0174) which always adds 1 credit
-  - there are writes to 0xa003 (check code at 0x0158 and 0x0160) which occur
-    when you insert a coin, but I can't confirm it's related to coin counters
-    as the same value is written when you press COIN1 or COIN2
-  - only English text (Dip Switch has no effect due to code at 0x2f77)
-  - hi-score : 3 chars, 10 seconds to enter
-  - same difficulty as in 'monncrst' (but stored at 0x809e and 0x809f)
-  - same other infos as in 'mooncrst'
-  - same ingame bug as in 'mooncrst'
-
-h) 'fantazia'
-
-  - made by Subelectro
-  - closest set to this one seems to be 'mooncrsb'
-  - all intro texts have been changed as well as colors
-  - inputs :
-      * player 1 controls are used by player 1
-      * player 2 controls are used by player 2, only in a "cocktail" cabinet
-    look at additional routine at 0x29e0
-  - 2 coins slots with different settings (inverted coin A/B compared to 'mooncrst') :
-      * coin A : 1C_1C / 1C_2C / 1C_3C / "Free Play"
-      * coin B : 1C_1C / 2C_1C / 3C_1C / 4C_1C
-  - only English text (Dip Switch has no effect due to code at 0x2f53)
-  - hi-score : 3 chars, 60 seconds to enter
-  - same other infos as in 'mooncrst'
-  - same ingame bug as in 'mooncrst'
-
-i) 'eagle'
-
-  - made by Centuri
-  - very similar to 'mooncrsb' with the only following differences :
-      * only 3 chars for hi-score instead of 11
-      * all other changes are modified "strings" to be displayed
-        (the intro texts but copyright remains though) as well as
-        new GFX (I can't test the sound for now to check)
-  - same ingame bug as in 'mooncrst'
-
-j) 'eagle2'
-
-  - made by Centuri
-  - very similar to 'eagle' with the only following differences :
-      * only 20 seconds to enter hi-score instead of 60
-      * coins stuff is different (see below)
-      * one GFX ROM is slighlty different
-  - 2 coins slots, but same settings : 1C_1C / 2C_1C / 3C_1C / 4C_1C
-  - previous "Coin B" Dip Switch is now only tested to see if in "Freeplay" mode
-  - same ingame bug as in 'mooncrst'
-
-k) 'eagle3'
-
-  - made by Centuri
-  - PRG ROMS are the same as for 'eagle' while two GFX ROMS are slighly different
-    (so the game is having 'mooncrst' ships and 'eagle' enemies)
-  - same ingame bug as in 'mooncrst'
-
-l) 'spctbird'
-
-  - made by Fortrek
-  - very similar to 'mooncrsb' with the only following difference :
-      * coins stuff is different (same as in 'eagle2' - see below)
-  - 2 coins slots, but same settings : 1C_1C / 2C_1C / 3C_1C / 4C_1C
-  - previous "Coin B" Dip Switch is now only tested to see if in "Freeplay" mode
-  - same ingame bug as in 'mooncrst'
-
-m) 'smooncrs'
-
-  - made par Gremlin (bootleg based on a Nichibutsu version we don't have ?)
-  - same RAM/ROM check routine as in 'mooncrs2' (so there is no screen flipped
-    ingame bug as in 'mooncrst'), but LOTS of new features !
-  - only top of the Gremlin logo is displayed and it is also used for hi-scores
-  - all intro texts have been changed
-  - "2'ST" instead of "2'ND" and "RECORD" instead of "HI-SCORE"
-  - additional "PLAYER 1/2" messages when player changes
-  - inputs : player 1 controls are used by players 1 and 2, even in a "cocktail"
-    cabinet (player 2 inputs are never read due to code at 0x2b1c and 0x3313)
-  - 2 coins slots with different settings :
-      * coin A : 1C_1C / 2C_1C / 3C_1C / 4C_1C
-      * coin B : 1C_1C / 1C_2C / 1C_3C / "Free Play"
-    additional wrong (Spanish) text displayed when "Coin B" set to 1C_1C
-    (check additional code at 0x0fae) :
-      * if "Coin A" set to 4C_1C, "1 MONEDA 1 PARTIDA" on one line
-      * if "Coin A" set to 2C_1C, "1 MONEDA 1 PARTIDA" on one line
-        and "2 MONEDAS 3 PARTIDAS" on another line below
-    when "Coin B" set to "Free Play", "CREDIT 04" instead of "FREE PLAY" string
-    (even if this number of credits is decremented when you press a START button,
-     it is put back to 04 when the game is over for all players)
-  - additional "POR" display after the number of credits
-  - bonus life always 50000 due to code at 0x2f68
-  - only English text due to code at 0x2f53
-  - hi-score : 3 chars, 60 seconds to enter
-  - players bullet speed : 9 or 12 pixels (using previous "Language" Dip Switch) -
-    lower limit : 0x0f (see additional routine at 0x0007 and call from 0x3407)
-  - game difficulty using previous "Bonus Life" Dip Switch (code at 0x2962)
-    however, even with "Easy" difficulty, the game is much harder as in 'mooncrs2'
-    as enemies as enemies move much faster and as they shoot on some levels
-  - docking stage is harder has there are gaps of 2 pixels instead of 1
-  - when you complete the 8 stages, "O.K." "FANTASTIC" messages on 2 lines
-    instead of "FAR OUT !" message on 1 line
-  - same ingame bug as in 'mooncrst'
-  - another ingame bug : when in "cocktail mode", "PLAYER 1/2" messages are
-    displayed BEFORE the screen is flipped (back)
-  - driver other bugs :
-      * when screen is flipped, player's bullets aren't displayed
-      * when screen is flipped, enemies' bullets aren't flipped
-
-n) 'spcdrag'
-
-  - bootleg
-  - heavily based on 'smooncrs' (so there's a RAM/ROM check) but some differences though
-  - same intro texts as in 'mooncrs2'
-  - 2 coins slots with different settings :
-      * coin A : 1C_1C / 2C_1C / 3C_1C / 4C_1C
-      * coin B : 1C_2C / 1C_3C / 1C_4C / "Free Play"
-    additional wrong (Engrish) text displayed when "Coin B" set to 1C_2C
-    (check additional code at 0x0fae) :
-      * if "Coin A" set to 4C_1C, "1 COIN   1 PLAY   " on one line
-      * if "Coin A" set to 2C_1C, "1 COIN   1 PLAY   " on one line
-        and "2 COINS   3 PLAYES  " (notice the spelling) on another line below
-    when "Coin B" set to "Free Play", "CREDIT 04" instead of "FREE PLAY" string
-    (even if this number of credits is decremented when you press a START button,
-     it is put back to 04 when the game is over for all players)
-  - "CAP 2" display instead of "POR" after the number of credits
-  - hi-score : 11 chars (even if only 10 will be displayed), 60 seconds to enter
-    (same as in 'mooncrs2')
-  - players bullet speed : 6 or 9 pixels (using previous "Language" Dip Switch) -
-    lower limit : 0x04 (instead of speed 9/12 and lower limit 0x0f)
-  - even if there's also the "Difficulty" Dip Switch, the game is a little bit easier
-    (enemies speed is slower and docking stage is back to 1 pixel to fit 'mooncrs2')
-  - when you complete the 8 stages, same "FAR OUT !" message as in 'mooncrs2'
-  - driver bug : even if player's bullets are displayed when screen is flipped as in
-    other sets, enemies' bullets are still not flipped as in 'smooncrs'
-
-o) 'spcdraga'
-
-  - bootleg ? (there's a Nichibutsu logo which is displayed in the "title" screen
-    as well as in the hi-scores)
-  - very similar to 'spcdrag' with the only following (comestical) differences :
-      * unused routine at 0x37a8 has been "noped"
-      * no text after the number of credits
-      * all texts have been translated to Spanish
-
-p) 'mooncrgx'
-
-  - bootleg on "Galaxian" hardware
-  - very similar to 'mooncrsb' with the only following differences :
-      * all unused routines have been "noped"
-      * settings are different (see below)
-  - 2 coins slots with different settings :
-      * coin A : 1C_1C / 2C_1C
-      * coin B : 1C_3C / 1C_5C
-  - there are writes to 0x6003 when you press COIN1 but not when you press COIN2
-  - there are also writes to (unmapped) 0x6804 when you press either COIN1 or COIN2 :
-      * when you press COIN1, 0x00 is written once
-      * when you press COIN2, 0x01 is written 5 times, then 0x00 is written once
-  - only English text (Dip Switch has no effect due to code at 0x2f4b)
-  - no ingame bug due to code at 0x2f77
-  - driver possible bug : while sprites are now correct when screen is flipped,
-    they are too shifted when screen is not flipped (again, see for example player 2
-    score which misses ending '0') while bullets shall be good
-    as a consequence, square around letters is wrong when entering player name
-    for hi-score table when screen not is flipped
-
-
 Stephh's notes (based on the games Z80 code and some tests) for other games :
 
 1) 'scramblb' and 'scramb2'
@@ -2762,21 +2498,11 @@ static MACHINE_CONFIG_DERIVED( hunchbkg, galaxold_base )
 MACHINE_CONFIG_END
 
 
-static MACHINE_CONFIG_DERIVED( spcwarp, galaxold_base )
+static MACHINE_CONFIG_DERIVED( spcwarp, hunchbkg )
 	/* hunchbkg but with different banking */
 	/* basic machine hardware */
-	MCFG_CPU_REPLACE("maincpu", S2650, PIXEL_CLOCK / 4)
-
+	MCFG_CPU_MODIFY("maincpu")
 	MCFG_CPU_PROGRAM_MAP(spcwarp)
-	MCFG_CPU_IO_MAP(hunchbkg_io)
-	MCFG_CPU_IRQ_ACKNOWLEDGE_DRIVER(galaxold_state,hunchbkg_irq_callback)
-
-	MCFG_DEVICE_MODIFY("7474_9m_1")
-	MCFG_7474_COMP_OUTPUT_CB(DEVWRITELINE("maincpu", s2650_device, write_sense))
-
-	MCFG_MACHINE_RESET_OVERRIDE(galaxold_state,hunchbkg)
-
-	MCFG_FRAGMENT_ADD(galaxian_audio)
 MACHINE_CONFIG_END
 
 
@@ -3489,15 +3215,19 @@ ROM_START( hunchbkg )
 ROM_END
 
 ROM_START( spcwarp )
-	// unknown Century Electronics space shooter which involves shooting down enemy ships to use them yourself for increasing rate of fire
-	// came out of an undumped ROMS collection - we have no idea if this is Space Warp but it's a unique dump compared to everything else.
+	// conversion of 'cosmos' (cvs.c) to Galaxian hardware
+	// notes:
+	// -came out of an unemulated games collection - may or may not be actually spcwarp but it's unique
+	// -uses hunchbkg hardware with a different map
+	// -the game likely calls a checksum check every 10 frames, causes game to freeze (probably because of bad ROM)
+	// -so far using hunchbkg inputs work
+	// -text in ROM confirms year of release and company; ASCII shows "COPYRIGHT 1983", "CENTURY ELECTRONICS UK LTD" in swarpt7f.bin
 	ROM_REGION( 0x8000, "maincpu", 0 )
 	ROM_LOAD( "swarpt7f.bin", 0x0000, 0x1000, CRC(04d744e3) SHA1(db8218510052a05670cb0b722b73d3f10464788c) )
 	ROM_LOAD( "swarpt7h.bin", 0x2000, 0x1000, CRC(34a36536) SHA1(bc438515618683b2a7c29637871ee00ed95ad7f8) )
-	/* missing rom at $4000? todo: check valid calls */
 	ROM_LOAD( "swarpt7m.bin", 0x6000, 0x1000, BAD_DUMP CRC(a2dff6c8) SHA1(d1c72848450dc5ff386dc94a26e4bf704ccc7121) ) /* ROMCMP reports "BADADDR            xxxxxx-xxxxx".  Observed data sequence repeated every 32 bytes */
 
-	ROM_REGION( 0x1000, "gfx1", 0 ) // gfx are very similar to 'cosmos'
+	ROM_REGION( 0x1000, "gfx1", 0 )
 	ROM_LOAD( "swarpb1h.bin", 0x0000, 0x0800, CRC(6ee3b5f7) SHA1(8150f2ecd59d3a165c0541b550664c56d049edd5) )
 	ROM_LOAD( "swarpb1k.bin", 0x0800, 0x0800, CRC(da4cee6b) SHA1(28b91381658f598fa62049489beee443232825c6) )
 
@@ -3789,7 +3519,7 @@ GAME( 1981, froggerv,  frogger,  videotron, froggerv,  driver_device,  0,       
 /* S2650 games */
 //    YEAR  NAME       PARENT    MACHINE    INPUT      INIT                       ROT     COMPANY, FULLNAME, FLAGS, LAYOUT
 GAME( 1983, hunchbkg,  hunchbak, hunchbkg,  hunchbkg,  driver_device,  0,         ROT90,  "Century Electronics", "Hunchback (Galaxian hardware)", MACHINE_SUPPORTS_SAVE )
-GAME( 1983, spcwarp,   0,        spcwarp,   hunchbkg,  driver_device,  0,         ROT90,  "Century Electronics", "Space Warp?",  MACHINE_NOT_WORKING | MACHINE_SUPPORTS_SAVE | MACHINE_WRONG_COLORS ) // bad dump
+GAME( 1983, spcwarp,   0,        spcwarp,   hunchbkg,  driver_device,  0,         ROT90,  "Century Electronics", "Space Warp? (Cosmos conversion on Galaxian hardware)",  MACHINE_NOT_WORKING | MACHINE_SUPPORTS_SAVE | MACHINE_WRONG_COLORS ) // bad dump
 GAME( 1984, drivfrcg,  drivfrcp, drivfrcg,  drivfrcg,  driver_device,  0,         ROT90,  "Shinkai Inc. (Magic Electronics USA license)", "Driving Force (Galaxian conversion)", MACHINE_SUPPORTS_SAVE )
 GAME( 1984, drivfrct,  drivfrcp, drivfrcg,  drivfrcg,  driver_device,  0,         ROT90,  "bootleg (EMT Germany)", "Top Racer (bootleg of Driving Force)", MACHINE_SUPPORTS_SAVE ) // Video Klein PCB
 GAME( 1985, drivfrcb,  drivfrcp, drivfrcg,  drivfrcg,  driver_device,  0,         ROT90,  "bootleg (Elsys Software)", "Driving Force (Galaxian conversion bootleg)", MACHINE_SUPPORTS_SAVE )

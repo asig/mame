@@ -536,6 +536,9 @@ void mc6845_device::recompute_parameters(bool postload)
 			if ( m_screen != NULL )
 				m_screen->configure(horiz_pix_total, vert_pix_total, visarea, refresh);
 
+			if(!m_reconfigure_cb.isnull())
+				m_reconfigure_cb(horiz_pix_total, vert_pix_total, visarea, refresh);
+
 			m_has_valid_parameters = true;
 		}
 		else
@@ -549,6 +552,7 @@ void mc6845_device::recompute_parameters(bool postload)
 		m_hsync_off_pos = hsync_off_pos;
 		m_vsync_on_pos = vsync_on_pos;
 		m_vsync_off_pos = vsync_off_pos;
+		m_line_counter = 0;
 	}
 }
 
@@ -667,6 +671,7 @@ void mc6845_device::handle_line_timer()
 		if ( m_line_counter == m_vert_disp )
 		{
 			m_line_enable_ff = false;
+			m_current_disp_addr = m_disp_start_addr;
 		}
 
 		/* Check if VSYNC should be enabled */
@@ -1005,6 +1010,7 @@ void mc6845_device::device_start()
 	m_out_vsync_cb.resolve_safe();
 
 	/* bind delegates */
+	m_reconfigure_cb.bind_relative_to(*owner());
 	m_begin_update_cb.bind_relative_to(*owner());
 	m_update_row_cb.bind_relative_to(*owner());
 	m_end_update_cb.bind_relative_to(*owner());
@@ -1026,7 +1032,7 @@ void mc6845_device::device_start()
 	m_max_ras_addr = 0x1f;
 	m_vert_char_total = 0x7f;
 
-	m_supports_disp_start_addr_r = true;
+	m_supports_disp_start_addr_r = false;  // MC6845 can not read Display Start (double checked on datasheet)
 	m_supports_vert_sync_width = false;
 	m_supports_status_reg_d5 = false;
 	m_supports_status_reg_d6 = false;
@@ -1162,7 +1168,7 @@ void hd6845_device::device_start()
 {
 	mc6845_device::device_start();
 
-	m_supports_disp_start_addr_r = false;
+	m_supports_disp_start_addr_r = true;  // HD6845S can definitely read Display Start (double checked on datasheet)
 	m_supports_vert_sync_width = true;
 	m_supports_status_reg_d5 = false;
 	m_supports_status_reg_d6 = false;
