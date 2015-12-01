@@ -44,7 +44,7 @@ ioport_constructor cpc_transtape_device::device_input_ports() const
 
 cpc_transtape_device::cpc_transtape_device(const machine_config &mconfig, const char *tag, device_t *owner, UINT32 clock) :
 	device_t(mconfig, CPC_TRANSTAPE, "HM Transtape", tag, owner, clock, "cpc_transtape", __FILE__),
-	device_cpc_expansion_card_interface(mconfig, *this),
+	device_cpc_expansion_card_interface(mconfig, *this), m_slot(nullptr), m_cpu(nullptr), m_space(nullptr), m_ram(nullptr),
 	m_rom_active(false),
 	m_romen(true),
 	m_output(0)
@@ -91,7 +91,7 @@ void cpc_transtape_device::map_enable()
 		membank(":bank7")->set_base(m_ram);
 		membank(":bank15")->set_base(m_ram);
 		membank(":bank8")->set_base(m_ram);  // repeats in second 8kB
-		membank(":bank16")->set_base(m_ram); 
+		membank(":bank16")->set_base(m_ram);
 	}
 }
 
@@ -136,5 +136,3 @@ void cpc_transtape_device::set_mapping(UINT8 type)
 		return;
 	map_enable();
 }
-
-

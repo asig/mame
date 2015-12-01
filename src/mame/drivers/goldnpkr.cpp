@@ -127,7 +127,8 @@
   * "Unknown French poker game",                      198?, Unknown.
   * "Unknown encrypted poker game",                   198?, Unknown.
   * "Unknown Sisteme France Poker",                   198?, Sisteme France.
-  * Bonne Chance! (Golden Poker prequel hardware),    198?, Unknown.
+  * Bonne Chance! (Golden Poker prequel HW, set 1),   198?, Unknown.
+  * Bonne Chance! (Golden Poker prequel HW, set 2),   198?, Unknown.
   * Mundial/Mondial (Italian/French),                 1987, Unknown.
   * Super 98 (3-hands, ICP-1),                        199?, Unknown.
 
@@ -482,7 +483,7 @@
   To run...
   1) Start the game.
   2) Break into debugger and do a pc=cfa1
-    
+
   Debug notes...
 
   From interrupts routine:
@@ -494,11 +495,11 @@
   CFA1: JMP $CEC6    ; yes?... jump to $CEC6
   CFA4: JSR $C0E1    ; continue...
   ...
-  
+
   Forcing the first time the comparation at $CF9D --> true, the game boots and is
   fully working.
 
-  
+
 ************************************************************************************
 
 
@@ -2104,7 +2105,7 @@ static INPUT_PORTS_START( ngold)
 	PORT_DIPSETTING(    0x00, DEF_STR( On ) )
 INPUT_PORTS_END
 
-static INPUT_PORTS_START( ngoldb)	// only coinage changes against ngold...
+static INPUT_PORTS_START( ngoldb)   // only coinage changes against ngold...
 	/* Multiplexed - 4x5bits */
 	PORT_START("IN0-0")
 	PORT_BIT( 0x01, IP_ACTIVE_LOW, IPT_GAMBLE_BET )
@@ -3656,7 +3657,7 @@ static INPUT_PORTS_START( super98 )
 	PORT_BIT( 0x01, IP_ACTIVE_LOW, IPT_OTHER )   PORT_NAME("Unknown IN0-3 0x01") PORT_CODE(KEYCODE_H)
 	PORT_BIT( 0x02, IP_ACTIVE_LOW, IPT_OTHER )   PORT_NAME("Unknown IN0-3 0x02") PORT_CODE(KEYCODE_J)
 	PORT_BIT( 0x04, IP_ACTIVE_LOW, IPT_OTHER )   PORT_NAME("Unknown IN0-3 0x04") PORT_CODE(KEYCODE_K)
-	PORT_BIT( 0x08, IP_ACTIVE_LOW, IPT_GAMBLE_BET )	                                       // Key 'M'
+	PORT_BIT( 0x08, IP_ACTIVE_LOW, IPT_GAMBLE_BET )                                        // Key 'M'
 	PORT_BIT( 0x10, IP_ACTIVE_LOW, IPT_OTHER )   PORT_NAME("Unknown IN0-3 0x10") PORT_CODE(KEYCODE_L)
 	PORT_BIT( 0x20, IP_ACTIVE_LOW, IPT_UNKNOWN )
 	PORT_BIT( 0x40, IP_ACTIVE_LOW, IPT_UNKNOWN )
@@ -3721,7 +3722,7 @@ static INPUT_PORTS_START( geniea )
 	PORT_BIT( 0x01, IP_ACTIVE_LOW, IPT_SERVICE )    PORT_NAME("Supervisor Key") PORT_CODE(KEYCODE_9)
 	PORT_BIT( 0x02, IP_ACTIVE_LOW, IPT_OTHER )      PORT_NAME("Unknown IN0-3 0x02") PORT_CODE(KEYCODE_J)
 	PORT_BIT( 0x04, IP_ACTIVE_LOW, IPT_COIN2 )      PORT_IMPULSE(3) PORT_NAME("Note In")     // Key '6'
-	PORT_BIT( 0x08, IP_ACTIVE_LOW, IPT_GAMBLE_BET )	                                         // Key 'M'
+	PORT_BIT( 0x08, IP_ACTIVE_LOW, IPT_GAMBLE_BET )                                          // Key 'M'
 	PORT_BIT( 0x10, IP_ACTIVE_LOW, IPT_OTHER )      PORT_NAME("Unknown IN0-3 0x10") PORT_CODE(KEYCODE_L)
 	PORT_BIT( 0x20, IP_ACTIVE_LOW, IPT_UNKNOWN )
 	PORT_BIT( 0x40, IP_ACTIVE_LOW, IPT_UNKNOWN )
@@ -4165,9 +4166,9 @@ static MACHINE_CONFIG_DERIVED( geniea, goldnpkr_base )
 	MCFG_CPU_MODIFY("maincpu")
 	MCFG_CPU_PROGRAM_MAP(goldnpkr_map)
 
-//	MCFG_DEVICE_MODIFY("pia0")
-//	MCFG_PIA_READPA_HANDLER(READ8(goldnpkr_state, pottnpkr_mux_port_r))
-//	MCFG_PIA_WRITEPA_HANDLER(WRITE8(goldnpkr_state, mux_port_w))
+//  MCFG_DEVICE_MODIFY("pia0")
+//  MCFG_PIA_READPA_HANDLER(READ8(goldnpkr_state, pottnpkr_mux_port_r))
+//  MCFG_PIA_WRITEPA_HANDLER(WRITE8(goldnpkr_state, mux_port_w))
 
 	/* video hardware */
 	MCFG_PALETTE_MODIFY("palette")
@@ -10013,6 +10014,23 @@ ROM_START( bchancep )   /* Bonne Chance! with PIAs 6821 */
 	ROM_LOAD( "bchancep_bp.bin", 0x0000, 0x0100, CRC(70fe1582) SHA1(118c743d445a37ad760e4163b61c3c562d7adda6) )
 ROM_END
 
+ROM_START( bchanceq )
+	ROM_REGION( 0x10000, "maincpu", 0 )
+	ROM_LOAD( "pok4-5.014",  0x4000, 0x4000, CRC(92f1f515) SHA1(f79ab453458f71d7e62e895d04a2d6161dbf2aad) )
+
+	ROM_REGION( 0x1800, "gfx1", 0 )
+	ROM_FILL(           0x0000, 0x1000, 0 ) /* filling the R-G bitplanes */
+	ROM_LOAD( "pok3.014",  0x1000, 0x0800, CRC(fb00e263) SHA1(879660bc3a3eb3d41f80741b157cdefaa7bd9a18) )    /* char ROM, different cardback logo */
+
+	ROM_REGION( 0x1800, "gfx2", 0 )
+	ROM_LOAD( "pok0.014",  0x0000, 0x0800, CRC(124f131f) SHA1(35b18d1d6b0146ecc5b52f3222a270c6b868742a) )    /* cards deck gfx, bitplane1 */
+	ROM_LOAD( "pok1.014",  0x0800, 0x0800, CRC(6bbb1e2d) SHA1(51ee282219bf84218886ad11a24bc6a8e7337527) )    /* cards deck gfx, bitplane2 */
+	ROM_LOAD( "pok2.014",  0x1000, 0x0800, CRC(6e3e9b1d) SHA1(14eb8d14ce16719a6ad7d13db01e47c8f05955f0) )    /* cards deck gfx, bitplane3 */
+
+	ROM_REGION( 0x0100, "proms", 0 )
+	ROM_LOAD( "82s129.bin", 0x0000, 0x0100, CRC(7f31066b) SHA1(15420780ec6b2870fc4539ec3afe4f0c58eedf12) )
+ROM_END
+
 /*
 
   PCB marked "MONDIAL"
@@ -10112,7 +10130,92 @@ ROM_START( super98 )
 	ROM_LOAD( "bipolar_prom.bin",  0x0000, 0x0100, BAD_DUMP CRC(7f31066b) SHA1(15420780ec6b2870fc4539ec3afe4f0c58eedf12) ) /* PROM dump needed */
 ROM_END
 
+/*-------------------------------------------------------------------------
 
+   Unknown animals themed banked game.
+
+   It has 4 character's tiles:
+   A pig, a duck, a donkey, and a mouse.
+   Duck and mouse are very close to Disney's characters
+   Donald Duck and Mickey Mouse.
+
+   The PCB has a lot of wire-hacks doing a weird banking,
+   and other unknown things (maybe addressing scramble).
+   These hacks need to be documented.
+
+   Bottom and Top programs ROMs are soldered one over the other, and a wire
+   hack enable/disable each set through the CE pin.
+
+---------------------------------------------------------------------------
+
+  * First game program:
+  
+  NMI vector is OK ($29FD).
+  RES & IRQ/BRK vectors are pointing to 0x2EE3 and $3065 (JMP $2EE3)
+  $2EE3 --> JMP $FBBB (where is in middle of a routine. Not the real start)
+
+---------------------------------------------------------------------------
+
+  * Second game program:
+
+  Expects the string '#2D' placed in offset FAh-FCh (NVRAM)
+   
+  fill FAh = 0x23
+       FBh = 0x32
+       FCh = 0x44
+
+	   #2D
+
+  ...to pass the checks at $638c: JSR $6760
+  
+  Another odd thing:
+
+  bp 6394
+  
+  639f: lda #$20
+  63a1: sta $a0
+  63a3: lda $a0   \ 
+  63a5: bne $63a3 / ---> loop waiting for register $a0 cleared!
+
+-------------------------------------------------------------------------*/
+ROM_START( animpkr )
+	ROM_REGION( 0x10000, "maincpu", 0 )
+	ROM_LOAD( "2732_bottom.15a",  0x2000, 0x1000, CRC(036f7639) SHA1(7d548dd71692fcde41c260a4a59ccdfa2aa5b07e) )
+	ROM_LOAD( "2732_bottom.17a",  0x3000, 0x1000, CRC(92c19e72) SHA1(034d077ede5608160ba882227e981751a5dde26d) )
+
+	ROM_REGION( 0x1800, "gfx1", 0 )
+	ROM_FILL(             0x0000, 0x1000, 0 ) /* filling the R-G bitplanes */
+	ROM_LOAD( "2716.8a",  0x1000, 0x0800, CRC(21c9c7f1) SHA1(daa0eddd4f4a9eec0cff3aebe884792adf830238) )    /* char ROM */
+
+	ROM_REGION( 0x1800, "gfx2", 0 )
+	ROM_LOAD( "2716.4a",  0x0000, 0x0800, CRC(0b7f11a2) SHA1(c5e347a377e307d12b2b2d2edf7c48be21ef5cdb) )    /* characters gfx, bitplane1 */
+	ROM_LOAD( "2716.5a",  0x0800, 0x0800, CRC(0b2c3c25) SHA1(c69b15c1cea9abc437b12211bc4087d4d5baf084) )    /* characters gfx, bitplane2 */
+	ROM_LOAD( "2716.7a",  0x1000, 0x0800, CRC(c48d17b0) SHA1(7c446339ab3aaa49004780fa90a3624b5a382cb1) )    /* characters gfx, bitplane3 */
+
+	ROM_REGION( 0x0100, "proms", 0 )
+	ROM_LOAD( "bprom.bin", 0x0000, 0x0100, BAD_DUMP CRC(7f31066b) SHA1(15420780ec6b2870fc4539ec3afe4f0c58eedf12) ) /* PROM dump needed */
+ROM_END
+
+ROM_START( animpkra )
+	ROM_REGION( 0x10000, "maincpu", 0 )
+	ROM_LOAD( "2732_top.15a",  0x2000, 0x1000, CRC(ef6b36ff) SHA1(2ca520502ce32c4327f9bcc85d5c7b6e2f22eeb5) )
+	ROM_LOAD( "2732_top.17a",  0x3000, 0x1000, CRC(13fae924) SHA1(c1c92fdb6e7036e6d9349c9b017e9daf3577345b) )
+
+	ROM_REGION( 0x1800, "gfx1", 0 )
+	ROM_FILL(             0x0000, 0x1000, 0 ) /* filling the R-G bitplanes */
+	ROM_LOAD( "2716.8a",  0x1000, 0x0800, CRC(21c9c7f1) SHA1(daa0eddd4f4a9eec0cff3aebe884792adf830238) )    /* char ROM */
+
+	ROM_REGION( 0x1800, "gfx2", 0 )
+	ROM_LOAD( "2716.4a",  0x0000, 0x0800, CRC(0b7f11a2) SHA1(c5e347a377e307d12b2b2d2edf7c48be21ef5cdb) )    /* characters gfx, bitplane1 */
+	ROM_LOAD( "2716.5a",  0x0800, 0x0800, CRC(0b2c3c25) SHA1(c69b15c1cea9abc437b12211bc4087d4d5baf084) )    /* characters gfx, bitplane2 */
+	ROM_LOAD( "2716.7a",  0x1000, 0x0800, CRC(c48d17b0) SHA1(7c446339ab3aaa49004780fa90a3624b5a382cb1) )    /* characters gfx, bitplane3 */
+
+	ROM_REGION( 0x0100, "proms", 0 )
+	ROM_LOAD( "bprom.bin", 0x0000, 0x0100, BAD_DUMP CRC(7f31066b) SHA1(15420780ec6b2870fc4539ec3afe4f0c58eedf12) ) /* PROM dump needed */
+ROM_END
+
+
+  
 /*********************************************
 *                Driver Init                 *
 *********************************************/
@@ -10417,38 +10520,38 @@ DRIVER_INIT_MEMBER(goldnpkr_state, vkdlswwv)
   If you apply these XOR's to get 00's, the code has no sense,
   so something is missing. For now will comment out the partial
   decryption code...
-  
+
 ***********************************************/
 
 DRIVER_INIT_MEMBER(goldnpkr_state, icp1db)
 {
 /*
-	int i;
-	UINT8 *ROM = memregion("maincpu")->base();
+    int i;
+    UINT8 *ROM = memregion("maincpu")->base();
 
-	unsigned char rawData[256] = {
-		0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFB, 0xFB, 0xFB, 0xFB, 0xFB, 0xFB, 0xFB, 0xFB,
-		0xFD, 0xFD, 0xFD, 0xFD, 0xFD, 0xFD, 0xFD, 0xFD, 0xF9, 0xF9, 0xF9, 0xF9, 0xF9, 0xF9, 0xF9, 0xF9,
-		0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFB, 0xFB, 0xFB, 0xFB, 0xFB, 0xFB, 0xFB, 0xFB,
-		0xFD, 0xFD, 0xFD, 0xFD, 0xFD, 0xFD, 0xFD, 0xFD, 0xF9, 0xF9, 0xF9, 0xF9, 0xF9, 0xF9, 0xF9, 0xF9,
-		0xFE, 0xFE, 0xFE, 0xFE, 0xFE, 0xFE, 0xFE, 0xFE, 0xFA, 0xFA, 0xFA, 0xFA, 0xFA, 0xFA, 0xFA, 0xFA,
-		0xFC, 0xFC, 0xFC, 0xFC, 0xFC, 0xFC, 0xFC, 0xFC, 0xF8, 0xF8, 0xF8, 0xF8, 0xF8, 0xF8, 0xF8, 0xF8,
-		0xFE, 0xFE, 0xFE, 0xFE, 0xFE, 0xFE, 0xFE, 0xFE, 0xFA, 0xFA, 0xFA, 0xFA, 0xFA, 0xFA, 0xFA, 0xFA,
-		0xFC, 0xFC, 0xFC, 0xFC, 0xFC, 0xFC, 0xFC, 0xFC, 0xF8, 0xF8, 0xF8, 0xF8, 0xF8, 0xF8, 0xF8, 0xF8,
-		0xBF, 0xBF, 0xBF, 0xBF, 0xBF, 0xBF, 0xBF, 0xBF, 0xBB, 0xBB, 0xBB, 0xBB, 0xBB, 0xBB, 0xBB, 0xBB,
-		0xBD, 0xBD, 0xBD, 0xBD, 0xBD, 0xBD, 0xBD, 0xBD, 0xB9, 0xB9, 0xB9, 0xB9, 0xB9, 0xB9, 0xB9, 0xB9,
-		0xBF, 0xBF, 0xBF, 0xBF, 0xBF, 0xBF, 0xBF, 0xBF, 0xBB, 0xBB, 0xBB, 0xBB, 0xBB, 0xBB, 0xBB, 0xBB,
-		0xBD, 0xBD, 0xBD, 0xBD, 0xBD, 0xBD, 0xBD, 0xBD, 0xB9, 0xB9, 0xB9, 0xB9, 0xB9, 0xB9, 0xB9, 0xB9,
-		0xBE, 0xBE, 0xBE, 0xBE, 0xBE, 0xBE, 0xBE, 0xBE, 0xBA, 0xBA, 0xBA, 0xBA, 0xBA, 0xBA, 0xBA, 0xBA,
-		0xBC, 0xBC, 0xBC, 0xBC, 0xBC, 0xBC, 0xBC, 0xBC, 0xB8, 0xB8, 0xB8, 0xB8, 0xB8, 0xB8, 0xB8, 0xB8,
-		0xBE, 0xBE, 0xBE, 0xBE, 0xBE, 0xBE, 0xBE, 0xBE, 0xBA, 0xBA, 0xBA, 0xBA, 0xBA, 0xBA, 0xBA, 0xBA,
-		0xBC, 0xBC, 0xBC, 0xBC, 0xBC, 0xBC, 0xBC, 0xBC, 0xB8, 0xB8, 0xB8, 0xB8, 0xB8, 0xB8, 0xB8, 0xB8,
-	};
+    unsigned char rawData[256] = {
+        0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFB, 0xFB, 0xFB, 0xFB, 0xFB, 0xFB, 0xFB, 0xFB,
+        0xFD, 0xFD, 0xFD, 0xFD, 0xFD, 0xFD, 0xFD, 0xFD, 0xF9, 0xF9, 0xF9, 0xF9, 0xF9, 0xF9, 0xF9, 0xF9,
+        0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFB, 0xFB, 0xFB, 0xFB, 0xFB, 0xFB, 0xFB, 0xFB,
+        0xFD, 0xFD, 0xFD, 0xFD, 0xFD, 0xFD, 0xFD, 0xFD, 0xF9, 0xF9, 0xF9, 0xF9, 0xF9, 0xF9, 0xF9, 0xF9,
+        0xFE, 0xFE, 0xFE, 0xFE, 0xFE, 0xFE, 0xFE, 0xFE, 0xFA, 0xFA, 0xFA, 0xFA, 0xFA, 0xFA, 0xFA, 0xFA,
+        0xFC, 0xFC, 0xFC, 0xFC, 0xFC, 0xFC, 0xFC, 0xFC, 0xF8, 0xF8, 0xF8, 0xF8, 0xF8, 0xF8, 0xF8, 0xF8,
+        0xFE, 0xFE, 0xFE, 0xFE, 0xFE, 0xFE, 0xFE, 0xFE, 0xFA, 0xFA, 0xFA, 0xFA, 0xFA, 0xFA, 0xFA, 0xFA,
+        0xFC, 0xFC, 0xFC, 0xFC, 0xFC, 0xFC, 0xFC, 0xFC, 0xF8, 0xF8, 0xF8, 0xF8, 0xF8, 0xF8, 0xF8, 0xF8,
+        0xBF, 0xBF, 0xBF, 0xBF, 0xBF, 0xBF, 0xBF, 0xBF, 0xBB, 0xBB, 0xBB, 0xBB, 0xBB, 0xBB, 0xBB, 0xBB,
+        0xBD, 0xBD, 0xBD, 0xBD, 0xBD, 0xBD, 0xBD, 0xBD, 0xB9, 0xB9, 0xB9, 0xB9, 0xB9, 0xB9, 0xB9, 0xB9,
+        0xBF, 0xBF, 0xBF, 0xBF, 0xBF, 0xBF, 0xBF, 0xBF, 0xBB, 0xBB, 0xBB, 0xBB, 0xBB, 0xBB, 0xBB, 0xBB,
+        0xBD, 0xBD, 0xBD, 0xBD, 0xBD, 0xBD, 0xBD, 0xBD, 0xB9, 0xB9, 0xB9, 0xB9, 0xB9, 0xB9, 0xB9, 0xB9,
+        0xBE, 0xBE, 0xBE, 0xBE, 0xBE, 0xBE, 0xBE, 0xBE, 0xBA, 0xBA, 0xBA, 0xBA, 0xBA, 0xBA, 0xBA, 0xBA,
+        0xBC, 0xBC, 0xBC, 0xBC, 0xBC, 0xBC, 0xBC, 0xBC, 0xB8, 0xB8, 0xB8, 0xB8, 0xB8, 0xB8, 0xB8, 0xB8,
+        0xBE, 0xBE, 0xBE, 0xBE, 0xBE, 0xBE, 0xBE, 0xBE, 0xBA, 0xBA, 0xBA, 0xBA, 0xBA, 0xBA, 0xBA, 0xBA,
+        0xBC, 0xBC, 0xBC, 0xBC, 0xBC, 0xBC, 0xBC, 0xBC, 0xB8, 0xB8, 0xB8, 0xB8, 0xB8, 0xB8, 0xB8, 0xB8,
+    };
 
-	for (i = 0; i < 0x10000; i++)
-	{
-		ROM[i] = ROM[i] ^ rawData[i & 0xff];
-	}
+    for (i = 0; i < 0x10000; i++)
+    {
+        ROM[i] = ROM[i] ^ rawData[i & 0xff];
+    }
 */
 }
 
@@ -10659,9 +10762,13 @@ GAME(  1987, caspoker,  0,        goldnpkr, caspoker, driver_device,  0,        
 GAMEL( 198?, superdbl,  pottnpkr, goldnpkr, goldnpkr, driver_device,  0,        ROT0,   "Karateco",                 "Super Double (French)",                   0,                layout_goldnpkr )
 GAME(  198?, pokerdub,  0,        pottnpkr, goldnpkr, driver_device,  0,        ROT0,   "<unknown>",                "unknown French poker game",               MACHINE_NOT_WORKING )   // lacks of 2nd program ROM.
 GAME(  198?, pokerduc,  0,        goldnpkr, goldnpkr, goldnpkr_state, icp1db,   ROT0,   "<unknown>",                "unknown encrypted poker game",            MACHINE_NOT_WORKING )   // encrypted.
-
-GAMEL( 198?, bchancep,  0,        bchancep, goldnpkr, goldnpkr_state, bchancep, ROT0,   "<unknown>",                "Bonne Chance! (Golden Poker prequel HW)", MACHINE_NOT_WORKING, layout_goldnpkr )
-GAME(  1987, pokermon,  0,        mondial,  mondial,  driver_device,  0,        ROT0,   "<unknown>",                "Mundial/Mondial (Italian/French)",        0 )                  // banked selectable program
 GAME(  198?, pokersis,  0,        bchancep, goldnpkr, driver_device,  0,        ROT0,   "Sisteme France",           "unknown Sisteme France Poker",            MACHINE_NOT_WORKING )   // fix banking (4 prgs?)...
 
+GAMEL( 198?, bchancep,  0,        bchancep, goldnpkr, goldnpkr_state, bchancep, ROT0,   "<unknown>",                "Bonne Chance! (Golden Poker prequel HW, set 1)", MACHINE_NOT_WORKING, layout_goldnpkr )
+GAMEL( 198?, bchanceq,  0,        goldnpkr, goldnpkr, driver_device,  0,        ROT0,   "<unknown>",                "Bonne Chance! (Golden Poker prequel HW, set 2)", MACHINE_NOT_WORKING, layout_goldnpkr )
+
+GAME(  1987, pokermon,  0,        mondial,  mondial,  driver_device,  0,        ROT0,   "<unknown>",                "Mundial/Mondial (Italian/French)",        0 )                  // banked selectable program
 GAME(  1998, super98,   bsuerte,  witchcrd, super98,  driver_device,  0,        ROT0,   "<unknown>",                "Super 98 (3-hands, ICP-1)",               MACHINE_NOT_WORKING )  // program checks zeropage registers for changes...
+
+GAME(  198?, animpkr,   0,        pottnpkr, goldnpkr, driver_device,  0,        ROT0,   "<unknown>",                "unknown animal-themed game (bottom)",     MACHINE_NOT_WORKING )  // banked selectable program (bottom).
+GAME(  198?, animpkra,  animpkr,  pottnpkr, goldnpkr, driver_device,  0,        ROT0,   "<unknown>",                "unknown animal-themed game (top)",        MACHINE_NOT_WORKING )  // banked selectable program (top).

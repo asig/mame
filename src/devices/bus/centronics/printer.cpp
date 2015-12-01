@@ -28,6 +28,8 @@ centronics_printer_device::centronics_printer_device(const machine_config &mconf
 	device_t(mconfig, CENTRONICS_PRINTER, "Centronics Printer", tag, owner, clock, "centronics_printer", __FILE__),
 	device_centronics_peripheral_interface( mconfig, *this ),
 	m_strobe(0),
+	m_data(0),
+	m_busy(0),
 	m_printer(*this, "printer")
 {
 }

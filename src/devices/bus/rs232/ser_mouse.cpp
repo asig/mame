@@ -17,6 +17,11 @@ serial_mouse_device::serial_mouse_device(const machine_config &mconfig, device_t
 	device_serial_interface(mconfig, *this),
 	m_dtr(1),
 	m_rts(1),
+	m_head(0),
+	m_tail(0),
+	m_mb(0),
+	m_timer(nullptr),
+	m_enabled(false),
 	m_x(*this, "ser_mouse_x"),
 	m_y(*this, "ser_mouse_y"),
 	m_btn(*this, "ser_mouse_btn")

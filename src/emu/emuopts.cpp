@@ -369,7 +369,7 @@ bool emu_options::parse_slot_devices(int argc, char *argv[], std::string &error_
 {
 	// an initial parse to capture the initial set of values
 	bool result;
-	
+
 	core_options::parse_command_line(argc, argv, OPTION_PRIORITY_CMDLINE, error_string);
 
 	// keep adding slot options until we stop seeing new stuff
@@ -566,7 +566,7 @@ bool emu_options::parse_one_ini(const char *basename, int priority, std::string 
 	// parse the file
 	osd_printf_verbose("Parsing %s.ini\n", basename);
 	std::string error;
-	bool result = parse_ini_file(file, priority, OPTION_PRIORITY_DRIVER_INI, error);
+	bool result = parse_ini_file((core_file&)file, priority, OPTION_PRIORITY_DRIVER_INI, error);
 
 	// append errors if requested
 	if (!error.empty() && error_string != NULL)

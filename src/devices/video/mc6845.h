@@ -30,9 +30,6 @@
 #define MCFG_MC6845_SHOW_BORDER_AREA(_show) \
 	mc6845_device::set_show_border_area(*device, _show);
 
-#define MCFG_MC6845_INTERLACE_ADJUST(_value) \
-	mc6845_device::set_interlace_adjust(*device, _value);
-
 #define MCFG_MC6845_VISAREA_ADJUST(_minx, _maxx, _miny, _maxy) \
 	mc6845_device::set_visarea_adjust(*device, _minx, _maxx, _miny, _maxy);
 
@@ -98,6 +95,7 @@ class mc6845_device :   public device_t,
 	friend class sy6845e_device;
 	friend class hd6345_device;
 	friend class ams40041_device;
+	friend class ams40489_device;
 
 public:
 	// construction/destruction
@@ -105,7 +103,6 @@ public:
 	mc6845_device(const machine_config &mconfig, device_type type, const char *name, const char *tag, device_t *owner, UINT32 clock, const char *shortname, const char *source);
 
 	static void set_show_border_area(device_t &device, bool show) { downcast<mc6845_device &>(device).m_show_border_area = show; }
-	static void set_interlace_adjust(device_t &device, int value) { downcast<mc6845_device &>(device).m_interlace_adjust = value; }
 	static void set_visarea_adjust(device_t &device, int min_x, int max_x, int min_y, int max_y)
 	{
 		mc6845_device &dev = downcast<mc6845_device &>(device);
@@ -167,7 +164,7 @@ public:
 	void set_hpixels_per_column(int hpixels_per_column);
 
 	/* updates the screen -- this will call begin_update(),
-	   followed by update_row() reapeatedly and after all row
+	   followed by update_row() repeatedly and after all row
 	   updating is complete, end_update() */
 	UINT32 screen_update(screen_device &screen, bitmap_rgb32 &bitmap, const rectangle &cliprect);
 
@@ -283,7 +280,8 @@ protected:
 	 ************************/
 
 	bool m_show_border_area;        /* visible screen area (false) active display (true) active display + blanking */
-	int m_interlace_adjust; /* adjust max ras in interlace mode */
+	int m_noninterlace_adjust;      /* adjust max ras in non-interlace mode */
+	int m_interlace_adjust;         /* adjust max ras in interlace mode */
 
 	/* visible screen area adjustment */
 	int m_visarea_adjust_min_x;
@@ -314,7 +312,7 @@ protected:
 	 * vblank/hblank timing not supported yet! */
 	mc6845_on_update_addr_changed_delegate m_on_update_addr_changed_cb;
 
-	/* if specified, this gets called for every change of the disply enable pin (pin 18) */
+	/* if specified, this gets called for every change of the display enable pin (pin 18) */
 	devcb_write_line            m_out_de_cb;
 
 	/* if specified, this gets called for every change of the cursor pin (pin 19) */
@@ -418,6 +416,16 @@ protected:
 	virtual void device_reset();
 };
 
+class ams40489_device : public mc6845_device
+{
+public:
+	ams40489_device(const machine_config &mconfig, const char *tag, device_t *owner, UINT32 clock);
+
+protected:
+	virtual void device_start();
+	virtual void device_reset();
+};
+
 class mos8563_device : public mc6845_device,
 						public device_memory_interface
 {
@@ -504,6 +512,7 @@ extern const device_type SY6545_1;
 extern const device_type SY6845E;
 extern const device_type HD6345;
 extern const device_type AMS40041;
+extern const device_type AMS40489;
 extern const device_type MOS8563;
 extern const device_type MOS8568;
 
