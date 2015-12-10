@@ -172,12 +172,15 @@ TIMER_DEVICE_CALLBACK_MEMBER(megasys1_state::megasys1A_scanline)
 {
 	int scanline = param;
 
+	// irq 1 is vblank (confirmed by Saint Dragon "press start" behaviour), 2 & 3 unknown
+	
 	if(scanline == 240) // vblank-out irq
-		m_maincpu->set_input_line(2, HOLD_LINE);
-
-	if(scanline == 0)
 		m_maincpu->set_input_line(1, HOLD_LINE);
 
+	if(scanline == 0)
+		m_maincpu->set_input_line(2, HOLD_LINE);
+
+	// RTE in stdragon
 	if(scanline == 128)
 		m_maincpu->set_input_line(3, HOLD_LINE);
 }
@@ -292,11 +295,12 @@ static ADDRESS_MAP_START( megasys1C_map, AS_PROGRAM, 16, megasys1_state )
 	AM_RANGE(0x000000, 0x07ffff) AM_ROM
 	AM_RANGE(0x0c0000, 0x0cffff) AM_READWRITE(megasys1_vregs_C_r,megasys1_vregs_C_w) AM_SHARE("vregs")
 	AM_RANGE(0x0d2000, 0x0d3fff) AM_RAM AM_SHARE("objectram")
-	AM_RANGE(0x0e0000, 0x0e3fff) AM_RAM_WRITE(megasys1_scrollram_0_w) AM_SHARE("scrollram.0")
-	AM_RANGE(0x0e8000, 0x0ebfff) AM_RAM_WRITE(megasys1_scrollram_1_w) AM_SHARE("scrollram.1")
-	AM_RANGE(0x0f0000, 0x0f3fff) AM_RAM_WRITE(megasys1_scrollram_2_w) AM_SHARE("scrollram.2")
-	AM_RANGE(0x0f8000, 0x0f87ff) AM_RAM_DEVWRITE("palette", palette_device, write) AM_SHARE("palette")
 	AM_RANGE(0x0d8000, 0x0d8001) AM_READWRITE(ip_select_r,ip_select_w)
+	// 64th Street actively uses 0xe4*** for breakable objects.
+	AM_RANGE(0x0e0000, 0x0e3fff) AM_MIRROR(0x4000) AM_RAM_WRITE(megasys1_scrollram_0_w) AM_SHARE("scrollram.0")
+	AM_RANGE(0x0e8000, 0x0ebfff) AM_MIRROR(0x4000) AM_RAM_WRITE(megasys1_scrollram_1_w) AM_SHARE("scrollram.1")
+	AM_RANGE(0x0f0000, 0x0f3fff) AM_MIRROR(0x4000) AM_RAM_WRITE(megasys1_scrollram_2_w) AM_SHARE("scrollram.2")
+	AM_RANGE(0x0f8000, 0x0f87ff) AM_RAM_DEVWRITE("palette", palette_device, write) AM_SHARE("palette")
 	AM_RANGE(0x1c0000, 0x1cffff) AM_MIRROR(0x30000) AM_RAM AM_SHARE("ram") //0x1f****, Cybattler reads attract mode inputs at 0x1d****
 ADDRESS_MAP_END
 

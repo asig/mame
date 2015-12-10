@@ -20,8 +20,12 @@
   (add audio)
   
   use gameking3 cartridge to get illegal cartridge scroller
+
+  This system appears to be based on the GeneralPlus GPL133 system-on-chip or a close relative.
+  Datasheet: http://www.generalplus.com/doc/ds/GPL133AV10_spec.pdf
 */
 
+#include <stddef.h>
 #include "emu.h"
 #include "cpu/m6502/r65c02.h"
 #include "bus/generic/slot.h"
