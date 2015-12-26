@@ -306,7 +306,7 @@ ppc405gp_device::ppc405gp_device(const machine_config &mconfig, const char *tag,
     of access and the protection bits
 -------------------------------------------------*/
 
-INLINE int page_access_allowed(int transtype, UINT8 key, UINT8 protbits)
+static inline int page_access_allowed(int transtype, UINT8 key, UINT8 protbits)
 {
 	if (key == 0)
 		return (transtype == TRANSLATE_WRITE) ? (protbits != 3) : TRUE;
@@ -450,7 +450,7 @@ inline void ppc_device::set_decrementer(UINT32 newdec)
     is_nan_double - is a double value a NaN
 -------------------------------------------------*/
 
-INLINE int is_nan_double(double x)
+static inline int is_nan_double(double x)
 {
 	UINT64 xi = *(UINT64*)&x;
 	return( ((xi & DOUBLE_EXP) == DOUBLE_EXP) &&
@@ -464,7 +464,7 @@ INLINE int is_nan_double(double x)
     quiet NaN
 -------------------------------------------------*/
 
-INLINE int is_qnan_double(double x)
+static inline int is_qnan_double(double x)
 {
 	UINT64 xi = *(UINT64*)&x;
 	return( ((xi & DOUBLE_EXP) == DOUBLE_EXP) &&
@@ -479,7 +479,7 @@ INLINE int is_qnan_double(double x)
     signaling NaN
 -------------------------------------------------*/
 
-INLINE int is_snan_double(double x)
+static inline int is_snan_double(double x)
 {
 	UINT64 xi = *(UINT64*)&x;
 	return( ((xi & DOUBLE_EXP) == DOUBLE_EXP) &&
@@ -494,7 +494,7 @@ INLINE int is_snan_double(double x)
     infinity
 -------------------------------------------------*/
 
-INLINE int is_infinity_double(double x)
+static inline int is_infinity_double(double x)
 {
 	UINT64 xi = *(UINT64*)&x;
 	return( ((xi & DOUBLE_EXP) == DOUBLE_EXP) &&
@@ -507,7 +507,7 @@ INLINE int is_infinity_double(double x)
     normalized
 -------------------------------------------------*/
 
-INLINE int is_normalized_double(double x)
+static inline int is_normalized_double(double x)
 {
 	UINT64 exp;
 	UINT64 xi = *(UINT64*)&x;
@@ -522,7 +522,7 @@ INLINE int is_normalized_double(double x)
     denormalized
 -------------------------------------------------*/
 
-INLINE int is_denormalized_double(double x)
+static inline int is_denormalized_double(double x)
 {
 	UINT64 xi = *(UINT64*)&x;
 	return( ((xi & DOUBLE_EXP) == 0) &&
@@ -534,7 +534,7 @@ INLINE int is_denormalized_double(double x)
     sign_double - return sign of a double value
 -------------------------------------------------*/
 
-INLINE int sign_double(double x)
+static inline int sign_double(double x)
 {
 	UINT64 xi = *(UINT64*)&x;
 	return ((xi & DOUBLE_SIGN) != 0);
@@ -882,7 +882,7 @@ void ppc_device::device_start()
 
 	UINT32 flags = 0;
 	/* initialize the UML generator */
-	m_drcuml = auto_alloc(machine(), drcuml_state(*this, m_cache, flags, 8, 32, 2));
+	m_drcuml = std::make_unique<drcuml_state>(*this, m_cache, flags, 8, 32, 2);
 
 	/* add symbols for our stuff */
 	m_drcuml->symbol_add(&m_core->pc, sizeof(m_core->pc), "pc");
@@ -928,7 +928,7 @@ void ppc_device::device_start()
 	m_drcuml->symbol_add(&m_fcmp_cr_table, sizeof(m_fcmp_cr_table), "fcmp_cr_table");
 
 	/* initialize the front-end helper */
-	m_drcfe = auto_alloc(machine(), ppc_frontend(this, COMPILE_BACKWARDS_BYTES, COMPILE_FORWARDS_BYTES, SINGLE_INSTRUCTION_MODE ? 1 : COMPILE_MAX_SEQUENCE));
+	m_drcfe = std::make_unique<ppc_frontend>(this, COMPILE_BACKWARDS_BYTES, COMPILE_FORWARDS_BYTES, SINGLE_INSTRUCTION_MODE ? 1 : COMPILE_MAX_SEQUENCE);
 
 	/* compute the register parameters */
 	for (int regnum = 0; regnum < 32; regnum++)
@@ -1151,10 +1151,6 @@ void ppc_device::device_stop()
 	if (m_vtlb != nullptr)
 		vtlb_free(m_vtlb);
 	m_vtlb = nullptr;
-
-	/* clean up the DRC */
-	auto_free(machine(), m_drcfe);
-	auto_free(machine(), m_drcuml);
 }
 
 

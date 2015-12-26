@@ -1324,6 +1324,7 @@ files {
 	MAME_DIR .. "src/mame/video/vulgus.cpp",
 	MAME_DIR .. "src/mame/machine/kabuki.cpp",
 	MAME_DIR .. "src/mame/machine/kabuki.h",
+	MAME_DIR .. "src/mame/drivers/tvcapcom.cpp",
 }
 
 createMAMEProjects(_target, _subtarget, "cinemat")
@@ -3661,6 +3662,8 @@ files {
 	MAME_DIR .. "src/mame/video/tc0110pcr.h",
 	MAME_DIR .. "src/mame/video/tc0180vcu.cpp",
 	MAME_DIR .. "src/mame/video/tc0180vcu.h",
+	MAME_DIR .. "src/mame/video/tc0780fpa.cpp",
+	MAME_DIR .. "src/mame/video/tc0780fpa.h",
 }
 
 createMAMEProjects(_target, _subtarget, "tatsumi")
@@ -4017,6 +4020,7 @@ createMAMEProjects(_target, _subtarget, "zaccaria")
 files {
 	MAME_DIR .. "src/mame/drivers/laserbat.cpp",
 	MAME_DIR .. "src/mame/includes/laserbat.h",
+	MAME_DIR .. "src/mame/video/laserbat.cpp",
 	MAME_DIR .. "src/mame/audio/laserbat.cpp",
 	MAME_DIR .. "src/mame/drivers/seabattl.cpp",
 	MAME_DIR .. "src/mame/drivers/zac2650.cpp",

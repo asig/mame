@@ -256,7 +256,7 @@ bool gba_cart_slot_device::call_softlist_load(software_list_device &swlist, cons
  fullpath
  -------------------------------------------------*/
 
-INLINE std::string gba_chip_string( UINT32 chip )
+static inline std::string gba_chip_string( UINT32 chip )
 {
 	std::string str;
 	if (chip == 0) str += "NONE ";
@@ -273,7 +273,7 @@ INLINE std::string gba_chip_string( UINT32 chip )
 }
 
 
-INLINE int gba_chip_has_conflict( UINT32 chip )
+static inline int gba_chip_has_conflict( UINT32 chip )
 {
 	int count1 = 0, count2 = 0;
 	if (chip & GBA_CHIP_EEPROM) count1++;
@@ -404,7 +404,7 @@ void gba_cart_slot_device::get_default_card_software(std::string &result)
 {
 	if (open_image_file(mconfig().options()))
 	{
-		const char *slot_string = "gba_rom";
+		const char *slot_string;
 		UINT32 len = core_fsize(m_file);
 		dynamic_buffer rom(len);
 		int type;

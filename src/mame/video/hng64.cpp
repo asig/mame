@@ -220,7 +220,7 @@ static void hng64_configure_blit_parameters(blit_parameters *blit, tilemap_t *tm
 	}
 }
 
-INLINE UINT32 alpha_additive_r32(UINT32 d, UINT32 s, UINT8 level)
+static inline UINT32 alpha_additive_r32(UINT32 d, UINT32 s, UINT8 level)
 {
 	UINT32 add;
 	add = (s & 0x00ff0000) + (d & 0x00ff0000);
@@ -1285,10 +1285,10 @@ void hng64_state::video_start()
 	m_additive_tilemap_debug = 0;
 
 	// Rasterizer creation
-	m_poly_renderer = auto_alloc(machine(), hng64_poly_renderer(*this));
+	m_poly_renderer = std::make_unique<hng64_poly_renderer>(*this);
 
 	// 3d information
-	m_dl = auto_alloc_array(machine(), UINT16, 0x100);
+	m_dl = std::make_unique<UINT16[]>(0x100);
 	m_polys.resize(HNG64_MAX_POLYGONS);
 
 	m_texturerom = memregion("textures")->base();

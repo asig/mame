@@ -73,8 +73,6 @@ public:
 	DECLARE_WRITE32_MEMBER(pxa255_gpio_w);
 	DECLARE_READ32_MEMBER(pxa255_lcd_r);
 	DECLARE_WRITE32_MEMBER(pxa255_lcd_w);
-	DECLARE_READ32_MEMBER(return_zero);
-	DECLARE_READ32_MEMBER(unknown_r);
 	DECLARE_READ32_MEMBER(cpld_r);
 	DECLARE_WRITE32_MEMBER(cpld_w);
 	DECLARE_READ32_MEMBER(prot_cheater_r);
@@ -103,7 +101,7 @@ public:
 
 #define VERBOSE_LEVEL ( 3 )
 
-INLINE void ATTR_PRINTF(3,4) verboselog( device_t& device, int n_level, const char* s_fmt, ... )
+static inline void ATTR_PRINTF(3,4) verboselog( device_t& device, int n_level, const char* s_fmt, ... )
 {
 	if( VERBOSE_LEVEL >= n_level )
 	{

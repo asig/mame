@@ -59,7 +59,7 @@ project "zlib"
 	kind "StaticLib"
 
 	local version = str_to_version(_OPTIONS["gcc_version"])
-	if _OPTIONS["gcc"]~=nil and string.find(_OPTIONS["gcc"], "clang") then
+	if _OPTIONS["gcc"]~=nil and (string.find(_OPTIONS["gcc"], "clang") or string.find(_OPTIONS["gcc"], "asmjs")) then
 		configuration { "gmake" }
 		if (version >= 30700) then
 			buildoptions {
@@ -129,11 +129,19 @@ project "softfloat"
 	includedirs {
 		MAME_DIR .. "src/osd",
 	}
+	configuration { "vs*" }
+		buildoptions {
+			"/wd4244", -- warning C4244: 'argument' : conversion from 'xxx' to 'xxx', possible loss of data
+			"/wd4146", -- warning C4146: unary minus operator applied to unsigned type, result still unsigned
+			"/wd4018", -- warning C4018: 'x' : signed/unsigned mismatch
+		}
 if _OPTIONS["vs"]=="intel-15" then
 		buildoptions {
 			"/Qwd2557", 			-- remark #2557: comparison between signed and unsigned operands
 		}
 end	
+	configuration { }
+
 	files {
 		MAME_DIR .. "3rdparty/softfloat/softfloat.c",
 		MAME_DIR .. "3rdparty/softfloat/fsincos.c",
@@ -366,6 +374,10 @@ project "lua"
 	--	"ForceCPP",
 	--}
 
+	configuration { "gmake" }
+		buildoptions_c {
+			"-Wno-bad-function-cast"
+		}
 	configuration { "vs*" }
 		buildoptions {
 			"/wd4244", -- warning C4244: 'argument' : conversion from 'xxx' to 'xxx', possible loss of data

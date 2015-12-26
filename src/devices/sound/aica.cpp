@@ -1,8 +1,8 @@
-// license:???
-// copyright-holders:ElSemi, kingshriek, Deunan Knute, R. Belmont
+// license:BSD-3-Clause
+// copyright-holders:ElSemi, Deunan Knute, R. Belmont
+// thanks-to: kingshriek
 /*
     Sega/Yamaha AICA emulation
-    By ElSemi, kingshriek, Deunan Knute, and R. Belmont
 
     This is effectively a 64-voice SCSP, with the following differences:
     - No FM mode
@@ -521,8 +521,8 @@ void aica_device::Init()
 	}
 
 	AICALFO_Init();
-	m_buffertmpl=auto_alloc_array_clear(machine(), signed int, 44100);
-	m_buffertmpr=auto_alloc_array_clear(machine(), signed int, 44100);
+	m_buffertmpl=make_unique_clear<INT32[]>(44100);
+	m_buffertmpr=make_unique_clear<INT32[]>(44100);
 
 	// no "pend"
 	m_udata.data[0xa0/2] = 0;

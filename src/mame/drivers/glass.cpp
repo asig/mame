@@ -193,7 +193,7 @@ void glass_state::machine_reset()
 static MACHINE_CONFIG_START( glass, glass_state )
 
 	/* basic machine hardware */
-	MCFG_CPU_ADD("maincpu", M68000,24000000/2)      /* 12 MHz (M680000 P12) */
+	MCFG_CPU_ADD("maincpu", M68000, XTAL_24MHz/2)      /* 12 MHz verified on PCB */
 	MCFG_CPU_PROGRAM_MAP(glass_map)
 	MCFG_CPU_VBLANK_INT_DRIVER("screen", glass_state,  glass_interrupt)
 
@@ -214,7 +214,7 @@ static MACHINE_CONFIG_START( glass, glass_state )
 	/* sound hardware */
 	MCFG_SPEAKER_STANDARD_MONO("mono")
 
-	MCFG_OKIM6295_ADD("oki", 1056000, OKIM6295_PIN7_HIGH) // clock frequency & pin 7 not verified
+	MCFG_OKIM6295_ADD("oki", XTAL_1MHz, OKIM6295_PIN7_HIGH) /* 1MHz Resonator & pin 7 high verified on PCB */
 	MCFG_SOUND_ROUTE(ALL_OUTPUTS, "mono", 1.0)
 MACHINE_CONFIG_END
 
@@ -260,7 +260,7 @@ ROM_START( glass10 ) /* Version 1.0 */
 	ROM_RELOAD(         0x040000, 0x100000 )
 ROM_END
 
-ROM_START( glassbrk ) /* Title screen shows "GLASS" and under that "Break Edition" on a real PCB */
+ROM_START( glass10a ) /* Title screen shows "GLASS" and under that "Break Edition" on a real PCB */
 	ROM_REGION( 0x100000, "maincpu", 0 )    /* 68000 code */
 	ROM_LOAD16_BYTE( "spl-c23.bin", 0x000000, 0x040000, CRC(c1393bea) SHA1(a5f877ba38305a7b49fa3c96b9344cbf71e8c9ef) )
 	ROM_LOAD16_BYTE( "spl-c22.bin", 0x000001, 0x040000, CRC(0d6fa33e) SHA1(37e9258ef7e108d034c80abc8e5e5ab6dacf0a61) )
@@ -281,7 +281,7 @@ ROM_START( glassbrk ) /* Title screen shows "GLASS" and under that "Break Editio
 	ROM_RELOAD(         0x040000, 0x100000 )
 ROM_END
 
-ROM_START( glass94 )
+ROM_START( glasskr )
 	ROM_REGION( 0x100000, "maincpu", 0 )    /* 68000 code */
 	ROM_LOAD16_BYTE( "glassk.c23", 0x000000, 0x080000, CRC(6ee19376) SHA1(8a8fdeebe094bd3e29c35cf59584e3cab708732d) )
 	ROM_LOAD16_BYTE( "glassk.c22", 0x000001, 0x080000, CRC(bd546568) SHA1(bcd5e7591f4e68c9470999b8a0ef1ee4392c907c) )
@@ -444,7 +444,12 @@ DRIVER_INIT_MEMBER(glass_state,glassp)
 
 }
 
-GAME( 1993, glass,    0,     glass, glass, glass_state, glassp, ROT0, "OMK / Gaelco",                  "Glass (Ver 1.1)",                                                     MACHINE_UNEMULATED_PROTECTION | MACHINE_NOT_WORKING | MACHINE_SUPPORTS_SAVE )
-GAME( 1993, glass10,  glass, glass, glass, glass_state, glassp, ROT0, "OMK / Gaelco",                  "Glass (Ver 1.0)",                                                     MACHINE_UNEMULATED_PROTECTION | MACHINE_NOT_WORKING | MACHINE_SUPPORTS_SAVE )
-GAME( 1993, glassbrk, glass, glass, glass, glass_state, glassp, ROT0, "OMK / Gaelco",                  "Glass (Ver 1.0, Break Edition)",                                      MACHINE_UNEMULATED_PROTECTION | MACHINE_NOT_WORKING | MACHINE_SUPPORTS_SAVE )
-GAME( 1993, glass94,  glass, glass, glass, glass_state, glass,  ROT0, "OMK / Gaelco (Promat license)", "Glass (Ver 1.1, Break Edition, Version 1994) (unprotected)",   MACHINE_SUPPORTS_SAVE ) // promat stickers on program roms
+// ALL versions of Glass contain the 'Break Edition' string (it just seems to be part of the title?)
+// The 2 version 1.0 releases are very similar code, it was thought that one was a break edition and the other wasn't, but as both contain the string this seems unlikely.
+// Version 1.1 releases also show Version 1994 on the title screen.  These versions do not have skulls in the playfield (at least not on early stages)
+// The unprotected version appears to be a Korean set, is censored, and has different girl pictures.
+
+GAME( 1994, glass,    0,     glass, glass, glass_state, glassp, ROT0, "OMK / Gaelco",                  "Glass (Ver 1.1, Break Edition, Version 1994)",                           MACHINE_UNEMULATED_PROTECTION | MACHINE_NOT_WORKING | MACHINE_SUPPORTS_SAVE )
+GAME( 1994, glasskr,  glass, glass, glass, glass_state, glass,  ROT0, "OMK / Gaelco (Promat license)", "Glass (Ver 1.1, Break Edition, Version 1994) (censored, unprotected)",   MACHINE_SUPPORTS_SAVE ) // promat stickers on program roms
+GAME( 1993, glass10,  glass, glass, glass, glass_state, glassp, ROT0, "OMK / Gaelco",                  "Glass (Ver 1.0, Break Edition) (set 1)",                                 MACHINE_UNEMULATED_PROTECTION | MACHINE_NOT_WORKING | MACHINE_SUPPORTS_SAVE )
+GAME( 1993, glass10a, glass, glass, glass, glass_state, glassp, ROT0, "OMK / Gaelco",                  "Glass (Ver 1.0, Break Edition) (set 2)",                                 MACHINE_UNEMULATED_PROTECTION | MACHINE_NOT_WORKING | MACHINE_SUPPORTS_SAVE )

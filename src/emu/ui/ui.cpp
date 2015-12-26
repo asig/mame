@@ -143,7 +143,7 @@ static INT32 slider_crossoffset(running_machine &machine, void *arg, std::string
 //  character a possible line break?
 //-------------------------------------------------
 
-INLINE int is_breakable_char(unicode_char ch)
+static inline int is_breakable_char(unicode_char ch)
 {
 	// regular spaces and hyphens are breakable
 	if (ch == ' ' || ch == '-')
@@ -244,7 +244,7 @@ ui_manager::ui_manager(running_machine &machine)
 
 	// more initialization
 	set_handler(handler_messagebox, 0);
-	m_non_char_keys_down = auto_alloc_array(machine, UINT8, (ARRAY_LENGTH(non_char_keys) + 7) / 8);
+	m_non_char_keys_down = std::make_unique<UINT8[]>((ARRAY_LENGTH(non_char_keys) + 7) / 8);
 	m_mouse_show = machine.system().flags & MACHINE_CLICKABLE_ARTWORK ? true : false;
 
 	// request a callback upon exiting

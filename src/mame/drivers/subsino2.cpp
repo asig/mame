@@ -64,9 +64,9 @@ enum vram_t
 // Layers
 struct layer_t
 {
-	UINT8 *videorams[2];
+	std::unique_ptr<UINT8[]> videorams[2];
 
-	UINT8 *scrollrams[2];
+	std::unique_ptr<UINT8[]> scrollrams[2];
 	int scroll_x;
 	int scroll_y;
 
@@ -88,11 +88,11 @@ public:
 		m_screen(*this, "screen"),
 		m_palette(*this, "palette") { }
 
-	UINT8 *m_hm86171_colorram;
+	std::unique_ptr<UINT8[]> m_hm86171_colorram;
 	layer_t m_layers[2];
 	UINT8 m_ss9601_byte_lo;
 	UINT8 m_ss9601_byte_lo2;
-	UINT8 *m_ss9601_reelrams[2];
+	std::unique_ptr<UINT8[]> m_ss9601_reelrams[2];
 	rectangle m_ss9601_reelrects[3];
 	UINT8 m_ss9601_scrollctrl;
 	UINT8 m_ss9601_tilesize;
@@ -168,7 +168,6 @@ public:
 	DECLARE_VIDEO_START(mtrain);
 	DECLARE_VIDEO_START(xtrain);
 	UINT32 screen_update_subsino2(screen_device &screen, bitmap_ind16 &bitmap, const rectangle &cliprect);
-	TIMER_DEVICE_CALLBACK_MEMBER(h8_timer_irq);
 	INTERRUPT_GEN_MEMBER(am188em_int0_irq);
 	required_device<cpu_device> m_maincpu;
 	optional_device<okim6295_device> m_oki;
@@ -223,7 +222,7 @@ WRITE8_MEMBER(subsino2_state::ss9601_byte_lo2_w)
 }
 
 
-INLINE void ss9601_videoram_w(layer_t *l, vram_t vram, address_space &space, offs_t offset, UINT8 data)
+static inline void ss9601_videoram_w(layer_t *l, vram_t vram, address_space &space, offs_t offset, UINT8 data)
 {
 	l->videorams[vram][offset] = data;
 
@@ -598,7 +597,7 @@ WRITE8_MEMBER(subsino2_state::ss9601_disable_w)
 
 VIDEO_START_MEMBER(subsino2_state,subsino2)
 {
-	m_hm86171_colorram = auto_alloc_array(machine(), UINT8, 256*3);
+	m_hm86171_colorram = std::make_unique<UINT8[]>(256*3);
 
 	// SS9601 Regs:
 
@@ -622,21 +621,21 @@ VIDEO_START_MEMBER(subsino2_state,subsino2)
 		// line scroll
 		l->tmap->set_scroll_rows(0x200);
 
-		l->videorams[VRAM_HI] = auto_alloc_array(machine(), UINT8, 0x80 * 0x40);
-		l->videorams[VRAM_LO] = auto_alloc_array(machine(), UINT8, 0x80 * 0x40);
+		l->videorams[VRAM_HI] = std::make_unique<UINT8[]>(0x80 * 0x40);
+		l->videorams[VRAM_LO] = std::make_unique<UINT8[]>(0x80 * 0x40);
 
-		l->scrollrams[VRAM_HI] = auto_alloc_array(machine(), UINT8, 0x200);
-		l->scrollrams[VRAM_LO] = auto_alloc_array(machine(), UINT8, 0x200);
-		memset(l->scrollrams[VRAM_HI], 0, 0x200);
-		memset(l->scrollrams[VRAM_LO], 0, 0x200);
+		l->scrollrams[VRAM_HI] = std::make_unique<UINT8[]>(0x200);
+		l->scrollrams[VRAM_LO] = std::make_unique<UINT8[]>(0x200);
+		memset(l->scrollrams[VRAM_HI].get(), 0, 0x200);
+		memset(l->scrollrams[VRAM_LO].get(), 0, 0x200);
 	}
 
 	// SS9601 Reels:
 
-	m_ss9601_reelrams[VRAM_HI] = auto_alloc_array(machine(), UINT8, 0x2000);
-	m_ss9601_reelrams[VRAM_LO] = auto_alloc_array(machine(), UINT8, 0x2000);
-	memset(m_ss9601_reelrams[VRAM_HI], 0, 0x2000);
-	memset(m_ss9601_reelrams[VRAM_LO], 0, 0x2000);
+	m_ss9601_reelrams[VRAM_HI] = std::make_unique<UINT8[]>(0x2000);
+	m_ss9601_reelrams[VRAM_LO] = std::make_unique<UINT8[]>(0x2000);
+	memset(m_ss9601_reelrams[VRAM_HI].get(), 0, 0x2000);
+	memset(m_ss9601_reelrams[VRAM_LO].get(), 0, 0x2000);
 	m_ss9601_reelrects[0].set(0, 0, 0x00*8, 0x09*8-1);
 	m_ss9601_reelrects[1].set(0, 0, 0x09*8, 0x10*8-1);
 	m_ss9601_reelrects[2].set(0, 0, 0x10*8, 256-16-1);

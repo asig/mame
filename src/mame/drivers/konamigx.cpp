@@ -106,7 +106,9 @@
 #include "includes/konamigx.h"
 #include "rendlay.h"
 
-
+// TODO: check on PCB
+#define MASTER_CLOCK XTAL_24MHz
+#define SUB_CLOCK XTAL_16MHz	
 
 /**********************************************************************************/
 /*
@@ -175,6 +177,7 @@
    000e0002
    002e0080
  - Sexy Parodius: sets up p1 as 2 at start of stage 1, 4 during stage 3A (attract mode), p4 is autoincremented at each gameplay frame. Related to missing effects?
+ - Tokimeki Memorial: wrong horizontal flip for mode select arrows;
  */
 
 static struct sprite_entry {
@@ -501,9 +504,11 @@ WRITE32_MEMBER(konamigx_state::eeprom_w)
 }
 
 WRITE32_MEMBER(konamigx_state::control_w)
-{
+{ 
+	// TODO: derive from reported PCB XTALs
+	const UINT32 pixclock[4] = { XTAL_6MHz, XTAL_8MHz, XTAL_12MHz, XTAL_16MHz};
 	//logerror("write %x to control register (mask=%x)\n", data, mem_mask);
-
+	
 	// known controls:
 	// bit 23 = reset graphics chips
 	// bit 22 = 0 to halt 68000, 1 to let it run (SOUNDRESET)
@@ -540,47 +545,18 @@ WRITE32_MEMBER(konamigx_state::control_w)
 		m_k055673->k053246_set_objcha_line((data&0x100000) ? ASSERT_LINE : CLEAR_LINE);
 
 		m_gx_wrport2 = (data>>16)&0xff;
+		
+		if(m_prev_pixel_clock != (m_gx_wrport2 & 3))
+		{
+			m_k053252->set_unscaled_clock(pixclock[m_gx_wrport2 & 3]);
+			m_prev_pixel_clock = m_gx_wrport2 & 3;
+		}
 	}
 }
 
 
 /**********************************************************************************/
 /* IRQ controllers */
-
-READ8_MEMBER(konamigx_state::ccu_r)
-{
-	// the routine at 204abe in opengolf polls to see if we're in vblank (it wants values between 0x111 and 0x1df)
-	if (offset == 0x1c/2)
-		return 0x01;
-	
-	if (offset == 0x1e/2)
-		return 0x20;
-	
-//  logerror("Read unhandled CCU register %x\n", offset);
-	return 0;
-}
-
-WRITE8_MEMBER(konamigx_state::ccu_w)
-{
-	switch(offset)
-	{
-		case 0x1a/2:
-			printf("%d INT-TIME\n",data);
-			break;
-		
-		// vblank interrupt ACK
-		case 0x1c/2:
-			m_maincpu->set_input_line(1, CLEAR_LINE);
-			m_gx_syncen |= 0x20;
-			break;
-
-		// hblank interrupt ACK
-		case 0x1e/2:
-			m_maincpu->set_input_line(2, CLEAR_LINE);
-			m_gx_syncen |= 0x40;
-			break;
-	}
-}
 
 TIMER_CALLBACK_MEMBER(konamigx_state::boothack_callback)
 {
@@ -621,7 +597,10 @@ TIMER_CALLBACK_MEMBER(konamigx_state::dmaend_callback)
 
 void konamigx_state::dmastart_callback(int data)
 {
+	int sprite_timing;
+	
 	// raise the DMA busy flag
+	// TODO: is it supposed to raise even if DMA is disabled?
 	m_gx_rdport1_3 |= 2;
 
 	// begin transfer if DMAEN(bit4 of OBJSET1) is set (see p.48)
@@ -632,7 +611,12 @@ void konamigx_state::dmastart_callback(int data)
 	}
 
 	// simulate DMA delay
-	m_dmadelay_timer->adjust(attotime::from_usec(120));
+	// TODO: Rushing Heroes doesn't like reported sprite timings, probably due of sprite protection being issued istantly or requires the double buffering ...
+	if(m_gx_rushingheroes_hack == 1)
+		sprite_timing = 64;
+	else
+		sprite_timing = m_gx_wrport2 & 1 ? (256+32) : (342+42);
+	m_dmadelay_timer->adjust(attotime::from_usec(sprite_timing));
 }
 
 
@@ -653,6 +637,7 @@ INTERRUPT_GEN_MEMBER(konamigx_state::konamigx_type2_vblank_irq)
 		if ((m_gx_wrport1_1 & 0x81) == 0x81 || (m_gx_syncen & 1))
 		{
 			m_gx_syncen &= ~1;
+			// TODO: enabling ASSERT_LINE breaks opengolf, annoying.
 			device.execute().set_input_line(1, HOLD_LINE);
 		}
 	}
@@ -897,10 +882,10 @@ WRITE32_MEMBER(konamigx_state::type4_prot_w)
 				    known commands:
 				    rng2   rushhero  vsnet  winspike   what
 				    ------------------------------------------------------------------------------
-				        0a56   0d96  0d14   0d1c       memcpy from c01000 to c01400 for 0x400 bytes
+				    0a56   0d96      0d14   0d1c       memcpy from c01000 to c01400 for 0x400 bytes
 				    0b16                               generate sprite list at c01000 or c08400 (not sure entirely, see routine at 209922 in rungun2)
-				           0d97  0515              parse big DMA list at c10200
-				                 57a       copy 4 bytes from c00f10 to c10f00 and 4 bytes from c00f30 to c0fe00
+				           0d97      0515              parse big DMA list at c10200
+				                            057a       copy 4 bytes from c00f10 to c10f00 and 4 bytes from c00f30 to c0fe00
 				*/
 				if ((m_last_prot_op == 0xa56) || (m_last_prot_op == 0xd96) || (m_last_prot_op == 0xd14) || (m_last_prot_op == 0xd1c))
 				{
@@ -1017,7 +1002,7 @@ static ADDRESS_MAP_START( gx_base_memmap, AS_PROGRAM, 32, konamigx_state )
 	AM_RANGE(0xd48000, 0xd48007) AM_DEVWRITE16("k055673", k055673_device, k053246_word_w, 0xffffffff)
 	AM_RANGE(0xd4a000, 0xd4a00f) AM_DEVREAD16("k055673", k055673_device, k055673_rom_word_r, 0xffffffff)
 	AM_RANGE(0xd4a010, 0xd4a01f) AM_DEVWRITE16("k055673", k055673_device, k055673_reg_word_w, 0xffffffff)
-	AM_RANGE(0xd4c000, 0xd4c01f) AM_READWRITE8(ccu_r, ccu_w,0xff00ff00)
+	AM_RANGE(0xd4c000, 0xd4c01f) AM_DEVREADWRITE8("k053252", k053252_device, read, write, 0xff00ff00)
 	AM_RANGE(0xd4e000, 0xd4e01f) AM_WRITENOP // left-over for "secondary" CCU, apparently (used by type 3/4 for slave screen?)
 	AM_RANGE(0xd50000, 0xd500ff) AM_DEVWRITE("k055555", k055555_device, K055555_long_w)
 	AM_RANGE(0xd52000, 0xd5201f) AM_DEVREADWRITE8("k056800", k056800_device, host_r, host_w, 0xff00ff00)
@@ -1606,17 +1591,35 @@ static GFXDECODE_START( type4 )
 	GFXDECODE_ENTRY( "gfx3", 0, bglayout_8bpp, 0x1800, 8 )
 GFXDECODE_END
 
+WRITE_LINE_MEMBER(konamigx_state::vblank_irq_ack_w)
+{
+	m_maincpu->set_input_line(1, CLEAR_LINE);
+	m_gx_syncen |= 0x20;
+}
+
+WRITE_LINE_MEMBER(konamigx_state::hblank_irq_ack_w)
+{
+	m_maincpu->set_input_line(2, CLEAR_LINE);
+	m_gx_syncen |= 0x40;
+}
+
 static MACHINE_CONFIG_START( konamigx, konamigx_state )
 	/* basic machine hardware */
-	MCFG_CPU_ADD("maincpu", M68EC020, 24000000)
+	MCFG_CPU_ADD("maincpu", M68EC020, MASTER_CLOCK)
 	MCFG_CPU_PROGRAM_MAP(gx_type2_map)
 	MCFG_CPU_VBLANK_INT_DRIVER("screen", konamigx_state, konamigx_type2_vblank_irq)
 
-	MCFG_CPU_ADD("soundcpu", M68000, 8000000)
+	MCFG_CPU_ADD("soundcpu", M68000, SUB_CLOCK/2)
 	MCFG_CPU_PROGRAM_MAP(gxsndmap)
 
-	MCFG_CPU_ADD("dasp", TMS57002, 24000000/2)
+	MCFG_CPU_ADD("dasp", TMS57002, MASTER_CLOCK/2)
 	MCFG_CPU_DATA_MAP(gxtmsmap)
+
+	MCFG_DEVICE_ADD("k053252", K053252, MASTER_CLOCK/4)
+	MCFG_K053252_OFFSETS(24, 16)
+	MCFG_K053252_INT1_ACK_CB(WRITELINE(konamigx_state, vblank_irq_ack_w))
+	MCFG_K053252_INT2_ACK_CB(WRITELINE(konamigx_state, hblank_irq_ack_w))
+	MCFG_VIDEO_SET_SCREEN("screen")
 
 	MCFG_QUANTUM_TIME(attotime::from_hz(6000))
 
@@ -1628,12 +1631,13 @@ static MACHINE_CONFIG_START( konamigx, konamigx_state )
 	/* video hardware */
 	MCFG_SCREEN_ADD("screen", RASTER)
 	MCFG_SCREEN_VIDEO_ATTRIBUTES(VIDEO_UPDATE_AFTER_VBLANK)
-	MCFG_SCREEN_RAW_PARAMS(6000000, 288+16+32+48, 0, 287, 224+16+8+16, 0, 223)
+	MCFG_SCREEN_RAW_PARAMS(8000000, 384+24+64+40, 0, 383, 224+16+8+16, 0, 223)
 	/* These parameters are actual value written to the CCU.
 	tbyahhoo attract mode desync is caused by another matter. */
 
-//  MCFG_SCREEN_VBLANK_TIME(ATTOSECONDS_IN_USEC(600))
-	MCFG_SCREEN_SIZE(64*8, 32*8)
+	//MCFG_SCREEN_VBLANK_TIME(ATTOSECONDS_IN_USEC(600))
+	// TODO: WTF, without these most games crashes? Some legacy call in video code???
+	MCFG_SCREEN_SIZE(1024, 1024)
 	MCFG_SCREEN_VISIBLE_AREA(24, 24+288-1, 16, 16+224-1)
 	MCFG_SCREEN_UPDATE_DRIVER(konamigx_state, screen_update_konamigx)
 
@@ -1692,6 +1696,11 @@ static MACHINE_CONFIG_START( konamigx, konamigx_state )
 	MCFG_SOUND_ROUTE(1, "rspeaker", 1.0)
 MACHINE_CONFIG_END
 
+static MACHINE_CONFIG_DERIVED( konamigx_bios, konamigx )
+	MCFG_DEVICE_MODIFY("k056832")
+	MCFG_K056832_CONFIG("gfx1", 0, K056832_BPP_4, 0, 0, "k055555")
+MACHINE_CONFIG_END
+
 static MACHINE_CONFIG_DERIVED( gokuparo, konamigx )
 	MCFG_DEVICE_MODIFY("k055673")
 	MCFG_K055673_CONFIG("gfx2", 0, K055673_LAYOUT_GX, -46, -23)
@@ -1712,9 +1721,11 @@ MACHINE_CONFIG_END
 
 static MACHINE_CONFIG_DERIVED( dragoonj, konamigx )
 	MCFG_SCREEN_MODIFY("screen")
-	MCFG_SCREEN_VISIBLE_AREA(40, 40+384-1, 16, 16+224-1)
 	MCFG_VIDEO_START_OVERRIDE(konamigx_state, dragoonj)
 
+	MCFG_DEVICE_MODIFY("k053252")
+	MCFG_K053252_OFFSETS(24+16, 16)
+	
 	MCFG_DEVICE_MODIFY("k056832")
 	MCFG_K056832_CONFIG("gfx1", 0, K056832_BPP_5, 1, 0, "none")
 
@@ -1773,11 +1784,14 @@ MACHINE_CONFIG_END
 
 static MACHINE_CONFIG_DERIVED( racinfrc, konamigx )
 	MCFG_SCREEN_MODIFY("screen")
-	MCFG_SCREEN_RAW_PARAMS(8000000, 384+24+64+40, 0, 383, 224+16+8+16, 0, 223)
-	MCFG_SCREEN_VISIBLE_AREA(32, 32+384-1, 16, 16+224-1)
+	//MCFG_SCREEN_RAW_PARAMS(6000000, 384+24+64+40, 0, 383, 224+16+8+16, 0, 223)
+	//MCFG_SCREEN_VISIBLE_AREA(32, 32+384-1, 16, 16+224-1)
 	MCFG_GFXDECODE_MODIFY("gfxdecode", racinfrc)
 	MCFG_VIDEO_START_OVERRIDE(konamigx_state, racinfrc)
 
+	MCFG_DEVICE_MODIFY("k053252")
+	MCFG_K053252_OFFSETS(24-8+16, 0)
+	
 	MCFG_DEVICE_MODIFY("k056832")
 	MCFG_K056832_CONFIG("gfx1", 0, K056832_BPP_6, 0, 0, "none")
 
@@ -1800,6 +1814,10 @@ static MACHINE_CONFIG_DERIVED( gxtype3, konamigx )
 	MCFG_DEFAULT_LAYOUT(layout_dualhsxs)
 
 	MCFG_VIDEO_START_OVERRIDE(konamigx_state, konamigx_type3)
+	
+	MCFG_DEVICE_MODIFY("k053252")
+	MCFG_K053252_OFFSETS(0, 16)
+	MCFG_K053252_SET_SLAVE_SCREEN("screen2")
 
 	MCFG_DEVICE_MODIFY("k056832")
 	MCFG_K056832_CONFIG("gfx1", 0, K056832_BPP_6, 0, 2, "none")
@@ -1814,14 +1832,14 @@ static MACHINE_CONFIG_DERIVED( gxtype3, konamigx )
 
 	MCFG_SCREEN_MODIFY("screen")
 	MCFG_SCREEN_VIDEO_ATTRIBUTES(VIDEO_UPDATE_AFTER_VBLANK | VIDEO_ALWAYS_UPDATE)
-	MCFG_SCREEN_SIZE(576, 264)
+	MCFG_SCREEN_SIZE(1024, 1024)
 	MCFG_SCREEN_VISIBLE_AREA(0, 576-1, 16, 32*8-1-16)
 	MCFG_SCREEN_UPDATE_DRIVER(konamigx_state, screen_update_konamigx_left)
 
 	MCFG_SCREEN_ADD("screen2", RASTER)
 	MCFG_SCREEN_VIDEO_ATTRIBUTES(VIDEO_UPDATE_AFTER_VBLANK | VIDEO_ALWAYS_UPDATE)
 	MCFG_SCREEN_RAW_PARAMS(6000000, 288+16+32+48, 0, 287, 224+16+8+16, 0, 223)
-	MCFG_SCREEN_SIZE(576, 264)
+	MCFG_SCREEN_SIZE(1024, 1024)
 	MCFG_SCREEN_VISIBLE_AREA(0, 576-1, 16, 32*8-1-16)
 	MCFG_SCREEN_UPDATE_DRIVER(konamigx_state, screen_update_konamigx_right)
 
@@ -1838,14 +1856,14 @@ static MACHINE_CONFIG_DERIVED( gxtype4, konamigx )
 
 	MCFG_SCREEN_MODIFY("screen")
 	MCFG_SCREEN_VIDEO_ATTRIBUTES(VIDEO_UPDATE_AFTER_VBLANK | VIDEO_ALWAYS_UPDATE)
-	MCFG_SCREEN_SIZE(128*8, 264)
-	MCFG_SCREEN_VISIBLE_AREA(0, 384-1, 16, 32*8-1-16)
+	//MCFG_SCREEN_SIZE(128*8, 264)
+	//MCFG_SCREEN_VISIBLE_AREA(0, 384-1, 16, 32*8-1-16)
 	MCFG_SCREEN_UPDATE_DRIVER(konamigx_state, screen_update_konamigx_left)
 
 	MCFG_SCREEN_ADD("screen2", RASTER)
 	MCFG_SCREEN_VIDEO_ATTRIBUTES(VIDEO_UPDATE_AFTER_VBLANK | VIDEO_ALWAYS_UPDATE)
 	MCFG_SCREEN_RAW_PARAMS(6000000, 288+16+32+48, 0, 287, 224+16+8+16, 0, 223)
-	MCFG_SCREEN_SIZE(128*8, 264)
+	MCFG_SCREEN_SIZE(1024, 1024)
 	MCFG_SCREEN_VISIBLE_AREA(0, 384-1, 16, 32*8-1-16)
 	MCFG_SCREEN_UPDATE_DRIVER(konamigx_state, screen_update_konamigx_right)
 
@@ -1857,6 +1875,11 @@ static MACHINE_CONFIG_DERIVED( gxtype4, konamigx )
 	MCFG_GFXDECODE_MODIFY("gfxdecode", type4)
 	MCFG_VIDEO_START_OVERRIDE(konamigx_state, konamigx_type4)
 
+	MCFG_DEVICE_MODIFY("k053252")
+	MCFG_K053252_OFFSETS(0, 16)
+	MCFG_K053252_SET_SLAVE_SCREEN("screen2")
+
+	
 	MCFG_DEVICE_MODIFY("k056832")
 	MCFG_K056832_CONFIG("gfx1", 0, K056832_BPP_8, 0, 0, "none")
 
@@ -1867,12 +1890,16 @@ MACHINE_CONFIG_END
 static MACHINE_CONFIG_DERIVED( gxtype4_vsn, gxtype4 )
 	MCFG_DEFAULT_LAYOUT(layout_dualhsxs)
 
-	MCFG_SCREEN_MODIFY("screen")
-	MCFG_SCREEN_SIZE(128*8, 32*8)
-	MCFG_SCREEN_VISIBLE_AREA(0, 576-1, 16, 32*8-1-16)
+	//MCFG_SCREEN_MODIFY("screen")
+	//MCFG_SCREEN_SIZE(128*8, 32*8)
+	//MCFG_SCREEN_VISIBLE_AREA(0, 576-1, 16, 32*8-1-16)
 
+	MCFG_DEVICE_MODIFY("k053252")
+	MCFG_K053252_OFFSETS(0, 16)
+	
+	
 	MCFG_SCREEN_MODIFY("screen2")
-	MCFG_SCREEN_SIZE(128*8, 32*8)
+	MCFG_SCREEN_SIZE(1024, 1024)
 	MCFG_SCREEN_VISIBLE_AREA(0, 576-1, 16, 32*8-1-16)
 
 	MCFG_VIDEO_START_OVERRIDE(konamigx_state, konamigx_type4_vsn)
@@ -1892,9 +1919,12 @@ static MACHINE_CONFIG_DERIVED( gxtype4sd2, gxtype4 )
 MACHINE_CONFIG_END
 
 static MACHINE_CONFIG_DERIVED( winspike, konamigx )
-	MCFG_SCREEN_MODIFY("screen")
-	MCFG_SCREEN_VISIBLE_AREA(38, 38+384-1, 16, 16+224-1)
+	//MCFG_SCREEN_MODIFY("screen")
+	//MCFG_SCREEN_VISIBLE_AREA(38, 38+384-1, 16, 16+224-1)
 
+	MCFG_DEVICE_MODIFY("k053252")
+	MCFG_K053252_OFFSETS(24+15, 16)
+	
 	MCFG_DEVICE_MODIFY("k056832")
 	MCFG_K056832_CB(konamigx_state, alpha_tile_callback)
 	MCFG_K056832_CONFIG("gfx1", 0, K056832_BPP_8, 0, 2, "none")
@@ -1915,6 +1945,14 @@ ROM_START(konamigx)
 
 	/* sound program */
 	ROM_REGION( 0x40000, "soundcpu", ROMREGION_ERASE00 )
+	// TODO: Bus Error, I guess?
+	//ROM_FILL( 4, 1, 0x00 )
+	//ROM_FILL( 5, 1, 0x00 )
+	ROM_FILL( 6, 1, 0x01 )
+	//ROM_FILL( 7, 1, 0x00 )
+	ROM_FILL( 0x100, 1, 0x60 )
+	ROM_FILL( 0x101, 1, 0xfe )
+
 	/* tiles */
 	ROM_REGION( 0x600000, "gfx1", ROMREGION_ERASEFF )
 	/* sprites */
@@ -3685,7 +3723,8 @@ MACHINE_RESET_MEMBER(konamigx_state,konamigx)
 	m_gx_rdport1_3 = 0xfc;
 	m_gx_syncen    = 0;
 	m_suspension_active = 0;
-
+	m_prev_pixel_clock = 0xff;
+	
 	// Hold sound CPUs in reset
 	m_soundcpu->set_input_line(INPUT_LINE_HALT, ASSERT_LINE);
 	m_soundcpu->set_input_line(INPUT_LINE_RESET, ASSERT_LINE);
@@ -3889,7 +3928,7 @@ DRIVER_INIT_MEMBER(konamigx_state,posthack)
 /*     year  ROM       parent    machine   inp       init */
 
 /* dummy parent for the BIOS */
-GAME( 1994, konamigx, 0, konamigx, konamigx, konamigx_state, konamigx, ROT0, "Konami", "System GX", MACHINE_IS_BIOS_ROOT )
+GAME( 1994, konamigx, 0, 		konamigx_bios, konamigx, konamigx_state, konamigx, ROT0, "Konami", "System GX", MACHINE_IS_BIOS_ROOT )
 
 /* --------------------------------------------------------------------------------------------------------------------------------------------------------------------------*/
 /* Type 1: standard with an add-on 53936 on the ROM board, analog inputs, */

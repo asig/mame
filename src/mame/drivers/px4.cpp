@@ -123,8 +123,6 @@ public:
 	DECLARE_WRITE_LINE_MEMBER( rs232_dcd_w );
 	DECLARE_WRITE_LINE_MEMBER( rs232_dsr_w );
 	DECLARE_WRITE_LINE_MEMBER( rs232_cts_w );
-	TIMER_CALLBACK_MEMBER( transmit_data );
-	TIMER_CALLBACK_MEMBER( receive_data );
 
 	// centronics
 	DECLARE_WRITE_LINE_MEMBER( centronics_busy_w ) { m_centronics_busy = state; }
@@ -278,7 +276,7 @@ private:
 	required_device<generic_slot_device> m_rdsocket;
 
 	offs_t m_ramdisk_address;
-	UINT8 *m_ramdisk;
+	std::unique_ptr<UINT8[]> m_ramdisk;
 };
 
 
@@ -1223,7 +1221,7 @@ DRIVER_INIT_MEMBER( px4p_state, px4p )
 	DRIVER_INIT_CALL(px4);
 
 	// reserve memory for external ram-disk
-	m_ramdisk = auto_alloc_array(machine(), UINT8, 0x20000);
+	m_ramdisk = std::make_unique<UINT8[]>(0x20000);
 }
 
 void px4_state::machine_start()
@@ -1248,7 +1246,7 @@ void px4_state::machine_reset()
 void px4p_state::machine_start()
 {
 	px4_state::machine_start();
-	m_rdnvram->set_base(m_ramdisk, 0x20000);
+	m_rdnvram->set_base(m_ramdisk.get(), 0x20000);
 }
 
 

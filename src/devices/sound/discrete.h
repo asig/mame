@@ -1,5 +1,5 @@
-// license:???
-// copyright-holders:K.Wilkins, Derrick Renaud, Frank Palazzolo, Couriersud
+// license:BSD-3-Clause
+// copyright-holders:K.Wilkins,Couriersud,Derrick Renaud,Frank Palazzolo
 #pragma once
 
 #ifndef __DISCRETE_H__
