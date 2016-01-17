@@ -19,7 +19,8 @@ sudo apt-get install --no-install-recommends \
     libx11-dev \
     libqt4-dev \
     libfontconfig1-dev \
-    libxinerama-dev
+    libxinerama-dev \
+    qt5-default
 ```
 
 BUILD
