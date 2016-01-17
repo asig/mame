@@ -59,7 +59,7 @@ class qs1000_device :   public device_t,
 {
 public:
 	// construction/destruction
-	qs1000_device(const machine_config &mconfig, const char *tag, device_t *owner, UINT32 clock);
+	qs1000_device(const machine_config &mconfig, std::string tag, device_t *owner, UINT32 clock);
 
 	static void set_external_rom(device_t &device, bool external_rom) { downcast<qs1000_device &>(device).m_external_rom = external_rom; }
 	template<class _Object> static devcb_base &set_in_p1_callback(device_t &device, _Object object) { return downcast<qs1000_device &>(device).m_in_p1_cb.set_callback(object); }
@@ -112,7 +112,6 @@ public:
 	};
 
 	void start_voice(int ch);
-	void set_voice_regs(int ch);
 
 	bool                    m_external_rom;
 

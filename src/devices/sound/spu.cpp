@@ -954,7 +954,7 @@ static int shift_register15(int &shift)
 //  spu_device - constructor
 //-------------------------------------------------
 
-spu_device::spu_device(const machine_config &mconfig, const char *tag, device_t *owner, UINT32 clock) :
+spu_device::spu_device(const machine_config &mconfig, std::string tag, device_t *owner, UINT32 clock) :
 	device_t(mconfig, SPU, "SPU", tag, owner, clock, "spu", __FILE__),
 	device_sound_interface(mconfig, *this),
 	m_irq_handler(*this),
@@ -1147,7 +1147,7 @@ void spu_device::kill_sound()
 
 READ16_MEMBER( spu_device::read )
 {
-	unsigned short ret=0, *rp=(unsigned short *)(reg+((offset*2)&0x1ff));
+	unsigned short ret, *rp=(unsigned short *)(reg+((offset*2)&0x1ff));
 
 	m_stream->update();
 

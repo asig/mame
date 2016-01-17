@@ -1101,7 +1101,7 @@ UINT32 amstrad_state::screen_update_amstrad(screen_device &screen, bitmap_ind16 
 
 
 /* traverses the daisy-chain of expansion devices, looking for the specified device */
-static device_t* get_expansion_device(running_machine &machine, const char* tag)
+static device_t* get_expansion_device(running_machine &machine, std::string tag)
 {
 	amstrad_state *state = machine.driver_data<amstrad_state>();
 	cpc_expansion_slot_device* exp_port = state->m_exp;
@@ -2346,7 +2346,7 @@ control is passed to the default entry in rom 0*/
 void amstrad_state::amstrad_reset_machine()
 {
 	m_last_write = 0xff;
-	
+
 	/* enable lower rom (OS rom) */
 	amstrad_GateArray_write(0x089);
 

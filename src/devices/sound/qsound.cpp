@@ -1,4 +1,4 @@
-// license:???
+// license:BSD-3-Clause
 // copyright-holders:Paul Leaman, Miguel Angel Horna
 /***************************************************************************
 
@@ -67,7 +67,7 @@ ROM_END
 //  qsound_device - constructor
 //-------------------------------------------------
 
-qsound_device::qsound_device(const machine_config &mconfig, const char *tag, device_t *owner, UINT32 clock)
+qsound_device::qsound_device(const machine_config &mconfig, std::string tag, device_t *owner, UINT32 clock)
 	: device_t(mconfig, QSOUND, "Q-Sound", tag, owner, clock, "qsound", __FILE__),
 		device_sound_interface(mconfig, *this),
 		m_cpu(*this, "qsound"),
@@ -224,7 +224,7 @@ READ8_MEMBER(qsound_device::qsound_r)
 
 void qsound_device::write_data(UINT8 address, UINT16 data)
 {
-	int ch = 0, reg = 0;
+	int ch = 0, reg;
 
 	// direct sound reg
 	if (address < 0x80)

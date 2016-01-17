@@ -179,7 +179,7 @@ ADDRESS_MAP_END
 //-------------------------------------------------
 //  qs1000_device - constructor
 //-------------------------------------------------
-qs1000_device::qs1000_device(const machine_config &mconfig, const char *tag, device_t *owner, UINT32 clock)
+qs1000_device::qs1000_device(const machine_config &mconfig, std::string tag, device_t *owner, UINT32 clock)
 	: device_t(mconfig, QS1000, "QS1000", tag, owner, clock, "qs1000", __FILE__),
 		device_sound_interface(mconfig, *this),
 		device_memory_interface(mconfig, *this),
@@ -488,8 +488,6 @@ void qs1000_device::sound_stream_update(sound_stream &stream, stream_sample_t **
 	// Iterate over voices and accumulate sample data
 	for (auto & chan : m_channels)
 	{
-		
-
 		UINT8 lvol = chan.m_regs[6];
 		UINT8 rvol = chan.m_regs[7];
 		UINT8 vol  = chan.m_regs[8];

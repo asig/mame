@@ -46,7 +46,7 @@ enum machine_type_t
 class bbc_state : public driver_device
 {
 public:
-	bbc_state(const machine_config &mconfig, device_type type, const char *tag) :
+	bbc_state(const machine_config &mconfig, device_type type, std::string tag) :
 		driver_device(mconfig, type, tag),
 		m_maincpu(*this, "maincpu"),
 		m_ram(*this, RAM_TAG),
@@ -137,6 +137,9 @@ public:
 	DECLARE_MACHINE_START(bbcb);
 	DECLARE_MACHINE_RESET(bbcb);
 	DECLARE_VIDEO_START(bbcb);
+
+	DECLARE_MACHINE_START(torch);
+	DECLARE_MACHINE_RESET(torch);
 
 	DECLARE_MACHINE_START(bbcbp);
 	DECLARE_MACHINE_RESET(bbcbp);

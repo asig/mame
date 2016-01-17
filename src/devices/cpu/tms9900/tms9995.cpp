@@ -176,7 +176,7 @@ enum
     Constructor
 ****************************************************************************/
 
-tms9995_device::tms9995_device(const machine_config &mconfig, const char *tag, device_t *owner, UINT32 clock)
+tms9995_device::tms9995_device(const machine_config &mconfig, std::string tag, device_t *owner, UINT32 clock)
 	: cpu_device(mconfig, TMS9995, "TMS9995", tag, owner, clock, "tms9995", __FILE__),
 		m_state_any(0),
 		PC(0),
@@ -198,7 +198,7 @@ tms9995_device::tms9995_device(const machine_config &mconfig, const char *tag, d
 /*
     Called from subclass.
 */
-tms9995_device::tms9995_device(const machine_config &mconfig, device_type type, const char *name, const char *tag, device_t *owner, UINT32 clock, const char *shortname, const char *source)
+tms9995_device::tms9995_device(const machine_config &mconfig, device_type type, std::string name, std::string tag, device_t *owner, UINT32 clock, std::string shortname, std::string source)
 		: cpu_device(mconfig, TMS9995, name, tag, owner, clock, shortname, source),
 		m_state_any(0),
 		PC(0),
@@ -269,13 +269,13 @@ void tms9995_device::device_start()
 	// Set up the lookup table for command decoding
 	build_command_lookup_table();
 
-	if (TRACE_CONFIG) logerror("%s: Variant = %s, Overflow int = %s\n", tag(), m_mp9537? "MP9537 (no on-chip RAM)" : "with on-chip RAM", m_check_overflow? "check" : "no check");
+	if (TRACE_CONFIG) logerror("%s: Variant = %s, Overflow int = %s\n", tag().c_str(), m_mp9537? "MP9537 (no on-chip RAM)" : "with on-chip RAM", m_check_overflow? "check" : "no check");
 }
 
 void tms9995_device::device_stop()
 {
 	int k = 0;
-	if (TRACE_CONFIG) logerror("%s: Deleting lookup tables\n", tag());
+	if (TRACE_CONFIG) logerror("%s: Deleting lookup tables\n", tag().c_str());
 	while (m_lotables[k]!=nullptr) delete[] m_lotables[k++];
 }
 
@@ -372,7 +372,7 @@ void tms9995_device::state_export(const device_state_entry &entry)
 /*
     state_string_export - export state as a string for the debugger
 */
-void tms9995_device::state_string_export(const device_state_entry &entry, std::string &str)
+void tms9995_device::state_string_export(const device_state_entry &entry, std::string &str) const
 {
 	static const char *statestr = "LAECOPX-----IIII";
 	char flags[17];
@@ -1128,7 +1128,7 @@ const tms9995_device::tms_instruction tms9995_device::s_command[] =
 void tms9995_device::build_command_lookup_table()
 {
 	int i = 0;
-	int cmdindex = 0;
+	int cmdindex;
 	int bitcount;
 	const tms_instruction *inst;
 	UINT16 opcode;
@@ -1599,7 +1599,7 @@ void tms9995_device::command_completed()
 */
 void tms9995_device::service_interrupt()
 {
-	int vectorpos = 0;
+	int vectorpos;
 
 	if (m_reset)
 	{
@@ -2555,7 +2555,7 @@ void tms9995_device::alu_divide()
 void tms9995_device::alu_divide_signed()
 {
 	int n=1;
-	bool overflow = true;
+	bool overflow;
 	UINT16 w1, w2, dwait;
 	INT16 divisor;
 	INT32 dividend;
@@ -2930,8 +2930,8 @@ void tms9995_device::alu_mov()
 void tms9995_device::alu_multiply()
 {
 	int n = 0;
-	UINT32 result = 0;
-	INT32 results = 0;
+	UINT32 result;
+	INT32 results;
 
 	if (m_instruction->command==MPY)
 	{

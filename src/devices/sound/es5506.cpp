@@ -127,7 +127,7 @@ Ensoniq OTIS - ES5505                                            Ensoniq OTTO - 
 #define CONTROL_STOPMASK        (CONTROL_STOP1 | CONTROL_STOP0)
 
 
-es550x_device::es550x_device(const machine_config &mconfig, device_type type, const char *name, const char *tag, device_t *owner, UINT32 clock, const char *shortname, const char *source)
+es550x_device::es550x_device(const machine_config &mconfig, device_type type, std::string name, std::string tag, device_t *owner, UINT32 clock, std::string shortname, std::string source)
 	: device_t(mconfig, type, name, tag, owner, clock, shortname, source),
 		device_sound_interface(mconfig, *this),
 		m_stream(nullptr),
@@ -165,7 +165,7 @@ es550x_device::es550x_device(const machine_config &mconfig, device_type type, co
 
 const device_type ES5506 = &device_creator<es5506_device>;
 
-es5506_device::es5506_device(const machine_config &mconfig, const char *tag, device_t *owner, UINT32 clock)
+es5506_device::es5506_device(const machine_config &mconfig, std::string tag, device_t *owner, UINT32 clock)
 	: es550x_device(mconfig, ES5506, "ES5506", tag, owner, clock, "es5506", __FILE__)
 {
 }
@@ -310,7 +310,7 @@ void es550x_device::device_stop()
 
 const device_type ES5505 = &device_creator<es5505_device>;
 
-es5505_device::es5505_device(const machine_config &mconfig, const char *tag, device_t *owner, UINT32 clock)
+es5505_device::es5505_device(const machine_config &mconfig, std::string tag, device_t *owner, UINT32 clock)
 	: es550x_device(mconfig, ES5505, "ES5505", tag, owner, clock, "es5505", __FILE__)
 {
 }
@@ -2139,7 +2139,7 @@ inline UINT16 es5505_device::reg_read_test(es550x_voice *voice, offs_t offset)
 READ16_MEMBER( es5505_device::read )
 {
 	es550x_voice *voice = &m_voice[m_current_page & 0x1f];
-	UINT16 result = 0;
+	UINT16 result;
 
 	if (LOG_COMMANDS && m_eslog)
 		fprintf(m_eslog, "read from %02x/%02x -> ", m_current_page, offset);

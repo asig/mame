@@ -48,7 +48,7 @@
 class px4_state : public driver_device, public device_serial_interface
 {
 public:
-	px4_state(const machine_config &mconfig, device_type type, const char *tag) :
+	px4_state(const machine_config &mconfig, device_type type, std::string tag) :
 	driver_device(mconfig, type, tag),
 	device_serial_interface(mconfig, *this),
 	m_z80(*this, "maincpu"),
@@ -63,13 +63,11 @@ public:
 	m_caps1(*this, "capsule1"), m_caps2(*this, "capsule2"),
 	m_caps1_rom(nullptr), m_caps2_rom(nullptr),
 	m_ctrl1(0), m_icrb(0), m_bankr(0),
-	m_isr(0), m_ier(0), m_str(0), m_sior(0xbf),
+	m_isr(0), m_ier(0), m_sior(0xbf),
 	m_frc_value(0), m_frc_latch(0),
 	m_vadr(0), m_yoff(0),
-	m_receive_timer(nullptr), m_transmit_timer(nullptr),
 	m_artdir(0xff), m_artdor(0xff), m_artsr(0), m_artcr(0),
-	m_swr(0),
-	m_one_sec_int_enabled(true), m_alarm_int_enabled(true), m_key_int_enabled(true),
+	m_one_sec_int_enabled(true),
 	m_key_status(0), m_interrupt_status(0),
 	m_time(), m_clock_state(0),
 	m_ear_last_state(0),
@@ -202,7 +200,6 @@ private:
 	UINT8 m_bankr;
 	UINT8 m_isr;
 	UINT8 m_ier;
-	UINT8 m_str;
 	UINT8 m_sior;
 
 	// gapnit internal
@@ -214,8 +211,6 @@ private:
 	UINT8 m_yoff;
 
 	// gapnio
-	emu_timer *m_receive_timer;
-	emu_timer *m_transmit_timer;
 	UINT8 m_artdir;
 	UINT8 m_artdor;
 	UINT8 m_artsr;
@@ -224,7 +219,6 @@ private:
 
 	// 7508 internal
 	bool m_one_sec_int_enabled;
-	bool m_alarm_int_enabled;
 	bool m_key_int_enabled;
 
 	UINT8 m_key_status;
@@ -250,7 +244,7 @@ private:
 class px4p_state : public px4_state
 {
 public:
-	px4p_state(const machine_config &mconfig, device_type type, const char *tag) :
+	px4p_state(const machine_config &mconfig, device_type type, std::string tag) :
 	px4_state(mconfig, type, tag),
 	m_rdnvram(*this, "rdnvram"),
 	m_rdsocket(*this, "ramdisk_socket"),
@@ -965,7 +959,7 @@ WRITE8_MEMBER( px4_state::artmr_w )
 	stop_bits_t stop_bits = BIT(data, 7) ? STOP_BITS_2 : STOP_BITS_1;
 
 	if (VERBOSE)
-		logerror("%s: serial frame setup: %d-%s-%d\n", tag(), data_bit_count, device_serial_interface::parity_tostring(parity), stop_bits);
+		logerror("%s: serial frame setup: %d-%s-%d\n", tag().c_str(), data_bit_count, device_serial_interface::parity_tostring(parity), stop_bits);
 
 	set_data_frame(1, data_bit_count, parity, stop_bits);
 }
@@ -1042,9 +1036,9 @@ WRITE8_MEMBER( px4_state::ioctlr_w )
 
 	// bit 3, cartridge reset
 
-	output_set_value("led_0", BIT(data, 4)); // caps lock
-	output_set_value("led_1", BIT(data, 5)); // num lock
-	output_set_value("led_2", BIT(data, 6)); // "led 2"
+	output().set_value("led_0", BIT(data, 4)); // caps lock
+	output().set_value("led_1", BIT(data, 5)); // num lock
+	output().set_value("led_2", BIT(data, 6)); // "led 2"
 
 	m_speaker->level_w(BIT(data, 7));
 }

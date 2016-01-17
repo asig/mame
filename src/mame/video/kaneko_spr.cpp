@@ -31,7 +31,7 @@
 const device_type KANEKO_VU002_SPRITE = &device_creator<kaneko_vu002_sprite_device>;
 const device_type KANEKO_KC002_SPRITE = &device_creator<kaneko_kc002_sprite_device>;
 
-kaneko16_sprite_device::kaneko16_sprite_device(const machine_config &mconfig, const char *tag, device_t *owner, UINT32 clock, device_type type)
+kaneko16_sprite_device::kaneko16_sprite_device(const machine_config &mconfig, std::string tag, device_t *owner, UINT32 clock, device_type type)
 	: device_t(mconfig, type, "Kaneko 16-bit Sprites", tag, owner, clock, "kaneko16_sprite", __FILE__),
 		device_video_interface(mconfig, *this),
 		m_gfxdecode(*this)
@@ -63,7 +63,7 @@ kaneko16_sprite_device::kaneko16_sprite_device(const machine_config &mconfig, co
 //  gfx decoder
 //-------------------------------------------------
 
-void kaneko16_sprite_device::static_set_gfxdecode_tag(device_t &device, const char *tag)
+void kaneko16_sprite_device::static_set_gfxdecode_tag(device_t &device, std::string tag)
 {
 	downcast<kaneko16_sprite_device &>(device).m_gfxdecode.set_tag(tag);
 }
@@ -326,9 +326,8 @@ void kaneko16_sprite_device::kaneko16_draw_sprites_custom(_BitmapClass &dest_bmp
 						{
 							if (!rgb) dest[x] = pen_base + c;
 							else dest[x] = pal[pen_base + c];
-
-							pri[x] = 0xff; // mark it "already drawn"
 						}
+						pri[x] = 0xff; // mark it "already drawn"
 					}
 					x_index += dx;
 				}
@@ -617,12 +616,12 @@ void kaneko16_sprite_device::kaneko16_render_sprites_common(_BitmapClass &bitmap
 	}
 }
 
-kaneko_vu002_sprite_device::kaneko_vu002_sprite_device(const machine_config &mconfig, const char *tag, device_t *owner, UINT32 clock)
+kaneko_vu002_sprite_device::kaneko_vu002_sprite_device(const machine_config &mconfig, std::string tag, device_t *owner, UINT32 clock)
 	: kaneko16_sprite_device(mconfig, tag, owner, clock, KANEKO_VU002_SPRITE)
 {
 }
 
-kaneko_kc002_sprite_device::kaneko_kc002_sprite_device(const machine_config &mconfig, const char *tag, device_t *owner, UINT32 clock)
+kaneko_kc002_sprite_device::kaneko_kc002_sprite_device(const machine_config &mconfig, std::string tag, device_t *owner, UINT32 clock)
 	: kaneko16_sprite_device(mconfig, tag, owner, clock, KANEKO_KC002_SPRITE)
 {
 }

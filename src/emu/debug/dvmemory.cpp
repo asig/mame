@@ -142,7 +142,7 @@ void debug_view_memory::enumerate_sources()
 				if (memintf->has_space(spacenum))
 				{
 					address_space &space = memintf->space(spacenum);
-					strprintf(name,"%s '%s' %s space memory", memintf->device().name(), memintf->device().tag(), space.name());
+					strprintf(name,"%s '%s' %s space memory", memintf->device().name().c_str(), memintf->device().tag().c_str(), space.name());
 					m_source_list.append(*global_alloc(debug_view_memory_source(name.c_str(), space)));
 				}
 
@@ -315,7 +315,7 @@ void debug_view_memory::view_update()
 					UINT64 chunkdata = 0;
 					floatx80 chunkdata80 = { 0, 0 };
 					bool ismapped;
-					
+
 					if (m_data_format != 11)
 						ismapped = read(m_bytes_per_chunk, addrbyte + chunknum * m_bytes_per_chunk, chunkdata);
 					else

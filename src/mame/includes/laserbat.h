@@ -1,5 +1,5 @@
 // license:BSD-3-Clause
-// copyright-holders:Pierpaolo Prazzoli, Vas Crabb
+// copyright-holders:Vas Crabb
 /*************************************************************************
 
     Laser Battle / Lazarian - Cat and Mouse
@@ -19,37 +19,7 @@ class laserbat_state_base : public driver_device
 {
 public:
 
-	// control ports
-	DECLARE_WRITE8_MEMBER(ct_io_w);
-	DECLARE_READ8_MEMBER(rrowx_r);
-
-	DECLARE_DRIVER_INIT(laserbat);
-	INTERRUPT_GEN_MEMBER(laserbat_interrupt);
-
-	// video initialisation
-	DECLARE_PALETTE_INIT(laserbat);
-
-	// video memory and control ports
-	DECLARE_WRITE8_MEMBER(videoram_w);
-	DECLARE_WRITE8_MEMBER(wcoh_w);
-	DECLARE_WRITE8_MEMBER(wcov_w);
-	DECLARE_WRITE8_MEMBER(cnt_eff_w);
-	DECLARE_WRITE8_MEMBER(cnt_nav_w);
-
-	// sound control ports
-	virtual DECLARE_READ8_MEMBER(rhsc_r);
-	virtual DECLARE_WRITE8_MEMBER(whsc_w);
-	virtual DECLARE_WRITE8_MEMBER(csound1_w);
-	virtual DECLARE_WRITE8_MEMBER(csound2_w);
-
-	// running the video
-	virtual void video_start() override;
-	UINT32 screen_update_laserbat(screen_device &screen, bitmap_ind16 &bitmap, const rectangle &cliprect);
-
-protected:
-	enum { TIMER_SCANLINE };
-
-	laserbat_state_base(const machine_config &mconfig, device_type type, const char *tag)
+	laserbat_state_base(const machine_config &mconfig, device_type type, std::string tag)
 		: driver_device(mconfig, type, tag)
 		, m_row0(*this, "ROW0")
 		, m_row1(*this, "ROW1")
@@ -87,6 +57,36 @@ protected:
 		, m_csound2(0)
 	{
 	}
+
+	// control ports
+	DECLARE_WRITE8_MEMBER(ct_io_w);
+	DECLARE_READ8_MEMBER(rrowx_r);
+
+	DECLARE_DRIVER_INIT(laserbat);
+	INTERRUPT_GEN_MEMBER(laserbat_interrupt);
+
+	// video initialisation
+	DECLARE_PALETTE_INIT(laserbat);
+
+	// video memory and control ports
+	DECLARE_WRITE8_MEMBER(videoram_w);
+	DECLARE_WRITE8_MEMBER(wcoh_w);
+	DECLARE_WRITE8_MEMBER(wcov_w);
+	DECLARE_WRITE8_MEMBER(cnt_eff_w);
+	DECLARE_WRITE8_MEMBER(cnt_nav_w);
+
+	// sound control ports
+	virtual DECLARE_READ8_MEMBER(rhsc_r);
+	virtual DECLARE_WRITE8_MEMBER(whsc_w);
+	virtual DECLARE_WRITE8_MEMBER(csound1_w);
+	virtual DECLARE_WRITE8_MEMBER(csound2_w);
+
+	// running the video
+	virtual void video_start() override;
+	UINT32 screen_update_laserbat(screen_device &screen, bitmap_ind16 &bitmap, const rectangle &cliprect);
+
+protected:
+	enum { TIMER_SCANLINE };
 
 	virtual void device_timer(emu_timer &timer, device_timer_id id, int param, void *ptr) override;
 
@@ -153,7 +153,7 @@ protected:
 class laserbat_state : public laserbat_state_base
 {
 public:
-	laserbat_state(const machine_config &mconfig, device_type type, const char *tag)
+	laserbat_state(const machine_config &mconfig, device_type type, std::string tag)
 		: laserbat_state_base(mconfig, type, tag)
 		, m_csg(*this, "csg")
 		, m_synth_low(*this, "synth_low")
@@ -183,45 +183,45 @@ protected:
 class catnmous_state : public laserbat_state_base
 {
 public:
-	catnmous_state(const machine_config &mconfig, device_type type, const char *tag)
+	catnmous_state(const machine_config &mconfig, device_type type, std::string tag)
 		: laserbat_state_base(mconfig, type, tag)
-		, m_pia(*this, "pia")
 		, m_audiocpu(*this, "audiocpu")
-		, m_ay1(*this, "ay1")
-		, m_ay2(*this, "ay2")
-		, m_active_8910(0)
-		, m_port0a(0)
-		, m_last_port0b(0)
-		, m_cb1_toggle(0)
+		, m_pia(*this, "pia")
+		, m_psg1(*this, "psg1")
+		, m_psg2(*this, "psg2")
+		, m_cb1(false)
 	{
 	}
 
-	// control ports
-	DECLARE_WRITE_LINE_MEMBER(zaccaria_irq0a);
-	DECLARE_WRITE_LINE_MEMBER(zaccaria_irq0b);
-	DECLARE_READ8_MEMBER(zaccaria_port0a_r);
-	DECLARE_WRITE8_MEMBER(zaccaria_port0a_w);
-	DECLARE_WRITE8_MEMBER(zaccaria_port0b_w);
+	// sound control ports
+	virtual DECLARE_WRITE8_MEMBER(csound1_w) override;
+	virtual DECLARE_WRITE8_MEMBER(csound2_w) override;
+
+	// PIA handlers
+	DECLARE_READ8_MEMBER(pia_porta_r);
+	DECLARE_WRITE8_MEMBER(pia_porta_w);
+	DECLARE_WRITE8_MEMBER(pia_portb_w);
+	DECLARE_WRITE_LINE_MEMBER(pia_irqa);
+	DECLARE_WRITE_LINE_MEMBER(pia_irqb);
+
+	// PSG handlers
+	DECLARE_WRITE8_MEMBER(psg1_porta_w);
+	DECLARE_READ8_MEMBER(psg1_portb_r);
 
 	// periodic signal generators
-	INTERRUPT_GEN_MEMBER(zaccaria_cb1_toggle);
+	INTERRUPT_GEN_MEMBER(cb1_toggle);
 
 protected:
 
 	// initialisation/startup
 	virtual void machine_start() override;
-	virtual void machine_reset() override;
 
 	// sound board devices
-	required_device<pia6821_device> m_pia;
 	required_device<cpu_device>     m_audiocpu;
-	required_device<ay8910_device>  m_ay1;
-	required_device<ay8910_device>  m_ay2;
-
+	required_device<pia6821_device> m_pia;
+	required_device<ay8910_device>  m_psg1;
+	required_device<ay8910_device>  m_psg2;
 
 	// control line states
-	int m_active_8910;
-	int m_port0a;
-	int m_last_port0b;
-	int m_cb1_toggle;
+	bool    m_cb1;
 };

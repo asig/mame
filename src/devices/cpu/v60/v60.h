@@ -84,8 +84,8 @@ class v60_device : public cpu_device
 {
 public:
 	// construction/destruction
-	v60_device(const machine_config &mconfig, const char *tag, device_t *owner, UINT32 clock);
-	v60_device(const machine_config &mconfig, device_type type, const char *name, const char *tag, device_t *owner, UINT32 clock, const char *shortname, const char *source);
+	v60_device(const machine_config &mconfig, std::string tag, device_t *owner, UINT32 clock);
+	v60_device(const machine_config &mconfig, device_type type, std::string name, std::string tag, device_t *owner, UINT32 clock, std::string shortname, std::string source);
 
 	void stall();
 
@@ -151,7 +151,6 @@ private:
 	address_space_config m_program_config;
 	address_space_config m_io_config;
 
-	offs_t              m_fetch_xor;
 	offs_t              m_start_pc;
 	UINT32              m_reg[68];
 	struct {
@@ -378,12 +377,10 @@ private:
 	UINT32 am2ImmediateQuick();
 	UINT32 am2Error1();
 	UINT32 am2Error2();
-	UINT32 am2Error3();
 	UINT32 am2Error4();
 	UINT32 am2Error5();
 	UINT32 bam2Error1();
 	UINT32 bam2Error2();
-	UINT32 bam2Error3();
 	UINT32 bam2Error4();
 	UINT32 bam2Error5();
 	UINT32 bam2Error6();
@@ -436,7 +433,6 @@ private:
 	UINT32 am3ImmediateQuick();
 	UINT32 am3Error1();
 	UINT32 am3Error2();
-	UINT32 am3Error3();
 	UINT32 am3Error4();
 	UINT32 am3Error5();
 	UINT32 am3Group7a();
@@ -778,7 +774,7 @@ class v70_device : public v60_device
 {
 public:
 	// construction/destruction
-	v70_device(const machine_config &mconfig, const char *tag, device_t *owner, UINT32 clock);
+	v70_device(const machine_config &mconfig, std::string tag, device_t *owner, UINT32 clock);
 
 protected:
 	virtual offs_t disasm_disassemble(char *buffer, offs_t pc, const UINT8 *oprom, const UINT8 *opram, UINT32 options) override;

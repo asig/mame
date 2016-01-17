@@ -52,7 +52,7 @@ machine_config_constructor m68307cpu_device::device_mconfig_additions() const
 }
 
 
-m68307cpu_device::m68307cpu_device(const machine_config &mconfig, const char *tag, device_t *owner, UINT32 clock)
+m68307cpu_device::m68307cpu_device(const machine_config &mconfig, std::string tag, device_t *owner, UINT32 clock)
 	: m68000_device(mconfig, "MC68307", tag, owner, clock, M68307, 16,24, ADDRESS_MAP_NAME(m68307_internal_map), "mc68307", __FILE__),
 	write_irq(*this),
 	write_a_tx(*this),
@@ -307,7 +307,7 @@ WRITE16_MEMBER( m68307cpu_device::m68307_internal_base_w )
 
 	int pc = space.device().safe_pc();
 	logerror("%08x m68307_internal_base_w %08x, %04x (%04x)\n", pc, offset*2,data,mem_mask);
-	int base = 0;
+	int base;
 	//int mask = 0;
 
 	switch (offset<<1)

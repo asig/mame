@@ -16,7 +16,6 @@
 
 #include "sc499.h"
 #include "formats/ioprocs.h"
-#include "image.h"
 
 #define VERBOSE 0
 
@@ -315,13 +314,13 @@ const device_type SC499 = &device_creator<sc499_device>;
 // sc499_device - constructor
 //-------------------------------------------------
 
-sc499_device::sc499_device(const machine_config &mconfig, const char *tag, device_t *owner, UINT32 clock)
+sc499_device::sc499_device(const machine_config &mconfig, std::string tag, device_t *owner, UINT32 clock)
 	: device_t(mconfig, SC499, "Archive SC-499", tag, owner, clock, "sc499", __FILE__),
 	device_isa8_card_interface(mconfig, *this),
 	m_iobase(*this, "IO_BASE"),
 	m_irqdrq(*this, "IRQ_DRQ"), m_data(0), m_command(0), m_status(0), m_control(0), m_has_cartridge(0), m_is_writable(0), m_current_command(0), m_first_block_hack(0), m_nasty_readahead(0), m_read_block_pending(0),
 	m_data_index(0), m_tape_status(0), m_data_error_counter(0), m_underrun_counter(0), m_tape_pos(0), m_ctape_block_count(0), m_ctape_block_index(0), m_image_length(0),
-	m_image(*this, SC499_CTAPE_TAG), irq_state(), dma_drq_state(), m_timer(nullptr), m_timer1(nullptr), m_timer_type(0), m_irq(0), m_drq(0), m_installed(false)
+	m_image(*this, SC499_CTAPE_TAG), irq_state(), dma_drq_state(), m_timer(nullptr), m_timer1(nullptr), m_irq(0), m_drq(0), m_installed(false)
 {
 }
 
@@ -414,7 +413,7 @@ const char *sc499_device::cpu_context()
 	int s = t / osd_ticks_per_second();
 	int ms = (t % osd_ticks_per_second()) / 1000;
 
-	sprintf(statebuf, "%d.%03d%s:", s, ms, tag());
+	sprintf(statebuf, "%d.%03d%s:", s, ms, tag().c_str());
 
 	return statebuf;
 }
@@ -1280,7 +1279,7 @@ void sc499_device::block_set_filemark()
 
 const device_type SC499_CTAPE = &device_creator<sc499_ctape_image_device>;
 
-sc499_ctape_image_device::sc499_ctape_image_device(const machine_config &mconfig, const char *tag, device_t *owner, UINT32 clock)
+sc499_ctape_image_device::sc499_ctape_image_device(const machine_config &mconfig, std::string tag, device_t *owner, UINT32 clock)
 	: device_t(mconfig, SC499_CTAPE, "Cartridge Tape", tag, owner, clock, "sc499_ctape", __FILE__),
 		device_image_interface(mconfig, *this)
 {

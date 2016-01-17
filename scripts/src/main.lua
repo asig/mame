@@ -44,7 +44,7 @@ end
 	flags {
 		"Unicode",
 	}
-if (_OPTIONS["SOURCES"] == nil) then 
+
 	configuration { "x64", "Release" }
 		targetsuffix "64"
 		if _OPTIONS["PROFILE"] then
@@ -80,7 +80,7 @@ if (_OPTIONS["SOURCES"] == nil) then
 		if _OPTIONS["PROFILE"] then
 			targetsuffix "dp"
 		end
-end
+
 	configuration { "mingw*" or "vs*" }
 		targetextension ".exe"
 
@@ -101,6 +101,9 @@ end
 	findfunction("linkProjects_" .. _OPTIONS["target"] .. "_" .. _OPTIONS["subtarget"])(_OPTIONS["target"], _OPTIONS["subtarget"])
 	links {
 		"osd_" .. _OPTIONS["osd"],
+	}
+	links {
+		"qtdbg_" .. _OPTIONS["osd"],
 	}
 	if (_OPTIONS["SOURCES"] == nil) then 
 		links {
@@ -126,7 +129,6 @@ end
 		"7z",
 		"lua",
 		"lsqlite3",
-		"jsoncpp",
 	}
 
 	if _OPTIONS["with-bundled-zlib"] then

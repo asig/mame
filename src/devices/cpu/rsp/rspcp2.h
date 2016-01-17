@@ -89,7 +89,7 @@ protected:
 	virtual int generate_lwc2(drcuml_block *block, rsp_device::compiler_state *compiler, const opcode_desc *desc) { return TRUE; }
 	virtual int generate_swc2(drcuml_block *block, rsp_device::compiler_state *compiler, const opcode_desc *desc) { return TRUE; }
 
-	virtual void state_string_export(const int index, std::string &str);
+	virtual void state_string_export(const int index, std::string &str) const;
 
 public:
 	virtual ~rsp_cop2();
@@ -175,7 +175,6 @@ protected:
 	virtual int     generate_vector_opcode(drcuml_block *block, rsp_device::compiler_state *compiler, const opcode_desc *desc) { return TRUE; }
 
 	UINT16          SATURATE_ACCUM(int accum, int slice, UINT16 negative, UINT16 positive);
-	UINT16          SATURATE_ACCUM1(int accum, UINT16 negative, UINT16 positive);
 
 	// Data that needs to be stored close to the generated DRC code
 	struct internal_rspcop2_state

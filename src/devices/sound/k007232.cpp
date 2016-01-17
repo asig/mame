@@ -147,7 +147,7 @@ static const float kdaca_fn[][2] = {
 
 const device_type K007232 = &device_creator<k007232_device>;
 
-k007232_device::k007232_device(const machine_config &mconfig, const char *tag, device_t *owner, UINT32 clock)
+k007232_device::k007232_device(const machine_config &mconfig, std::string tag, device_t *owner, UINT32 clock)
 	: device_t(mconfig, K007232, "K007232 PCM Controller", tag, owner, clock, "k007232", __FILE__),
 		device_sound_interface(mconfig, *this),
 		m_rom(*this, DEVICE_SELF),
@@ -310,7 +310,7 @@ WRITE8_MEMBER( k007232_device::write )
 READ8_MEMBER( k007232_device::read )
 {
 	int r = offset;
-	int  ch = 0;
+	int  ch;
 
 	if( r == 0x0005 || r == 0x000b ){
 	ch = r/0x0006;

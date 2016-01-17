@@ -39,7 +39,7 @@ typedef device_delegate<void (address_space &space, bool dedicated, UINT16 data,
 
 class m68307cpu_device : public m68000_device {
 public:
-	m68307cpu_device(const machine_config &mconfig, const char *tag, device_t *owner, UINT32 clock);
+	m68307cpu_device(const machine_config &mconfig, std::string tag, device_t *owner, UINT32 clock);
 
 	/* trampolines so we can specify the 68681 serial configuration when adding the CPU  */
 	template<class _Object> static devcb_base &set_irq_cb(device_t &device, _Object object) { return downcast<m68307cpu_device &>(device).write_irq.set_callback(object); }
@@ -109,7 +109,6 @@ public:
 	m68307_portb_write_delegate m_m68307_portb_w;
 
 	void init16_m68307(address_space &space);
-	void init_cpu_m68307(void);
 
 	virtual UINT32 disasm_min_opcode_bytes() const override { return 2; };
 	virtual UINT32 disasm_max_opcode_bytes() const override { return 10; };

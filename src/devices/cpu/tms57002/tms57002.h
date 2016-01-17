@@ -14,7 +14,7 @@
 
 class tms57002_device : public cpu_device, public device_sound_interface {
 public:
-	tms57002_device(const machine_config &mconfig, const char *tag, device_t *owner, UINT32 clock);
+	tms57002_device(const machine_config &mconfig, std::string tag, device_t *owner, UINT32 clock);
 
 	DECLARE_READ8_MEMBER(data_r);
 	DECLARE_WRITE8_MEMBER(data_w);
@@ -158,8 +158,6 @@ private:
 	inline int rnd(UINT32 st1);
 	inline int movm(UINT32 st1);
 	inline int sfma(UINT32 st1);
-
-	const char *get_memadr(UINT32 opcode, char type);
 
 	void xm_init();
 	void xm_step_read();

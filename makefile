@@ -82,7 +82,6 @@
 # OPENMP = 1
 # FASTDEBUG = 1
 
-# FILTER_DEPS = 1
 # SEPARATE_BIN = 1
 # PYTHON_EXECUTABLE = python3
 # SHADOW_CHECK = 1
@@ -120,9 +119,28 @@ MAKEPARAMS := -R
 ifeq ($(OS),Windows_NT)
 OS := windows
 GENIEOS := windows
+PLATFORM := x86
 else
 UNAME := $(shell uname -mps)
+UNAME_M := $(shell uname -m)
+UNAME_P := $(shell uname -p)
 GENIEOS := linux
+PLATFORM := unknown
+ifneq ($(filter x86_64,$(UNAME_P)),)
+PLATFORM := x86
+endif 
+ifneq ($(filter %86,$(UNAME_P)),)
+PLATFORM := x86
+endif 
+ifneq ($(filter arm%,$(UNAME_M)),)
+PLATFORM := arm
+endif 
+ifneq ($(filter arm%,$(UNAME_P)),)
+PLATFORM := arm
+endif 
+ifneq ($(filter powerpc,$(UNAME_P)),)
+PLATFORM := powerpc
+endif 
 ifeq ($(firstword $(filter Linux,$(UNAME))),Linux)
 OS := linux
 endif
@@ -167,10 +185,10 @@ endif
 endif
 
 #-------------------------------------------------
-# specify core target: mame, mess, etc.
-# specify subtarget: mame, mess, tiny, etc.
-# build rules will be included from
-# src/$(TARGET)/$(SUBTARGET).mak
+# specify core target: mame, ldplayer
+# specify subtarget: mame, arcade, mess, tiny, etc.
+# build scripts will be run from
+# scripts/target/$(TARGET)/$(SUBTARGET).lua
 #-------------------------------------------------
 
 ifndef TARGET
@@ -298,8 +316,8 @@ LD := $(SILENT)g++
 
 #-------------------------------------------------
 # specify OSD layer: windows, sdl, etc.
-# build rules will be included from
-# src/osd/$(OSD)/$(OSD).mak
+# build scripts will be run from
+# scripts/src/osd/$(OSD).lua
 #-------------------------------------------------
 
 ifndef OSD
@@ -623,10 +641,6 @@ ifdef FASTDEBUG
 PARAMS += --FASTDEBUG='$(FASTDEBUG)'
 endif
 
-ifdef FILTER_DEPS
-PARAMS += --FILTER_DEPS='$(FILTER_DEPS)'
-endif
-
 ifdef SEPARATE_BIN
 PARAMS += --SEPARATE_BIN='$(SEPARATE_BIN)'
 endif
@@ -653,6 +667,10 @@ endif
 
 ifdef FORCE_VERSION_COMPILE
 PARAMS += --FORCE_VERSION_COMPILE='$(FORCE_VERSION_COMPILE)'
+endif
+
+ifdef PLATFORM
+PARAMS += --PLATFORM='$(PLATFORM)'
 endif
 
 #-------------------------------------------------
@@ -733,11 +751,25 @@ SRC = src
 
 # all 3rd party sources are under the 3rdparty/ directory
 3RDPARTY = 3rdparty
+ifeq ($(SUBTARGET),mame)
+PROJECT_NAME := $(SUBTARGET)
+else ifeq ($(SUBTARGET),mess)
+PROJECT_NAME := $(SUBTARGET)
+else
+PROJECT_NAME := $(TARGET)$(SUBTARGET)
+endif
+
 
 ifeq ($(OS),windows)
+ifeq (posix,$(SHELLTYPE))
+GCC_VERSION      := $(shell $(subst @,,$(CC)) -dumpversion 2> /dev/null)
+CLANG_VERSION    := $(shell $(subst @,,$(CC)) --version 2> /dev/null| head -n 1 | grep clang | sed "s/^.*[^0-9]\([0-9]*\.[0-9]*\.[0-9]*\).*$$/\1/" | head -n 1)
+PYTHON_AVAILABLE := $(shell $(PYTHON) --version > /dev/null 2>&1 && echo python)
+else
 GCC_VERSION      := $(shell $(subst @,,$(CC)) -dumpversion 2> NUL)
 CLANG_VERSION    := $(shell $(subst @,,$(CC)) --version 2> NUL| head -n 1 | grep clang | sed "s/^.*[^0-9]\([0-9]*\.[0-9]*\.[0-9]*\).*$$/\1/" | head -n 1)
 PYTHON_AVAILABLE := $(shell $(PYTHON) --version > NUL 2>&1 && echo python)
+endif
 ifdef MSBUILD
 MSBUILD_PARAMS   := /v:minimal /m:$(NUMBER_OF_PROCESSORS)
 ifeq ($(CONFIG),debug)
@@ -749,13 +781,6 @@ ifeq ($(ARCHITECTURE),_x64)
 MSBUILD_PARAMS += /p:Platform=x64
 else
 MSBUILD_PARAMS += /p:Platform=win32
-endif
-ifeq ($(SUBTARGET),mame)
-MSBUILD_SOLUTION := $(SUBTARGET).sln
-else ifeq ($(SUBTARGET),mess)
-MSBUILD_SOLUTION := $(SUBTARGET).sln
-else
-MSBUILD_SOLUTION := $(TARGET)$(SUBTARGET).sln
 endif
 endif
 else
@@ -804,7 +829,11 @@ endif
 
 .PHONY: windows_x64
 windows_x64: generate $(PROJECTDIR)/gmake-mingw64-gcc/Makefile
-	$(SILENT) $(MAKE) $(MAKEPARAMS) -C $(PROJECTDIR)/gmake-mingw64-gcc config=$(CONFIG)64 WINDRES=$(WINDRES)
+ifndef MINGW64
+	$(error MINGW64 is not set)
+endif
+	$(SILENT) $(MAKE) $(MAKEPARAMS) -C $(PROJECTDIR)/gmake-mingw64-gcc config=$(CONFIG)64 WINDRES=$(WINDRES) precompile
+	$(SILENT) $(MAKE) $(MAKEPARAMS) -C $(PROJECTDIR)/gmake-mingw64-gcc config=$(CONFIG)64 WINDRES=$(WINDRES) 
 
 #-------------------------------------------------
 # gmake-mingw32-gcc
@@ -821,6 +850,10 @@ endif
 
 .PHONY: windows_x86
 windows_x86: generate $(PROJECTDIR)/gmake-mingw32-gcc/Makefile
+ifndef MINGW32
+	$(error MINGW32 is not set)
+endif
+	$(SILENT) $(MAKE) $(MAKEPARAMS) -C $(PROJECTDIR)/gmake-mingw32-gcc config=$(CONFIG)32 WINDRES=$(WINDRES) precompile
 	$(SILENT) $(MAKE) $(MAKEPARAMS) -C $(PROJECTDIR)/gmake-mingw32-gcc config=$(CONFIG)32 WINDRES=$(WINDRES)
 
 #-------------------------------------------------
@@ -828,35 +861,34 @@ windows_x86: generate $(PROJECTDIR)/gmake-mingw32-gcc/Makefile
 #-------------------------------------------------
 
 $(PROJECTDIR)/gmake-mingw-clang/Makefile: makefile $(SCRIPTS) $(GENIE)
-ifndef CLANG
-	$(error CLANG is not set)
-endif
 	$(SILENT) $(GENIE) $(PARAMS) --gcc=mingw-clang --gcc_version=$(CLANG_VERSION) gmake
 
 .PHONY: windows_x64_clang
 windows_x64_clang: generate $(PROJECTDIR)/gmake-mingw-clang/Makefile
+	$(SILENT) $(MAKE) $(MAKEPARAMS) -C $(PROJECTDIR)/gmake-mingw-clang config=$(CONFIG)64 WINDRES=$(WINDRES) precompile
 	$(SILENT) $(MAKE) $(MAKEPARAMS) -C $(PROJECTDIR)/gmake-mingw-clang config=$(CONFIG)64 WINDRES=$(WINDRES)
 
 .PHONY: windows_x86_clang
 windows_x86_clang: generate $(PROJECTDIR)/gmake-mingw-clang/Makefile
+	$(SILENT) $(MAKE) $(MAKEPARAMS) -C $(PROJECTDIR)/gmake-mingw-clang config=$(CONFIG)32 WINDRES=$(WINDRES) precompile
 	$(SILENT) $(MAKE) $(MAKEPARAMS) -C $(PROJECTDIR)/gmake-mingw-clang config=$(CONFIG)32 WINDRES=$(WINDRES)
 
 vs2013: generate
 	$(SILENT) $(GENIE) $(PARAMS) vs2013
 ifdef MSBUILD
-	$(SILENT) msbuild $(PROJECTDIR)/vs2013/$(MSBUILD_SOLUTION) $(MSBUILD_PARAMS)
+	$(SILENT) msbuild $(PROJECTDIR)/vs2013/$(PROJECT_NAME).sln $(MSBUILD_PARAMS)
 endif
 
 vs2013_intel: generate
 	$(SILENT) $(GENIE) $(PARAMS) --vs=intel-15 vs2013
 ifdef MSBUILD
-	$(SILENT) msbuild $(PROJECTDIR)/vs2013-intel/$(MSBUILD_SOLUTION) $(MSBUILD_PARAMS)
+	$(SILENT) msbuild $(PROJECTDIR)/vs2013-intel/$(PROJECT_NAME).sln $(MSBUILD_PARAMS)
 endif
 
 vs2013_xp: generate
 	$(SILENT) $(GENIE) $(PARAMS) --vs=vs2013-xp vs2013
 ifdef MSBUILD
-	$(SILENT) msbuild $(PROJECTDIR)/vs2013-xp/$(MSBUILD_SOLUTION) $(MSBUILD_PARAMS)
+	$(SILENT) msbuild $(PROJECTDIR)/vs2013-xp/$(PROJECT_NAME).sln $(MSBUILD_PARAMS)
 endif
 
 vs2013_clang: generate
@@ -868,19 +900,19 @@ vs2013_winrt: generate
 vs2015: generate
 	$(SILENT) $(GENIE) $(PARAMS) vs2015
 ifdef MSBUILD
-	$(SILENT) msbuild $(PROJECTDIR)/vs2015/$(MSBUILD_SOLUTION) $(MSBUILD_PARAMS)
+	$(SILENT) msbuild $(PROJECTDIR)/vs2015/$(PROJECT_NAME).sln $(MSBUILD_PARAMS)
 endif
 
 vs2015_intel: generate
 	$(SILENT) $(GENIE) $(PARAMS) --vs=intel-15 vs2015
 ifdef MSBUILD
-	$(SILENT) msbuild $(PROJECTDIR)/vs2015-intel/$(MSBUILD_SOLUTION) $(MSBUILD_PARAMS)
+	$(SILENT) msbuild $(PROJECTDIR)/vs2015-intel/$(PROJECT_NAME).sln $(MSBUILD_PARAMS)
 endif
 
 vs2015_xp: generate
 	$(SILENT) $(GENIE) $(PARAMS) --vs=vs2015-xp vs2015
 ifdef MSBUILD
-	$(SILENT) msbuild $(PROJECTDIR)/vs2015-xp/$(MSBUILD_SOLUTION) $(MSBUILD_PARAMS)
+	$(SILENT) msbuild $(PROJECTDIR)/vs2015-xp/$(PROJECT_NAME).sln $(MSBUILD_PARAMS)
 endif
 
 vs2015_clang: generate
@@ -982,14 +1014,17 @@ $(PROJECTDIR)/gmake-linux/Makefile: makefile $(SCRIPTS) $(GENIE)
 
 .PHONY: linux_x64
 linux_x64: generate $(PROJECTDIR)/gmake-linux/Makefile
+	$(SILENT) $(MAKE) $(MAKEPARAMS) -C $(PROJECTDIR)/gmake-linux config=$(CONFIG)64 precompile
 	$(SILENT) $(MAKE) $(MAKEPARAMS) -C $(PROJECTDIR)/gmake-linux config=$(CONFIG)64
 
 .PHONY: linux_x86
 linux_x86: generate $(PROJECTDIR)/gmake-linux/Makefile
+	$(SILENT) $(MAKE) $(MAKEPARAMS) -C $(PROJECTDIR)/gmake-linux config=$(CONFIG)32 precompile
 	$(SILENT) $(MAKE) $(MAKEPARAMS) -C $(PROJECTDIR)/gmake-linux config=$(CONFIG)32
 
 .PHONY: linux
 linux: generate $(PROJECTDIR)/gmake-linux/Makefile
+	$(SILENT) $(MAKE) $(MAKEPARAMS) -C $(PROJECTDIR)/gmake-linux config=$(CONFIG) precompile
 	$(SILENT) $(MAKE) $(MAKEPARAMS) -C $(PROJECTDIR)/gmake-linux config=$(CONFIG)
 
 #-------------------------------------------------
@@ -1001,10 +1036,12 @@ $(PROJECTDIR)/gmake-linux-clang/Makefile: makefile $(SCRIPTS) $(GENIE)
 
 .PHONY: linux_x64_clang
 linux_x64_clang: generate $(PROJECTDIR)/gmake-linux-clang/Makefile
+	$(SILENT) $(MAKE) $(MAKEPARAMS) -C $(PROJECTDIR)/gmake-linux-clang config=$(CONFIG)64 precompile
 	$(SILENT) $(MAKE) $(MAKEPARAMS) -C $(PROJECTDIR)/gmake-linux-clang config=$(CONFIG)64
 
 .PHONY: linux_x86_clang
 linux_x86_clang: generate $(PROJECTDIR)/gmake-linux-clang/Makefile
+	$(SILENT) $(MAKE) $(MAKEPARAMS) -C $(PROJECTDIR)/gmake-linux-clang config=$(CONFIG)32 precompile
 	$(SILENT) $(MAKE) $(MAKEPARAMS) -C $(PROJECTDIR)/gmake-linux-clang config=$(CONFIG)32
 
 #-------------------------------------------------
@@ -1016,6 +1053,7 @@ $(PROJECTDIR)/gmake-osx/Makefile: makefile $(SCRIPTS) $(GENIE)
 
 .PHONY: macosx_x64
 macosx_x64: generate $(PROJECTDIR)/gmake-osx/Makefile
+	$(SILENT) $(MAKE) $(MAKEPARAMS) -C $(PROJECTDIR)/gmake-osx config=$(CONFIG)64 precompile
 	$(SILENT) $(MAKE) $(MAKEPARAMS) -C $(PROJECTDIR)/gmake-osx config=$(CONFIG)64
 
 .PHONY: macosx
@@ -1023,6 +1061,7 @@ macosx: macosx_x86
 
 .PHONY: macosx_x86
 macosx_x86: generate $(PROJECTDIR)/gmake-osx/Makefile
+	$(SILENT) $(MAKE) $(MAKEPARAMS) -C $(PROJECTDIR)/gmake-osx config=$(CONFIG)32 precompile
 	$(SILENT) $(MAKE) $(MAKEPARAMS) -C $(PROJECTDIR)/gmake-osx config=$(CONFIG)32
 
 #-------------------------------------------------
@@ -1034,10 +1073,12 @@ $(PROJECTDIR)/gmake-osx-clang/Makefile: makefile $(SCRIPTS) $(GENIE)
 
 .PHONY: macosx_x64_clang
 macosx_x64_clang: generate $(PROJECTDIR)/gmake-osx-clang/Makefile
+	$(SILENT) $(MAKE) $(MAKEPARAMS) -C $(PROJECTDIR)/gmake-osx-clang config=$(CONFIG)64 precompile
 	$(SILENT) $(MAKE) $(MAKEPARAMS) -C $(PROJECTDIR)/gmake-osx-clang config=$(CONFIG)64
 
 .PHONY: macosx_x86_clang
 macosx_x86_clang: generate $(PROJECTDIR)/gmake-osx-clang/Makefile
+	$(SILENT) $(MAKE) $(MAKEPARAMS) -C $(PROJECTDIR)/gmake-osx-clang config=$(CONFIG)32 precompile
 	$(SILENT) $(MAKE) $(MAKEPARAMS) -C $(PROJECTDIR)/gmake-osx-clang config=$(CONFIG)32
 
 xcode4: generate
@@ -1056,6 +1097,7 @@ $(PROJECTDIR)/gmake-solaris/Makefile: makefile $(SCRIPTS) $(GENIE)
 
 .PHONY: solaris_x64
 solaris_x64: generate $(PROJECTDIR)/gmake-solaris/Makefile
+	$(SILENT) $(MAKE) -C $(PROJECTDIR)/gmake-solaris config=$(CONFIG)64 precompile
 	$(SILENT) $(MAKE) -C $(PROJECTDIR)/gmake-solaris config=$(CONFIG)64
 
 .PHONY: solaris
@@ -1063,6 +1105,7 @@ solaris: solaris_x86
 
 .PHONY: solaris_x86
 solaris_x86: generate $(PROJECTDIR)/gmake-solaris/Makefile
+	$(SILENT) $(MAKE) -C $(PROJECTDIR)/gmake-solaris config=$(CONFIG)32 precompile
 	$(SILENT) $(MAKE) -C $(PROJECTDIR)/gmake-solaris config=$(CONFIG)32
 
 
@@ -1076,6 +1119,7 @@ $(PROJECTDIR)/gmake-freebsd/Makefile: makefile $(SCRIPTS) $(GENIE)
 
 .PHONY: freebsd_x64
 freebsd_x64: generate $(PROJECTDIR)/gmake-freebsd/Makefile
+	$(SILENT) $(MAKE) -C $(PROJECTDIR)/gmake-freebsd config=$(CONFIG)64 precompile
 	$(SILENT) $(MAKE) -C $(PROJECTDIR)/gmake-freebsd config=$(CONFIG)64
 
 .PHONY: freebsd
@@ -1083,6 +1127,7 @@ freebsd: freebsd_x86
 
 .PHONY: freebsd_x86
 freebsd_x86: generate $(PROJECTDIR)/gmake-freebsd/Makefile
+	$(SILENT) $(MAKE) -C $(PROJECTDIR)/gmake-freebsd config=$(CONFIG)32 precompile
 	$(SILENT) $(MAKE) -C $(PROJECTDIR)/gmake-freebsd config=$(CONFIG)32
 
 
@@ -1096,6 +1141,7 @@ $(PROJECTDIR)/gmake-netbsd/Makefile: makefile $(SCRIPTS) $(GENIE)
 
 .PHONY: netbsd_x64
 netbsd_x64: generate $(PROJECTDIR)/gmake-netbsd/Makefile
+	$(SILENT) $(MAKE) -C $(PROJECTDIR)/gmake-netbsd config=$(CONFIG)64 precompile
 	$(SILENT) $(MAKE) -C $(PROJECTDIR)/gmake-netbsd config=$(CONFIG)64
 
 .PHONY: netbsd
@@ -1103,6 +1149,7 @@ netbsd: netbsd_x86
 
 .PHONY: netbsd_x86
 netbsd_x86: generate $(PROJECTDIR)/gmake-netbsd/Makefile
+	$(SILENT) $(MAKE) -C $(PROJECTDIR)/gmake-netbsd config=$(CONFIG)32 precompile
 	$(SILENT) $(MAKE) -C $(PROJECTDIR)/gmake-netbsd config=$(CONFIG)32
 
 
@@ -1119,6 +1166,7 @@ os2: os2_x86
 
 .PHONY: os2_x86
 os2_x86: generate $(PROJECTDIR)/gmake-os2/Makefile
+	$(SILENT) $(MAKE) -C $(PROJECTDIR)/gmake-os2 config=$(CONFIG)32 precompile
 	$(SILENT) $(MAKE) -C $(PROJECTDIR)/gmake-os2 config=$(CONFIG)32
 
 
@@ -1172,7 +1220,7 @@ generate: \
 		$(GEN_FOLDERS) \
 		$(patsubst $(SRC)/%.lay,$(GENDIR)/%.lh,$(LAYOUTS))
 
-$(GENDIR)/%.lh: $(SRC)/%.lay scripts/build/file2str.py
+$(GENDIR)/%.lh: $(SRC)/%.lay scripts/build/file2str.py | $(GEN_FOLDERS)
 	@echo Converting $<...
 	$(SILENT)$(PYTHON) scripts/build/file2str.py $< $@ layout_$(basename $(notdir $<))
 

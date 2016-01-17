@@ -101,13 +101,12 @@ ADDRESS_MAP_END
 //  nick_device - constructor
 //-------------------------------------------------
 
-nick_device::nick_device(const machine_config &mconfig, const char *tag, device_t *owner, UINT32 clock)
+nick_device::nick_device(const machine_config &mconfig, std::string tag, device_t *owner, UINT32 clock)
 	: device_t(mconfig, NICK, "NICK", tag, owner, clock, "nick", __FILE__),
 		device_memory_interface(mconfig, *this),
 		device_video_interface(mconfig, *this),
 		m_space_config("vram", ENDIANNESS_LITTLE, 8, 16, 0, *ADDRESS_MAP_NAME(nick_map)),
 		m_write_virq(*this),
-		horizontal_clock(0),
 		m_scanline_count(0),
 		m_FIXBIAS(0),
 		m_BORDER(0),

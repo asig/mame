@@ -13,6 +13,7 @@
 
 #include "emu.h"
 #include "exp.h"
+#include "video/ef9365.h"
 
 
 
@@ -23,12 +24,12 @@
 // ======================> cbm8000_hsg_t
 
 class cbm8000_hsg_t : public device_t,
-						public device_pet_expansion_card_interface
+					  public device_pet_expansion_card_interface
 {
 public:
 	// construction/destruction
-	cbm8000_hsg_t(const machine_config &mconfig, device_type type, const char *name, const char *tag, device_t *owner, UINT32 clock, const char *shortname, const char *source);
-	
+	cbm8000_hsg_t(const machine_config &mconfig, device_type type, std::string name, std::string tag, device_t *owner, UINT32 clock, std::string shortname, std::string source);
+
 	// optional information overrides
 	virtual const rom_entry *device_rom_region() const override;
 
@@ -45,7 +46,7 @@ protected:
 	virtual void device_reset() override;
 
 private:
-	//required_device<ef9365_device> m_gdc;
+	required_device<ef9365_device> m_gdc;
 	required_memory_region m_9000;
 	required_memory_region m_a000;
 };
@@ -57,7 +58,7 @@ class cbm8000_hsg_a_t :  public cbm8000_hsg_t
 {
 public:
 	// construction/destruction
-	cbm8000_hsg_a_t(const machine_config &mconfig, const char *tag, device_t *owner, UINT32 clock);
+	cbm8000_hsg_a_t(const machine_config &mconfig, std::string tag, device_t *owner, UINT32 clock);
 
 	// optional information overrides
 	virtual machine_config_constructor device_mconfig_additions() const override;
@@ -70,7 +71,7 @@ class cbm8000_hsg_b_t :  public cbm8000_hsg_t
 {
 public:
 	// construction/destruction
-	cbm8000_hsg_b_t(const machine_config &mconfig, const char *tag, device_t *owner, UINT32 clock);
+	cbm8000_hsg_b_t(const machine_config &mconfig, std::string tag, device_t *owner, UINT32 clock);
 
 	// optional information overrides
 	virtual machine_config_constructor device_mconfig_additions() const override;

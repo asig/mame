@@ -165,7 +165,6 @@ protected:
 											void *fmnoise_ptr,
 											void *outxptr,
 											unsigned int *tleft);
-	void process();
 	void process_until(const unsigned int tsample);
 	void update_voice_loop(const unsigned int v);
 	bool update_voice_state(const unsigned int v);
@@ -222,7 +221,7 @@ protected:
 	static reverb_preset *find_reverb_preset(const unsigned short *param);
 
 public:
-	spu_device(const machine_config &mconfig, const char *tag, device_t *owner, UINT32 clock);
+	spu_device(const machine_config &mconfig, std::string tag, device_t *owner, UINT32 clock);
 
 	// static configuration helpers
 	template<class _Object> static devcb_base &set_irq_handler(device_t &device, _Object object) { return downcast<spu_device &>(device).m_irq_handler.set_callback(object); }

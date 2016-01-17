@@ -298,13 +298,13 @@
 #define SCC2_TAG        "scc2"
 #define ESP_TAG         "esp"
 #define FDC_TAG         "fdc"
-#define RS232A_TAG		"rs232a"
-#define RS232B_TAG		"rs232b"
+#define RS232A_TAG      "rs232a"
+#define RS232B_TAG      "rs232b"
 
 class sun3_state : public driver_device
 {
 public:
-	sun3_state(const machine_config &mconfig, device_type type, const char *tag)
+	sun3_state(const machine_config &mconfig, device_type type, std::string tag)
 		: driver_device(mconfig, type, tag),
 		m_maincpu(*this, "maincpu"),
 		m_scc1(*this, SCC1_TAG),

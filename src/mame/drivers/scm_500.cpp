@@ -15,14 +15,14 @@ http://www.standardchange.com/frequently-asked-questions
 class scm_500_state : public driver_device
 {
 public:
-	scm_500_state(const machine_config &mconfig, device_type type, const char *tag)
+	scm_500_state(const machine_config &mconfig, device_type type, std::string tag)
 		: driver_device(mconfig, type, tag)
-//		,m_maincpu(*this, "maincpu")
+//      ,m_maincpu(*this, "maincpu")
 		{ }
 
 	virtual void machine_start() override;
 	virtual void machine_reset() override;
-//	required_device<cpu_device> m_maincpu;
+//  required_device<cpu_device> m_maincpu;
 };
 
 

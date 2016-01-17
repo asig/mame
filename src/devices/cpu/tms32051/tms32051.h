@@ -57,8 +57,8 @@ class tms32051_device : public cpu_device
 {
 public:
 	// construction/destruction
-	tms32051_device(const machine_config &mconfig, const char *tag, device_t *owner, UINT32 clock);
-	tms32051_device(const machine_config &mconfig, device_type type, const char *name, const char *tag, device_t *owner, UINT32 clock, const char *shortname, const char *source);
+	tms32051_device(const machine_config &mconfig, std::string tag, device_t *owner, UINT32 clock);
+	tms32051_device(const machine_config &mconfig, device_type type, std::string name, std::string tag, device_t *owner, UINT32 clock, std::string shortname, std::string source);
 
 	DECLARE_READ16_MEMBER( cpuregs_r );
 	DECLARE_WRITE16_MEMBER( cpuregs_w );
@@ -175,13 +175,13 @@ protected:
 	inline void DM_WRITE16(UINT16 address, UINT16 data);
 	inline void PUSH_STACK(UINT16 pc);
 	inline UINT16 POP_STACK();
-	inline INT32 SUB(UINT32 a, UINT32 b, int shift);
-	inline INT32 ADD(UINT32 a, UINT32 b, int shift);
+	inline INT32 SUB(UINT32 a, UINT32 b, bool shift16);
+	inline INT32 ADD(UINT32 a, UINT32 b, bool shift16);
 	inline void UPDATE_AR(int ar, int step);
 	inline void UPDATE_ARP(int nar);
 	UINT16 GET_ADDRESS();
-	inline int GET_ZLVC_CONDITION(int zlvc, int zlvc_mask);
-	inline int GET_TP_CONDITION(int tp);
+	inline bool GET_ZLVC_CONDITION(int zlvc, int zlvc_mask);
+	inline bool GET_TP_CONDITION(int tp);
 	inline INT32 PREG_PSCALER(INT32 preg);
 	void op_invalid();
 	void op_abs();
@@ -373,7 +373,7 @@ class tms32053_device : public tms32051_device
 {
 public:
 	// construction/destruction
-	tms32053_device(const machine_config &mconfig, const char *tag, device_t *owner, UINT32 clock);
+	tms32053_device(const machine_config &mconfig, std::string tag, device_t *owner, UINT32 clock);
 
 protected:
 	virtual void device_config_complete() override;

@@ -3,7 +3,7 @@
 class cclimber_state : public driver_device
 {
 public:
-	cclimber_state(const machine_config &mconfig, device_type type, const char *tag)
+	cclimber_state(const machine_config &mconfig, device_type type, std::string tag)
 		: driver_device(mconfig, type, tag),
 		m_maincpu(*this, "maincpu"),
 		m_audiocpu(*this, "audiocpu"),
@@ -49,7 +49,7 @@ public:
 	tilemap_t *m_pf_tilemap;
 	tilemap_t *m_bs_tilemap;
 	tilemap_t *m_toproller_bg_tilemap;
-	std::unique_ptr<UINT8[]> m_opcodes;	
+	std::unique_ptr<UINT8[]> m_opcodes;
 
 	DECLARE_WRITE8_MEMBER(swimmer_sh_soundlatch_w);
 	DECLARE_WRITE8_MEMBER(yamato_p0_w);

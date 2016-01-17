@@ -211,7 +211,7 @@ void hh_tms1k_state::display_update()
 		if (m_display_cache[y] != active_state[y])
 		{
 			if (m_display_segmask[y] != 0)
-				output_set_digit_value(y, active_state[y] & m_display_segmask[y]);
+				output().set_digit_value(y, active_state[y] & m_display_segmask[y]);
 
 			const int mul = (m_display_maxx <= 10) ? 10 : 100;
 			for (int x = 0; x <= m_display_maxx; x++)
@@ -231,8 +231,8 @@ void hh_tms1k_state::display_update()
 					sprintf(buf1, "lamp%d", y * mul + x);
 					sprintf(buf2, "%d.%d", y, x);
 				}
-				output_set_value(buf1, state);
-				output_set_value(buf2, state);
+				output().set_value(buf1, state);
+				output().set_value(buf2, state);
 			}
 		}
 
@@ -242,7 +242,7 @@ void hh_tms1k_state::display_update()
 	if (m_power_led != m_power_on)
 	{
 		m_power_led = m_power_on;
-		output_set_value("power_led", m_power_led ? 1 : 0);
+		output().set_value("power_led", m_power_led ? 1 : 0);
 	}
 }
 
@@ -349,7 +349,7 @@ INPUT_CHANGED_MEMBER(hh_tms1k_state::power_button)
 class mathmagi_state : public hh_tms1k_state
 {
 public:
-	mathmagi_state(const machine_config &mconfig, device_type type, const char *tag)
+	mathmagi_state(const machine_config &mconfig, device_type type, std::string tag)
 		: hh_tms1k_state(mconfig, type, tag)
 	{ }
 
@@ -527,7 +527,7 @@ MACHINE_CONFIG_END
 class amaztron_state : public hh_tms1k_state
 {
 public:
-	amaztron_state(const machine_config &mconfig, device_type type, const char *tag)
+	amaztron_state(const machine_config &mconfig, device_type type, std::string tag)
 		: hh_tms1k_state(mconfig, type, tag)
 	{ }
 
@@ -668,7 +668,7 @@ MACHINE_CONFIG_END
 class h2hbaseb_state : public hh_tms1k_state
 {
 public:
-	h2hbaseb_state(const machine_config &mconfig, device_type type, const char *tag)
+	h2hbaseb_state(const machine_config &mconfig, device_type type, std::string tag)
 		: hh_tms1k_state(mconfig, type, tag)
 	{ }
 
@@ -806,7 +806,7 @@ MACHINE_CONFIG_END
 class h2hfootb_state : public hh_tms1k_state
 {
 public:
-	h2hfootb_state(const machine_config &mconfig, device_type type, const char *tag)
+	h2hfootb_state(const machine_config &mconfig, device_type type, std::string tag)
 		: hh_tms1k_state(mconfig, type, tag)
 	{ }
 
@@ -944,7 +944,7 @@ MACHINE_CONFIG_END
 class tc4_state : public hh_tms1k_state
 {
 public:
-	tc4_state(const machine_config &mconfig, device_type type, const char *tag)
+	tc4_state(const machine_config &mconfig, device_type type, std::string tag)
 		: hh_tms1k_state(mconfig, type, tag)
 	{ }
 
@@ -1099,7 +1099,7 @@ MACHINE_CONFIG_END
 class ebball_state : public hh_tms1k_state
 {
 public:
-	ebball_state(const machine_config &mconfig, device_type type, const char *tag)
+	ebball_state(const machine_config &mconfig, device_type type, std::string tag)
 		: hh_tms1k_state(mconfig, type, tag)
 	{ }
 
@@ -1230,7 +1230,7 @@ MACHINE_CONFIG_END
 class ebball2_state : public hh_tms1k_state
 {
 public:
-	ebball2_state(const machine_config &mconfig, device_type type, const char *tag)
+	ebball2_state(const machine_config &mconfig, device_type type, std::string tag)
 		: hh_tms1k_state(mconfig, type, tag)
 	{ }
 
@@ -1360,7 +1360,7 @@ MACHINE_CONFIG_END
 class ebball3_state : public hh_tms1k_state
 {
 public:
-	ebball3_state(const machine_config &mconfig, device_type type, const char *tag)
+	ebball3_state(const machine_config &mconfig, device_type type, std::string tag)
 		: hh_tms1k_state(mconfig, type, tag)
 	{ }
 
@@ -1523,7 +1523,7 @@ MACHINE_CONFIG_END
 class einvader_state : public hh_tms1k_state
 {
 public:
-	einvader_state(const machine_config &mconfig, device_type type, const char *tag)
+	einvader_state(const machine_config &mconfig, device_type type, std::string tag)
 		: hh_tms1k_state(mconfig, type, tag)
 	{ }
 
@@ -1631,7 +1631,7 @@ MACHINE_CONFIG_END
 class efootb4_state : public hh_tms1k_state
 {
 public:
-	efootb4_state(const machine_config &mconfig, device_type type, const char *tag)
+	efootb4_state(const machine_config &mconfig, device_type type, std::string tag)
 		: hh_tms1k_state(mconfig, type, tag)
 	{ }
 
@@ -1760,7 +1760,7 @@ MACHINE_CONFIG_END
 class ebaskb2_state : public hh_tms1k_state
 {
 public:
-	ebaskb2_state(const machine_config &mconfig, device_type type, const char *tag)
+	ebaskb2_state(const machine_config &mconfig, device_type type, std::string tag)
 		: hh_tms1k_state(mconfig, type, tag)
 	{ }
 
@@ -1886,7 +1886,7 @@ MACHINE_CONFIG_END
 class raisedvl_state : public hh_tms1k_state
 {
 public:
-	raisedvl_state(const machine_config &mconfig, device_type type, const char *tag)
+	raisedvl_state(const machine_config &mconfig, device_type type, std::string tag)
 		: hh_tms1k_state(mconfig, type, tag)
 	{ }
 
@@ -2018,7 +2018,7 @@ MACHINE_CONFIG_END
 class gpoker_state : public hh_tms1k_state
 {
 public:
-	gpoker_state(const machine_config &mconfig, device_type type, const char *tag)
+	gpoker_state(const machine_config &mconfig, device_type type, std::string tag)
 		: hh_tms1k_state(mconfig, type, tag),
 		m_beeper(*this, "beeper")
 	{ }
@@ -2163,7 +2163,7 @@ MACHINE_CONFIG_END
 class gjackpot_state : public gpoker_state
 {
 public:
-	gjackpot_state(const machine_config &mconfig, device_type type, const char *tag)
+	gjackpot_state(const machine_config &mconfig, device_type type, std::string tag)
 		: gpoker_state(mconfig, type, tag)
 	{ }
 
@@ -2278,7 +2278,7 @@ MACHINE_CONFIG_END
 class elecdet_state : public hh_tms1k_state
 {
 public:
-	elecdet_state(const machine_config &mconfig, device_type type, const char *tag)
+	elecdet_state(const machine_config &mconfig, device_type type, std::string tag)
 		: hh_tms1k_state(mconfig, type, tag)
 	{ }
 
@@ -2368,7 +2368,7 @@ INPUT_PORTS_END
 static MACHINE_CONFIG_START( elecdet, elecdet_state )
 
 	/* basic machine hardware */
-	MCFG_CPU_ADD("maincpu", TMS0980, 425000) // approximation - unknown freq
+	MCFG_CPU_ADD("maincpu", TMS0980, 425000) // approximation
 	MCFG_TMS1XXX_READ_K_CB(READ8(elecdet_state, read_k))
 	MCFG_TMS1XXX_WRITE_R_CB(WRITE16(elecdet_state, write_r))
 	MCFG_TMS1XXX_WRITE_O_CB(WRITE16(elecdet_state, write_o))
@@ -2402,7 +2402,7 @@ MACHINE_CONFIG_END
 class starwbc_state : public hh_tms1k_state
 {
 public:
-	starwbc_state(const machine_config &mconfig, device_type type, const char *tag)
+	starwbc_state(const machine_config &mconfig, device_type type, std::string tag)
 		: hh_tms1k_state(mconfig, type, tag)
 	{ }
 
@@ -2527,7 +2527,7 @@ MACHINE_CONFIG_END
 class astro_state : public hh_tms1k_state
 {
 public:
-	astro_state(const machine_config &mconfig, device_type type, const char *tag)
+	astro_state(const machine_config &mconfig, device_type type, std::string tag)
 		: hh_tms1k_state(mconfig, type, tag)
 	{ }
 
@@ -2651,7 +2651,7 @@ MACHINE_CONFIG_END
 class mdndclab_state : public hh_tms1k_state
 {
 public:
-	mdndclab_state(const machine_config &mconfig, device_type type, const char *tag)
+	mdndclab_state(const machine_config &mconfig, device_type type, std::string tag)
 		: hh_tms1k_state(mconfig, type, tag)
 	{ }
 
@@ -2691,7 +2691,7 @@ READ8_MEMBER(mdndclab_state::read_k)
     8 buttons on the left, top-to-bottom: (lower 6 are just for sound-preview)
     [Switch Key]  [Next Turn / Level 1/2]  [Dragon Flying / Defeat Tune]  [Dragon Attacks / Dragon Wakes]
     [Wall / Door]  [Illegal Move / Warrior Moves]  [Warrior 1 / Winner]  [Warrior 2 / Treasure]
-    
+
     8*8 buttons to the right of that, making the gameboard
 
 */
@@ -2848,7 +2848,7 @@ MACHINE_CONFIG_END
 class comp4_state : public hh_tms1k_state
 {
 public:
-	comp4_state(const machine_config &mconfig, device_type type, const char *tag)
+	comp4_state(const machine_config &mconfig, device_type type, std::string tag)
 		: hh_tms1k_state(mconfig, type, tag)
 	{ }
 
@@ -2914,7 +2914,7 @@ INPUT_PORTS_END
 static MACHINE_CONFIG_START( comp4, comp4_state )
 
 	/* basic machine hardware */
-	MCFG_CPU_ADD("maincpu", TMS0970, 250000) // approximation - unknown freq
+	MCFG_CPU_ADD("maincpu", TMS0970, 250000) // approximation
 	MCFG_TMS1XXX_READ_K_CB(READ8(comp4_state, read_k))
 	MCFG_TMS1XXX_WRITE_R_CB(WRITE16(comp4_state, write_r))
 	MCFG_TMS1XXX_WRITE_O_CB(WRITE16(comp4_state, write_o))
@@ -2947,7 +2947,7 @@ MACHINE_CONFIG_END
 class simon_state : public hh_tms1k_state
 {
 public:
-	simon_state(const machine_config &mconfig, device_type type, const char *tag)
+	simon_state(const machine_config &mconfig, device_type type, std::string tag)
 		: hh_tms1k_state(mconfig, type, tag)
 	{ }
 
@@ -3046,7 +3046,7 @@ MACHINE_CONFIG_END
 class ssimon_state : public hh_tms1k_state
 {
 public:
-	ssimon_state(const machine_config &mconfig, device_type type, const char *tag)
+	ssimon_state(const machine_config &mconfig, device_type type, std::string tag)
 		: hh_tms1k_state(mconfig, type, tag)
 	{ }
 
@@ -3194,7 +3194,7 @@ MACHINE_CONFIG_END
 class bigtrak_state : public hh_tms1k_state
 {
 public:
-	bigtrak_state(const machine_config &mconfig, device_type type, const char *tag)
+	bigtrak_state(const machine_config &mconfig, device_type type, std::string tag)
 		: hh_tms1k_state(mconfig, type, tag)
 	{ }
 
@@ -3247,11 +3247,11 @@ WRITE16_MEMBER(bigtrak_state::write_o)
 	// O4: right motor reverse
 	// O5: ext out
 	// O6: N/C
-	output_set_value("left_motor_forward", data >> 1 & 1);
-	output_set_value("left_motor_reverse", data >> 2 & 1);
-	output_set_value("right_motor_forward", data >> 3 & 1);
-	output_set_value("right_motor_reverse", data >> 4 & 1);
-	output_set_value("ext_out", data >> 5 & 1);
+	output().set_value("left_motor_forward", data >> 1 & 1);
+	output().set_value("left_motor_reverse", data >> 2 & 1);
+	output().set_value("right_motor_forward", data >> 3 & 1);
+	output().set_value("right_motor_reverse", data >> 4 & 1);
+	output().set_value("ext_out", data >> 5 & 1);
 
 	// O0,O7(,R10)(tied together): speaker out
 	m_speaker->level_w((data & 1) | (data >> 6 & 2) | (m_r >> 8 & 4));
@@ -3373,7 +3373,7 @@ MACHINE_CONFIG_END
 class cnsector_state : public hh_tms1k_state
 {
 public:
-	cnsector_state(const machine_config &mconfig, device_type type, const char *tag)
+	cnsector_state(const machine_config &mconfig, device_type type, std::string tag)
 		: hh_tms1k_state(mconfig, type, tag)
 	{ }
 
@@ -3466,7 +3466,7 @@ INPUT_PORTS_END
 static MACHINE_CONFIG_START( cnsector, cnsector_state )
 
 	/* basic machine hardware */
-	MCFG_CPU_ADD("maincpu", TMS0970, 250000) // approximation - unknown freq
+	MCFG_CPU_ADD("maincpu", TMS0970, 250000) // approximation
 	MCFG_TMS1XXX_READ_K_CB(READ8(cnsector_state, read_k))
 	MCFG_TMS1XXX_WRITE_R_CB(WRITE16(cnsector_state, write_r))
 	MCFG_TMS1XXX_WRITE_O_CB(WRITE16(cnsector_state, write_o))
@@ -3506,7 +3506,7 @@ MACHINE_CONFIG_END
 class merlin_state : public hh_tms1k_state
 {
 public:
-	merlin_state(const machine_config &mconfig, device_type type, const char *tag)
+	merlin_state(const machine_config &mconfig, device_type type, std::string tag)
 		: hh_tms1k_state(mconfig, type, tag)
 	{ }
 
@@ -3625,7 +3625,7 @@ MACHINE_CONFIG_END
 class mmerlin_state : public merlin_state
 {
 public:
-	mmerlin_state(const machine_config &mconfig, device_type type, const char *tag)
+	mmerlin_state(const machine_config &mconfig, device_type type, std::string tag)
 		: merlin_state(mconfig, type, tag)
 	{ }
 };
@@ -3679,7 +3679,7 @@ MACHINE_CONFIG_END
 class stopthief_state : public hh_tms1k_state
 {
 public:
-	stopthief_state(const machine_config &mconfig, device_type type, const char *tag)
+	stopthief_state(const machine_config &mconfig, device_type type, std::string tag)
 		: hh_tms1k_state(mconfig, type, tag)
 	{ }
 
@@ -3762,7 +3762,7 @@ INPUT_PORTS_END
 static MACHINE_CONFIG_START( stopthief, stopthief_state )
 
 	/* basic machine hardware */
-	MCFG_CPU_ADD("maincpu", TMS0980, 425000) // approximation - unknown freq
+	MCFG_CPU_ADD("maincpu", TMS0980, 425000) // approximation
 	MCFG_TMS1XXX_READ_K_CB(READ8(stopthief_state, read_k))
 	MCFG_TMS1XXX_WRITE_R_CB(WRITE16(stopthief_state, write_r))
 	MCFG_TMS1XXX_WRITE_O_CB(WRITE16(stopthief_state, write_o))
@@ -3800,7 +3800,7 @@ MACHINE_CONFIG_END
 class bankshot_state : public hh_tms1k_state
 {
 public:
-	bankshot_state(const machine_config &mconfig, device_type type, const char *tag)
+	bankshot_state(const machine_config &mconfig, device_type type, std::string tag)
 		: hh_tms1k_state(mconfig, type, tag)
 	{ }
 
@@ -3923,7 +3923,7 @@ MACHINE_CONFIG_END
 class splitsec_state : public hh_tms1k_state
 {
 public:
-	splitsec_state(const machine_config &mconfig, device_type type, const char *tag)
+	splitsec_state(const machine_config &mconfig, device_type type, std::string tag)
 		: hh_tms1k_state(mconfig, type, tag)
 	{ }
 
@@ -4024,7 +4024,7 @@ MACHINE_CONFIG_END
 class tandy12_state : public hh_tms1k_state
 {
 public:
-	tandy12_state(const machine_config &mconfig, device_type type, const char *tag)
+	tandy12_state(const machine_config &mconfig, device_type type, std::string tag)
 		: hh_tms1k_state(mconfig, type, tag)
 	{ }
 
@@ -4196,7 +4196,7 @@ MACHINE_CONFIG_END
 class tbreakup_state : public hh_tms1k_state
 {
 public:
-	tbreakup_state(const machine_config &mconfig, device_type type, const char *tag)
+	tbreakup_state(const machine_config &mconfig, device_type type, std::string tag)
 		: hh_tms1k_state(mconfig, type, tag),
 		m_expander(*this, "expander")
 	{ }
@@ -4392,7 +4392,7 @@ MACHINE_CONFIG_END
 class phpball_state : public hh_tms1k_state
 {
 public:
-	phpball_state(const machine_config &mconfig, device_type type, const char *tag)
+	phpball_state(const machine_config &mconfig, device_type type, std::string tag)
 		: hh_tms1k_state(mconfig, type, tag)
 	{ }
 
@@ -4460,7 +4460,7 @@ INPUT_CHANGED_MEMBER(phpball_state::flipper_button)
 {
 	// rectangular LEDs under LEDs D,F and E,G are directly connected
 	// to the left and right flipper buttons - output them to lamp90 and 91
-	output_set_lamp_value(90 + (int)(FPTR)param, newval);
+	output().set_lamp_value(90 + (int)(FPTR)param, newval);
 }
 
 
@@ -4654,7 +4654,7 @@ ROM_START( elecdet )
 	ROM_REGION( 1982, "maincpu:mpla", 0 )
 	ROM_LOAD( "tms0980_common1_micro.pla", 0, 1982, CRC(3709014f) SHA1(d28ee59ded7f3b9dc3f0594a32a98391b6e9c961) )
 	ROM_REGION( 352, "maincpu:opla", 0 )
-	ROM_LOAD( "tms0980_elecdet_output.pla", 0, 352, CRC(652d19c3) SHA1(75550c2b293453b6b9efed88c8cc77195a53161f) )
+	ROM_LOAD( "tms0980_elecdet_output.pla", 0, 352, CRC(5d12c24a) SHA1(e486802151a704c6273d4a8682c9c374d27d1e6d) )
 	ROM_REGION( 157, "maincpu:spla", 0 )
 	ROM_LOAD( "tms0980_common1_segment.pla", 0, 157, CRC(399aa481) SHA1(72c56c58fde3fbb657d69647a9543b5f8fc74279) )
 ROM_END
@@ -4712,9 +4712,9 @@ ROM_START( comp4 )
 	ROM_REGION( 860, "maincpu:mpla", 0 )
 	ROM_LOAD( "tms0970_comp4_micro.pla", 0, 860, CRC(ee9d7d9e) SHA1(25484e18f6a07f7cdb21a07220e2f2a82fadfe7b) )
 	ROM_REGION( 352, "maincpu:opla", 0 )
-	ROM_LOAD( "tms0970_comp4_output.pla", 0, 352, CRC(a0f887d1) SHA1(3c666663d484d5bed81e1014f8715aab8a3d489f) )
+	ROM_LOAD( "tms0980_comp4_output.pla", 0, 352, CRC(144ce2d5) SHA1(459b92ad62421932df61b7e3965f1821f9636a2c) )
 	ROM_REGION( 157, "maincpu:spla", 0 )
-	ROM_LOAD( "tms0970_comp4_segment.pla", 0, 157, CRC(e5bddd90) SHA1(4b1c6512c70e5bcd23c2dbf0c88cd8aa2c632a10) )
+	ROM_LOAD( "tms0980_comp4_segment.pla", 0, 157, CRC(73426b07) SHA1(311be3f95a97936b6d1a4dcfa7746da26318ce54) )
 ROM_END
 
 
@@ -4760,9 +4760,9 @@ ROM_START( cnsector )
 	ROM_REGION( 860, "maincpu:mpla", 0 )
 	ROM_LOAD( "tms0970_cnsector_micro.pla", 0, 860, CRC(059f5bb4) SHA1(2653766f9fd74d41d44013bb6f54c0973a6080c9) )
 	ROM_REGION( 352, "maincpu:opla", 0 )
-	ROM_LOAD( "tms0970_cnsector_output.pla", 0, 352, CRC(7c0bdcd6) SHA1(dade774097e8095dca5deac7b2367d0c701aca51) )
+	ROM_LOAD( "tms0980_cnsector_output.pla", 0, 352, CRC(c8bfb9d2) SHA1(30c3c73cec194debdcb1dd01b4adfefaeddf9516) )
 	ROM_REGION( 157, "maincpu:spla", 0 )
-	ROM_LOAD( "tms0970_common2_segment.pla", 0, 157, CRC(56c37a4f) SHA1(18ecc20d2666e89673739056483aed5a261ae927) )
+	ROM_LOAD( "tms0980_common2_segment.pla", 0, 157, CRC(c03cccd8) SHA1(08bc4b597686a7aa8b2c9f43b85b62747ffd455b) )
 ROM_END
 
 
@@ -4797,7 +4797,7 @@ ROM_START( stopthie )
 	ROM_REGION( 1982, "maincpu:mpla", 0 )
 	ROM_LOAD( "tms0980_common1_micro.pla", 0, 1982, CRC(3709014f) SHA1(d28ee59ded7f3b9dc3f0594a32a98391b6e9c961) )
 	ROM_REGION( 352, "maincpu:opla", 0 )
-	ROM_LOAD( "tms0980_stopthie_output.pla", 0, 352, CRC(50337a48) SHA1(4a9ea62ed797a9ac5190eec3bb6ebebb7814628c) )
+	ROM_LOAD( "tms0980_stopthie_output.pla", 0, 352, CRC(680ca1c1) SHA1(dea6365f2e6b50a52f1a8f1d8417176b905d2bc9) )
 	ROM_REGION( 157, "maincpu:spla", 0 )
 	ROM_LOAD( "tms0980_common1_segment.pla", 0, 157, CRC(399aa481) SHA1(72c56c58fde3fbb657d69647a9543b5f8fc74279) )
 ROM_END
@@ -4811,7 +4811,7 @@ ROM_START( stopthiep )
 	ROM_REGION( 1982, "maincpu:mpla", 0 )
 	ROM_LOAD( "tms0980_common1_micro.pla", 0, 1982, CRC(3709014f) SHA1(d28ee59ded7f3b9dc3f0594a32a98391b6e9c961) )
 	ROM_REGION( 352, "maincpu:opla", 0 )
-	ROM_LOAD( "tms0980_stopthie_output.pla", 0, 352, CRC(50337a48) SHA1(4a9ea62ed797a9ac5190eec3bb6ebebb7814628c) )
+	ROM_LOAD( "tms0980_stopthie_output.pla", 0, 352, CRC(680ca1c1) SHA1(dea6365f2e6b50a52f1a8f1d8417176b905d2bc9) )
 	ROM_REGION( 157, "maincpu:spla", 0 )
 	ROM_LOAD( "tms0980_common1_segment.pla", 0, 157, CRC(399aa481) SHA1(72c56c58fde3fbb657d69647a9543b5f8fc74279) )
 ROM_END

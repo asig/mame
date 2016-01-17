@@ -126,7 +126,7 @@ class namcos22_renderer : public poly_manager<float, namcos22_object_data, 4, 80
 {
 public:
 	namcos22_renderer(namcos22_state &state);
-	
+
 	void render_scene(screen_device &screen, bitmap_rgb32 &bitmap);
 	struct namcos22_scenenode *new_scenenode(running_machine &machine, UINT32 zsort, namcos22_scenenode_type type);
 
@@ -171,7 +171,7 @@ enum namcos22_dsp_upload_state
 class namcos22_state : public driver_device
 {
 public:
-	namcos22_state(const machine_config &mconfig, device_type type, const char *tag)
+	namcos22_state(const machine_config &mconfig, device_type type, std::string tag)
 		: driver_device(mconfig, type, tag),
 		m_maincpu(*this, "maincpu"),
 		m_master(*this, "master"),

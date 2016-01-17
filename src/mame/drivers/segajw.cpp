@@ -40,7 +40,7 @@ Also seem to be running on the same/similar hardware:
 class segajw_state : public driver_device
 {
 public:
-	segajw_state(const machine_config &mconfig, device_type type, const char *tag)
+	segajw_state(const machine_config &mconfig, device_type type, std::string tag)
 		: driver_device(mconfig, type, tag),
 			m_maincpu(*this, "maincpu"),
 			m_audiocpu(*this, "audiocpu")
@@ -110,7 +110,7 @@ READ8_MEMBER(segajw_state::lamps_r)
 WRITE8_MEMBER(segajw_state::lamps_w)
 {
 	for(int i=0; i<8; i++)
-		output_set_lamp_value((offset * 8) + i, BIT(data, i));
+		output().set_lamp_value((offset * 8) + i, BIT(data, i));
 
 	m_lamps[offset] = data;
 }
@@ -122,11 +122,11 @@ READ16_MEMBER(segajw_state::coinlockout_r)
 
 WRITE16_MEMBER(segajw_state::coinlockout_w)
 {
-	coin_lockout_w(machine(), 0, data & 1);
+	machine().bookkeeping().coin_lockout_w(0, data & 1);
 	m_coin_lockout = data;
 
 	for(int i=0; i<3; i++)
-		output_set_indexed_value("towerlamp", i, BIT(data, 3 + i));
+		output().set_indexed_value("towerlamp", i, BIT(data, 3 + i));
 }
 
 WRITE8_MEMBER(segajw_state::audiocpu_cmd_w)
@@ -298,10 +298,10 @@ static INPUT_PORTS_START( segajw )
 	PORT_DIPSETTING(    0x0000, "$25" )
 	PORT_DIPSETTING(    0x0001, "$5" )
 	PORT_DIPSETTING(    0x0002, "$1" )
-	PORT_DIPSETTING(    0x0003, "50¢" )
-	PORT_DIPSETTING(    0x0004, "25¢" )
-	PORT_DIPSETTING(    0x0005, "10¢" )
-	PORT_DIPSETTING(    0x0006, "5¢" )
+	PORT_DIPSETTING(    0x0003, "50c" )
+	PORT_DIPSETTING(    0x0004, "25c" )
+	PORT_DIPSETTING(    0x0005, "10c" )
+	PORT_DIPSETTING(    0x0006, "5c" )
 	PORT_DIPSETTING(    0x0007, "Medal" )
 	PORT_DIPNAME( 0x0008, 0x0000, "Max. Pay" )      PORT_DIPLOCATION("SW2:4")
 	PORT_DIPSETTING(    0x0008, "500" )

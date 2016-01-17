@@ -140,7 +140,7 @@ class cdi68070_device : public device_t
 {
 public:
 	// construction/destruction
-	cdi68070_device(const machine_config &mconfig, const char *tag, device_t *owner, UINT32 clock);
+	cdi68070_device(const machine_config &mconfig, std::string tag, device_t *owner, UINT32 clock);
 
 	// external callbacks
 	void uart_rx(UINT8 data);
@@ -275,8 +275,6 @@ private:
 	void set_timer_callback(int channel);
 
 	// internal state
-	emu_timer *m_interrupt_timer;
-
 	UINT16 m_seeds[10];
 	UINT8 m_state[8];
 

@@ -52,7 +52,7 @@
 class applix_state : public driver_device
 {
 public:
-	applix_state(const machine_config &mconfig, device_type type, const char *tag)
+	applix_state(const machine_config &mconfig, device_type type, std::string tag)
 		: driver_device(mconfig, type, tag),
 		m_base(*this, "base"),
 		m_maincpu(*this, "maincpu"),
@@ -155,7 +155,6 @@ private:
 	UINT8   m_p3;
 	UINT16  m_last_write_addr;
 	UINT8 m_cass_data[4];
-	int m_centronics_busy;
 	required_device<cpu_device> m_maincpu;
 	required_device<mc6845_device> m_crtc;
 	required_device<via6522_device> m_via;

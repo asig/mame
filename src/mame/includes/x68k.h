@@ -48,7 +48,7 @@ public:
 		TIMER_X68K_ADPCM
 	};
 
-	x68k_state(const machine_config &mconfig, device_type type, const char *tag)
+	x68k_state(const machine_config &mconfig, device_type type, std::string tag)
 		: driver_device(mconfig, type, tag),
 			m_maincpu(*this, "maincpu"),
 			m_okim6258(*this, "okim6258"),
@@ -113,8 +113,9 @@ public:
 	std::vector<UINT16> m_gvram;
 	std::vector<UINT16> m_spritereg;
 
-	std::unique_ptr<bitmap_ind16> m_pcgbitmap;
-	std::unique_ptr<bitmap_ind16> m_gfxbitmap;
+	bitmap_ind16 m_pcgbitmap;
+	bitmap_ind16 m_gfxbitmap;
+	bitmap_ind16 m_special;
 
 	void floppy_load_unload(bool load, floppy_image_device *dev);
 	int floppy_load(floppy_image_device *dev);

@@ -65,7 +65,7 @@ TODO:
 
 const device_type K053252 = &device_creator<k053252_device>;
 
-k053252_device::k053252_device(const machine_config &mconfig, const char *tag, device_t *owner, UINT32 clock)
+k053252_device::k053252_device(const machine_config &mconfig, std::string tag, device_t *owner, UINT32 clock)
 	: device_t(mconfig, K053252, "K053252 Timing/Interrupt", tag, owner, clock, "k053252", __FILE__),
 		device_video_interface(mconfig, *this),
 		m_int1_en_cb(*this),
@@ -76,7 +76,6 @@ k053252_device::k053252_device(const machine_config &mconfig, const char *tag, d
 		m_offsx(0),
 		m_offsy(0),
 		// ugly, needed to work with the rungun etc. video demux board
-		m_slave_screen_tag(nullptr),
 		m_slave_screen(nullptr)
 {
 }
@@ -104,7 +103,7 @@ void k053252_device::device_start()
 	save_item(NAME(m_vsw));
 	save_item(NAME(m_hsw));
 
-	if (m_slave_screen_tag != nullptr)
+	if (!m_slave_screen_tag.empty())
 	{
 		// find the screen device if explicitly configured
 		m_slave_screen = device().siblingdevice<screen_device>(m_slave_screen_tag);
@@ -123,7 +122,7 @@ void k053252_device::device_reset()
 		m_regs[i] = 0;
 
 	m_regs[0x08] = 1; // Xexex apparently does a wrong assignment for VC (sets up the INT enable register instead)
-	
+
 	reset_internal_state();
 }
 
@@ -173,14 +172,14 @@ void k053252_device::res_change()
 		//(HC+1) - HFP - HBP - 8*(HSW+1)
 		//VC - VFP - VBP - (VSW+1)
 		attoseconds_t refresh = HZ_TO_ATTOSECONDS(clock()) * (m_hc) * m_vc;
-		
+
 		visarea.min_x = m_offsx;
 		visarea.min_y = m_offsy;
 		visarea.max_x = m_offsx + m_hc - m_hfp - m_hbp - 8*(m_hsw) - 1;
 		visarea.max_y = m_offsy + m_vc - m_vfp - m_vbp - (m_vsw) - 1;
-		
+
 		m_screen->configure(m_hc, m_vc, visarea, refresh);
-		
+
 		if (m_slave_screen)
 			m_slave_screen->configure(m_hc, m_vc, visarea, refresh);
 
@@ -189,7 +188,7 @@ void k053252_device::res_change()
 		printf("H %d HFP %d HSW %d HBP %d\n",m_hc,m_hfp,m_hsw*8,m_hbp);
 		printf("V %d VFP %d VSW %d VBP %d\n",m_vc,m_vfp,m_vsw,m_vbp);
 		// L stands for Legacy ...
-		printf("L %d %d\n",m_offsx,m_offsy); 
+		printf("L %d %d\n",m_offsx,m_offsy);
 		printf("Screen params: Clock: %u V-Sync %.2f H-Sync %.f\n",clock(),ATTOSECONDS_TO_HZ(refresh),ATTOSECONDS_TO_HZ(hsync));
 		printf("visible screen area: %d x %d\n\n",(visarea.max_x - visarea.min_x) + 1,(visarea.max_y - visarea.min_y) + 1);
 #endif
@@ -251,7 +250,7 @@ WRITE8_MEMBER( k053252_device::write )
 			logerror("%02x VSW / %02x HSW set\n",m_vsw,m_hsw);
 			res_change();
 			break;
-		
+
 		//case 0x0d: m_int_time(data); break;
 		case 0x0e: m_int1_ack_cb(1); break;
 		case 0x0f: m_int2_ack_cb(1); break;
@@ -259,7 +258,7 @@ WRITE8_MEMBER( k053252_device::write )
 }
 
 
-void k053252_device::static_set_slave_screen(device_t &device, const char *tag)
+void k053252_device::static_set_slave_screen(device_t &device, std::string tag)
 {
 	k053252_device &dev = downcast<k053252_device &>(device);
 	dev.m_slave_screen_tag = tag;

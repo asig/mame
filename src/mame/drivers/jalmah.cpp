@@ -37,7 +37,7 @@ TODO:
  a match in particular circumstances because there's a write in the 94000-9bfff region;
 -Massive clean-ups needed for the MCU snippet programs and the input-ports, also check if
  the programs are actually into the m68k program itself (like hachamf/tdragon/ddealer);
--Video code could be optimized too (for example by calling the priority function only when 
+-Video code could be optimized too (for example by calling the priority function only when
  priority number is updated), might also need a merging with Jaleco Mega System 1/NMK16 drivers;
 
 Notes (1st MCU ver.):
@@ -121,7 +121,7 @@ OSC:    12.000MHz
 class jalmah_state : public driver_device
 {
 public:
-	jalmah_state(const machine_config &mconfig, device_type type, const char *tag)
+	jalmah_state(const machine_config &mconfig, device_type type, std::string tag)
 		: driver_device(mconfig, type, tag),
 		m_sc0_vram(*this, "sc0_vram"),
 		m_sc1_vram(*this, "sc1_vram"),

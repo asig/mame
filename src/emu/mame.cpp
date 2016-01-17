@@ -169,6 +169,9 @@ int machine_manager::execute()
 	int error = MAMERR_NONE;
 
 	m_lua->initialize();
+	if (m_options.console()) {
+		m_lua->start_console();
+	}
 	while (error == MAMERR_NONE && !exit_pending)
 	{
 		m_new_driver_pending = nullptr;
@@ -196,6 +199,7 @@ int machine_manager::execute()
 		if (system != nullptr)
 		{
 			validity_checker valid(m_options);
+			valid.set_verbose(false);
 			valid.check_shared_source(*system);
 		}
 

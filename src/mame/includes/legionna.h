@@ -8,7 +8,7 @@
 class legionna_state : public driver_device
 {
 public:
-	legionna_state(const machine_config &mconfig, device_type type, const char *tag)
+	legionna_state(const machine_config &mconfig, device_type type, std::string tag)
 		: driver_device(mconfig, type, tag),
 			m_spriteram(*this, "spriteram"),
 		/*m_back_data(*this, "back_data"),
@@ -48,6 +48,8 @@ public:
 	UINT16 scrollvals[6];
 	DECLARE_WRITE16_MEMBER(tilemap_enable_w);
 	DECLARE_WRITE16_MEMBER(tile_scroll_w);
+	DECLARE_WRITE16_MEMBER(tile_scroll_base_w);
+	DECLARE_WRITE16_MEMBER(tile_vreg_1a_w);
 	DECLARE_WRITE16_MEMBER(videowrite_cb_w);
 	DECLARE_WRITE16_MEMBER(wordswapram_w);
 	DECLARE_WRITE16_MEMBER(legionna_background_w);

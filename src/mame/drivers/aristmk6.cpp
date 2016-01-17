@@ -31,7 +31,7 @@ notes:
 class aristmk6_state : public driver_device
 {
 public:
-	aristmk6_state(const machine_config &mconfig, device_type type, const char *tag)
+	aristmk6_state(const machine_config &mconfig, device_type type, std::string tag)
 		: driver_device(mconfig, type, tag),
 		m_maincpu(*this, "maincpu"),
 		m_uart0(*this, "uart0"),
@@ -152,7 +152,7 @@ READ8_MEMBER(aristmk6_state::test_r)
 	default:
 		logerror("Unmapped read %08x\n", 0x13800000 + offset);
 	}
-	
+
 	return 0;
 }
 

@@ -40,20 +40,33 @@
     However video is actually generated in a 16-bit internal colour
     space and mapped onto the 8-bit output colour space using a PLA.
 
-    The equations in the PAL give the following graphics priorities,
-    from highest to lowest:
+    The equations in the PLA for Laser Battle/Lazarian give the
+    following graphics priorities, from highest to lowest:
     * TTL-generated sprite
     * PVIs (colours ORed, object/score output ignored)
     * Shell/area effect 2
     * Background tilemap
     * Area effect 1
 
+    The Cat and Mouse PLA program gives completely different priorities,
+    once again from highest to lowest:
+    * Background tilemap
+    * PVIs (colours ORed, object/score output ignored)
+    * TTL-generated sprite
+    * Shell
+
+    Cat and Mouse uses some signals completely differently.  LUM affects
+    the background palette rather than the sprite palette, area effect 1
+    affects the background palette, and area effect 2 is completely
+    unused.
+
     The game board has no logic for flipping the screen in cocktail
     mode.  It just provides an active-low open collector out with pull-
     up indicating when player 2 is playing.  In a cocktail cabinet this
     goes to an "image commutation board".  It's not connected to
     anything in an upright cabinet.  The "image commutation board" must
-    flip the image somehow, presumably by dark magic.
+    flip the image somehow, presumably by reversing the deflection coil
+    connections.
 
     There are still issues with horizontal alignment between layers.  I
     have the schematic, yet I really can't understand where these issues
@@ -67,8 +80,6 @@
 */
 
 #include "includes/laserbat.h"
-
-#define PLA_DEBUG 0
 
 
 PALETTE_INIT_MEMBER(laserbat_state_base, laserbat)
@@ -199,35 +210,6 @@ WRITE8_MEMBER(laserbat_state_base::cnt_nav_w)
 
 void laserbat_state_base::video_start()
 {
-	// extract product and sum terms from video mixing PAL
-	if (PLA_DEBUG)
-	{
-		UINT8 const *bitstream = memregion("gfxmix")->base() + 4;
-		UINT32 products[48];
-		UINT8 sums[48];
-		for (unsigned term = 0; 48 > term; term++)
-		{
-			products[term] = 0;
-			for (unsigned byte = 0; 4 > byte; byte++)
-			{
-				UINT8 bits = *bitstream++;
-				for (unsigned bit = 0; 4 > bit; bit++, bits >>= 2)
-				{
-					products[term] >>= 1;
-					if (bits & 0x01) products[term] |= 0x80000000;
-					if (bits & 0x02) products[term] |= 0x00008000;
-				}
-			}
-			sums[term] = ~*bitstream++;
-			UINT32 const sensitive = ((products[term] >> 16) ^ products[term]) & 0x0000ffff;
-			UINT32 const required = ~products[term] & sensitive & 0x0000ffff;
-			UINT32 const inactive = ~((products[term] >> 16) | products[term]) & 0x0000ffff;
-			printf("if (!0x%04x && ((x & 0x%04x) == 0x%04x)) y |= %02x; /* %u */\n", inactive, sensitive, required, sums[term], term);
-		}
-		UINT8 const mask = *bitstream;
-		printf("y ^= %02x;\n", mask);
-	}
-
 	// we render straight from ROM
 	m_gfx1 = memregion("gfx1")->base();
 	m_gfx2 = memregion("gfx2")->base();
@@ -261,26 +243,26 @@ UINT32 laserbat_state_base::screen_update_laserbat(screen_device &screen, bitmap
 TIMER_CALLBACK_MEMBER(laserbat_state_base::video_line)
 {
 	/*
-	    +-----+---------+-----------------------------------+
-	    | bit |  name   | description                       |
-	    +-----+---------+-----------------------------------+
-	    |  0  | NAV0    | sprite bit 0                      |
-	    |  1  | NAV1    | sprite bit 1                      |
-	    |  2  | CLR0    | sprite colour bit 0               |
-	    |  3  | CLR1    | sprite colour bit 1               |
-	    |  4  | LUM     | sprite luminance                  |
-	    |  5  | C1*     | combined PVI red (active low)     |
-	    |  6  | C2*     | combined PVI green (active low)   |
-	    |  7  | C3*     | combined PVI blue (active low)    |
-	    |  8  | BKR     | background tilemap red            |
-	    |  9  | BKG     | background tilemap green          |
-	    | 10  | BKB     | background tilemap blue           |
-	    | 11  | SHELL   | shell point                       |
-	    | 12  | EFF1    | effect 1 area                     |
-	    | 13  | EFF2    | effect 2 area                     |
-	    | 14  | COLEFF0 | area effect colour bit 0          |
-	    | 15  | COLEFF1 | area effect colour bit 1          |
-	    +-----+---------+-----------------------------------+
+	    +-----+---------+----------------------------------+-------------------------------------+
+	    | bit |  name   | laserbat/lazarian                | catnmous                            |
+	    +-----+---------+----------------------------------+-------------------------------------+
+	    |  0  | NAV0    | sprite bit 0                     | sprite bit 0                        |
+	    |  1  | NAV1    | sprite bit 1                     | sprite bit 1                        |
+	    |  2  | CLR0    | sprite palette bit 0             | sprite palette bit 0                |
+	    |  3  | CLR1    | sprite palette bit 1             | sprite palette bit 1                |
+	    |  4  | LUM     | sprite luminance                 | background tilemap palette control  |
+	    |  5  | C1*     | combined PVI red (active low)    | combined PVI red (active low)       |
+	    |  6  | C2*     | combined PVI green (active low)  | combined PVI green (active low)     |
+	    |  7  | C3*     | combined PVI blue (active low)   | combined PVI blue (active low)      |
+	    |  8  | BKR     | background tilemap red           | background tilemap bit 0            |
+	    |  9  | BKG     | background tilemap green         | background tilemap bit 1            |
+	    | 10  | BKB     | background tilemap blue          | background tilemap bit 2            |
+	    | 11  | SHELL   | shell point                      | shell point                         |
+	    | 12  | EFF1    | effect 1 area                    | background tilemap palette control  |
+	    | 13  | EFF2    | effect 2 area                    | unused                              |
+	    | 14  | COLEFF0 | area effect colour bit 0         | background tilemap palette control  |
+	    | 15  | COLEFF1 | area effect colour bit 1         | background tilemap palette control  |
+	    +-----+---------+----------------------------------+-------------------------------------+
 	*/
 
 	assert(m_bitmap.width() > m_screen->visible_area().max_x);
@@ -326,7 +308,7 @@ TIMER_CALLBACK_MEMBER(laserbat_state_base::video_line)
 	// render the TTL-generated background tilemap
 	unsigned const bg_row = (y - y_offset) & 0x07;
 	UINT8 const *const bg_src = &m_bg_ram[((y - y_offset) << 2) & 0x3e0];
-	for (unsigned byte = 0, px = x_offset; max_x >= px; byte++)
+	for (unsigned byte = 0, px = x_offset + (9 * 3); max_x >= px; byte++)
 	{
 		UINT16 const tile = (UINT16(bg_src[byte & 0x1f]) << 3) & 0x7f8;
 		UINT8 red   = m_gfx1[0x0000 | tile | bg_row];
@@ -351,15 +333,15 @@ TIMER_CALLBACK_MEMBER(laserbat_state_base::video_line)
 	{
 		// calculate area effects
 		// I have no idea where the magical x offset comes from but it's necessary
-		bool const right_half = bool((x + 6) & 0x80);
-		bool const eff1_cmp = right_half ? (UINT8((x + 6) & 0x7f) < (eff1_val & 0x7f)) : (UINT8((x + 6) & 0x7f) > (~eff1_val & 0x7f));
-		bool const eff2_cmp = right_half ? (UINT8((x + 6) & 0x7f) < (eff2_val & 0x7f)) : (UINT8((x + 6) & 0x7f) > (~eff2_val & 0x7f));
+		bool const right_half = bool((x + 0) & 0x80);
+		bool const eff1_cmp = right_half ? (UINT8((x + 0) & 0x7f) < (eff1_val & 0x7f)) : (UINT8((x + 0) & 0x7f) > (~eff1_val & 0x7f));
+		bool const eff2_cmp = right_half ? (UINT8((x + 0) & 0x7f) < (eff2_val & 0x7f)) : (UINT8((x + 0) & 0x7f) > (~eff2_val & 0x7f));
 		bool const eff1 = m_abeff1 && (m_neg1 ? !eff1_cmp : eff1_cmp);
 		bool const eff2 = m_abeff2 && (m_neg2 ? !eff2_cmp : eff2_cmp) && m_mpx_eff2_sh;
 
 		// calculate shell point effect
 		// using the same magical offset as the area effects
-		bool const shell = m_abeff2 && (UINT8((x + 6) & 0xff) == (eff2_val & 0xff)) && !m_mpx_eff2_sh;
+		bool const shell = m_abeff2 && (UINT8((x + 0) & 0xff) == (eff2_val & 0xff)) && !m_mpx_eff2_sh;
 
 		// set effect bits, and mix in PVI graphics while we're here
 		UINT16 const effect_bits = (shell ? 0x0800 : 0x0000) | (eff1 ? 0x1000 : 0x0000) | (eff2 ? 0x2000 : 0x0000);
@@ -380,7 +362,7 @@ TIMER_CALLBACK_MEMBER(laserbat_state_base::video_line)
 		int const sprite_row = y + y_offset - ((256 - m_wcov) & 0x0ff);
 		if ((0 <= sprite_row) && (32 > sprite_row))
 		{
-			for (unsigned byte = 0, x = x_offset + (3 * ((256 - m_wcoh - 4) & 0x0ff)); 8 > byte; byte++)
+			for (unsigned byte = 0, x = x_offset + (3 * ((256 - m_wcoh + 5) & 0x0ff)); 8 > byte; byte++)
 			{
 				UINT8 bits = m_gfx2[((m_shp << 8) & 0x700) | ((sprite_row << 3) & 0x0f8) | (byte & 0x07)];
 				for (unsigned pixel = 0; 4 > pixel; pixel++, bits <<= 2)

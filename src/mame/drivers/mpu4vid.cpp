@@ -219,7 +219,7 @@ struct bt471_t
 class mpu4vid_state : public mpu4_state
 {
 public:
-	mpu4vid_state(const machine_config &mconfig, device_type type, const char *tag)
+	mpu4vid_state(const machine_config &mconfig, device_type type, std::string tag)
 		: mpu4_state(mconfig, type, tag),
 		m_videocpu(*this, "video"),
 		m_scn2674(*this, "scn2674_vid"),
@@ -1215,9 +1215,6 @@ MACHINE_START_MEMBER(mpu4vid_state,mpu4_vid)
 	m_mod_number=4; //No AY chip
 	/* setup communications */
 	m_link7a_connected = 1;
-
-	/* setup 8 mechanical meters */
-	MechMtr_config(machine(),8);
 
 	/* Hook the reset line */
 	m_videocpu->set_reset_callback(write_line_delegate(FUNC(mpu4vid_state::mpu_video_reset),this));

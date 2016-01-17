@@ -188,7 +188,8 @@ const options_entry emu_options::s_option_entries[] =
 	{ OPTION_UI_MOUSE,                                   "0",         OPTION_BOOLEAN,    "display ui mouse cursor" },
 	{ OPTION_AUTOBOOT_COMMAND ";ab",                     nullptr,        OPTION_STRING,     "command to execute after machine boot" },
 	{ OPTION_AUTOBOOT_DELAY,                             "2",         OPTION_INTEGER,    "timer delay in sec to trigger command execution on autoboot" },
-	{ OPTION_AUTOBOOT_SCRIPT ";script",                  nullptr,     OPTION_STRING,     "lua script to execute after machine boot" },
+	{ OPTION_AUTOBOOT_SCRIPT ";script",                  nullptr,        OPTION_STRING,     "lua script to execute after machine boot" },
+	{ OPTION_CONSOLE,                                    "0",         OPTION_BOOLEAN,    "enable emulator LUA console" },
 	// MKChamp Hiscore Diff options
 	{ nullptr,                                           nullptr,        OPTION_HEADER,     "CORE MKChamp OPTIONS" },
 	{ OPTION_DISABLE_HISCORE_PATCH,                      "0",         OPTION_BOOLEAN,    "disable hiscore saving" },
@@ -249,7 +250,7 @@ bool emu_options::add_slot_options(bool isfirstpass)
 		first = false;
 
 		// retrieve info about the device instance
-		const char *name = slot->device().tag() + 1;
+		const char *name = slot->device().tag().c_str() + 1;
 		if (!exists(name))
 		{
 			// add the option
@@ -286,16 +287,15 @@ void emu_options::update_slot_options()
 	for (device_slot_interface *slot = iter.first(); slot != nullptr; slot = iter.next())
 	{
 		// retrieve info about the device instance
-		const char *name = slot->device().tag() + 1;
-		if (exists(name) && slot->first_option() != nullptr)
+		std::string name(slot->device().tag().c_str()+1);
+		if (exists(name.c_str()) && slot->first_option() != nullptr)
 		{
-			std::string defvalue;
-			slot->get_default_card_software(defvalue);
+			std::string defvalue = slot->get_default_card_software();
 			if (defvalue.length() > 0)
 			{
-				set_default_value(name, defvalue.c_str());
+				set_default_value(name.c_str(), defvalue.c_str());
 				const device_slot_option *option = slot->option(defvalue.c_str());
-				set_flag(name, ~OPTION_FLAG_INTERNAL, (option != nullptr && !option->selectable()) ? OPTION_FLAG_INTERNAL : 0);
+				set_flag(name.c_str(), ~OPTION_FLAG_INTERNAL, (option != nullptr && !option->selectable()) ? OPTION_FLAG_INTERNAL : 0);
 			}
 		}
 	}
@@ -478,11 +478,10 @@ void emu_options::parse_standard_inis(std::string &error_string)
 	}
 
 	// next parse "source/<sourcefile>.ini"; if that doesn't exist, try <sourcefile>.ini
-	std::string sourcename;
-	core_filename_extract_base(sourcename, cursystem->source_file, true).insert(0, "source" PATH_SEPARATOR);
+	std::string sourcename = core_filename_extract_base(cursystem->source_file, true).insert(0, "source" PATH_SEPARATOR);
 	if (!parse_one_ini(sourcename.c_str(), OPTION_PRIORITY_SOURCE_INI, &error_string))
 	{
-		core_filename_extract_base(sourcename, cursystem->source_file, true);
+		sourcename = core_filename_extract_base(cursystem->source_file, true);
 		parse_one_ini(sourcename.c_str(), OPTION_PRIORITY_SOURCE_INI, &error_string);
 	}
 
@@ -509,8 +508,7 @@ void emu_options::parse_standard_inis(std::string &error_string)
 
 const game_driver *emu_options::system() const
 {
-	std::string tempstr;
-	int index = driver_list::find(core_filename_extract_base(tempstr, system_name(), true).c_str());
+	int index = driver_list::find(core_filename_extract_base(system_name(), true).c_str());
 	return (index != -1) ? &driver_list::driver(index) : nullptr;
 }
 
@@ -576,19 +574,19 @@ bool emu_options::parse_one_ini(const char *basename, int priority, std::string 
 }
 
 
-const char *emu_options::main_value(std::string &buffer, const char *name) const
+std::string emu_options::main_value(const char *name) const
 {
-	buffer = value(name);
+	std::string buffer = value(name);
 	int pos = buffer.find_first_of(',');
 	if (pos != -1)
 		buffer = buffer.substr(0, pos);
-	return buffer.c_str();
+	return buffer;
 }
 
-const char *emu_options::sub_value(std::string &buffer, const char *name, const char *subname) const
+std::string emu_options::sub_value(const char *name, const char *subname) const
 {
 	std::string tmp = std::string(",").append(subname).append("=");
-	buffer = value(name);
+	std::string buffer = value(name);
 	int pos = buffer.find(tmp);
 	if (pos != -1)
 	{
@@ -599,7 +597,7 @@ const char *emu_options::sub_value(std::string &buffer, const char *name, const 
 	}
 	else
 		buffer.clear();
-	return buffer.c_str();
+	return buffer;
 }
 
 

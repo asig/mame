@@ -38,10 +38,9 @@ enum
 	TMS32051_AR7,
 	TMS32051_IFR,
 	TMS32051_IMR,
-	TMS32051_ST0_ARP,
 	TMS32051_ST0_INTM,
-	TMS32051_ST0_DP,
 	TMS32051_ST1_ARB,
+	TMS32051_ST1_TC,
 	TMS32051_TIM,
 	TMS32051_PSC
 };
@@ -70,7 +69,7 @@ static ADDRESS_MAP_START( tms32051_internal_data, AS_DATA, 16, tms32051_device )
 ADDRESS_MAP_END
 
 
-tms32051_device::tms32051_device(const machine_config &mconfig, const char *tag, device_t *owner, UINT32 clock)
+tms32051_device::tms32051_device(const machine_config &mconfig, std::string tag, device_t *owner, UINT32 clock)
 	: cpu_device(mconfig, TMS32051, "TMS32051", tag, owner, clock, "tms32051", __FILE__)
 	, m_program_config("program", ENDIANNESS_LITTLE, 16, 16, -1, ADDRESS_MAP_NAME(tms32051_internal_pgm))
 	, m_data_config("data", ENDIANNESS_LITTLE, 16, 16, -1, ADDRESS_MAP_NAME(tms32051_internal_data))
@@ -78,7 +77,7 @@ tms32051_device::tms32051_device(const machine_config &mconfig, const char *tag,
 {
 }
 
-tms32051_device::tms32051_device(const machine_config &mconfig, device_type type, const char *name, const char *tag, device_t *owner, UINT32 clock, const char* shortname, const char* source)
+tms32051_device::tms32051_device(const machine_config &mconfig, device_type type, std::string name, std::string tag, device_t *owner, UINT32 clock, std::string shortname, std::string source)
 	: cpu_device(mconfig, type, name, tag, owner, clock, shortname, source)
 	, m_program_config("program", ENDIANNESS_LITTLE, 16, 16, -1)
 	, m_data_config("data", ENDIANNESS_LITTLE, 16, 16, -1)
@@ -107,7 +106,7 @@ static ADDRESS_MAP_START( tms32053_internal_data, AS_DATA, 16, tms32053_device )
 ADDRESS_MAP_END
 
 
-tms32053_device::tms32053_device(const machine_config &mconfig, const char *tag, device_t *owner, UINT32 clock)
+tms32053_device::tms32053_device(const machine_config &mconfig, std::string tag, device_t *owner, UINT32 clock)
 	: tms32051_device(mconfig, TMS32053, "TMS32053", tag, owner, clock, "tms32053", __FILE__)
 {
 }
@@ -238,10 +237,9 @@ void tms32051_device::device_start()
 
 	state_add( TMS32051_IFR,      "IFR", m_ifr).formatstr("%04X");
 	state_add( TMS32051_IMR,      "IMR", m_imr).formatstr("%04X");
-	state_add( TMS32051_ST0_ARP,  "ST0 ARP", m_st0.arp).formatstr("%1d");
-	state_add( TMS32051_ST0_INTM, "ST0 INTM", m_st0.intm).formatstr("%1d");
-	state_add( TMS32051_ST0_DP,   "ST0 DP", m_st0.dp).formatstr("%04X");
-	state_add( TMS32051_ST1_ARB,  "ST1 ARB", m_st1.arb).formatstr("%04X");
+	state_add( TMS32051_ST0_INTM, "ST0_INTM", m_st0.intm).formatstr("%1d");
+	state_add( TMS32051_ST1_ARB,  "ST1_ARB", m_st1.arb).formatstr("%04X");
+	state_add( TMS32051_ST1_TC,   "ST1_TC", m_st1.tc).formatstr("%1d");
 	state_add( TMS32051_TIM,      "TIM", m_timer.tim).formatstr("%04X");
 	state_add( TMS32051_PSC,      "PSC", m_timer.psc).formatstr("%04X");
 
@@ -387,7 +385,7 @@ void tms32051_device::execute_run()
 					{
 						CHANGE_PC(m_pasr);
 					}
-						
+
 					m_brcr--;
 					if (m_brcr <= 0)
 					{
@@ -492,10 +490,10 @@ READ16_MEMBER( tms32051_device::cpuregs_r )
 		case 0x28: // PDWSR
 			return 0;
 
-		case 0x37:	// ABU BKR
+		case 0x37:  // ABU BKR
 			return 0;
 
-		case 0x50:	// Memory-mapped I/O ports
+		case 0x50:  // Memory-mapped I/O ports
 		case 0x51:
 		case 0x52:
 		case 0x53:
@@ -606,7 +604,7 @@ WRITE16_MEMBER( tms32051_device::cpuregs_w )
 		case 0x2a: // CWSR
 			break;
 
-		case 0x50:	// Memory-mapped I/O ports
+		case 0x50:  // Memory-mapped I/O ports
 		case 0x51:
 		case 0x52:
 		case 0x53:

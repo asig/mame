@@ -91,7 +91,7 @@ drcbe_interface::drcbe_interface(drcuml_state &drcuml, drc_cache &cache, device_
 	// find the spaces and fetch memory accessors
 	device_memory_interface *memory;
 	if (device.interface(memory))
-		for (address_spacenum spacenum = AS_0; spacenum < ARRAY_LENGTH(m_space); spacenum++)
+		for (address_spacenum spacenum = AS_0; spacenum < ARRAY_LENGTH(m_space); ++spacenum)
 			if (memory->has_space(spacenum))
 			{
 				m_space[spacenum] = &memory->space(spacenum);
@@ -126,7 +126,7 @@ drcuml_state::drcuml_state(device_t &device, drc_cache &cache, UINT32 flags, int
 			std::unique_ptr<drcbe_interface>{ std::make_unique<drcbe_native>(*this, device, cache, flags, modes, addrbits, ignorebits) }),
 		m_beintf(*m_drcbe_interface.get()),
 		m_umllog(nullptr)
-{	
+{
 	// if we're to log, create the logfile
 	if (device.machine().options().drc_log_uml())
 	{
@@ -456,7 +456,6 @@ void drcuml_block::optimize()
 void drcuml_block::disassemble()
 {
 	std::string comment;
-	std::string dasm;
 
 	// iterate over instructions and output
 	int firstcomment = -1;
@@ -483,7 +482,7 @@ void drcuml_block::disassemble()
 		// indent everything else with a tab
 		else
 		{
-			m_inst[instnum].disasm(dasm, &m_drcuml);
+			std::string dasm = m_inst[instnum].disasm(&m_drcuml);
 
 			// include the first accumulated comment with this line
 			if (firstcomment != -1)
@@ -1119,16 +1118,14 @@ static int bevalidate_verify_state(drcuml_state *drcuml, const drcuml_machine_st
 	// output the error if we have one
 	if (errend != errorbuf)
 	{
-		char disasm[256];
-
 		// disassemble the test instruction
-		testinst->disasm(disasm, drcuml);
+		std::string disasm = testinst->disasm(drcuml);
 
 		// output a description of what went wrong
 		printf("\n");
 		printf("----------------------------------------------\n");
 		printf("Backend validation error:\n");
-		printf("   %s\n", disasm);
+		printf("   %s\n", disasm.c_str());
 		printf("\n");
 		printf("Errors:\n");
 		printf("%s\n", errorbuf);
