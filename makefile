@@ -461,7 +461,10 @@ endif
 # set the symbols level
 ifdef SYMBOLS
 ifndef SYMLEVEL
+SYMLEVEL = 1
+ifdef SOURCES
 SYMLEVEL = 2
+endif
 endif
 endif
 
