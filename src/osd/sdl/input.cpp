@@ -1743,7 +1743,7 @@ void sdlinput_poll(running_machine &machine)
 			if (event.key.keysym.sym < 0x20)
 				machine.ui_input().push_char_event(sdl_window_list->target(), event.key.keysym.sym);
 #else
-			ui_input_push_char_event(machine, sdl_window_list->target(), (unicode_char) event.key.keysym.unicode);
+			machine.ui_input().push_char_event(sdl_window_list->target(), (unicode_char) event.key.keysym.unicode);
 #endif
 			break;
 		case SDL_KEYUP:
@@ -1918,7 +1918,7 @@ void sdlinput_poll(running_machine &machine)
 			if (!event.active.gain)
 			{
 				sdl_window_info *window = GET_FOCUS_WINDOW(&event.motion);
-				ui_input_push_mouse_leave_event(machine, window->target());
+				machine.ui_input().push_mouse_leave_event(window->target());
 			}
 			break;
 		case SDL_QUIT:
