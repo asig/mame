@@ -193,7 +193,7 @@ void asap_device::device_start()
 	state_add(ASAP_PC,         "PC",        m_pc);
 	state_add(ASAP_PS,         "PS",        m_flagsio).callimport().callexport();
 	for (int regnum = 0; regnum < 32; regnum++)
-		state_add(ASAP_R0 + regnum, strformat("R%d", regnum).c_str(), m_src2val[REGBASE + regnum]);
+		state_add(ASAP_R0 + regnum, string_format("R%d", regnum).c_str(), m_src2val[REGBASE + regnum]);
 
 	// register our state for saving
 	save_item(NAME(m_pc));
@@ -231,7 +231,7 @@ void asap_device::device_reset()
 
 //-------------------------------------------------
 //  memory_space_config - return the configuration
-//  of the specified address space, or NULL if
+//  of the specified address space, or nullptr if
 //  the space doesn't exist
 //-------------------------------------------------
 
@@ -285,13 +285,13 @@ void asap_device::state_string_export(const device_state_entry &entry, std::stri
 	switch (entry.index())
 	{
 		case STATE_GENFLAGS:
-			strprintf(str, "%c%c%c%c%c%c",
-							m_pflag ? 'P' : '.',
-							m_iflag ? 'I' : '.',
-							((INT32)m_znflag < 0) ? 'N' : '.',
-							(m_znflag == 0) ? 'Z' : '.',
-							((m_vflag >> 30) & PS_VFLAG) ? 'V' : '.',
-							m_cflag ? 'C' : '.');
+			str = string_format("%c%c%c%c%c%c",
+					m_pflag ? 'P' : '.',
+					m_iflag ? 'I' : '.',
+					((INT32)m_znflag < 0) ? 'N' : '.',
+					(m_znflag == 0) ? 'Z' : '.',
+					((m_vflag >> 30) & PS_VFLAG) ? 'V' : '.',
+					m_cflag ? 'C' : '.');
 			break;
 	}
 }
@@ -364,7 +364,7 @@ inline UINT8 asap_device::readbyte(offs_t address)
 inline UINT16 asap_device::readword(offs_t address)
 {
 	// aligned reads are easy
-	if (!(address & 1))
+	if (WORD_ALIGNED(address))
 		return m_program->read_word(address);
 
 	// misaligned reads are tricky
@@ -379,7 +379,7 @@ inline UINT16 asap_device::readword(offs_t address)
 inline UINT32 asap_device::readlong(offs_t address)
 {
 	// aligned reads are easy
-	if (!(address & 3))
+	if (DWORD_ALIGNED(address))
 		return m_program->read_dword(address);
 
 	// misaligned reads are tricky
@@ -405,7 +405,7 @@ inline void asap_device::writebyte(offs_t address, UINT8 data)
 inline void asap_device::writeword(offs_t address, UINT16 data)
 {
 	// aligned writes are easy
-	if (!(address & 1))
+	if (WORD_ALIGNED(address))
 	{
 		m_program->write_word(address, data);
 		return;
@@ -429,7 +429,7 @@ inline void asap_device::writeword(offs_t address, UINT16 data)
 inline void asap_device::writelong(offs_t address, UINT32 data)
 {
 	// aligned writes are easy
-	if (!(address & 3))
+	if (DWORD_ALIGNED(address))
 	{
 		m_program->write_dword(address, data);
 		return;

@@ -12,14 +12,17 @@ class segas24_state : public driver_device
 {
 public:
 	segas24_state(const machine_config &mconfig, device_type type, const char *tag)
-		: driver_device(mconfig, type, tag) ,
-		m_maincpu(*this, "maincpu"),
-		m_subcpu(*this, "subcpu"),
-		m_dac(*this, "dac"),
-		m_screen(*this, "screen"),
-		m_palette(*this, "palette"),
-		m_generic_paletteram_16(*this, "paletteram")
-	{ }
+		: driver_device(mconfig, type, tag)
+		, m_maincpu(*this, "maincpu")
+		, m_subcpu(*this, "subcpu")
+		, m_dac(*this, "dac")
+		, m_screen(*this, "screen")
+		, m_palette(*this, "palette")
+		, m_generic_paletteram_16(*this, "paletteram")
+		, m_romboard(*this, "romboard")
+		, m_gground_hack_timer(nullptr)
+	{
+	}
 
 	required_device<cpu_device> m_maincpu;
 	required_device<cpu_device> m_subcpu;
@@ -27,6 +30,7 @@ public:
 	required_device<screen_device> m_screen;
 	required_device<palette_device> m_palette;
 	required_shared_ptr<UINT16> m_generic_paletteram_16;
+	optional_memory_region m_romboard;
 
 	static const UINT8  mahmajn_mlt[8];
 	static const UINT8 mahmajn2_mlt[8];
@@ -139,4 +143,8 @@ public:
 	TIMER_DEVICE_CALLBACK_MEMBER(irq_timer_clear_cb);
 	TIMER_DEVICE_CALLBACK_MEMBER(irq_frc_cb);
 	TIMER_DEVICE_CALLBACK_MEMBER(irq_vbl);
+
+	// game specific
+	TIMER_CALLBACK_MEMBER(gground_hack_timer_callback);
+	emu_timer *m_gground_hack_timer;
 };

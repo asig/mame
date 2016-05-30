@@ -106,7 +106,7 @@ public:
 	attotime sample_period() const { return attotime(0, m_attoseconds_per_sample); }
 	int input_count() const { return m_input.size(); }
 	int output_count() const { return m_output.size(); }
-	const char *input_name(int inputnum, std::string &str) const;
+	std::string input_name(int inputnum) const;
 	device_t *input_source_device(int inputnum) const;
 	int input_source_outputnum(int inputnum) const;
 	float user_gain(int inputnum) const;
@@ -199,7 +199,7 @@ public:
 	// getters
 	running_machine &machine() const { return m_machine; }
 	int attenuation() const { return m_attenuation; }
-	sound_stream *first_stream() const { return m_stream_list.first(); }
+	const simple_list<sound_stream> &streams() const { return m_stream_list; }
 	attotime last_update() const { return m_last_update; }
 	attoseconds_t update_attoseconds() const { return m_update_attoseconds; }
 
@@ -207,6 +207,8 @@ public:
 	sound_stream *stream_alloc(device_t &device, int inputs, int outputs, int sample_rate, stream_update_delegate callback = stream_update_delegate());
 
 	// global controls
+	void start_recording();
+	void stop_recording();
 	void set_attenuation(int attenuation);
 	void ui_mute(bool turn_off = true) { mute(turn_off, MUTE_REASON_UI); }
 	void debugger_mute(bool turn_off = true) { mute(turn_off, MUTE_REASON_DEBUGGER); }

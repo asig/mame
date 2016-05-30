@@ -17,20 +17,20 @@ namespace netlist
 // net_device_t_base_factory
 // ----------------------------------------------------------------------------------------
 
-ATTR_COLD const pstring_list_t base_factory_t::term_param_list()
+ATTR_COLD const pstring_vector_t base_factory_t::term_param_list()
 {
 	if (m_def_param.startsWith("+"))
-		return pstring_list_t(m_def_param.substr(1), ",");
+		return pstring_vector_t(m_def_param.substr(1), ",");
 	else
-		return pstring_list_t();
+		return pstring_vector_t();
 }
 
-ATTR_COLD const pstring_list_t base_factory_t::def_params()
+ATTR_COLD const pstring_vector_t base_factory_t::def_params()
 {
 	if (m_def_param.startsWith("+") || m_def_param.equals("-"))
-		return pstring_list_t();
+		return pstring_vector_t();
 	else
-		return pstring_list_t(m_def_param, ",");
+		return pstring_vector_t(m_def_param, ",");
 }
 
 
@@ -62,7 +62,7 @@ device_t *factory_list_t::new_device_by_classname(const pstring &classname) cons
 		}
 		p++;
 	}
-	return NULL; // appease code analysis
+	return nullptr; // appease code analysis
 }
 #endif
 
@@ -71,20 +71,20 @@ void factory_list_t::error(const pstring &s)
 	m_setup.log().fatal("{1}", s);
 }
 
-device_t *factory_list_t::new_device_by_name(const pstring &name)
+std::shared_ptr<device_t> factory_list_t::new_device_by_name(const pstring &devname, netlist_t &anetlist, const pstring &name)
 {
-	base_factory_t *f = factory_by_name(name);
-	return f->Create();
+	base_factory_t *f = factory_by_name(devname);
+	return std::shared_ptr<device_t>(f->Create(anetlist, name));
 }
 
-base_factory_t * factory_list_t::factory_by_name(const pstring &name)
+base_factory_t * factory_list_t::factory_by_name(const pstring &devname)
 {
-	if (contains(name))
-		return (*this)[name];
+	if (contains(devname))
+		return (*this)[devname];
 	else
 	{
-		m_setup.log().fatal("Class {1} not found!\n", name);
-		return NULL; // appease code analysis
+		m_setup.log().fatal("Class {1} not found!\n", devname);
+		return nullptr; // appease code analysis
 	}
 }
 

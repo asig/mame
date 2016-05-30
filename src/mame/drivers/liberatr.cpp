@@ -15,7 +15,7 @@
     Liberator Memory Map (for the main set, the other one is rearranged)
      (from the schematics/manual)
 
-    HEX        R/W   D7 D6 D5 D4 D3 D2 D2 D0  function
+    HEX        R/W   D7 D6 D5 D4 D3 D2 D1 D0  function
     ---------+-----+------------------------+------------------------
     0000             D  D  D  D  D  D  D  D   XCOORD
     0001             D  D  D  D  D  D  D  D   YCOORD
@@ -144,11 +144,19 @@
 
 void liberatr_state::machine_start()
 {
-	atarigen_state::machine_start();
+	save_item(NAME(m_earom_data));
+	save_item(NAME(m_earom_control));
 
 	save_item(NAME(m_trackball_offset));
 	save_item(NAME(m_ctrld));
 	save_item(NAME(m_videoram));
+}
+
+
+void liberatr_state::machine_reset()
+{
+	// reset the control latch on the EAROM
+	m_earom->set_control(0, 1, 1, 0, 0);
 }
 
 
@@ -210,6 +218,48 @@ READ8_MEMBER( liberatr_state::port0_r )
 
 /*************************************
  *
+ *  Early raster EAROM interface
+ *
+ *************************************/
+
+READ8_MEMBER( liberatr_state::earom_r )
+{
+	// return data latched from previous clock
+	return m_earom->data();
+}
+
+
+WRITE8_MEMBER( liberatr_state::earom_w )
+{
+	// remember the value written
+	m_earom_data = data;
+
+	// output latch only enabled if control bit 2 is set
+	if (m_earom_control & 4)
+		m_earom->set_data(m_earom_data);
+
+	// always latch the address
+	m_earom->set_address(offset);
+}
+
+
+WRITE8_MEMBER( liberatr_state::earom_control_w )
+{
+	// remember the control state
+	m_earom_control = data;
+
+	// ensure ouput data is put on data lines prior to updating controls
+	if (m_earom_control & 4)
+		m_earom->set_data(m_earom_data);
+
+	// set the control lines; /CS2 is always held low
+	m_earom->set_control(data & 8, 1, ~data & 4, data & 2, data & 1);
+}
+
+
+
+/*************************************
+ *
  *  Main CPU memory handlers
  *
  *************************************/
@@ -227,7 +277,7 @@ static ADDRESS_MAP_START( liberatr_map, AS_PROGRAM, 8, liberatr_state )
 	AM_RANGE(0x6400, 0x6400) AM_WRITENOP
 	AM_RANGE(0x6600, 0x6600) AM_WRITE(earom_control_w)
 	AM_RANGE(0x6800, 0x6800) AM_WRITEONLY AM_SHARE("planet_frame")
-	AM_RANGE(0x6a00, 0x6a00) AM_WRITE(watchdog_reset_w)
+	AM_RANGE(0x6a00, 0x6a00) AM_DEVWRITE("watchdog", watchdog_timer_device, reset_w)
 	AM_RANGE(0x6c00, 0x6c01) AM_WRITE(led_w)
 	AM_RANGE(0x6c04, 0x6c04) AM_WRITE(trackball_reset_w)
 	AM_RANGE(0x6c05, 0x6c06) AM_WRITE(coin_counter_w)
@@ -260,7 +310,7 @@ static ADDRESS_MAP_START( liberat2_map, AS_PROGRAM, 8, liberatr_state )
 	AM_RANGE(0x4600, 0x4600) AM_WRITE(earom_control_w)
 	AM_RANGE(0x4800, 0x483f) AM_READ(earom_r)
 	AM_RANGE(0x4800, 0x4800) AM_WRITEONLY AM_SHARE("planet_frame")
-	AM_RANGE(0x4a00, 0x4a00) AM_WRITE(watchdog_reset_w)
+	AM_RANGE(0x4a00, 0x4a00) AM_DEVWRITE("watchdog", watchdog_timer_device, reset_w)
 	AM_RANGE(0x4c00, 0x4c01) AM_WRITE(led_w)
 	AM_RANGE(0x4c04, 0x4c04) AM_WRITE(trackball_reset_w)
 	AM_RANGE(0x4c05, 0x4c06) AM_WRITE(coin_counter_w)
@@ -372,6 +422,8 @@ static MACHINE_CONFIG_START( liberatr, liberatr_state )
 	MCFG_DEVICE_PERIODIC_INT_DRIVER(driver_device,irq0_line_hold,4*60)
 
 	MCFG_ER2055_ADD("earom")
+
+	MCFG_WATCHDOG_ADD("watchdog")
 
 	/* video hardware */
 	MCFG_SCREEN_ADD("screen", RASTER)

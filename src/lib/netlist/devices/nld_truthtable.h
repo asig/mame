@@ -17,8 +17,9 @@
 	class NETLIB_NAME(_name) : public nld_truthtable_t<_nIN, _nOUT, _state>         \
 	{                                                                               \
 	public:                                                                         \
-		NETLIB_NAME(_name)()                                                        \
-		: nld_truthtable_t<_nIN, _nOUT, _state>(&m_ttbl, m_desc) { }                \
+		template <class C>                                                          \
+		NETLIB_NAME(_name)(C &owner, const pstring &name)                           \
+		: nld_truthtable_t<_nIN, _nOUT, _state>(owner, name, nullptr, &m_ttbl, m_desc) { }   \
 	private:                                                                        \
 		static truthtable_t m_ttbl;                                                 \
 		static const char *m_desc[];                                                \
@@ -30,10 +31,10 @@
 			# _name, # _name, "+" _def_params);
 
 #define TT_HEAD(_x) \
-	ttd->m_desc.add(_x);
+	ttd->m_desc.push_back(_x);
 
 #define TT_LINE(_x) \
-	ttd->m_desc.add(_x);
+	ttd->m_desc.push_back(_x);
 
 #define TT_FAMILY(_x) \
 	ttd->m_family = setup.family_from_model(_x);
@@ -65,11 +66,11 @@ struct truthtable_desc_t
 	{
 	}
 
-	void setup(const pstring_list_t &desc, UINT32 disabled_ignore);
+	void setup(const pstring_vector_t &desc, UINT32 disabled_ignore);
 
 private:
-	void help(unsigned cur, pstring_list_t list,
-			UINT64 state,UINT16 val, UINT8 *timing_index);
+	void help(unsigned cur, pstring_vector_t list,
+			UINT64 state,UINT16 val, parray_t<UINT8> &timing_index);
 	static unsigned count_bits(UINT32 v);
 	static UINT32 set_bits(UINT32 v, UINT32 b);
 	UINT32 get_ignored_simple(UINT32 i);
@@ -91,8 +92,10 @@ private:
 };
 
 template<unsigned m_NI, unsigned m_NO, int has_state>
-class nld_truthtable_t : public device_t
+NETLIB_OBJECT(truthtable_t)
 {
+private:
+	family_setter_t m_fam;
 public:
 
 	static const int m_num_bits = m_NI + has_state * (m_NI + m_NO);
@@ -100,8 +103,9 @@ public:
 
 	struct truthtable_t
 	{
-		truthtable_t() : m_initialized(false),
-				m_desc(m_NO, m_NI, has_state, &m_initialized, m_outs, m_timing, m_timing_nt) {}
+		truthtable_t()
+		: m_initialized(false)
+		, m_desc(m_NO, m_NI, has_state, &m_initialized, m_outs, m_timing, m_timing_nt) {}
 		bool m_initialized;
 		UINT32 m_outs[m_size];
 		UINT8  m_timing[m_size * m_NO];
@@ -109,19 +113,33 @@ public:
 		truthtable_desc_t m_desc;
 	};
 
-	nld_truthtable_t(truthtable_t *ttbl, const char *desc[])
-	: device_t(), m_last_state(0), m_ign(0), m_active(1), m_ttp(ttbl)
+	template <class C>
+	nld_truthtable_t(C &owner, const pstring &name, logic_family_desc_t *fam,
+			truthtable_t *ttbl, const char *desc[])
+	: device_t(owner, name)
+	, m_fam(*this, fam)
+	, m_last_state(0)
+	, m_ign(0)
+	, m_active(1)
+	, m_ttp(ttbl)
 	{
-		while (*desc != NULL && **desc != 0 )
+		while (*desc != nullptr && **desc != 0 )
 			{
-				m_desc.add(*desc);
+				m_desc.push_back(*desc);
 				desc++;
 			}
 
 	}
 
-	nld_truthtable_t(truthtable_t *ttbl, const pstring_list_t &desc)
-	: device_t(), m_last_state(0), m_ign(0), m_active(1), m_ttp(ttbl)
+	template <class C>
+	nld_truthtable_t(C &owner, const pstring &name, logic_family_desc_t *fam,
+			truthtable_t *ttbl, const pstring_vector_t &desc)
+	: device_t(owner, name)
+	, m_fam(*this, fam)
+	, m_last_state(0)
+	, m_ign(0)
+	, m_active(1)
+	, m_ttp(ttbl)
 	{
 		m_desc = desc;
 	}
@@ -130,23 +148,23 @@ public:
 	{
 		pstring header = m_desc[0];
 
-		pstring_list_t io(header,"|");
+		pstring_vector_t io(header,"|");
 		// checks
 		nl_assert_always(io.size() == 2, "too many '|'");
-		pstring_list_t inout(io[0], ",");
+		pstring_vector_t inout(io[0], ",");
 		nl_assert_always(inout.size() == m_num_bits, "bitcount wrong");
-		pstring_list_t out(io[1], ",");
+		pstring_vector_t out(io[1], ",");
 		nl_assert_always(out.size() == m_NO, "output count wrong");
 
 		for (unsigned i=0; i < m_NI; i++)
 		{
 			inout[i] = inout[i].trim();
-			register_input(inout[i], m_I[i]);
+			enregister(inout[i], m_I[i]);
 		}
 		for (unsigned i=0; i < m_NO; i++)
 		{
 			out[i] = out[i].trim();
-			register_output(out[i], m_Q[i]);
+			enregister(out[i], m_Q[i]);
 		}
 		// Connect output "Q" to input "_Q" if this exists
 		// This enables timed state without having explicit state ....
@@ -289,7 +307,7 @@ private:
 	INT32 m_active;
 
 	truthtable_t *m_ttp;
-	pstring_list_t m_desc;
+	pstring_vector_t m_desc;
 };
 
 class netlist_base_factory_truthtable_t : public base_factory_t
@@ -298,7 +316,7 @@ class netlist_base_factory_truthtable_t : public base_factory_t
 public:
 	netlist_base_factory_truthtable_t(const pstring &name, const pstring &classname,
 			const pstring &def_param)
-	: base_factory_t(name, classname, def_param), m_family(netlist_family_TTL)
+	: base_factory_t(name, classname, def_param), m_family(family_TTL)
 	{}
 
 	virtual ~netlist_base_factory_truthtable_t()
@@ -307,7 +325,7 @@ public:
 			pfree(m_family);
 	}
 
-	pstring_list_t m_desc;
+	pstring_vector_t m_desc;
 	logic_family_desc_t *m_family;
 };
 
@@ -321,11 +339,10 @@ public:
 			const pstring &def_param)
 	: netlist_base_factory_truthtable_t(name, classname, def_param) { }
 
-	device_t *Create() override
+	device_t *Create(netlist_t &anetlist, const pstring &name) override
 	{
 		typedef nld_truthtable_t<m_NI, m_NO, has_state> tt_type;
-		device_t *r = palloc(tt_type(&m_ttbl, m_desc));
-		r->set_logic_family(m_family);
+		device_t *r = palloc(tt_type(anetlist, name, m_family, &m_ttbl, m_desc));
 		//r->init(setup, name);
 		return r;
 	}

@@ -220,7 +220,7 @@ static MACHINE_CONFIG_START( pulsar, pulsar_state )
 	MCFG_CPU_ADD("maincpu",Z80, XTAL_4MHz)
 	MCFG_CPU_PROGRAM_MAP(pulsar_mem)
 	MCFG_CPU_IO_MAP(pulsar_io)
-	MCFG_CPU_CONFIG(daisy_chain_intf)
+	MCFG_Z80_DAISY_CHAIN(daisy_chain_intf)
 	MCFG_MACHINE_RESET_OVERRIDE(pulsar_state, pulsar)
 
 	/* Devices */
@@ -254,7 +254,10 @@ MACHINE_CONFIG_END
 /* ROM definition */
 ROM_START( pulsarlb )
 	ROM_REGION( 0x10800, "maincpu", ROMREGION_ERASEFF )
-	ROM_LOAD( "mp7a.bin", 0x10000, 0x800, CRC(726b8a19) SHA1(43b2af84d5622c1f67584c501b730acf002a6113) )
+	ROM_SYSTEM_BIOS(0, "mon7", "MP7A")
+	ROMX_LOAD( "mp7a.bin", 0x10000, 0x800, CRC(726b8a19) SHA1(43b2af84d5622c1f67584c501b730acf002a6113), ROM_BIOS(1))
+	ROM_SYSTEM_BIOS(1, "mon6", "LBOOT6") // Blank screen until floppy boots
+	ROMX_LOAD( "lboot6.rom", 0x10000, 0x800, CRC(3bca9096) SHA1(ff99288e51a9e832785ce8e3ab5a9452b1064231), ROM_BIOS(2))
 ROM_END
 
 /* Driver */

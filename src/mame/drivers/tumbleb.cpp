@@ -302,7 +302,7 @@ Stephh's notes (based on the games M68000 code and some tests) :
 #include "cpu/m68000/m68000.h"
 #include "cpu/h6280/h6280.h"
 #include "cpu/mcs51/mcs51.h" // for semicom mcu
-#include "includes/decocrpt.h"
+#include "machine/decocrpt.h"
 #include "sound/2151intf.h"
 #include "sound/3812intf.h"
 #include "sound/okim6295.h"
@@ -2063,7 +2063,6 @@ static MACHINE_CONFIG_START( tumblepb, tumbleb_state )
 	MCFG_DECO_SPRITE_GFX_REGION(3)
 	MCFG_DECO_SPRITE_ISBOOTLEG(true)
 	MCFG_DECO_SPRITE_GFXDECODE("gfxdecode")
-	MCFG_DECO_SPRITE_PALETTE("palette")
 
 	MCFG_GFXDECODE_ADD("gfxdecode", "palette", tumbleb)
 	MCFG_PALETTE_ADD("palette", 1024)
@@ -2102,7 +2101,6 @@ static MACHINE_CONFIG_START( tumbleb2, tumbleb_state )
 	MCFG_DECO_SPRITE_GFX_REGION(3)
 	MCFG_DECO_SPRITE_ISBOOTLEG(true)
 	MCFG_DECO_SPRITE_GFXDECODE("gfxdecode")
-	MCFG_DECO_SPRITE_PALETTE("palette")
 
 	MCFG_GFXDECODE_ADD("gfxdecode", "palette", tumbleb)
 	MCFG_PALETTE_ADD("palette", 1024)
@@ -2144,7 +2142,6 @@ static MACHINE_CONFIG_START( jumpkids, tumbleb_state )
 	MCFG_DECO_SPRITE_GFX_REGION(3)
 	MCFG_DECO_SPRITE_ISBOOTLEG(true)
 	MCFG_DECO_SPRITE_GFXDECODE("gfxdecode")
-	MCFG_DECO_SPRITE_PALETTE("palette")
 
 	MCFG_GFXDECODE_ADD("gfxdecode", "palette", tumbleb)
 	MCFG_PALETTE_ADD("palette", 1024)
@@ -2183,7 +2180,6 @@ static MACHINE_CONFIG_START( fncywld, tumbleb_state )
 	MCFG_DECO_SPRITE_ISBOOTLEG(true)
 	MCFG_DECO_SPRITE_TRANSPEN(15)
 	MCFG_DECO_SPRITE_GFXDECODE("gfxdecode")
-	MCFG_DECO_SPRITE_PALETTE("palette")
 
 	MCFG_GFXDECODE_ADD("gfxdecode", "palette", fncywld)
 	MCFG_PALETTE_ADD("palette", 0x800)
@@ -2207,12 +2203,15 @@ MACHINE_CONFIG_END
 
 MACHINE_RESET_MEMBER(tumbleb_state,htchctch)
 {
-	/* copy protection data every reset */
-	UINT16 *PROTDATA = (UINT16*)memregion("user1")->base();
-	int i, len = memregion("user1")->bytes();
+	if (memregion("user1") != nullptr)
+	{
+		/* copy protection data every reset */
+		UINT16 *PROTDATA = (UINT16*)memregion("user1")->base();
+		int i, len = memregion("user1")->bytes();
 
-	for (i = 0; i < len / 2; i++)
-		m_mainram[0x000/2 + i] = PROTDATA[i];
+		for (i = 0; i < len / 2; i++)
+			m_mainram[0x000 / 2 + i] = PROTDATA[i];
+	}
 
 	MACHINE_RESET_CALL_MEMBER(tumbleb);
 }
@@ -2243,7 +2242,6 @@ static MACHINE_CONFIG_START( htchctch, tumbleb_state )
 	MCFG_DECO_SPRITE_GFX_REGION(3)
 	MCFG_DECO_SPRITE_ISBOOTLEG(true)
 	MCFG_DECO_SPRITE_GFXDECODE("gfxdecode")
-	MCFG_DECO_SPRITE_PALETTE("palette")
 
 	MCFG_GFXDECODE_ADD("gfxdecode", "palette", tumbleb)
 	MCFG_PALETTE_ADD("palette", 1024)
@@ -2354,7 +2352,6 @@ static MACHINE_CONFIG_START( suprtrio, tumbleb_state )
 	MCFG_DECO_SPRITE_GFX_REGION(3)
 	MCFG_DECO_SPRITE_ISBOOTLEG(true)
 	MCFG_DECO_SPRITE_GFXDECODE("gfxdecode")
-	MCFG_DECO_SPRITE_PALETTE("palette")
 
 	MCFG_GFXDECODE_ADD("gfxdecode", "palette", suprtrio)
 	MCFG_PALETTE_ADD("palette", 1024)
@@ -2393,7 +2390,6 @@ static MACHINE_CONFIG_START( pangpang, tumbleb_state )
 	MCFG_DECO_SPRITE_GFX_REGION(3)
 	MCFG_DECO_SPRITE_ISBOOTLEG(true)
 	MCFG_DECO_SPRITE_GFXDECODE("gfxdecode")
-	MCFG_DECO_SPRITE_PALETTE("palette")
 
 	MCFG_GFXDECODE_ADD("gfxdecode", "palette", tumbleb)
 	MCFG_PALETTE_ADD("palette", 1024)

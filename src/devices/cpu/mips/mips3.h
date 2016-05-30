@@ -15,7 +15,7 @@
 #define __MIPS3_H__
 
 
-#include "cpu/vtlb.h"
+#include "divtlb.h"
 #include "cpu/drcfe.h"
 #include "cpu/drcuml.h"
 #include "cpu/drcumlsh.h"
@@ -245,7 +245,7 @@ struct compiler_state
 
 class mips3_frontend;
 
-class mips3_device : public cpu_device
+class mips3_device : public cpu_device, public device_vtlb_interface
 {
 	friend class mips3_frontend;
 
@@ -355,7 +355,6 @@ private:
 	UINT32      m_ll_value;
 	UINT64      m_lld_value;
 	UINT32      m_badcop_value;
-	const vtlb_entry *m_tlb_table;
 
 	/* endian-dependent load/store */
 	typedef void (mips3_device::*loadstore_func)(UINT32 op);
@@ -389,7 +388,6 @@ private:
 	size_t          c_dcache_size;
 
 	/* MMU */
-	vtlb_state *    m_vtlb;
 	mips3_tlb_entry m_tlb[MIPS3_MAX_TLB_ENTRIES];
 
 	/* fast RAM */
@@ -559,8 +557,14 @@ private:
 	int generate_set_cop0_reg(drcuml_block *block, compiler_state *compiler, const opcode_desc *desc, UINT8 reg);
 	int generate_get_cop0_reg(drcuml_block *block, compiler_state *compiler, const opcode_desc *desc, UINT8 reg);
 	int generate_cop0(drcuml_block *block, compiler_state *compiler, const opcode_desc *desc);
-	int generate_cop1(drcuml_block *block, compiler_state *compiler, const opcode_desc *desc);
-	int generate_cop1x(drcuml_block *block, compiler_state *compiler, const opcode_desc *desc);
+	int generate_cop1_fr0(drcuml_block *block, compiler_state *compiler, const opcode_desc *desc);
+	int generate_cop1_fr1(drcuml_block *block, compiler_state *compiler, const opcode_desc *desc);
+	void generate_get_cop1_reg64(drcuml_block *block, compiler_state *compiler, const opcode_desc *desc, const UINT32 reg, const uml::parameter& param);
+	void generate_get_cop1_reg64_d2i(drcuml_block *block, compiler_state *compiler, const opcode_desc *desc, const UINT32 reg, const uml::parameter& param);
+	void generate_set_cop1_reg64(drcuml_block *block, compiler_state *compiler, const opcode_desc *desc, const UINT32 reg, const uml::parameter& param);
+	void generate_set_cop1_reg64_i2d(drcuml_block *block, compiler_state *compiler, const opcode_desc *desc, const UINT32 reg, const uml::parameter& param);
+	int generate_cop1x_fr0(drcuml_block *block, compiler_state *compiler, const opcode_desc *desc);
+	int generate_cop1x_fr1(drcuml_block *block, compiler_state *compiler, const opcode_desc *desc);
 
 	void check_cop0_access(drcuml_block *block);
 	void check_cop1_access(drcuml_block *block);

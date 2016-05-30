@@ -86,7 +86,7 @@ k05324x_device::k05324x_device(const machine_config &mconfig, const char *tag, d
 	device_gfx_interface(mconfig, *this, gfxinfo),
 	m_ram(nullptr),
 	m_buffer(nullptr),
-	m_sprite_rom(nullptr),
+	m_sprite_rom(*this, DEVICE_SELF),
 	m_dx(0),
 	m_dy(0),
 	m_rombank(0),
@@ -118,14 +118,11 @@ void k05324x_device::set_bpp(device_t &device, int bpp)
 
 void k05324x_device::device_start()
 {
-	m_sprite_rom = region()->base();
-	m_sprite_size = region()->bytes();
-
 	/* decode the graphics */
 	decode_gfx();
-	m_gfx[0]->set_colors(m_palette->entries() / m_gfx[0]->depth());
+	gfx(0)->set_colors(palette().entries() / gfx(0)->depth());
 
-	if (VERBOSE && !(m_palette->shadows_enabled()))
+	if (VERBOSE && !(palette().shadows_enabled()))
 		popmessage("driver should use VIDEO_HAS_SHADOWS");
 
 	m_ramsize = 0x800;
@@ -209,7 +206,7 @@ READ8_MEMBER( k05324x_device::k053244_r )
 		addr = (m_rombank << 19) | ((m_regs[11] & 0x7) << 18)
 			| (m_regs[8] << 10) | (m_regs[9] << 2)
 			| ((offset & 3) ^ 1);
-		addr &= m_sprite_size - 1;
+		addr &= m_sprite_rom.mask();
 
 		//  popmessage("%s: offset %02x addr %06x", machine().describe_context(), offset & 3, addr);
 
@@ -458,7 +455,7 @@ void k05324x_device::sprites_draw( bitmap_ind16 &bitmap, const rectangle &clipre
 		ox -= (zoomx * w) >> 13;
 		oy -= (zoomy * h) >> 13;
 
-		drawmode_table[m_gfx[0]->granularity() - 1] = shadow ? DRAWMODE_SHADOW : DRAWMODE_SOURCE;
+		drawmode_table[gfx(0)->granularity() - 1] = shadow ? DRAWMODE_SHADOW : DRAWMODE_SOURCE;
 
 		for (y = 0; y < h; y++)
 		{
@@ -522,7 +519,7 @@ void k05324x_device::sprites_draw( bitmap_ind16 &bitmap, const rectangle &clipre
 
 				if (zoomx == 0x10000 && zoomy == 0x10000)
 				{
-					m_gfx[0]->prio_transtable(bitmap,cliprect,
+					gfx(0)->prio_transtable(bitmap,cliprect,
 							c,color,
 							fx,fy,
 							sx,sy,
@@ -531,7 +528,7 @@ void k05324x_device::sprites_draw( bitmap_ind16 &bitmap, const rectangle &clipre
 				}
 				else
 				{
-					m_gfx[0]->prio_zoom_transtable(bitmap,cliprect,
+					gfx(0)->prio_zoom_transtable(bitmap,cliprect,
 							c,color,
 							fx,fy,
 							sx,sy,

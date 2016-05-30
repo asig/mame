@@ -37,7 +37,6 @@
 #ifndef NLD_9312_H_
 #define NLD_9312_H_
 
-#include "nld_signal.h"
 #include "nld_truthtable.h"
 
 #define TTL_9312(_name)                                                \
@@ -58,13 +57,13 @@ NETLIB_TRUTHTABLE(9312, 12, 2, 0);
 NETLIB_DEVICE(9312,
 public:
 //      C, B, A, G,D0,D1,D2,D3,D4,D5,D6,D7| Y,YQ
-	netlist_logic_input_t m_A;
-	netlist_logic_input_t m_B;
-	netlist_logic_input_t m_C;
-	netlist_logic_input_t m_G;
-	netlist_logic_input_t m_D[8];
-	netlist_logic_output_t m_Y;
-	netlist_logic_output_t m_YQ;
+	logic_input_t m_A;
+	logic_input_t m_B;
+	logic_input_t m_C;
+	logic_input_t m_G;
+	logic_input_t m_D[8];
+	logic_output_t m_Y;
+	logic_output_t m_YQ;
 
 	UINT8 m_last_chan;
 	UINT8 m_last_G;
@@ -73,7 +72,7 @@ public:
 #endif
 
 NETLIB_DEVICE(9312_dip,
-	NETLIB_NAME(9312) m_sub;
+	NETLIB_SUBXX(9312) m_sub;
 );
 
 NETLIB_NAMESPACE_DEVICES_END()

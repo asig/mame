@@ -62,7 +62,6 @@ Notes:
 
 
  - sound CPU seems to miss commands sometimes
- - flipscreen is wrong
  - should sprites be buffered, is the Deco '77' a '71' or similar?
 
 */
@@ -70,7 +69,8 @@ Notes:
 #include "emu.h"
 #include "cpu/z80/z80.h"
 #include "cpu/m68000/m68000.h"
-#include "includes/decocrpt.h"
+#include "machine/decocrpt.h"
+#include "machine/deco102.h"
 #include "sound/2151intf.h"
 #include "sound/okim6295.h"
 #include "video/deco16ic.h"
@@ -403,13 +403,11 @@ static MACHINE_CONFIG_START( dblewing, dblewing_state )
 	MCFG_DECO16IC_PF12_8X8_BANK(0)
 	MCFG_DECO16IC_PF12_16X16_BANK(1)
 	MCFG_DECO16IC_GFXDECODE("gfxdecode")
-	MCFG_DECO16IC_PALETTE("palette")
 
 	MCFG_DEVICE_ADD("spritegen", DECO_SPRITE, 0)
 	MCFG_DECO_SPRITE_GFX_REGION(2)
 	MCFG_DECO_SPRITE_PRIORITY_CB(dblewing_state, pri_callback)
 	MCFG_DECO_SPRITE_GFXDECODE("gfxdecode")
-	MCFG_DECO_SPRITE_PALETTE("palette")
 
 	MCFG_DECO104_ADD("ioprot104")
 	MCFG_DECO146_SET_INTERFACE_SCRAMBLE_INTERLEAVE

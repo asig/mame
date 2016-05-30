@@ -143,7 +143,7 @@ static INT16 clip_analog(INT16 cliptemp);
 
 
 /* Pull in the ROM tables */
-#include "tms5110r.inc"
+#include "tms5110r.hxx"
 
 #define DEBUG_5110  0
 
@@ -1049,8 +1049,6 @@ static const unsigned int example_word_TEN[619]={
 
 void tms5110_device::device_start()
 {
-	m_table = region()->base();
-
 	set_variant(TMS5110_IS_TMS5110A);
 
 	/* resolve lines */
@@ -1186,7 +1184,7 @@ void tms5110_device::device_reset()
 	m_RNG = 0x1FFF;
 	memset(m_u, 0, sizeof(m_u));
 	memset(m_x, 0, sizeof(m_x));
-	if (m_table != nullptr)
+	if (m_table.found())
 	{
 		/* legacy interface */
 		m_schedule_dummy_read = TRUE;
@@ -1456,11 +1454,6 @@ void tmsprom_device::device_start()
 	m_pdc_cb.resolve_safe();
 	m_ctl_cb.resolve_safe();
 
-	m_rom = region()->base();
-	assert_always(m_rom != nullptr, "Error creating TMSPROM chip: No rom region found");
-	m_prom = owner()->memregion(m_prom_region)->base();
-	assert_always(m_prom != nullptr, "Error creating TMSPROM chip: No prom region found");
-
 	m_romclk_timer = timer_alloc(0);
 	m_romclk_timer->adjust(attotime::zero, 0, attotime::from_hz(clock()));
 
@@ -1531,24 +1524,26 @@ WRITE_LINE_MEMBER( tmsprom_device::enable_w )
 const device_type TMS5110 = &device_creator<tms5110_device>;
 
 tms5110_device::tms5110_device(const machine_config &mconfig, const char *tag, device_t *owner, UINT32 clock)
-	: device_t(mconfig, TMS5110, "TMS5110", tag, owner, clock, "tms5110", __FILE__),
-		device_sound_interface(mconfig, *this),
-		m_m0_cb(*this),
-		m_m1_cb(*this),
-		m_addr_cb(*this),
-		m_data_cb(*this),
-		m_romclk_cb(*this)
+	: device_t(mconfig, TMS5110, "TMS5110", tag, owner, clock, "tms5110", __FILE__)
+	, device_sound_interface(mconfig, *this)
+	, m_table(*this, DEVICE_SELF)
+	, m_m0_cb(*this)
+	, m_m1_cb(*this)
+	, m_addr_cb(*this)
+	, m_data_cb(*this)
+	, m_romclk_cb(*this)
 {
 }
 
 tms5110_device::tms5110_device(const machine_config &mconfig, device_type type, const char *name, const char *tag, device_t *owner, UINT32 clock, const char *shortname, const char *source)
-	: device_t(mconfig, type, name, tag, owner, clock, shortname, source),
-		device_sound_interface(mconfig, *this),
-		m_m0_cb(*this),
-		m_m1_cb(*this),
-		m_addr_cb(*this),
-		m_data_cb(*this),
-		m_romclk_cb(*this)
+	: device_t(mconfig, type, name, tag, owner, clock, shortname, source)
+	, device_sound_interface(mconfig, *this)
+	, m_table(*this, DEVICE_SELF)
+	, m_m0_cb(*this)
+	, m_m1_cb(*this)
+	, m_addr_cb(*this)
+	, m_data_cb(*this)
+	, m_romclk_cb(*this)
 {
 }
 
@@ -1614,7 +1609,8 @@ const device_type TMSPROM = &device_creator<tmsprom_device>;
 
 tmsprom_device::tmsprom_device(const machine_config &mconfig, const char *tag, device_t *owner, UINT32 clock)
 	: device_t(mconfig, TMSPROM, "TMSPROM", tag, owner, clock, "tmsprom", __FILE__),
-		m_prom_region(""),
+		m_rom(*this, DEVICE_SELF),
+		m_prom(*this, 0x20),
 		m_rom_size(0),
 		m_pdc_bit(0),
 		m_ctl1_bit(0),

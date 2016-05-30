@@ -8,6 +8,7 @@
 
 #include "emu.h"
 #include "cpu/m6502/m6502.h"
+#include "machine/watchdog.h"
 #include "includes/wolfpack.h"
 
 
@@ -153,7 +154,7 @@ static ADDRESS_MAP_START( main_map, AS_PROGRAM, 8, wolfpack_state )
 	AM_RANGE(0x4004, 0x4004) AM_WRITE(wolfpack_ship_pic_w)
 	AM_RANGE(0x4005, 0x4005) AM_WRITE(wolfpack_torpedo_h_w)
 	AM_RANGE(0x4006, 0x4006) AM_WRITE(wolfpack_torpedo_v_w)
-	AM_RANGE(0x5000, 0x5fff) AM_WRITE(watchdog_reset_w)
+	AM_RANGE(0x5000, 0x5fff) AM_DEVWRITE("watchdog", watchdog_timer_device, reset_w)
 	AM_RANGE(0x7000, 0x7fff) AM_ROM
 	AM_RANGE(0x9000, 0x9000) AM_READNOP /* debugger ROM location? */
 	AM_RANGE(0xf000, 0xffff) AM_ROM
@@ -162,7 +163,7 @@ ADDRESS_MAP_END
 
 static INPUT_PORTS_START( wolfpack )
 	PORT_START("INPUTS")
-	PORT_BIT( 0x01, IP_ACTIVE_HIGH, IPT_SPECIAL ) PORT_CUSTOM_MEMBER(DEVICE_SELF, wolfpack_state,wolfpack_dial_r, (void *)nullptr)    /* dial connects here */
+	PORT_BIT( 0x01, IP_ACTIVE_HIGH, IPT_SPECIAL ) PORT_CUSTOM_MEMBER(DEVICE_SELF, wolfpack_state,wolfpack_dial_r, (void *)0)    /* dial connects here */
 	PORT_BIT( 0x02, IP_ACTIVE_HIGH, IPT_SPECIAL ) PORT_CUSTOM_MEMBER(DEVICE_SELF, wolfpack_state,wolfpack_dial_r, (void *)1)    /* dial connects here */
 	PORT_BIT( 0x04, IP_ACTIVE_LOW, IPT_TILT )
 	PORT_BIT( 0x08, IP_ACTIVE_LOW, IPT_BUTTON1 )
@@ -303,6 +304,8 @@ static MACHINE_CONFIG_START( wolfpack, wolfpack_state )
 	MCFG_CPU_ADD("maincpu", M6502, 12096000 / 16)
 	MCFG_CPU_PROGRAM_MAP(main_map)
 
+	MCFG_WATCHDOG_ADD("watchdog")
+
 	/* video hardware */
 	MCFG_SCREEN_ADD("screen", RASTER)
 	MCFG_SCREEN_REFRESH_RATE(60)
@@ -319,7 +322,7 @@ static MACHINE_CONFIG_START( wolfpack, wolfpack_state )
 
 	/* sound hardware */
 	MCFG_SPEAKER_STANDARD_MONO("mono")
-	MCFG_SOUND_ADD("speech", S14001A_NEW, 20000) /* RC Clock (C=100pf, R=470K-670K ohms, adjustable) ranging from 14925.37313hz to 21276.59574hz, likely factory set to 20000hz since anything below 19500 is too slow */
+	MCFG_SOUND_ADD("speech", S14001A, 20000) /* RC Clock (C=100pf, R=470K-670K ohms, adjustable) ranging from 14925.37313hz to 21276.59574hz, likely factory set to 20000hz since anything below 19500 is too slow */
 	MCFG_SOUND_ROUTE(ALL_OUTPUTS, "mono", 1.00)
 MACHINE_CONFIG_END
 

@@ -149,6 +149,8 @@ http://www.z88forever.org.uk/zxplus3e/
 #include "emu.h"
 #include "cpu/z80/z80.h"
 #include "includes/spectrum.h"
+#include "includes/spec128.h"
+#include "includes/timex.h"
 #include "imagedev/snapquik.h"
 #include "imagedev/cassette.h"
 #include "sound/speaker.h"
@@ -158,6 +160,7 @@ http://www.z88forever.org.uk/zxplus3e/
 #include "machine/beta.h"
 #include "machine/ram.h"
 #include "softlist.h"
+#include "machine/spec_snqk.h"
 
 /****************************************************************************************************/
 /* TS2048 specific functions */
@@ -212,9 +215,13 @@ WRITE8_MEMBER( spectrum_state::ts2068_port_ff_w )
  *******************************************************************/
 void spectrum_state::ts2068_update_memory()
 {
-	UINT8 *messram = m_ram->pointer();
+	UINT8 *messram = nullptr;
+	if (m_ram) messram = m_ram->pointer();
 	address_space &space = m_maincpu->space(AS_PROGRAM);
-	UINT8 *DOCK = m_dock_crt->base();
+	UINT8 *DOCK = nullptr;
+	if (m_dock_crt) DOCK = m_dock_crt->base();
+
+
 	UINT8 *ExROM = memregion("maincpu")->base() + 0x014000;
 	UINT8 *ChosenROM;
 

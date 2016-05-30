@@ -3,7 +3,7 @@
 
 /* Williams WPC Dot Matrix */
 
-#include "includes/wpc_pin.h"
+#include "includes/wpc_dot.h"
 
 
 static ADDRESS_MAP_START( wpc_dot_map, AS_PROGRAM, 8, wpc_dot_state )
@@ -657,7 +657,7 @@ ROM_START(tfdmd_l3)
 	ROM_REGION(0x20000, "code", 0)
 	ROM_LOAD("u6_l3.rom", 0x00000, 0x20000, CRC(bd43e28c) SHA1(df0a64a9fddbc59e3edde56ae12b68f76e44ba2e))
 	ROM_REGION(0x180000, "sound1", 0)
-	ROM_FILL(0x0000,0x180000,nullptr)
+	ROM_FILL(0x0000,0x180000,0x00)
 ROM_END
 
 

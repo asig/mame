@@ -83,7 +83,7 @@ void battlex_state::draw_sprites( bitmap_ind16 &bitmap, const rectangle &cliprec
 			flipy = !flipy;
 		}
 
-			gfx->transpen(bitmap,cliprect, tile, color, flipx, flipy, sx, sy, 0);
+		gfx->transpen(bitmap,cliprect, tile, color, flipx, flipy, sx, sy, 0);
 		source += 4;
 	}
 
@@ -96,7 +96,7 @@ UINT32 battlex_state::screen_update_battlex(screen_device &screen, bitmap_ind16 
 		m_bg_tilemap->set_scrollx(0, m_scroll_lsb | (m_scroll_msb << 8));
 	else
 		m_bg_tilemap->set_scrollx(0, m_scroll_lsb | m_scroll_msb);
-		
+
 	m_bg_tilemap->draw(screen, bitmap, cliprect, 0, 0);
 	draw_sprites(bitmap, cliprect);
 

@@ -146,7 +146,7 @@ es550x_device::es550x_device(const machine_config &mconfig, device_type type, co
 		m_ulaw_lookup(nullptr),
 		m_volume_lookup(nullptr),
 		#if MAKE_WAVS
-		m_wavraw(NULL),
+		m_wavraw(nullptr),
 		#endif
 		m_eslog(nullptr),
 		m_region0(nullptr),
@@ -195,10 +195,39 @@ void es5506_device::device_start()
 	m_stream = machine().sound().stream_alloc(*this, 0, 2 * channels, clock() / (16*32));
 
 	/* initialize the regions */
-	m_region_base[0] = m_region0 ? (UINT16 *)machine().root_device().memregion(m_region0)->base() : nullptr;
-	m_region_base[1] = m_region1 ? (UINT16 *)machine().root_device().memregion(m_region1)->base() : nullptr;
-	m_region_base[2] = m_region2 ? (UINT16 *)machine().root_device().memregion(m_region2)->base() : nullptr;
-	m_region_base[3] = m_region3 ? (UINT16 *)machine().root_device().memregion(m_region3)->base() : nullptr;
+	m_region_base[0] = m_region_base[1] = m_region_base[2] = m_region_base[3] = nullptr;
+	if (m_region0)
+	{
+		memory_region *region0 = machine().root_device().memregion(m_region0);
+		if (region0 != nullptr)
+		{
+			m_region_base[0] = (UINT16 *)region0->base();
+		}
+	}
+	if (m_region1)
+	{
+		memory_region *region1 = machine().root_device().memregion(m_region1);
+		if (region1 != nullptr)
+		{
+			m_region_base[1] = (UINT16 *)region1->base();
+		}
+	}
+	if (m_region2)
+	{
+		memory_region *region2 = machine().root_device().memregion(m_region2);
+		if (region2 != nullptr)
+		{
+			m_region_base[2] = (UINT16 *)region2->base();
+		}
+	}
+	if (m_region3)
+	{
+		memory_region *region3 = machine().root_device().memregion(m_region3);
+		if (region3 != nullptr)
+		{
+			m_region_base[3] = (UINT16 *)region3->base();
+		}
+	}
 
 	/* initialize the rest of the structure */
 	m_master_clock = clock();
@@ -337,8 +366,16 @@ void es5505_device::device_start()
 	m_stream = machine().sound().stream_alloc(*this, 0, 2 * channels, clock() / (16*32));
 
 	/* initialize the regions */
-	m_region_base[0] = m_region0 ? (UINT16 *)machine().root_device().memregion(m_region0)->base() : nullptr;
-	m_region_base[1] = m_region1 ? (UINT16 *)machine().root_device().memregion(m_region1)->base() : nullptr;
+	if (m_region0)
+	{
+		memory_region* region = machine().root_device().memregion(m_region0);
+		m_region_base[0] = region ? reinterpret_cast<UINT16 *>(region->base()) : nullptr;
+	}
+	if (m_region1)
+	{
+		memory_region* region = machine().root_device().memregion(m_region1);
+		m_region_base[1] = region ? reinterpret_cast<UINT16 *>(region->base()) : nullptr;
+	}
 
 	/* initialize the rest of the structure */
 	m_master_clock = clock();
@@ -1010,7 +1047,7 @@ void es5506_device::generate_samples(INT32 **outputs, int offset, int samples)
 		/* generate from the appropriate source */
 		if (!base)
 		{
-			logerror("es5506: NULL region base %d\n",voice->control >> 14);
+			logerror("es5506: nullptr region base %d\n",voice->control >> 14);
 			generate_dummy(voice, base, left, right, samples);
 		}
 		else if (voice->control & 0x2000)
@@ -1073,7 +1110,7 @@ void es5505_device::generate_samples(INT32 **outputs, int offset, int samples)
 		/* generate from the appropriate source */
 		if (!base)
 		{
-			logerror("es5506: NULL region base %d\n",voice->control >> 14);
+			logerror("es5506: nullptr region base %d\n",voice->control >> 14);
 			generate_dummy(voice, base, left, right, samples);
 		}
 		else if (voice->control & 0x2000)

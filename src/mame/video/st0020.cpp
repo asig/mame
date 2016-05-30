@@ -16,32 +16,11 @@
 const device_type ST0020_SPRITES = &device_creator<st0020_device>;
 
 st0020_device::st0020_device(const machine_config &mconfig, const char *tag, device_t *owner, UINT32 clock)
-	: device_t(mconfig, ST0020_SPRITES, "Seta ST0020 Sprites", tag, owner, clock, "st0020", __FILE__),
-		m_gfxdecode(*this),
-		m_palette(*this)
+	: device_t(mconfig, ST0020_SPRITES, "Seta ST0020 Sprites", tag, owner, clock, "st0020", __FILE__)
+	, device_gfx_interface(mconfig, *this)
 {
 	m_is_st0032 = 0;
 	m_is_jclub2 = 0;
-}
-
-//-------------------------------------------------
-//  static_set_gfxdecode_tag: Set the tag of the
-//  gfx decoder
-//-------------------------------------------------
-
-void st0020_device::static_set_gfxdecode_tag(device_t &device, const char *tag)
-{
-	downcast<st0020_device &>(device).m_gfxdecode.set_tag(tag);
-}
-
-//-------------------------------------------------
-//  static_set_palette_tag: Set the tag of the
-//  palette device
-//-------------------------------------------------
-
-void st0020_device::static_set_palette_tag(device_t &device, const char *tag)
-{
-	downcast<st0020_device &>(device).m_palette.set_tag(tag);
 }
 
 void st0020_device::set_is_st0032(device_t &device, int is_st0032)
@@ -73,17 +52,26 @@ static const gfx_layout layout_16x8x8_2 =
 
 void st0020_device::device_start()
 {
+	memory_region* rgn = memregion(tag());
+
+	if (rgn)
+	{
+		m_rom_ptr = rgn->base();
+		m_rom_size = rgn->bytes();
+	}
+	else
+	{
+		m_rom_ptr = nullptr;
+		m_rom_size = 0;
+	}
+
 	m_st0020_gfxram = make_unique_clear<UINT16[]>(4 * 0x100000 / 2);
 	m_st0020_spriteram = make_unique_clear<UINT16[]>(0x80000 / 2);
 	m_st0020_blitram = make_unique_clear<UINT16[]>(0x100 / 2);
 
-	for (m_gfx_index = 0; m_gfx_index < MAX_GFX_ELEMENTS; m_gfx_index++)
-		if (m_gfxdecode->gfx(m_gfx_index) == nullptr)
-			break;
+	set_gfx(0, std::make_unique<gfx_element>(palette(), layout_16x8x8_2, (UINT8 *)m_st0020_gfxram.get(), 0, palette().entries() / 64, 0));
 
-	m_gfxdecode->set_gfx(m_gfx_index, std::make_unique<gfx_element>(m_palette, layout_16x8x8_2, (UINT8 *)m_st0020_gfxram.get(), 0, m_palette->entries() / 64, 0));
-
-	m_gfxdecode->gfx(m_gfx_index)->set_granularity(64); /* 256 colour sprites with palette selectable on 64 colour boundaries */
+	gfx(0)->set_granularity(64); /* 256 colour sprites with palette selectable on 64 colour boundaries */
 
 	save_pointer(NAME(m_st0020_gfxram.get()), 4 * 0x100000/2);
 	save_pointer(NAME(m_st0020_spriteram.get()), 0x80000/2);
@@ -115,7 +103,7 @@ WRITE16_MEMBER(st0020_device::st0020_gfxram_w)
 
 	offset += m_st0020_gfxram_bank * 0x100000/2;
 	COMBINE_DATA(&m_st0020_gfxram[offset]);
-	m_gfxdecode->gfx(m_gfx_index)->mark_dirty(offset / (16*8/2));
+	gfx(0)->mark_dirty(offset / (16*8/2));
 }
 
 READ16_MEMBER(st0020_device::st0020_sprram_r)
@@ -183,20 +171,17 @@ WRITE16_MEMBER(st0020_device::st0020_blit_w)
 			UINT32 dst  =   (st0020_blitram[0xc4/2] + (st0020_blitram[0xc6/2] << 16)) << 4;
 			UINT32 len  =   (st0020_blitram[0xc8/2]) << 4;
 
-			UINT8 *rom  =   memregion(":st0020")->base();
-
-
-			if (!rom)
+			if (!m_rom_ptr)
 			{
 				logerror("CPU #0 PC: %06X - Blit out of range: src %x, dst %x, len %x\n",space.device().safe_pc(),src,dst,len);
 				return;
 			}
 
-			size_t size =   memregion(":st0020")->bytes();
+			size_t size = m_rom_size;
 
 			if ( (src+len <= size) && (dst+len <= 4 * 0x100000) )
 			{
-				memcpy( &m_st0020_gfxram[dst/2], &rom[src], len );
+				memcpy( &m_st0020_gfxram[dst/2], &m_rom_ptr[src], len );
 
 				if (len % (16*8))   len = len / (16*8) + 1;
 				else                len = len / (16*8);
@@ -204,7 +189,7 @@ WRITE16_MEMBER(st0020_device::st0020_blit_w)
 				dst /= 16*8;
 				while (len--)
 				{
-					m_gfxdecode->gfx(m_gfx_index)->mark_dirty(dst);
+					gfx(0)->mark_dirty(dst);
 					dst++;
 				}
 			}
@@ -397,7 +382,7 @@ void st0020_device::st0020_draw_zooming_sprites(bitmap_ind16 &bitmap, const rect
 			{
 				for (y = ystart; y != yend; y += yinc)
 				{
-					m_gfxdecode->gfx(m_gfx_index)->zoom_transpen(bitmap,cliprect,
+					gfx(0)->zoom_transpen(bitmap,cliprect,
 									code++,
 									color,
 									flipx, flipy,

@@ -178,7 +178,7 @@ struct gfx_decode_entry
 {
 	const char *    memory_region;      // memory region where the data resides
 	UINT32          start;              // offset of beginning of data to decode
-	const gfx_layout *gfxlayout;        // pointer to gfx_layout describing the layout; NULL marks the end of the array
+	const gfx_layout *gfxlayout;        // pointer to gfx_layout describing the layout; nullptr marks the end of the array
 	UINT16          color_codes_start;  // offset in the color lookup table where color codes start
 	UINT16          total_color_codes;  // total number of color codes
 	UINT32          flags;              // flags and optional scaling factors
@@ -199,7 +199,7 @@ public:
 	static void static_set_palette(device_t &device, const char *tag);
 
 	// getters
-	palette_device *palette() const { return m_palette; }
+	palette_device &palette() const { return *m_palette; }
 	gfx_element *gfx(int index) const { assert(index < MAX_GFX_ELEMENTS); return m_gfx[index].get(); }
 
 	// decoding
@@ -214,10 +214,10 @@ protected:
 	virtual void interface_pre_start() override;
 	virtual void interface_post_start() override;
 
+private:
 	palette_device *            m_palette;                  // pointer to the palette device
 	std::unique_ptr<gfx_element>  m_gfx[MAX_GFX_ELEMENTS];    // array of pointers to graphic sets
 
-private:
 	// configuration
 	const gfx_decode_entry *    m_gfxdecodeinfo;        // pointer to array of gfx decode information
 	const char *                m_palette_tag;          // configured tag for palette device

@@ -31,6 +31,7 @@ function toolchain(_buildDir, _libDir)
 			{ "mingw-clang",    "MinGW (clang compiler)"     },
 			{ "nacl",           "Native Client"              },
 			{ "nacl-arm",       "Native Client - ARM"        },
+			{ "netbsd",         "NetBSD"                     },
 			{ "osx",            "OSX"                        },
 			{ "pnacl",          "Native Client - PNaCl"      },
 			{ "ps4",            "PS4"                        },
@@ -46,6 +47,7 @@ function toolchain(_buildDir, _libDir)
 		allowed = {
 			{ "vs2012-clang",  "Clang 3.6"                       },
 			{ "vs2013-clang",  "Clang 3.6"                       },
+			{ "vs2015-clang",  "Clang 3.9"                       },
 			{ "vs2012-xp",     "Visual Studio 2012 targeting XP" },
 			{ "vs2013-xp",     "Visual Studio 2013 targeting XP" },
 			{ "vs2015-xp",     "Visual Studio 2015 targeting XP" },
@@ -53,6 +55,7 @@ function toolchain(_buildDir, _libDir)
 			{ "winphone81",    "Windows Phone 8.1"               },
 			{ "winstore81",    "Windows Store 8.1"               },
 			{ "winstore82",    "Universal Windows App"           },
+			{ "durango",       "Durango"                         },
 		},
 	}
 
@@ -86,13 +89,20 @@ function toolchain(_buildDir, _libDir)
 		description = "Set tvOS target version (default: 9.0).",
 	}
 
+	newoption {
+		trigger = "with-dynamic-runtime",
+		description = "Dynamically link with the runtime rather than statically",
+	}
+
 	-- Avoid error when invoking genie --help.
 	if (_ACTION == nil) then return false end
 
 	location (path.join(_buildDir, "projects", _ACTION))
 
 	if _ACTION == "clean" then
-		os.rmdir(BUILD_DIR)
+		os.rmdir(_buildDir)
+		os.mkdir(_buildDir)
+		os.exit(1)
 	end
 
 	local androidPlatform = "android-14"
@@ -157,12 +167,12 @@ function toolchain(_buildDir, _libDir)
 		elseif "asmjs" == _OPTIONS["gcc"] then
 
 			if not os.getenv("EMSCRIPTEN") then
-				print("Set EMSCRIPTEN enviroment variables.")
+				print("Set EMSCRIPTEN enviroment variable.")
 			end
 
-			premake.gcc.cc   = "$(EMSCRIPTEN)/emcc"
-			premake.gcc.cxx  = "$(EMSCRIPTEN)/em++"
-			premake.gcc.ar   = "$(EMSCRIPTEN)/emar"
+			premake.gcc.cc   = "\"$(EMSCRIPTEN)/emcc\""
+			premake.gcc.cxx  = "\"$(EMSCRIPTEN)/em++\""
+			premake.gcc.ar   = "\"$(EMSCRIPTEN)/emar\""
 			premake.gcc.llvm = true
 			location (path.join(_buildDir, "projects", _ACTION .. "-asmjs"))
 
@@ -214,6 +224,16 @@ function toolchain(_buildDir, _libDir)
 		elseif "linux-arm-gcc" == _OPTIONS["gcc"] then
 			location (path.join(_buildDir, "projects", _ACTION .. "-linux-arm-gcc"))
 
+		elseif "linux-steamlink" == _OPTIONS["gcc"] then
+			if not os.getenv("MARVELL_SDK_PATH") then
+				print("Set MARVELL_SDK_PATH enviroment variable.")
+			end
+
+			premake.gcc.cc  = "$(MARVELL_SDK_PATH)/toolchain/bin/armv7a-cros-linux-gnueabi-gcc"
+			premake.gcc.cxx = "$(MARVELL_SDK_PATH)/toolchain/bin/armv7a-cros-linux-gnueabi-g++"
+			premake.gcc.ar  = "$(MARVELL_SDK_PATH)/toolchain/bin/armv7a-cros-linux-gnueabi-ar"
+			location (path.join(_buildDir, "projects", _ACTION .. "-linux-steamlink"))
+
 		elseif "mingw-gcc" == _OPTIONS["gcc"] then
 			premake.gcc.cc  = "$(MINGW)/bin/x86_64-w64-mingw32-gcc"
 			premake.gcc.cxx = "$(MINGW)/bin/x86_64-w64-mingw32-g++"
@@ -231,7 +251,7 @@ function toolchain(_buildDir, _libDir)
 		elseif "nacl" == _OPTIONS["gcc"] then
 
 			if not os.getenv("NACL_SDK_ROOT") then
-				print("Set NACL_SDK_ROOT enviroment variables.")
+				print("Set NACL_SDK_ROOT enviroment variable.")
 			end
 
 			naclToolchain = "$(NACL_SDK_ROOT)/toolchain/win_x86_newlib/bin/x86_64-nacl-"
@@ -249,7 +269,7 @@ function toolchain(_buildDir, _libDir)
 		elseif "nacl-arm" == _OPTIONS["gcc"] then
 
 			if not os.getenv("NACL_SDK_ROOT") then
-				print("Set NACL_SDK_ROOT enviroment variables.")
+				print("Set NACL_SDK_ROOT enviroment variable.")
 			end
 
 			naclToolchain = "$(NACL_SDK_ROOT)/toolchain/win_arm_newlib/bin/arm-nacl-"
@@ -264,10 +284,13 @@ function toolchain(_buildDir, _libDir)
 			premake.gcc.ar  = naclToolchain .. "ar"
 			location (path.join(_buildDir, "projects", _ACTION .. "-nacl-arm"))
 
+		elseif "netbsd" == _OPTIONS["gcc"] then
+			location (path.join(_buildDir, "projects", _ACTION .. "-netbsd"))
+
 		elseif "osx" == _OPTIONS["gcc"] then
 
 			if os.is("linux") then
-				local osxToolchain = "x86_64-apple-darwin13-"
+				local osxToolchain = "x86_64-apple-darwin15-"
 				premake.gcc.cc  = osxToolchain .. "clang"
 				premake.gcc.cxx = osxToolchain .. "clang++"
 				premake.gcc.ar  = osxToolchain .. "ar"
@@ -277,7 +300,7 @@ function toolchain(_buildDir, _libDir)
 		elseif "pnacl" == _OPTIONS["gcc"] then
 
 			if not os.getenv("NACL_SDK_ROOT") then
-				print("Set NACL_SDK_ROOT enviroment variables.")
+				print("Set NACL_SDK_ROOT enviroment variable.")
 			end
 
 			naclToolchain = "$(NACL_SDK_ROOT)/toolchain/win_pnacl/bin/pnacl-"
@@ -295,7 +318,7 @@ function toolchain(_buildDir, _libDir)
 		elseif "ps4" == _OPTIONS["gcc"] then
 
 			if not os.getenv("PS4_SDK_ROOT") then
-				print("Set PS4_SDK_ROOT enviroment variables.")
+				print("Set PS4_SDK_ROOT enviroment variable.")
 			end
 
 			ps4Toolchain = "$(PS4_SDK_ROOT)/host_tools/bin/orbis-"
@@ -308,7 +331,7 @@ function toolchain(_buildDir, _libDir)
 		elseif "qnx-arm" == _OPTIONS["gcc"] then
 
 			if not os.getenv("QNX_HOST") then
-				print("Set QNX_HOST enviroment variables.")
+				print("Set QNX_HOST enviroment variable.")
 			end
 
 			premake.gcc.cc  = "$(QNX_HOST)/usr/bin/arm-unknown-nto-qnx8.0.0eabi-gcc"
@@ -318,11 +341,22 @@ function toolchain(_buildDir, _libDir)
 
 		elseif "rpi" == _OPTIONS["gcc"] then
 			location (path.join(_buildDir, "projects", _ACTION .. "-rpi"))
+
+		elseif "riscv" == _OPTIONS["gcc"] then
+			premake.gcc.cc  = "$(RISCV_DIR)/bin/riscv64-unknown-elf-gcc"
+			premake.gcc.cxx = "$(RISCV_DIR)/bin/riscv64-unknown-elf-g++"
+			premake.gcc.ar  = "$(RISCV_DIR)/bin/riscv64-unknown-elf-ar"
+			location (path.join(_buildDir, "projects", _ACTION .. "-riscv"))
+
 		end
 	elseif _ACTION == "vs2012" or _ACTION == "vs2013" or _ACTION == "vs2015" then
 
 		if (_ACTION .. "-clang") == _OPTIONS["vs"] then
-			premake.vstudio.toolset = ("LLVM-" .. _ACTION)
+			if "vs2015-clang" == _OPTIONS["vs"] then
+				premake.vstudio.toolset = ("LLVM-vs2014")
+			else
+				premake.vstudio.toolset = ("LLVM-" .. _ACTION)
+			end
 			location (path.join(_buildDir, "projects", _ACTION .. "-clang"))
 
 		elseif "winphone8" == _OPTIONS["vs"] then
@@ -347,18 +381,28 @@ function toolchain(_buildDir, _libDir)
 			platforms { "ARM" }
 			location (path.join(_buildDir, "projects", _ACTION .. "-winstore82"))
 
+		elseif "durango" == _OPTIONS["vs"] then
+			if not os.getenv("DurangoXDK") then
+				print("DurangoXDK not found.")
+			end
+
+			premake.vstudio.toolset = "v140"
+			premake.vstudio.storeapp = "durango"
+			platforms { "Durango" }
+			location (path.join(_buildDir, "projects", _ACTION .. "-durango"))
+		end
+
 		elseif ("vs2012-xp") == _OPTIONS["vs"] then
 			premake.vstudio.toolset = ("v110_xp")
 			location (path.join(_buildDir, "projects", _ACTION .. "-xp"))
 
-		elseif ("vs2013-xp") == _OPTIONS["vs"] then
+		elseif "vs2013-xp" == _OPTIONS["vs"] then
 			premake.vstudio.toolset = ("v120_xp")
 			location (path.join(_buildDir, "projects", _ACTION .. "-xp"))
 
-		elseif ("vs2015-xp") == _OPTIONS["vs"] then
+		elseif "vs2015-xp" == _OPTIONS["vs"] then
 			premake.vstudio.toolset = ("v140_xp")
 			location (path.join(_buildDir, "projects", _ACTION .. "-xp"))
-		end
 
 	elseif _ACTION == "xcode4" then
 
@@ -376,13 +420,17 @@ function toolchain(_buildDir, _libDir)
 		end
 	end
 
+	if not _OPTIONS["with-dynamic-runtime"] then
+		flags { "StaticRuntime" }
+	end
+
 	flags {
-		"StaticRuntime",
 		"NoPCH",
 		"NativeWChar",
 		"NoRTTI",
 		"NoExceptions",
 		"NoEditAndContinue",
+		"NoFramePointer",
 		"Symbols",
 	}
 
@@ -397,6 +445,7 @@ function toolchain(_buildDir, _libDir)
 
 	configuration { "Release" }
 		flags {
+			"NoBufferSecurityCheck",
 			"OptimizeSpeed",
 		}
 		targetsuffix "Release"
@@ -420,8 +469,9 @@ function toolchain(_buildDir, _libDir)
 			"_CRT_SECURE_NO_DEPRECATE",
 		}
 		buildoptions {
-			"/Oy-", -- Suppresses creation of frame pointers on the call stack.
-			"/Ob2", -- The Inline Function Expansion
+			"/wd4201", -- warning C4201: nonstandard extension used: nameless struct/union
+			"/wd4324", -- warning C4324: '': structure was padded due to alignment specifier
+			"/Ob2",    -- The Inline Function Expansion
 		}
 		linkoptions {
 			"/ignore:4221", -- LNK4221: This object file does not define any previously undefined public symbols, so it will not be used by any link operation that consumes this library
@@ -500,7 +550,10 @@ function toolchain(_buildDir, _libDir)
 		libdirs {
 			path.join(_libDir, "lib/win32_mingw-gcc"),
 		}
-		buildoptions { "-m32" }
+		buildoptions {
+			"-m32",
+			"-mstackrealign",
+		}
 
 	configuration { "x64", "mingw-gcc" }
 		targetdir (path.join(_buildDir, "win64_mingw-gcc/bin"))
@@ -645,6 +698,7 @@ function toolchain(_buildDir, _libDir)
 		}
 
 	configuration { "android-*" }
+		targetprefix ("lib")
 		flags {
 			"NoImportLib",
 		}
@@ -686,15 +740,40 @@ function toolchain(_buildDir, _libDir)
 			"-Wl,-z,now",
 		}
 
+	configuration { "linux-steamlink" }
+		targetdir (path.join(_buildDir, "steamlink/bin"))
+		objdir (path.join(_buildDir, "steamlink/obj"))
+		libdirs { path.join(_libDir, "lib/steamlink") }
+		includedirs { path.join(bxDir, "include/compat/linux") }
+		defines {
+			"__STEAMLINK__=1", -- There is no special prefedined compiler symbol to detect SteamLink, faking it.
+		}
+		buildoptions {
+			"-std=c++0x",
+			"-Wfatal-errors",
+			"-Wunused-value",
+			"-Wundef",
+			"-pthread",
+			"-marm",
+			"-mfloat-abi=hard",
+			"--sysroot=$(MARVELL_SDK_PATH)/rootfs",
+		}
+		linkoptions {
+			"-static-libgcc",
+			"-static-libstdc++",
+			"--sysroot=$(MARVELL_SDK_PATH)/rootfs",
+		}
+
 	configuration { "android-arm" }
 		targetdir (path.join(_buildDir, "android-arm/bin"))
 		objdir (path.join(_buildDir, "android-arm/obj"))
 		libdirs {
 			path.join(_libDir, "lib/android-arm"),
-			"$(ANDROID_NDK_ROOT)/sources/cxx-stl/gnu-libstdc++/4.8/libs/armeabi-v7a",
+			"$(ANDROID_NDK_ROOT)/sources/cxx-stl/gnu-libstdc++/4.9/libs/armeabi-v7a",
 		}
 		includedirs {
-			"$(ANDROID_NDK_ROOT)/sources/cxx-stl/gnu-libstdc++/4.8/libs/armeabi-v7a/include",
+			"$(ANDROID_NDK_ROOT)/sources/cxx-stl/gnu-libstdc++/4.9/libs/armeabi-v7a/include",
+			"$(ANDROID_NDK_ROOT)/sources/cxx-stl/gnu-libstdc++/4.9/include",
 		}
 		buildoptions {
 			"--sysroot=" .. path.join("$(ANDROID_NDK_ROOT)/platforms", androidPlatform, "arch-arm"),
@@ -757,7 +836,7 @@ function toolchain(_buildDir, _libDir)
 		linkoptions {
 			"--sysroot=" .. path.join("$(ANDROID_NDK_ROOT)/platforms", androidPlatform, "arch-x86"),
 			path.join("$(ANDROID_NDK_ROOT)/platforms", androidPlatform, "arch-x86/usr/lib/crtbegin_so.o"),
-			path.join("$(ANDROID_NDK_ROOT)/platforms", androidPlatform, "/arch-x86/usr/lib/crtend_so.o"),
+			path.join("$(ANDROID_NDK_ROOT)/platforms", androidPlatform, "arch-x86/usr/lib/crtend_so.o"),
 		}
 
 	configuration { "asmjs" }
@@ -765,8 +844,8 @@ function toolchain(_buildDir, _libDir)
 		objdir (path.join(_buildDir, "asmjs/obj"))
 		libdirs { path.join(_libDir, "lib/asmjs") }
 		buildoptions {
-			"-isystem$(EMSCRIPTEN)/system/include",
-			"-isystem$(EMSCRIPTEN)/system/include/libc",
+			"-i\"system$(EMSCRIPTEN)/system/include\"",
+			"-i\"system$(EMSCRIPTEN)/system/include/libc\"",
 			"-Wunused-value",
 			"-Wundef",
 		}
@@ -856,14 +935,31 @@ function toolchain(_buildDir, _libDir)
 	configuration { "pnacl", "Release" }
 		libdirs { "$(NACL_SDK_ROOT)/lib/pnacl/Release" }
 
-	configuration { "Xbox360" }
+	configuration { "xbox360" }
 		targetdir (path.join(_buildDir, "xbox360/bin"))
 		objdir (path.join(_buildDir, "xbox360/obj"))
 		includedirs { path.join(bxDir, "include/compat/msvc") }
 		libdirs { path.join(_libDir, "lib/xbox360") }
 		defines {
 			"NOMINMAX",
-			"_XBOX",
+		}
+
+	configuration { "durango" }
+		targetdir (path.join(_buildDir, "durango/bin"))
+		objdir (path.join(_buildDir, "durango/obj"))
+		includedirs { path.join(bxDir, "include/compat/msvc") }
+		libdirs { path.join(_libDir, "lib/durango") }
+		removeflags { "StaticRuntime" }
+		defines {
+			"NOMINMAX",
+		}
+
+	configuration { "netbsd" }
+		targetdir (path.join(_buildDir, "netbsd/bin"))
+		objdir (path.join(_buildDir, "netbsd/obj"))
+		libdirs { path.join(_libDir, "lib/netbsd") }
+		includedirs {
+			path.join(bxDir, "include/compat/freebsd"),
 		}
 
 	configuration { "osx", "x32" }
@@ -1058,6 +1154,21 @@ function toolchain(_buildDir, _libDir)
 			"-Wl,--gc-sections",
 		}
 
+	configuration { "riscv" }
+		targetdir (path.join(_buildDir, "riscv/bin"))
+		objdir (path.join(_buildDir, "riscv/obj"))
+		includedirs {
+			"$(RISCV_DIR)/sysroot/usr/include",
+		}
+		buildoptions {
+			"-Wunused-value",
+			"-Wundef",
+			"--sysroot=$(RISCV_DIR)/sysroot",
+		}
+		buildoptions_cpp {
+			"-std=c++0x",
+		}
+
 	configuration {} -- reset configuration
 
 	return true
@@ -1083,7 +1194,13 @@ function strip()
 			"$(SILENT) $(ANDROID_NDK_X86)/bin/i686-linux-android-strip -s \"$(TARGET)\""
 		}
 
-	configuration { "linux-* or rpi", "Release" }
+	configuration { "linux-steamlink", "Release" }
+		postbuildcommands {
+			"$(SILENT) echo Stripping symbols.",
+			"$(SILENT) $(MARVELL_SDK_PATH)/toolchain/bin/armv7a-cros-linux-gnueabi-strip -s \"$(TARGET)\""
+		}
+
+	configuration { "linux-* or rpi", "not linux-steamlink", "Release" }
 		postbuildcommands {
 			"$(SILENT) echo Stripping symbols.",
 			"$(SILENT) strip -s \"$(TARGET)\""
@@ -1110,11 +1227,12 @@ function strip()
 	configuration { "asmjs" }
 		postbuildcommands {
 			"$(SILENT) echo Running asmjs finalize.",
-			"$(SILENT) $(EMSCRIPTEN)/emcc -O2 "
+			"$(SILENT) \"$(EMSCRIPTEN)/emcc\" -O2 "
 --				.. "-s EMTERPRETIFY=1 "
 --				.. "-s EMTERPRETIFY_ASYNC=1 "
 				.. "-s TOTAL_MEMORY=268435456 "
 --				.. "-s ALLOW_MEMORY_GROWTH=1 "
+--				.. "-s USE_WEBGL2=1 "
 				.. "--memory-init-file 1 "
 				.. "\"$(TARGET)\" -o \"$(TARGET)\".html "
 --				.. "--preload-file ../../../examples/runtime@/"

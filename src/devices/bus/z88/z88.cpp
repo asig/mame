@@ -10,7 +10,6 @@
 
 #include "emu.h"
 #include "z88.h"
-#include "emuopts.h"
 
 
 /***************************************************************************
@@ -158,7 +157,11 @@ bool z88cart_slot_device::call_load()
 void z88cart_slot_device::call_unload()
 {
 	if (m_cart)
-		memset(m_cart->get_cart_base(), 0xff, m_cart->get_cart_size());
+	{
+		auto cart_size = m_cart->get_cart_size();
+		if (cart_size>0)
+			memset(m_cart->get_cart_base(), 0xff, cart_size);
+	}
 
 	// open the flap
 	m_out_flp_cb(ASSERT_LINE);

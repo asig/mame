@@ -115,10 +115,10 @@ static void updateTextureCubeRectBgra8(bgfx::TextureHandle _handle, uint8_t _sid
 static const uint32_t m_textureside   = 512;
 static const uint32_t m_texture2dSize = 256;
 
-class Update : public entry::AppI
+class ExampleUpdate : public entry::AppI
 {
 public:
-	Update()
+	ExampleUpdate()
 		: m_cube(m_textureside)
 	{
 	}
@@ -149,15 +149,15 @@ public:
 		// Create vertex stream declaration.
 		PosTexcoordVertex::init();
 
-		m_textures[0] = loadTexture("texture_compression_bc1.dds",  BGFX_TEXTURE_U_CLAMP|BGFX_TEXTURE_V_CLAMP);
-		m_textures[1] = loadTexture("texture_compression_bc2.dds",  BGFX_TEXTURE_U_CLAMP);
-		m_textures[2] = loadTexture("texture_compression_bc3.dds",  BGFX_TEXTURE_V_CLAMP);
-		m_textures[3] = loadTexture("texture_compression_etc1.ktx", BGFX_TEXTURE_U_BORDER|BGFX_TEXTURE_V_BORDER|BGFX_TEXTURE_BORDER_COLOR(1) );
-		m_textures[4] = loadTexture("texture_compression_etc2.ktx");
-		m_textures[5] = loadTexture("texture_compression_ptc12.pvr");
-		m_textures[6] = loadTexture("texture_compression_ptc14.pvr");
-		m_textures[7] = loadTexture("texture_compression_ptc22.pvr");
-		m_textures[8] = loadTexture("texture_compression_ptc24.pvr");
+		m_textures[0] = loadTexture("textures/texture_compression_bc1.ktx",  BGFX_TEXTURE_U_CLAMP|BGFX_TEXTURE_V_CLAMP);
+		m_textures[1] = loadTexture("textures/texture_compression_bc2.ktx",  BGFX_TEXTURE_U_CLAMP);
+		m_textures[2] = loadTexture("textures/texture_compression_bc3.ktx",  BGFX_TEXTURE_V_CLAMP);
+		m_textures[3] = loadTexture("textures/texture_compression_etc1.ktx", BGFX_TEXTURE_U_BORDER|BGFX_TEXTURE_V_BORDER|BGFX_TEXTURE_BORDER_COLOR(1) );
+		m_textures[4] = loadTexture("textures/texture_compression_etc2.ktx");
+		m_textures[5] = loadTexture("textures/texture_compression_ptc12.pvr");
+		m_textures[6] = loadTexture("textures/texture_compression_ptc14.pvr");
+		m_textures[7] = loadTexture("textures/texture_compression_ptc22.pvr");
+		m_textures[8] = loadTexture("textures/texture_compression_ptc24.pvr");
 
 		const bgfx::Caps* caps = bgfx::getCaps();
 		m_texture3DSupported = !!(caps->supported & BGFX_CAPS_TEXTURE_3D);
@@ -240,7 +240,7 @@ public:
 				, BGFX_TEXTURE_MIN_POINT|BGFX_TEXTURE_MAG_POINT|BGFX_TEXTURE_MIP_POINT
 				);
 
-		m_m_texture2dData = (uint8_t*)malloc(m_texture2dSize*m_texture2dSize*4);
+		m_texture2dData = (uint8_t*)malloc(m_texture2dSize*m_texture2dSize*4);
 
 		m_rr = rand()%255;
 		m_gg = rand()%255;
@@ -255,13 +255,13 @@ public:
 
 	virtual int shutdown() BX_OVERRIDE
 	{
-		// m_m_texture2dData is managed from main thread, and it's passed to renderer
+		// m_texture2dData is managed from main thread, and it's passed to renderer
 		// just as MemoryRef. At this point render might be using it. We must wait
 		// previous frame to finish before we can free it.
 		bgfx::frame();
 
 		// Cleanup.
-		free(m_m_texture2dData);
+		free(m_texture2dData);
 
 		for (uint32_t ii = 0; ii < BX_COUNTOF(m_textures); ++ii)
 		{
@@ -380,7 +380,7 @@ public:
 					const uint16_t tx = rand()%(m_texture2dSize-tw);
 					const uint16_t ty = rand()%(m_texture2dSize-th);
 
-					uint8_t* dst = &m_m_texture2dData[(ty*m_texture2dSize+tx)*4];
+					uint8_t* dst = &m_texture2dData[(ty*m_texture2dSize+tx)*4];
 					uint8_t* next = dst + pitch;
 
 					// Using makeRef to pass texture memory without copying.
@@ -537,7 +537,7 @@ public:
 		return false;
 	}
 
-	uint8_t* m_m_texture2dData;
+	uint8_t* m_texture2dData;
 
 	uint32_t m_width;
 	uint32_t m_height;
@@ -575,4 +575,4 @@ public:
 
 };
 
-ENTRY_IMPLEMENT_MAIN(Update);
+ENTRY_IMPLEMENT_MAIN(ExampleUpdate);

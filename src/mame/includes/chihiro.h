@@ -3,6 +3,8 @@
 /*
  * geforce 3d (NV2A) vertex program disassembler
  */
+#include <mutex>
+
 class vertex_program_disassembler {
 	static const char *srctypes[];
 	static const char *scaops[];
@@ -208,15 +210,15 @@ public:
 		POLYGON = 10
 	};
 	enum class NV2A_VERTEX_ATTR {
-		POS = 0,
-		WEIGHT = 1,
-		NORMAL = 2,
+		POS = 0, // position
+		WEIGHT = 1, // blend weigth
+		NORMAL = 2, 
 		COLOR0 = 3, // diffuse
 		COLOR1 = 4, // specular
 		FOG = 5,
-		BACKCOLOR0 = 7, // diffuse
-		BACKCOLOR1 = 8, // specular
-		TEX0 = 9,
+		BACKCOLOR0 = 7, // back diffuse
+		BACKCOLOR1 = 8, // back specular
+		TEX0 = 9, // texture coordinate
 		TEX1 = 10,
 		TEX2 = 11,
 		TEX3 = 12
@@ -344,6 +346,15 @@ public:
 		B8 = 9,
 		G8B8 = 10
 	};
+	enum class NV2A_GL_FRONT_FACE {
+		CW = 0x0900,
+		CCW = 0x0901
+	};
+	enum class NV2A_GL_CULL_FACE {
+		FRONT = 0x0404,
+		BACK = 0x0405,
+		FRONT_AND_BACK = 0x0408
+	};
 
 	nv2a_renderer(running_machine &machine) : poly_manager<float, nvidia_object_data, 13, 8192>(machine)
 	{
@@ -357,11 +368,13 @@ public:
 		objectdata = &(object_data_alloc());
 		objectdata->data = this;
 		combiner.used = 0;
-		combiner.lock = osd_lock_alloc();
 		enabled_vertex_attributes = 0;
 		indexesleft_count = 0;
 		vertex_pipeline = 4;
 		color_mask = 0xffffffff;
+		backface_culling_enabled = false;
+		backface_culling_winding = NV2A_GL_FRONT_FACE::CCW;
+		backface_culling_culled = NV2A_GL_CULL_FACE::BACK;
 		alpha_test_enabled = false;
 		alpha_reference = 0;
 		alpha_func = NV2A_COMPARISON_OP::ALWAYS;
@@ -382,6 +395,8 @@ public:
 		blend_function_source = NV2A_BLEND_FACTOR::ONE;
 		logical_operation_enabled = false;
 		logical_operation = NV2A_LOGIC_OP::COPY;
+		for (int n = 0; n < 8; n++)
+			clippingwindows[n].set(0, 0, 640, 480);
 		limits_rendertarget.set(0, 0, 640, 480);
 		pitch_rendertarget = 0;
 		pitch_depthbuffer = 0;
@@ -396,16 +411,20 @@ public:
 		clear_rendertarget.set(0, 0, 639, 479);
 		primitive_type = NV2A_BEGIN_END::STOP;
 		antialias_control = 0;
+		supersample_factor_x = 1.0;
+		supersample_factor_y = 1.0;
 		rendertarget = nullptr;
 		depthbuffer = nullptr;
 		displayedtarget = nullptr;
-		puller_channel = 0;
 		puller_waiting = 0;
 		debug_grab_texttype = -1;
 		debug_grab_textfile = nullptr;
 		waitvblank_used = 1;
 		memset(vertex_attribute_words, 0, sizeof(vertex_attribute_words));
 		memset(vertex_attribute_offset, 0, sizeof(vertex_attribute_offset));
+		memset(&persistvertexattr, 0, sizeof(persistvertexattr));
+		for (int n = 0; n < 16; n++)
+			persistvertexattr.attribute[n].fv[3] = 1;
 	}
 	DECLARE_READ32_MEMBER(geforce_r);
 	DECLARE_WRITE32_MEMBER(geforce_w);
@@ -457,12 +476,16 @@ public:
 	void debug_grab_vertex_program_slot(int slot, UINT32 *instruction);
 	void start(address_space *cpu_space);
 	void savestate_items();
+	void compute_supersample_factors(float &horizontal, float &vertical);
+	void compute_limits_rendertarget(UINT32 chanel, UINT32 subchannel);
 	void read_vertex(address_space & space, offs_t address, vertex_nv &vertex, int attrib);
 	int read_vertices_0x1800(address_space & space, vertex_nv *destination, UINT32 address, int limit);
 	int read_vertices_0x1808(address_space & space, vertex_nv *destination, UINT32 address, int limit);
 	int read_vertices_0x1810(address_space & space, vertex_nv *destination, int offset, int limit);
 	int read_vertices_0x1818(address_space & space, vertex_nv *destination, UINT32 address, int limit);
 	void convert_vertices_poly(vertex_nv *source, vertex_t *destination, int count);
+	void assemble_primitive(vertex_nv *source, int count, render_delegate &renderspans);
+	UINT32 render_triangle_culling(const rectangle &cliprect, render_delegate callback, int paramcount, const vertex_t &_v1, const vertex_t &_v2, const vertex_t &_v3);
 	void clear_render_target(int what, UINT32 value);
 	void clear_depth_buffer(int what, UINT32 value);
 	inline UINT8 *direct_access_ptr(offs_t address);
@@ -474,6 +497,7 @@ public:
 			UINT32 objhandle;
 			UINT32 objclass;
 			UINT32 method[0x2000 / 4];
+			// int execute_method(address_space & space, UINT32 method, UINT32 address, int &countlen); // for the future
 		} object;
 	} channel[32][8];
 	UINT32 pfifo[0x2000 / 4];
@@ -484,7 +508,9 @@ public:
 	UINT32 dma_offset[2];
 	UINT32 dma_size[2];
 	UINT8 *basemempointer;
+	UINT8 *topmempointer;
 	pic8259_device *interruptdevice;
+	rectangle clippingwindows[8];
 	rectangle limits_rendertarget;
 	UINT32 pitch_rendertarget;
 	UINT32 pitch_depthbuffer;
@@ -498,6 +524,8 @@ public:
 	int bytespixel_rendertarget;
 	rectangle clear_rendertarget;
 	UINT32 antialias_control;
+	float supersample_factor_x;
+	float supersample_factor_y;
 	UINT32 *rendertarget;
 	UINT32 *depthbuffer;
 	UINT32 *displayedtarget;
@@ -512,18 +540,35 @@ public:
 		int sizew;
 		int dilate;
 		NV2A_TEX_FORMAT format;
+		bool rectangle;
 		int rectangle_pitch;
 		void *buffer;
+		int dma0;
+		int dma1;
+		int cubic;
+		int noborder;
+		int dims;
+		int mipmap;
+		int colorkey;
+		int imagefield;
+		int aniso;
+		int mipmapmaxlod;
+		int mipmapminlod;
+		int rectheight;
+		int rectwidth;
 	} texture[4];
 	NV2A_BEGIN_END primitive_type;
-	int primitives_count;
+	UINT32 primitives_count;
 	int indexesleft_count;
 	int indexesleft_first;
 	UINT32 indexesleft[1024]; // vertex indices sent by the software to the 3d accelerator
 	int vertex_count;
 	unsigned int vertex_first;
+	int vertex_accumulated;
 	vertex_nv vertex_software[1024+2]; // vertex attributes sent by the software to the 3d accelerator
 	vertex_t vertex_xy[1024+2]; // vertex attributes computed by the 3d accelerator
+	vertex_nv persistvertexattr; // persistent vertex attributes
+	render_delegate render_spans_callback;
 
 	struct {
 		float variable_A[4]; // 0=R 1=G 2=B 3=A
@@ -626,9 +671,12 @@ public:
 		} final;
 		int stages;
 		int used;
-		osd_lock *lock;
+		std::mutex lock;
 	} combiner;
 	UINT32 color_mask;
+	bool backface_culling_enabled;
+	NV2A_GL_FRONT_FACE backface_culling_winding;
+	NV2A_GL_CULL_FACE backface_culling_culled;
 	bool alpha_test_enabled;
 	NV2A_COMPARISON_OP alpha_func;
 	int alpha_reference;
@@ -670,7 +718,6 @@ public:
 	int vertex_attribute_words[16];
 	int vertex_attribute_offset[16];
 	emu_timer *puller_timer;
-	int puller_channel;
 	int puller_waiting;
 	address_space *puller_space;
 	UINT32 dilated0[16][2048];

@@ -10,6 +10,7 @@
  *    - If LD A,I or LD A,R is interrupted, P/V flag gets reset, even if IFF2
  *      was set before this instruction (implemented, but not enabled: we need
  *      document Z80 types first, see below)
+ *    - WAIT only stalls between instructions now, it should stall immediately.
  *    - Ideally, the tiny differences between Z80 types should be supported,
  *      currently known differences:
  *       - LD A,I/R P/V flag reset glitch is fixed on CMOS Z80
@@ -75,7 +76,7 @@
  *   Changes in 2.6:
  *    - BUSY_LOOP_HACKS needed to call change_pc() earlier, before
  *      checking the opcodes at the new address, because otherwise they
- *      might access the old (wrong or even NULL) banked memory region.
+ *      might access the old (wrong or even nullptr) banked memory region.
  *      Thanks to Sean Young for finding this nasty bug.
  *   Changes in 2.5:
  *    - Burning cycles always adjusts the ICount by a multiple of 4.
@@ -109,7 +110,6 @@
 #include "emu.h"
 #include "debugger.h"
 #include "z80.h"
-#include "z80daisy.h"
 
 #define VERBOSE             0
 
@@ -646,7 +646,7 @@ inline void z80_device::reti()
 	pop(m_pc);
 	WZ = PC;
 	m_iff1 = m_iff2;
-	m_daisy.call_reti_device();
+	daisy_call_reti_device();
 }
 
 /***************************************************************
@@ -3124,6 +3124,27 @@ OP(op,fe) { cp(arg());                                                          
 OP(op,ff) { rst(0x38);                                                            } /* RST  7           */
 
 
+void z80_device::take_nmi()
+{
+	/* there isn't a valid previous program counter */
+	PRVPC = -1;
+
+	/* Check if processor was halted */
+	leave_halt();
+
+#if HAS_LDAIR_QUIRK
+	/* reset parity flag after LD A,I or LD A,R */
+	if (m_after_ldair) F &= ~PF;
+#endif
+
+	m_iff1 = 0;
+	push(m_pc);
+	PCD = 0x0066;
+	WZ=PCD;
+	m_icount -= 11;
+	m_nmi_pending = FALSE;
+}
+
 void z80_device::take_interrupt()
 {
 	int irq_vector;
@@ -3138,8 +3159,8 @@ void z80_device::take_interrupt()
 	m_iff1 = m_iff2 = 0;
 
 	/* Daisy chain mode? If so, call the requesting device */
-	if (m_daisy.present())
-		irq_vector = m_daisy.call_ack_device();
+	if (daisy_chain_present())
+		irq_vector = daisy_call_ack_device();
 
 	/* else call back the cpu interface to retrieve the vector */
 	else
@@ -3206,6 +3227,11 @@ void z80_device::take_interrupt()
 		m_icount -= m_cc_ex[0xff];
 	}
 	WZ=PCD;
+
+#if HAS_LDAIR_QUIRK
+	/* reset parity flag after LD A,I or LD A,R */
+	if (m_after_ldair) F &= ~PF;
+#endif
 }
 
 void nsc800_device::take_interrupt_nsc800()
@@ -3239,6 +3265,11 @@ void nsc800_device::take_interrupt_nsc800()
 	m_icount -= m_cc_op[0xff] + cc_ex[0xff];
 
 	WZ=PCD;
+
+#if HAS_LDAIR_QUIRK
+	/* reset parity flag after LD A,I or LD A,R */
+	if (m_after_ldair) F &= ~PF;
+#endif
 }
 
 /****************************************************************************
@@ -3387,8 +3418,6 @@ void z80_device::device_start()
 	m_decrypted_opcodes_direct = &m_decrypted_opcodes->direct();
 	m_io = &space(AS_IO);
 
-	if (static_config() != nullptr)
-		m_daisy.init(this, (const z80_daisy_config *)static_config());
 	m_irq_callback = device_irq_acknowledge_delegate(FUNC(z80_device::standard_irq_callback_member), this);
 
 	IX = IY = 0xffff; /* IX and IY are FFFF after a reset! */
@@ -3462,8 +3491,6 @@ void z80_device::device_reset()
 	m_iff1 = 0;
 	m_iff2 = 0;
 
-	m_daisy.reset();
-
 	WZ=PCD;
 }
 
@@ -3474,44 +3501,25 @@ void nsc800_device::device_reset()
 }
 
 /****************************************************************************
- * Execute 'cycles' T-states. Return number of T-states really executed
+ * Execute 'cycles' T-states.
  ****************************************************************************/
 void z80_device::execute_run()
 {
-	/* check for NMIs on the way in; they can only be set externally */
-	/* via timers, and can't be dynamically enabled, so it is safe */
-	/* to just check here */
-	if (m_nmi_pending)
-	{
-		LOG(("Z80 '%s' take NMI\n", tag()));
-		PRVPC = -1;            /* there isn't a valid previous program counter */
-		leave_halt();            /* Check if processor was halted */
-
-#if HAS_LDAIR_QUIRK
-		/* reset parity flag after LD A,I or LD A,R */
-		if (m_after_ldair) F &= ~PF;
-#endif
-		m_after_ldair = FALSE;
-
-		m_iff1 = 0;
-		push(m_pc);
-		PCD = 0x0066;
-		WZ=PCD;
-		m_icount -= 11;
-		m_nmi_pending = FALSE;
-	}
-
 	do
 	{
-		/* check for IRQs before each instruction */
-		if (m_irq_state != CLEAR_LINE && m_iff1 && !m_after_ei)
+		if (m_wait_state)
 		{
-#if HAS_LDAIR_QUIRK
-			/* reset parity flag after LD A,I or LD A,R */
-			if (m_after_ldair) F &= ~PF;
-#endif
-			take_interrupt();
+			// stalled
+			m_icount = 0;
+			return;
 		}
+
+		// check for interrupts before each instruction
+		if (m_nmi_pending)
+			take_nmi();
+		else if (m_irq_state != CLEAR_LINE && m_iff1 && !m_after_ei)
+			take_interrupt();
+
 		m_after_ei = FALSE;
 		m_after_ldair = FALSE;
 
@@ -3524,34 +3532,25 @@ void z80_device::execute_run()
 
 void nsc800_device::execute_run()
 {
-	/* check for NMIs on the way in; they can only be set externally */
-	/* via timers, and can't be dynamically enabled, so it is safe */
-	/* to just check here */
-	if (m_nmi_pending)
-	{
-		LOG(("Z80 '%s' take NMI\n", tag()));
-		PRVPC = -1;            /* there isn't a valid previous program counter */
-		leave_halt();            /* Check if processor was halted */
-
-		m_iff1 = 0;
-		push(m_pc);
-		PCD = 0x0066;
-		WZ=PCD;
-		m_icount -= 11;
-		m_nmi_pending = FALSE;
-	}
-
 	do
 	{
-		/* check for NSC800 IRQs line RSTA, RSTB, RSTC */
-		if ((m_nsc800_irq_state[NSC800_RSTA] != CLEAR_LINE || m_nsc800_irq_state[NSC800_RSTB] != CLEAR_LINE || m_nsc800_irq_state[NSC800_RSTC] != CLEAR_LINE) && m_iff1 && !m_after_ei)
-			take_interrupt_nsc800();
+		if (m_wait_state)
+		{
+			// stalled
+			m_icount = 0;
+			return;
+		}
 
-		/* check for IRQs before each instruction */
-		if (m_irq_state != CLEAR_LINE && m_iff1 && !m_after_ei)
+		// check for interrupts before each instruction
+		if (m_nmi_pending)
+			take_nmi();
+		else if ((m_nsc800_irq_state[NSC800_RSTA] != CLEAR_LINE || m_nsc800_irq_state[NSC800_RSTB] != CLEAR_LINE || m_nsc800_irq_state[NSC800_RSTC] != CLEAR_LINE) && m_iff1 && !m_after_ei)
+			take_interrupt_nsc800();
+		else if (m_irq_state != CLEAR_LINE && m_iff1 && !m_after_ei)
 			take_interrupt();
 
 		m_after_ei = FALSE;
+		m_after_ldair = FALSE;
 
 		PRVPC = PCD;
 		debugger_instruction_hook(this, PCD);
@@ -3578,14 +3577,17 @@ void z80_device::execute_set_input(int inputnum, int state)
 	case INPUT_LINE_IRQ0:
 		/* update the IRQ state via the daisy chain */
 		m_irq_state = state;
-		if (m_daisy.present())
-			m_irq_state = ( m_daisy.update_irq_state() == ASSERT_LINE ) ? ASSERT_LINE : m_irq_state;
+		if (daisy_chain_present())
+			m_irq_state = (daisy_update_irq_state() == ASSERT_LINE ) ? ASSERT_LINE : m_irq_state;
 
 		/* the main execute loop will take the interrupt */
 		break;
 
 	case Z80_INPUT_LINE_WAIT:
 		m_wait_state = state;
+		break;
+
+	default:
 		break;
 	}
 }
@@ -3594,17 +3596,6 @@ void nsc800_device::execute_set_input(int inputnum, int state)
 {
 	switch (inputnum)
 	{
-	case Z80_INPUT_LINE_BUSRQ:
-		m_busrq_state = state;
-		break;
-
-	case INPUT_LINE_NMI:
-		/* mark an NMI pending on the rising edge */
-		if (m_nmi_state == CLEAR_LINE && state != CLEAR_LINE)
-			m_nmi_pending = TRUE;
-		m_nmi_state = state;
-		break;
-
 	case NSC800_RSTA:
 		m_nsc800_irq_state[NSC800_RSTA] = state;
 		break;
@@ -3617,17 +3608,8 @@ void nsc800_device::execute_set_input(int inputnum, int state)
 		m_nsc800_irq_state[NSC800_RSTC] = state;
 		break;
 
-	case INPUT_LINE_IRQ0:
-		/* update the IRQ state via the daisy chain */
-		m_irq_state = state;
-		if (m_daisy.present())
-			m_irq_state = m_daisy.update_irq_state();
-
-		/* the main execute loop will take the interrupt */
-		break;
-
-	case Z80_INPUT_LINE_WAIT:
-		m_wait_state = state;
+	default:
+		z80_device::execute_set_input(inputnum, state);
 		break;
 	}
 }
@@ -3671,7 +3653,7 @@ void z80_device::state_string_export(const device_state_entry &entry, std::strin
 	switch (entry.index())
 	{
 		case STATE_GENFLAGS:
-			strprintf(str, "%c%c%c%c%c%c%c%c",
+			str = string_format("%c%c%c%c%c%c%c%c",
 				F & 0x80 ? 'S':'.',
 				F & 0x40 ? 'Z':'.',
 				F & 0x20 ? 'Y':'.',
@@ -3713,6 +3695,7 @@ void z80_device::z80_set_cycle_tables(const UINT8 *op, const UINT8 *cb, const UI
 
 z80_device::z80_device(const machine_config &mconfig, const char *tag, device_t *owner, UINT32 clock) :
 	cpu_device(mconfig, Z80, "Z80", tag, owner, clock, "z80", __FILE__),
+	z80_daisy_chain_interface(mconfig, *this),
 	m_program_config("program", ENDIANNESS_LITTLE, 8, 16, 0),
 	m_decrypted_opcodes_config("decrypted_opcodes", ENDIANNESS_LITTLE, 8, 16, 0),
 	m_io_config("io", ENDIANNESS_LITTLE, 8, 16, 0),
@@ -3723,6 +3706,7 @@ z80_device::z80_device(const machine_config &mconfig, const char *tag, device_t 
 
 z80_device::z80_device(const machine_config &mconfig, device_type type, const char *name, const char *tag, device_t *owner, UINT32 clock, const char *shortname, const char *source) :
 	cpu_device(mconfig, type, name, tag, owner, clock, shortname, source),
+	z80_daisy_chain_interface(mconfig, *this),
 	m_program_config("program", ENDIANNESS_LITTLE, 8, 16, 0),
 	m_decrypted_opcodes_config("decrypted_opcodes", ENDIANNESS_LITTLE, 8, 16, 0),
 	m_io_config("io", ENDIANNESS_LITTLE, 8, 16, 0),
@@ -3750,10 +3734,3 @@ nsc800_device::nsc800_device(const machine_config &mconfig, const char *tag, dev
 }
 
 const device_type NSC800 = &device_creator<nsc800_device>;
-
-
-
-WRITE_LINE_MEMBER( z80_device::irq_line )
-{
-	set_input_line( INPUT_LINE_IRQ0, state );
-}

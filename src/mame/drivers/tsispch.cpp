@@ -132,23 +132,22 @@
 *****************************************************************************/
 WRITE_LINE_MEMBER(tsispch_state::i8251_rxrdy_int)
 {
-	machine().device<pic8259_device>("pic8259")->ir1_w(state);
+	m_pic->ir1_w(state);
 }
 
 WRITE_LINE_MEMBER(tsispch_state::i8251_txempty_int)
 {
-	machine().device<pic8259_device>("pic8259")->ir2_w(state);
+	m_pic->ir2_w(state);
 }
 
 WRITE_LINE_MEMBER(tsispch_state::i8251_txrdy_int)
 {
-	machine().device<pic8259_device>("pic8259")->ir3_w(state);
+	m_pic->ir3_w(state);
 }
 
 WRITE8_MEMBER( tsispch_state::i8251_rxd )
 {
-	i8251_device *uart = machine().device<i8251_device>("i8251a_u15");
-	uart->receive_character(data);
+	m_uart->receive_character(data);
 }
 
 /*****************************************************************************
@@ -245,6 +244,7 @@ WRITE_LINE_MEMBER( tsispch_state::dsp_to_8086_p1_w )
 void tsispch_state::machine_reset()
 {
 	fprintf(stderr,"machine reset\n");
+	m_dsp->set_input_line(INPUT_LINE_RESET, ASSERT_LINE); // starts in reset
 }
 
 DRIVER_INIT_MEMBER(tsispch_state,prose2k)
@@ -291,7 +291,6 @@ DRIVER_INIT_MEMBER(tsispch_state,prose2k)
 			dspprg++;
 		}
 	m_paramReg = 0x00; // on power up, all leds on, reset to upd7720 is high
-	m_dsp->set_input_line(INPUT_LINE_RESET, ASSERT_LINE); // starts in reset
 }
 
 /******************************************************************************
@@ -393,7 +392,7 @@ static MACHINE_CONFIG_START( prose2k, tsispch_state )
 	MCFG_NECDSP_OUT_P1_CB(WRITELINE(tsispch_state, dsp_to_8086_p1_w))
 
 	/* PIC 8259 */
-	MCFG_PIC8259_ADD("pic8259", INPUTLINE("maincpu", 0), VCC, NULL)
+	MCFG_PIC8259_ADD("pic8259", INPUTLINE("maincpu", 0), VCC, NOOP)
 
 	/* uarts */
 	MCFG_DEVICE_ADD("i8251a_u15", I8251, 0)
@@ -543,6 +542,6 @@ ROM_START( prose2ko )
  Drivers
 ******************************************************************************/
 
-/*    YEAR  NAME    PARENT  COMPAT  MACHINE     INPUT   INIT    COMPANY     FULLNAME            FLAGS */
-COMP( 1987, prose2k,    0,      0,      prose2k,        prose2k, tsispch_state, prose2k,    "Telesensory Systems Inc/Speech Plus",  "Prose 2000/2020 v3.4.1",  MACHINE_NOT_WORKING | MACHINE_NO_SOUND )
-COMP( 1982, prose2ko, prose2k,      0,      prose2k,        prose2k, tsispch_state, prose2k,    "Telesensory Systems Inc/Speech Plus",  "Prose 2000/2020 v1.1",  MACHINE_NOT_WORKING | MACHINE_NO_SOUND )
+/*    YEAR      NAME   PARENT  COMPAT   MACHINE    INPUT          STATE     INIT                                   COMPANY                   FULLNAME                         FLAGS */
+COMP( 1987, prose2k,        0,      0,  prose2k, prose2k, tsispch_state, prose2k,    "Telesensory Systems Inc/Speech Plus",  "Prose 2000/2020 v3.4.1",  MACHINE_NOT_WORKING | MACHINE_NO_SOUND )
+COMP( 1982, prose2ko, prose2k,      0,  prose2k, prose2k, tsispch_state, prose2k,    "Telesensory Systems Inc/Speech Plus",  "Prose 2000/2020 v1.1",  MACHINE_NOT_WORKING | MACHINE_NO_SOUND )

@@ -21,6 +21,7 @@
 
 #include "emu.h"
 #include "cpu/m68000/m68000.h"
+#include "machine/watchdog.h"
 #include "machine/atarigen.h"
 #include "sound/okim6295.h"
 #include "sound/2413intf.h"
@@ -84,7 +85,7 @@ WRITE16_MEMBER(relief_state::audio_control_w)
 	if (ACCESSING_BITS_0_7)
 	{
 		m_ym2413_volume = (data >> 1) & 15;
-		set_ym2413_volume((m_ym2413_volume * m_overall_volume * 100) / (127 * 15));
+		m_ym2413->set_output_gain(ALL_OUTPUTS, (m_ym2413_volume * m_overall_volume) / (127.0f * 15.0f));
 		m_adpcm_bank = ((data >> 6) & 3) | (m_adpcm_bank & 4);
 	}
 	if (ACCESSING_BITS_8_15)
@@ -99,8 +100,8 @@ WRITE16_MEMBER(relief_state::audio_volume_w)
 	if (ACCESSING_BITS_0_7)
 	{
 		m_overall_volume = data & 127;
-		set_ym2413_volume((m_ym2413_volume * m_overall_volume * 100) / (127 * 15));
-		set_oki6295_volume(m_overall_volume * 100 / 127);
+		m_ym2413->set_output_gain(ALL_OUTPUTS, (m_ym2413_volume * m_overall_volume) / (127.0f * 15.0f));
+		m_oki->set_output_gain(ALL_OUTPUTS, m_overall_volume / 127.0f);
 	}
 }
 
@@ -130,7 +131,7 @@ static ADDRESS_MAP_START( main_map, AS_PROGRAM, 16, relief_state )
 	AM_RANGE(0x260002, 0x260003) AM_READ_PORT("260002")
 	AM_RANGE(0x260010, 0x260011) AM_READ(special_port2_r)
 	AM_RANGE(0x260012, 0x260013) AM_READ_PORT("260012")
-	AM_RANGE(0x2a0000, 0x2a0001) AM_WRITE(watchdog_reset16_w)
+	AM_RANGE(0x2a0000, 0x2a0001) AM_DEVWRITE("watchdog", watchdog_timer_device, reset16_w)
 	AM_RANGE(0x3e0000, 0x3e0fff) AM_RAM_DEVWRITE("palette", palette_device, write) AM_SHARE("palette")
 	AM_RANGE(0x3effc0, 0x3effff) AM_DEVREADWRITE("vad", atari_vad_device, control_read, control_write)
 	AM_RANGE(0x3f0000, 0x3f1fff) AM_RAM_DEVWRITE("vad", atari_vad_device, playfield2_latched_msb_w) AM_SHARE("vad:playfield2")
@@ -273,6 +274,8 @@ static MACHINE_CONFIG_START( relief, relief_state )
 	MCFG_MACHINE_RESET_OVERRIDE(relief_state,relief)
 
 	MCFG_ATARI_EEPROM_2816_ADD("eeprom")
+
+	MCFG_WATCHDOG_ADD("watchdog")
 
 	/* video hardware */
 	MCFG_GFXDECODE_ADD("gfxdecode", "palette", relief)

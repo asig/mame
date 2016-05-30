@@ -1,7 +1,7 @@
 // license:BSD-3-Clause
 // copyright-holders:Ryan Holtz
 //-----------------------------------------------------------------------------
-// Effect File Variables
+// Vector Effect
 //-----------------------------------------------------------------------------
 
 //-----------------------------------------------------------------------------
@@ -28,14 +28,16 @@ struct PS_INPUT
 {
 	float4 Color : COLOR0;
 	float2 TexCoord : TEXCOORD0;
-	float2 LineInfo : TEXCOORD1;
+	float2 LineInfo : TEXCOORD1; // x is the line length, y is unused
 };
 
 //-----------------------------------------------------------------------------
-// Simple Vertex Shader
+// Vector Vertex Shader
 //-----------------------------------------------------------------------------
 
 uniform float2 ScreenDims;
+uniform float2 QuadDims;
+
 uniform float2 TimeParams;
 uniform float3 LengthParams;
 
@@ -45,11 +47,11 @@ VS_OUTPUT vs_main(VS_INPUT Input)
 
 	Output.Position = float4(Input.Position.xyz, 1.0f);
 	Output.Position.xy /= ScreenDims;
-	Output.Position.y = 1.0f - Output.Position.y; // flip y
+	Output.Position.y = 1.0f - Output.Position.y;
 	Output.Position.xy -= 0.5f; // center
 	Output.Position.xy *= 2.0f; // zoom
 
-	Output.TexCoord = Input.Position.xy / ScreenDims;
+	Output.TexCoord = Input.TexCoord;
 
 	Output.Color = Input.Color;
 
@@ -59,7 +61,7 @@ VS_OUTPUT vs_main(VS_INPUT Input)
 }
 
 //-----------------------------------------------------------------------------
-// Simple Pixel Shader
+// Vector Pixel Shader
 //-----------------------------------------------------------------------------
 
 // TimeParams.x: Frame time of the vector
@@ -75,21 +77,23 @@ float4 ps_main(PS_INPUT Input) : COLOR
 	lengthModulate = lerp(lengthModulate, 4.0f, minLength * 0.5f);
 	lengthModulate = lerp(1.0f, timeModulate * lengthModulate, LengthParams.y);
 
-	float4 outColor = Input.Color * float4(lengthModulate, lengthModulate, lengthModulate, 1.0f);
+	float4 outColor = float4(lengthModulate, lengthModulate, lengthModulate, 1.0f);
+	outColor *= Input.Color;
+
 	return outColor;
 }
 
 //-----------------------------------------------------------------------------
-// Simple Effect
+// Vector Technique
 //-----------------------------------------------------------------------------
 
-technique TestTechnique
+technique DefaultTechnique
 {
 	pass Pass0
 	{
 		Lighting = FALSE;
 
 		VertexShader = compile vs_2_0 vs_main();
-		PixelShader  = compile ps_2_0 ps_main();
+		PixelShader = compile ps_2_0 ps_main();
 	}
 }

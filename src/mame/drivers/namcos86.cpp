@@ -185,16 +185,16 @@ WRITE8_MEMBER(namcos86_state::bankswitch1_w)
 {
 	/* if the ROM expansion module is available, don't do anything. This avoids conflict */
 	/* with bankswitch1_ext_w() in wndrmomo */
-	if (memregion("user1")->base()) return;
+	if (m_user1_ptr)
+		return;
 
 	membank("bank1")->set_entry(data & 0x03);
 }
 
 WRITE8_MEMBER(namcos86_state::bankswitch1_ext_w)
 {
-	UINT8 *base = memregion("user1")->base();
-
-	if (base == nullptr) return;
+	if (!m_user1_ptr)
+		return;
 
 	membank("bank1")->set_entry(data & 0x1f);
 }
@@ -256,7 +256,7 @@ WRITE8_MEMBER(namcos86_state::watchdog1_w)
 	if (m_wdog == 3)
 	{
 		m_wdog = 0;
-		watchdog_reset_w(space,0,0);
+		m_watchdog->reset_w(space,0,0);
 	}
 }
 
@@ -266,7 +266,7 @@ WRITE8_MEMBER(namcos86_state::watchdog2_w)
 	if (m_wdog == 3)
 	{
 		m_wdog = 0;
-		watchdog_reset_w(space,0,0);
+		m_watchdog->reset_w(space,0,0);
 	}
 }
 
@@ -288,7 +288,7 @@ WRITE8_MEMBER(namcos86_state::led_w)
 WRITE8_MEMBER(namcos86_state::cus115_w)
 {
 	/* make sure the expansion board is present */
-	if (!memregion("user1")->base())
+	if (!m_user1_ptr)
 	{
 		popmessage("expansion board not present");
 		return;
@@ -317,10 +317,10 @@ WRITE8_MEMBER(namcos86_state::cus115_w)
 
 void namcos86_state::machine_start()
 {
-	if (!memregion("user1")->base())
-		membank("bank1")->configure_entries(0, 4, memregion("cpu1")->base(), 0x2000);
+	if (m_user1_ptr)
+		membank("bank1")->configure_entries(0, 32, m_user1_ptr, 0x2000);
 	else
-		membank("bank1")->configure_entries(0, 32, memregion("user1")->base(), 0x2000);
+		membank("bank1")->configure_entries(0, 4, memregion("cpu1")->base(), 0x2000);
 
 	if (membank("bank2"))
 		membank("bank2")->configure_entries(0, 4, memregion("cpu2")->base(), 0x2000);
@@ -1061,6 +1061,7 @@ static MACHINE_CONFIG_START( hopmappy, namcos86_state )
 
 	MCFG_QUANTUM_TIME(attotime::from_hz(48000)) /* heavy interleaving needed to avoid hangs in rthunder */
 
+	MCFG_WATCHDOG_ADD("watchdog")
 
 	/* video hardware */
 	MCFG_SCREEN_ADD("screen", RASTER)

@@ -184,14 +184,17 @@ public:
 			m_e90_pal(*this,"e90pal"),
 			m_dip_read_offset(0) { }
 
-	optional_shared_ptr<UINT32> m_e90_vram;
-	optional_shared_ptr<UINT32> m_e90_pal;
 	DECLARE_DRIVER_INIT(aleck64);
 	DECLARE_WRITE32_MEMBER(aleck_dips_w);
 	DECLARE_READ32_MEMBER(aleck_dips_r);
 	DECLARE_READ16_MEMBER(e90_prot_r);
 	DECLARE_WRITE16_MEMBER(e90_prot_w);
+
 	UINT32 screen_update_e90(screen_device &screen, bitmap_rgb32 &bitmap, const rectangle &cliprect);
+
+protected:
+	optional_shared_ptr<UINT32> m_e90_vram;
+	optional_shared_ptr<UINT32> m_e90_pal;
 
 private:
 	UINT32 m_dip_read_offset;
@@ -842,6 +845,7 @@ static MACHINE_CONFIG_START( aleck64, aleck64_state )
 	MCFG_MIPS3_DCACHE_SIZE(8192)
 	MCFG_MIPS3_SYSTEM_CLOCK(62500000)
 	MCFG_CPU_PROGRAM_MAP(n64_map)
+	MCFG_CPU_FORCE_NO_DRC()
 
 	MCFG_CPU_ADD("rsp", RSP, 62500000)
 	MCFG_RSP_DP_REG_R_CB(DEVREAD32("rcp",n64_periphs, dp_reg_r))
@@ -850,6 +854,7 @@ static MACHINE_CONFIG_START( aleck64, aleck64_state )
 	MCFG_RSP_SP_REG_W_CB(DEVWRITE32("rcp",n64_periphs, sp_reg_w))
 	MCFG_RSP_SP_SET_STATUS_CB(DEVWRITE32("rcp",n64_periphs, sp_set_status))
 	MCFG_CPU_PROGRAM_MAP(rsp_map)
+	MCFG_CPU_FORCE_NO_DRC()
 
 	MCFG_SCREEN_ADD("screen", RASTER)
 	MCFG_SCREEN_REFRESH_RATE(60)
@@ -869,8 +874,6 @@ static MACHINE_CONFIG_START( aleck64, aleck64_state )
 	MCFG_SOUND_ROUTE(ALL_OUTPUTS, "rspeaker", 1.0)
 
 	MCFG_N64_PERIPHS_ADD("rcp");
-
-	MCFG_FORCE_NO_DRC()
 MACHINE_CONFIG_END
 
 UINT32 aleck64_state::screen_update_e90(screen_device &screen, bitmap_rgb32 &bitmap, const rectangle &cliprect)

@@ -29,6 +29,9 @@ public:
 	void _timer_handler(int c,int count,int clock);
 	void _ym2610_update_request();
 
+	static const char* YM2610_TAG;
+	static const char* YM2610_DELTAT_TAG;
+
 protected:
 	// device-level overrides
 	virtual void device_start() override;
@@ -47,6 +50,7 @@ private:
 	sound_stream *  m_stream;
 	emu_timer *     m_timer[2];
 	devcb_write_line m_irq_handler;
+	required_memory_region m_region;
 };
 
 extern const device_type YM2610;

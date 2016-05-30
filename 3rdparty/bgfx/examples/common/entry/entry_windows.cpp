@@ -358,7 +358,7 @@ namespace entry
 			s_translateKey[VK_HOME]       = Key::Home;
 			s_translateKey[VK_END]        = Key::End;
 			s_translateKey[VK_PRIOR]      = Key::PageUp;
-			s_translateKey[VK_NEXT]       = Key::PageUp;
+			s_translateKey[VK_NEXT]       = Key::PageDown;
 			s_translateKey[VK_SNAPSHOT]   = Key::Print;
 			s_translateKey[VK_OEM_PLUS]   = Key::Plus;
 			s_translateKey[VK_OEM_MINUS]  = Key::Minus;
@@ -823,7 +823,7 @@ namespace entry
 		WindowHandle findHandle(HWND _hwnd)
 		{
 			bx::LwMutexScope scope(m_lock);
-			for (uint32_t ii = 0, num = m_windowAlloc.getNumHandles(); ii < num; ++ii)
+			for (uint16_t ii = 0, num = m_windowAlloc.getNumHandles(); ii < num; ++ii)
 			{
 				uint16_t idx = m_windowAlloc.getHandleAt(ii);
 				if (_hwnd == m_hwnd[idx])

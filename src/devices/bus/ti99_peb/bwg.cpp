@@ -151,7 +151,7 @@ SETADDRESS_DBIN_MEMBER( snug_bwg_device::setaddress_dbin )
 			&& ((state==ASSERT_LINE && ((m_address & 0x1ff8)==0x1ff0))    // read
 				|| (state==CLEAR_LINE && ((m_address & 0x1ff8)==0x1ff8)));  // write
 
-	m_WDsel = m_WDsel0 && ((m_address & 1)==0);
+	m_WDsel = m_WDsel0 && WORD_ALIGNED(m_address);
 
 	// Is the RTC selected on the card? (even addr)
 	m_RTCsel = m_inDsrArea && m_rtc_enabled && ((m_address & 0x1fe1)==0x1fe0);
@@ -625,10 +625,10 @@ void snug_bwg_device::device_config_complete()
 		elem = nullptr;
 
 	// Seems to be null when doing a "-listslots"
-	if (subdevice("0")!=nullptr) m_floppy[0] = static_cast<floppy_image_device*>(subdevice("0")->first_subdevice());
-	if (subdevice("1")!=nullptr) m_floppy[1] = static_cast<floppy_image_device*>(subdevice("1")->first_subdevice());
-	if (subdevice("2")!=nullptr) m_floppy[2] = static_cast<floppy_image_device*>(subdevice("2")->first_subdevice());
-	if (subdevice("3")!=nullptr) m_floppy[3] = static_cast<floppy_image_device*>(subdevice("3")->first_subdevice());
+	if (subdevice("0")!=nullptr) m_floppy[0] = static_cast<floppy_image_device*>(subdevice("0")->subdevices().first());
+	if (subdevice("1")!=nullptr) m_floppy[1] = static_cast<floppy_image_device*>(subdevice("1")->subdevices().first());
+	if (subdevice("2")!=nullptr) m_floppy[2] = static_cast<floppy_image_device*>(subdevice("2")->subdevices().first());
+	if (subdevice("3")!=nullptr) m_floppy[3] = static_cast<floppy_image_device*>(subdevice("3")->subdevices().first());
 }
 
 INPUT_PORTS_START( bwg_fdc )
@@ -682,7 +682,7 @@ MACHINE_CONFIG_END
 
 ROM_START( bwg_fdc )
 	ROM_REGION(0x8000, DSRROM, 0)
-	ROM_LOAD("bwg.bin", 0x0000, 0x8000, CRC(06f1ec89) SHA1(6ad77033ed268f986d9a5439e65f7d391c4b7651)) /* BwG disk DSR ROM */
+	ROM_LOAD("bwg_dsr.u15", 0x0000, 0x8000, CRC(06f1ec89) SHA1(6ad77033ed268f986d9a5439e65f7d391c4b7651)) /* BwG disk DSR ROM */
 	ROM_REGION(0x0800, BUFFER, 0)  /* BwG RAM buffer */
 	ROM_FILL(0x0000, 0x0400, 0x00)
 ROM_END

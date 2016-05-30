@@ -27,6 +27,7 @@
 
 #include "emu.h"
 #include "cpu/m68000/m68000.h"
+#include "machine/watchdog.h"
 #include "includes/eprom.h"
 
 
@@ -148,7 +149,7 @@ static ADDRESS_MAP_START( main_map, AS_PROGRAM, 16, eprom_state )
 	AM_RANGE(0x260010, 0x26001f) AM_READ(special_port1_r)
 	AM_RANGE(0x260020, 0x26002f) AM_READ(adc_r)
 	AM_RANGE(0x260030, 0x260031) AM_DEVREAD8("jsa", atari_jsa_base_device, main_response_r, 0x00ff)
-	AM_RANGE(0x2e0000, 0x2e0001) AM_WRITE(watchdog_reset16_w)
+	AM_RANGE(0x2e0000, 0x2e0001) AM_DEVWRITE("watchdog", watchdog_timer_device, reset16_w)
 	AM_RANGE(0x360000, 0x360001) AM_WRITE(video_int_ack_w)
 	AM_RANGE(0x360010, 0x360011) AM_WRITE(eprom_latch_w)
 	AM_RANGE(0x360020, 0x360021) AM_DEVWRITE("jsa", atari_jsa_base_device, sound_reset_w)
@@ -173,7 +174,7 @@ static ADDRESS_MAP_START( guts_map, AS_PROGRAM, 16, eprom_state )
 	AM_RANGE(0x260010, 0x26001f) AM_READ(special_port1_r)
 	AM_RANGE(0x260020, 0x26002f) AM_READ(adc_r)
 	AM_RANGE(0x260030, 0x260031) AM_DEVREAD8("jsa", atari_jsa_ii_device, main_response_r, 0x00ff)
-	AM_RANGE(0x2e0000, 0x2e0001) AM_WRITE(watchdog_reset16_w)
+	AM_RANGE(0x2e0000, 0x2e0001) AM_DEVWRITE("watchdog", watchdog_timer_device, reset16_w)
 	AM_RANGE(0x360000, 0x360001) AM_WRITE(video_int_ack_w)
 //  AM_RANGE(0x360010, 0x360011) AM_WRITE(eprom_latch_w)
 	AM_RANGE(0x360020, 0x360021) AM_DEVWRITE("jsa", atari_jsa_ii_device, sound_reset_w)
@@ -395,6 +396,8 @@ static MACHINE_CONFIG_START( eprom, eprom_state )
 
 	MCFG_ATARI_EEPROM_2804_ADD("eeprom")
 
+	MCFG_WATCHDOG_ADD("watchdog")
+
 	/* video hardware */
 	MCFG_GFXDECODE_ADD("gfxdecode", "palette", eprom)
 	MCFG_PALETTE_ADD("palette", 2048)
@@ -437,6 +440,8 @@ static MACHINE_CONFIG_START( klaxp, eprom_state )
 
 	MCFG_ATARI_EEPROM_2804_ADD("eeprom")
 
+	MCFG_WATCHDOG_ADD("watchdog")
+
 	/* video hardware */
 	MCFG_GFXDECODE_ADD("gfxdecode", "palette", eprom)
 	MCFG_PALETTE_ADD("palette", 2048)
@@ -477,6 +482,8 @@ static MACHINE_CONFIG_START( guts, eprom_state )
 	MCFG_MACHINE_RESET_OVERRIDE(eprom_state,eprom)
 
 	MCFG_ATARI_EEPROM_2804_ADD("eeprom")
+
+	MCFG_WATCHDOG_ADD("watchdog")
 
 	/* video hardware */
 	MCFG_GFXDECODE_ADD("gfxdecode", "palette", guts)
@@ -529,9 +536,8 @@ ROM_START( eprom )
 	ROM_LOAD16_BYTE( "136069-2034.10u",   0x00001, 0x10000, CRC(5d7afca2) SHA1(a37ecd2909049dd0b3ddbe602f0173c44b065f6f) )
 	ROM_COPY( "maincpu", 0x60000,  0x60000, 0x20000 )
 
-	ROM_REGION( 0x14000, "jsa:cpu", 0 ) /* 64k + 16k for 6502 code */
-	ROM_LOAD( "136069-1040.7b",    0x10000, 0x4000, CRC(86e93695) SHA1(63ddab02df139dd41a8260c303798b2a550b9fe6) )
-	ROM_CONTINUE(             0x04000, 0xc000 )
+	ROM_REGION( 0x10000, "jsa:cpu", 0 ) /* 64k for 6502 code */
+	ROM_LOAD( "136069-1040.7b",    0x00000, 0x10000, CRC(86e93695) SHA1(63ddab02df139dd41a8260c303798b2a550b9fe6) )
 
 	ROM_REGION( 0x100000, "gfx1", ROMREGION_INVERT )
 	ROM_LOAD( "136069-1020.47s",   0x00000, 0x10000, CRC(0de9d98d) SHA1(c2f963a8a4573e135a2825929cbc5535ce3b0215) )
@@ -582,9 +588,8 @@ ROM_START( eprom2 )
 	ROM_LOAD16_BYTE( "136069-1034.10u",    0x00001, 0x10000, CRC(c68f58dd) SHA1(0ec300f32e67b710ac33efb60b8eccceb43faca6) )
 	ROM_COPY( "maincpu", 0x60000, 0x60000, 0x20000 )
 
-	ROM_REGION( 0x14000, "jsa:cpu", 0 ) /* 64k + 16k for 6502 code */
-	ROM_LOAD( "136069-1040.7b",    0x10000, 0x4000, CRC(86e93695) SHA1(63ddab02df139dd41a8260c303798b2a550b9fe6) )
-	ROM_CONTINUE(             0x04000, 0xc000 )
+	ROM_REGION( 0x10000, "jsa:cpu", 0 ) /* 64k for 6502 code */
+	ROM_LOAD( "136069-1040.7b",    0x00000, 0x10000, CRC(86e93695) SHA1(63ddab02df139dd41a8260c303798b2a550b9fe6) )
 
 	ROM_REGION( 0x100000, "gfx1", ROMREGION_INVERT )
 	ROM_LOAD( "136069-1020.47s",   0x00000, 0x10000, CRC(0de9d98d) SHA1(c2f963a8a4573e135a2825929cbc5535ce3b0215) )
@@ -622,9 +627,8 @@ ROM_START( klaxp1 )
 	ROM_LOAD16_BYTE( "klax_ft1.50a",   0x00000, 0x10000, CRC(87ee72d1) SHA1(39ae6f8406f0768480bcc80d395a14d9c2c65dca) )
 	ROM_LOAD16_BYTE( "klax_ft1.40a",   0x00001, 0x10000, CRC(ba139fdb) SHA1(98a8ac5e0349b934f55d0d9de85abacd3fd0d77d) )
 
-	ROM_REGION( 0x14000, "jsa:cpu", 0 ) /* 64k + 16k for 6502 code */
-	ROM_LOAD( "klaxsnd.10c",  0x10000, 0x4000, CRC(744734cb) SHA1(3630428d69ddd2a4d5dd76bb4ee9485c943129e9) )
-	ROM_CONTINUE(             0x04000, 0xc000 )
+	ROM_REGION( 0x10000, "jsa:cpu", 0 ) /* 64k for 6502 code */
+	ROM_LOAD( "klaxsnd.10c",  0x00000, 0x10000, CRC(744734cb) SHA1(3630428d69ddd2a4d5dd76bb4ee9485c943129e9) )
 
 	ROM_REGION( 0x40000, "gfx1", ROMREGION_INVERT )
 	ROM_LOAD( "klaxprot.43s",   0x00000, 0x10000, CRC(a523c966) SHA1(8e284901cd1c68b25aa9dec1c87374b93cceeb40) )
@@ -646,9 +650,8 @@ ROM_START( klaxp2 )
 	ROM_LOAD16_BYTE( "klax_ft2.50a",   0x00000, 0x10000, CRC(7d401937) SHA1(8db0560528a86b9cb01c4598a49694bd44b00dba) )
 	ROM_LOAD16_BYTE( "klax_ft2.40a",   0x00001, 0x10000, CRC(c5ca33a9) SHA1(c2e2948f987ba43f61c043baed06ffea8787be43) )
 
-	ROM_REGION( 0x14000, "jsa:cpu", 0 ) /* 64k + 16k for 6502 code */
-	ROM_LOAD( "klaxsnd.10c",  0x10000, 0x4000, CRC(744734cb) SHA1(3630428d69ddd2a4d5dd76bb4ee9485c943129e9) )
-	ROM_CONTINUE(             0x04000, 0xc000 )
+	ROM_REGION( 0x10000, "jsa:cpu", 0 ) /* 64k for 6502 code */
+	ROM_LOAD( "klaxsnd.10c",  0x00000, 0x10000, CRC(744734cb) SHA1(3630428d69ddd2a4d5dd76bb4ee9485c943129e9) )
 
 	ROM_REGION( 0x40000, "gfx1", ROMREGION_INVERT )
 	ROM_LOAD( "klaxprot.43s",   0x00000, 0x10000, CRC(a523c966) SHA1(8e284901cd1c68b25aa9dec1c87374b93cceeb40) )
@@ -672,9 +675,8 @@ ROM_START( guts )
 	ROM_LOAD16_BYTE( "guts-hi1.50b", 0x20000, 0x10000, CRC(a231f65d) SHA1(9c8ccd265ed0e9f6d7181d216ed41a0c5cc0cd5f) )
 	ROM_LOAD16_BYTE( "guts-lo1.40b", 0x20001, 0x10000, CRC(dbdd4910) SHA1(9ca22321398b6397902aa99a3ef46f1a78ccc438) )
 
-	ROM_REGION( 0x14000, "jsa:cpu", 0 ) /* 64k + 16k for 6502 code */
-	ROM_LOAD( "guts-snd.10c", 0x10000, 0x4000, CRC(9fe065d7) SHA1(0d202af3d6c62fdcfc3bb2ea95bbf4e37c0d43cf) )
-	ROM_CONTINUE(             0x04000, 0xc000 )
+	ROM_REGION( 0x10000, "jsa:cpu", 0 ) /* 64k for 6502 code */
+	ROM_LOAD( "guts-snd.10c", 0x00000, 0x10000, CRC(9fe065d7) SHA1(0d202af3d6c62fdcfc3bb2ea95bbf4e37c0d43cf) )
 
 	ROM_REGION( 0x100000, "gfx1", ROMREGION_INVERT )
 	ROM_LOAD( "guts-mo0.bin", 0x00000, 0x10000, CRC(b8d8d8da) SHA1(6426607402aa9f1c872290910eefc57a8dd60e17) )

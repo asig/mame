@@ -662,8 +662,13 @@ MACHINE_CONFIG_END
 #define ROM_LOAD_BIOS(bios,name,offset,length,hash) \
 		ROMX_LOAD(name, offset, length, hash, ROM_GROUPWORD | ROM_BIOS(bios+1))
 
+// known undumped or private BIOS revisions:
+// "MPR-21068 SEGA JAPAN / 9850 D" from VA0 837-13392-02 (171-7782B) NTSC-J unit
+// KABUTO Ver.1.011 CRC 34DA5C88 from pre-release US unit (private)
+
+// MPR-21933-X2 confirmed match MPR-21931 (v1.01d)
+
 // actual mask rom labels can have -X1 or -X2 added, presumable depending on mobo revision and/or type of rom used (5v or 3.3v), contents is the same
-// known to exists undumped MPR-21086 (VA0 NTSC-J 3010) and MPR-21933 (VA0 US) boot roms
 
 #define DREAMCAST_COMMON_BIOS \
 	ROM_REGION(0x200000, "maincpu", 0) \
@@ -681,7 +686,7 @@ ROM_START(dc)
 	DREAMCAST_COMMON_BIOS
 
 	ROM_REGION(0x020000, "dcflash", 0)
-	ROM_LOAD( "dcus_ntsc.bin", 0x000000, 0x020000, BAD_DUMP CRC(e6862dd0) SHA1(24875ce85c011600e73b1c3fd2b341824cbf8544) )	// dumped from VA2.4 mobo with 1.022 BIOS
+	ROM_LOAD( "dcus_ntsc.bin", 0x000000, 0x020000, BAD_DUMP CRC(e6862dd0) SHA1(24875ce85c011600e73b1c3fd2b341824cbf8544) )  // dumped from VA2.4 mobo with 1.022 BIOS
 ROM_END
 
 ROM_START( dceu )
@@ -693,7 +698,7 @@ ROM_END
 
 ROM_START( dcjp )
 	DREAMCAST_COMMON_BIOS
-	ROM_SYSTEM_BIOS(4, "1004", "v1.004 (Japan)")	// oldest known mass production version, supports Japan region only
+	ROM_SYSTEM_BIOS(4, "1004", "v1.004 (Japan)")    // oldest known mass production version, supports Japan region only
 	ROM_LOAD_BIOS(4, "mpr-21068.ic501", 0x000000, 0x200000, CRC(5454841f) SHA1(1ea132c0fbbf07ef76789eadc07908045c089bd6) )
 
 	ROM_REGION(0x020000, "dcflash", 0)
@@ -706,9 +711,9 @@ ROM_END
 // otherwise it boots from EPROM which contain system checker software (last dump)
 ROM_START( dcdev )
 	ROM_REGION(0x200000, "maincpu", 0)
-	ROM_SYSTEM_BIOS(0, "1011", "Katana Set5 v1.011 (World)")	// BOOT flash rom update from Katana SDK R9-R11, WinCE SDK v2.1
+	ROM_SYSTEM_BIOS(0, "1011", "Katana Set5 v1.011 (World)")    // BOOT flash rom update from Katana SDK R9-R11, WinCE SDK v2.1
 	ROM_LOAD_BIOS(0, "set5v1.011.ic507", 0x000000, 0x200000, CRC(2186e0e5) SHA1(6bd18fb83f8fdb56f1941e079580e5dd672a6dad) )
-	ROM_SYSTEM_BIOS(1, "1001", "Katana Set5 v1.001 (Japan)")	// BOOT flash rom update from WinCE SDK v1.0
+	ROM_SYSTEM_BIOS(1, "1001", "Katana Set5 v1.001 (Japan)")    // BOOT flash rom update from WinCE SDK v1.0
 	ROM_LOAD_BIOS(1, "set5v1.001.ic507", 0x000000, 0x200000, CRC(5702d38f) SHA1(ea7a3ae1de73683008dd795c252941a4fc81b42e) )
 
 	// 27C160 EPROM (DIP42) IC??? labeled

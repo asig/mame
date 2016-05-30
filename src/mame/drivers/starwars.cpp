@@ -26,6 +26,7 @@
 
 #include "emu.h"
 #include "cpu/m6809/m6809.h"
+#include "machine/watchdog.h"
 #include "video/vector.h"
 #include "video/avgdvg.h"
 #include "sound/tms5220.h"
@@ -175,7 +176,7 @@ static ADDRESS_MAP_START( main_map, AS_PROGRAM, 8, starwars_state )
 	AM_RANGE(0x4500, 0x45ff) AM_DEVREADWRITE("x2212", x2212_device, read, write)
 	AM_RANGE(0x4600, 0x461f) AM_DEVWRITE("avg", avg_starwars_device, go_w)
 	AM_RANGE(0x4620, 0x463f) AM_DEVWRITE("avg", avg_starwars_device, reset_w)
-	AM_RANGE(0x4640, 0x465f) AM_WRITE(watchdog_reset_w)
+	AM_RANGE(0x4640, 0x465f) AM_DEVWRITE("watchdog", watchdog_timer_device, reset_w)
 	AM_RANGE(0x4660, 0x467f) AM_WRITE(irq_ack_w)
 	AM_RANGE(0x4680, 0x469f) AM_READNOP AM_WRITE(starwars_out_w)
 	AM_RANGE(0x46a0, 0x46bf) AM_WRITE(starwars_nstore_w)
@@ -240,9 +241,9 @@ static INPUT_PORTS_START( starwars )
 	PORT_BIT( 0x10, IP_ACTIVE_LOW, IPT_BUTTON3 )
 	PORT_BIT( 0x20, IP_ACTIVE_LOW, IPT_BUTTON2 )
 	/* Bit 6 is VG_HALT */
-	PORT_BIT( 0x40, IP_ACTIVE_HIGH, IPT_SPECIAL ) PORT_CUSTOM_MEMBER("avg", avg_starwars_device, done_r, NULL)
+	PORT_BIT( 0x40, IP_ACTIVE_HIGH, IPT_SPECIAL ) PORT_CUSTOM_MEMBER("avg", avg_starwars_device, done_r, nullptr)
 	/* Bit 7 is MATH_RUN - see machine/starwars.c */
-	PORT_BIT( 0x80, IP_ACTIVE_HIGH, IPT_SPECIAL ) PORT_CUSTOM_MEMBER(DEVICE_SELF, starwars_state,matrix_flag_r, NULL)
+	PORT_BIT( 0x80, IP_ACTIVE_HIGH, IPT_SPECIAL ) PORT_CUSTOM_MEMBER(DEVICE_SELF, starwars_state,matrix_flag_r, nullptr)
 
 	PORT_START("DSW0")
 	PORT_DIPNAME( 0x03, 0x02, "Starting Shields" )  PORT_DIPLOCATION("10D:1,2")
@@ -331,9 +332,9 @@ static MACHINE_CONFIG_START( starwars, starwars_state )
 	MCFG_CPU_ADD("maincpu", M6809, MASTER_CLOCK / 8)
 	MCFG_CPU_PROGRAM_MAP(main_map)
 	MCFG_CPU_PERIODIC_INT_DRIVER(starwars_state, irq0_line_assert, CLOCK_3KHZ / 12)
-	MCFG_WATCHDOG_TIME_INIT(attotime::from_hz(CLOCK_3KHZ / 128))
 
-	MCFG_SLAPSTIC_ADD("slapstic")
+	MCFG_WATCHDOG_ADD("watchdog")
+	MCFG_WATCHDOG_TIME_INIT(attotime::from_hz(CLOCK_3KHZ / 128))
 
 	MCFG_CPU_ADD("audiocpu", M6809, MASTER_CLOCK / 8)
 	MCFG_CPU_PROGRAM_MAP(sound_map)
@@ -375,6 +376,11 @@ static MACHINE_CONFIG_START( starwars, starwars_state )
 
 	MCFG_SOUND_ADD("tms", TMS5220, MASTER_CLOCK/2/9)
 	MCFG_SOUND_ROUTE(ALL_OUTPUTS, "mono", 0.50)
+MACHINE_CONFIG_END
+
+
+static MACHINE_CONFIG_DERIVED( esb, starwars )
+	MCFG_SLAPSTIC_ADD("slapstic", 101)
 MACHINE_CONFIG_END
 
 
@@ -558,7 +564,7 @@ DRIVER_INIT_MEMBER(starwars_state,esb)
 	UINT8 *rom = memregion("maincpu")->base();
 
 	/* init the slapstic */
-	m_slapstic_device->slapstic_init(machine(), 101);
+	m_slapstic_device->slapstic_init();
 	m_slapstic_source = &rom[0x14000];
 	m_slapstic_base = &rom[0x08000];
 
@@ -603,4 +609,4 @@ GAME( 1983, starwarso,starwars, starwars, starwars, starwars_state, starwars, RO
 
 GAME( 1983, tomcatsw, tomcat,   starwars, starwars, starwars_state, starwars, ROT0, "Atari", "TomCat (Star Wars hardware, prototype)", MACHINE_NO_SOUND )
 
-GAME( 1985, esb,      0,        starwars, esb, starwars_state,      esb,      ROT0, "Atari Games", "The Empire Strikes Back", 0 )
+GAME( 1985, esb,      0,        esb,      esb,      starwars_state, esb,      ROT0, "Atari Games", "The Empire Strikes Back", 0 )

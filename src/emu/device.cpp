@@ -10,7 +10,6 @@
 
 #include "emu.h"
 #include "string.h"
-#include "ui/ui.h"
 #include "debug/debugcpu.h"
 
 
@@ -33,20 +32,13 @@ device_t::device_t(const machine_config &mconfig, device_type type, const char *
 		m_owner(owner),
 		m_next(nullptr),
 
-		m_interface_list(nullptr),
-		m_execute(nullptr),
-		m_memory(nullptr),
-		m_state(nullptr),
-
 		m_configured_clock(clock),
 		m_unscaled_clock(clock),
 		m_clock(clock),
 		m_clock_scale(1.0),
 		m_attoseconds_per_clock((clock == 0) ? 0 : HZ_TO_ATTOSECONDS(clock)),
 
-		m_region(nullptr),
 		m_machine_config(mconfig),
-		m_static_config(nullptr),
 		m_input_defaults(nullptr),
 		m_default_bios_tag(""),
 
@@ -79,17 +71,10 @@ device_t::~device_t()
 //  info for a given region
 //-------------------------------------------------
 
-// NOTE: this being NULL in a C++ member function can lead to undefined behavior.
-// However, it is relied on throughout MAME, so will remain for now.
-
 memory_region *device_t::memregion(const char *_tag) const
 {
-	// safety first
-	if (this == nullptr)
-		return nullptr;
-
 	// build a fully-qualified name and look it up
-	return machine().memory().region(subtag(_tag).c_str());
+	return machine().memory().regions().find(subtag(_tag).c_str());
 }
 
 
@@ -100,12 +85,8 @@ memory_region *device_t::memregion(const char *_tag) const
 
 memory_share *device_t::memshare(const char *_tag) const
 {
-	// safety first
-	if (this == nullptr)
-		return nullptr;
-
 	// build a fully-qualified name and look it up
-	return machine().memory().shared(subtag(_tag).c_str());
+	return machine().memory().shares().find(subtag(_tag).c_str());
 }
 
 
@@ -116,12 +97,8 @@ memory_share *device_t::memshare(const char *_tag) const
 
 memory_bank *device_t::membank(const char *_tag) const
 {
-	// safety first
-	if (this == nullptr)
-		return nullptr;
-
 	// build a fully-qualified name and look it up
-	return machine().memory().bank(subtag(_tag).c_str());
+	return machine().memory().banks().find(subtag(_tag).c_str());
 }
 
 
@@ -132,10 +109,6 @@ memory_bank *device_t::membank(const char *_tag) const
 
 ioport_port *device_t::ioport(const char *tag) const
 {
-	// safety first
-	if (this == nullptr)
-		return nullptr;
-
 	// build a fully-qualified name and look it up
 	return machine().ioport().port(subtag(tag).c_str());
 }
@@ -148,10 +121,6 @@ ioport_port *device_t::ioport(const char *tag) const
 
 std::string device_t::parameter(const char *tag) const
 {
-	// safety first
-	if (this == nullptr)
-		return nullptr;
-
 	// build a fully-qualified name and look it up
 	return machine().parameters().lookup(subtag(tag));
 }
@@ -184,8 +153,8 @@ void device_t::static_set_clock(device_t &device, UINT32 clock)
 void device_t::config_complete()
 {
 	// first notify the interfaces
-	for (device_interface *intf = m_interface_list; intf != nullptr; intf = intf->interface_next())
-		intf->interface_config_complete();
+	for (device_interface &intf : interfaces())
+		intf.interface_config_complete();
 
 	// then notify the device itself
 	device_config_complete();
@@ -203,8 +172,8 @@ void device_t::config_complete()
 void device_t::validity_check(validity_checker &valid) const
 {
 	// validate via the interfaces
-	for (device_interface *intf = m_interface_list; intf != nullptr; intf = intf->interface_next())
-		intf->interface_validity_check(valid);
+	for (device_interface &intf : interfaces())
+		intf.interface_validity_check(valid);
 
 	// let the device itself validate
 	device_validity_check(valid);
@@ -218,22 +187,22 @@ void device_t::validity_check(validity_checker &valid) const
 void device_t::reset()
 {
 	// let the interfaces do their pre-work
-	for (device_interface *intf = m_interface_list; intf != nullptr; intf = intf->interface_next())
-		intf->interface_pre_reset();
+	for (device_interface &intf : interfaces())
+		intf.interface_pre_reset();
 
 	// reset the device
 	device_reset();
 
 	// reset all child devices
-	for (device_t *child = m_subdevice_list.first(); child != nullptr; child = child->next())
-		child->reset();
+	for (device_t &child : subdevices())
+		child.reset();
 
 	// now allow for some post-child reset action
 	device_reset_after_children();
 
 	// let the interfaces do their post-work
-	for (device_interface *intf = m_interface_list; intf != nullptr; intf = intf->interface_next())
-		intf->interface_post_reset();
+	for (device_interface &intf : interfaces())
+		intf.interface_post_reset();
 }
 
 
@@ -336,7 +305,26 @@ bool device_t::findit(bool isvalidation) const
 {
 	bool allfound = true;
 	for (finder_base *autodev = m_auto_finder_list; autodev != nullptr; autodev = autodev->m_next)
+	{
+		if (isvalidation)
+		{
+			// sanity checking
+			const char *tag = autodev->finder_tag();
+			if (tag == nullptr)
+			{
+				osd_printf_error("Finder tag is null!\n");
+				allfound = false;
+				continue;
+			}
+			if (tag[0] == '^' && tag[1] == ':')
+			{
+				osd_printf_error("Malformed finder tag: %s\n", tag);
+				allfound = false;
+				continue;
+			}
+		}
 		allfound &= autodev->findit(isvalidation);
+	}
 	return allfound;
 }
 
@@ -346,16 +334,13 @@ bool device_t::findit(bool isvalidation) const
 
 void device_t::start()
 {
-	// populate the machine and the region field
-	m_region = machine().root_device().memregion(tag());
-
 	// find all the registered devices
 	if (!findit(false))
 		throw emu_fatalerror("Missing some required objects, unable to proceed");
 
 	// let the interfaces do their pre-work
-	for (device_interface *intf = m_interface_list; intf != nullptr; intf = intf->interface_next())
-		intf->interface_pre_start();
+	for (device_interface &intf : interfaces())
+		intf.interface_pre_start();
 
 	// remember the number of state registrations
 	int state_registrations = machine().save().registration_count();
@@ -375,8 +360,8 @@ void device_t::start()
 	}
 
 	// let the interfaces do their post-work
-	for (device_interface *intf = m_interface_list; intf != nullptr; intf = intf->interface_next())
-		intf->interface_post_start();
+	for (device_interface &intf : interfaces())
+		intf.interface_post_start();
 
 	// force an update of the clock
 	notify_clock_changed();
@@ -405,15 +390,15 @@ void device_t::start()
 void device_t::stop()
 {
 	// let the interfaces do their pre-work
-	for (device_interface *intf = m_interface_list; intf != nullptr; intf = intf->interface_next())
-		intf->interface_pre_stop();
+	for (device_interface &intf : interfaces())
+		intf.interface_pre_stop();
 
 	// stop the device
 	device_stop();
 
 	// let the interfaces do their post-work
-	for (device_interface *intf = m_interface_list; intf != nullptr; intf = intf->interface_next())
-		intf->interface_post_stop();
+	for (device_interface &intf : interfaces())
+		intf.interface_post_stop();
 
 	// free any debugging info
 	m_debug.reset();
@@ -431,8 +416,8 @@ void device_t::stop()
 void device_t::debug_setup()
 {
 	// notify the interface
-	for (device_interface *intf = m_interface_list; intf != nullptr; intf = intf->interface_next())
-		intf->interface_debug_setup();
+	for (device_interface &intf : interfaces())
+		intf.interface_debug_setup();
 
 	// notify the device
 	device_debug_setup();
@@ -447,8 +432,8 @@ void device_t::debug_setup()
 void device_t::pre_save()
 {
 	// notify the interface
-	for (device_interface *intf = m_interface_list; intf != nullptr; intf = intf->interface_next())
-		intf->interface_pre_save();
+	for (device_interface &intf : interfaces())
+		intf.interface_pre_save();
 
 	// notify the device
 	device_pre_save();
@@ -463,8 +448,8 @@ void device_t::pre_save()
 void device_t::post_load()
 {
 	// notify the interface
-	for (device_interface *intf = m_interface_list; intf != nullptr; intf = intf->interface_next())
-		intf->interface_post_load();
+	for (device_interface &intf : interfaces())
+		intf.interface_post_load();
 
 	// notify the device
 	device_post_load();
@@ -479,8 +464,8 @@ void device_t::post_load()
 void device_t::notify_clock_changed()
 {
 	// first notify interfaces
-	for (device_interface *intf = m_interface_list; intf != nullptr; intf = intf->interface_next())
-		intf->interface_clock_changed();
+	for (device_interface &intf : interfaces())
+		intf.interface_clock_changed();
 
 	// then notify the device
 	device_clock_changed();
@@ -663,14 +648,12 @@ device_t *device_t::subdevice_slow(const char *tag) const
 		for (int start = 1, end = fulltag.find_first_of(':', start); start != 0 && curdevice != nullptr; start = end + 1, end = fulltag.find_first_of(':', start))
 		{
 			std::string part(fulltag, start, (end == -1) ? -1 : end - start);
-			for (curdevice = curdevice->m_subdevice_list.first(); curdevice != nullptr; curdevice = curdevice->next())
-				if (part.compare(curdevice->m_basetag)==0)
-					break;
+			curdevice = curdevice->subdevices().find(part);
 		}
 
 	// if we got a match, add to the fast map
 	if (curdevice != nullptr)
-		m_device_map.insert(std::make_pair(tag, curdevice));
+		m_subdevices.m_tagmap.insert(std::make_pair(tag, curdevice));
 	return curdevice;
 }
 
@@ -732,65 +715,6 @@ std::string device_t::subtag(const char *tag) const
 
 
 //-------------------------------------------------
-//  add_subdevice - create a new device and add it
-//  as a subdevice
-//-------------------------------------------------
-
-device_t *device_t::add_subdevice(device_type type, const char *tag, UINT32 clock)
-{
-	// allocate the device and append to our list
-	device_t *device = (*type)(mconfig(), tag, this, clock);
-	m_subdevice_list.append(*device);
-
-	// apply any machine configuration owned by the device now
-	machine_config_constructor additions = device->machine_config_additions();
-	if (additions != nullptr)
-		(*additions)(const_cast<machine_config &>(mconfig()), device, nullptr);
-	return device;
-}
-
-
-//-------------------------------------------------
-//  add_subdevice - create a new device and use it
-//  to replace an existing subdevice
-//-------------------------------------------------
-
-device_t *device_t::replace_subdevice(device_t &old, device_type type, const char *tag, UINT32 clock)
-{
-	// iterate over all devices and remove any references to the old device
-	device_iterator iter(mconfig().root_device());
-	for (device_t *scan = iter.first(); scan != nullptr; scan = iter.next())
-		scan->m_device_map.clear(); //remove(&old);
-
-	// create a new device, and substitute it for the old one
-	device_t *device = (*type)(mconfig(), tag, this, clock);
-	m_subdevice_list.replace_and_remove(*device, old);
-
-	// apply any machine configuration owned by the device now
-	machine_config_constructor additions = device->machine_config_additions();
-	if (additions != nullptr)
-		(*additions)(const_cast<machine_config &>(mconfig()), device, nullptr);
-	return device;
-}
-
-
-//-------------------------------------------------
-//  remove_subdevice - remove a given subdevice
-//-------------------------------------------------
-
-void device_t::remove_subdevice(device_t &device)
-{
-	// iterate over all devices and remove any references
-	device_iterator iter(mconfig().root_device());
-	for (device_t *scan = iter.first(); scan != nullptr; scan = iter.next())
-		scan->m_device_map.clear(); //remove(&device);
-
-	// remove from our list
-	m_subdevice_list.remove(device);
-}
-
-
-//-------------------------------------------------
 //  register_auto_finder - add a new item to the
 //  list of stuff to find after we go live
 //-------------------------------------------------
@@ -801,42 +725,6 @@ finder_base *device_t::register_auto_finder(finder_base &autodev)
 	finder_base *old = m_auto_finder_list;
 	m_auto_finder_list = &autodev;
 	return old;
-}
-
-void device_t::popmessage(const char *format, ...) const
-{
-	// if the format is NULL, it is a signal to clear the popmessage
-	if (format == nullptr)
-		machine().ui().popup_time(0, " ");
-
-	// otherwise, generate the buffer and call the UI to display the message
-	else
-	{
-		std::string temp;
-		va_list arg;
-
-		// dump to the buffer
-		va_start(arg, format);
-		strvprintf(temp, format, arg);
-		va_end(arg);
-
-		// pop it in the UI
-		if (m_machine!=nullptr) machine().ui().popup_time(temp.length() / 40 + 2, "%s", temp.c_str());
-	}
-}
-
-void device_t::logerror(const char *format, ...) const
-{
-	va_list arg;
-	va_start(arg, format);
-	vlogerror(format, arg);
-	va_end(arg);
-}
-void device_t::vlogerror(const char *format, va_list args) const
-{
-	std::string fmt("[");
-	fmt += tag() + std::string("] ") + format;
-	if (m_machine!=nullptr) machine().vlogerror(fmt.c_str(), args);
 }
 
 //**************************************************************************
@@ -853,7 +741,7 @@ device_interface::device_interface(device_t &device, const char *type)
 		m_type(type)
 {
 	device_interface **tailptr;
-	for (tailptr = &device.m_interface_list; *tailptr != nullptr; tailptr = &(*tailptr)->m_interface_next) { }
+	for (tailptr = &device.interfaces().m_head; *tailptr != nullptr; tailptr = &(*tailptr)->m_interface_next) { }
 	*tailptr = this;
 }
 

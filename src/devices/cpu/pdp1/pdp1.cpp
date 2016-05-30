@@ -384,14 +384,14 @@ pdp1_device::pdp1_device(const machine_config &mconfig, const char *tag, device_
 	: cpu_device(mconfig, PDP1, "PDP1", tag, owner, clock, "pdp1_cpu", __FILE__)
 	, m_program_config("program", ENDIANNESS_BIG, 32, 18, 0)
 {
-	m_is_octal = true;
+	m_program_config.m_is_octal = true;
 }
 
 
 void pdp1_device::device_config_complete()
 {
 	// inherit a copy of the static data
-	const pdp1_reset_param_t *intf = reinterpret_cast<const pdp1_reset_param_t *>(static_config());
+	const pdp1_reset_param_t *intf = m_reset_param;
 	if (intf != nullptr)
 		*static_cast<pdp1_reset_param_t *>(this) = *intf;
 
@@ -742,7 +742,7 @@ void pdp1_device::state_string_export(const device_state_entry &entry, std::stri
 	switch (entry.index())
 	{
 		case STATE_GENFLAGS:
-			strprintf(str, "%c%c%c%c%c%c-%c%c%c%c%c%c",
+			str = string_format("%c%c%c%c%c%c-%c%c%c%c%c%c",
 					(FLAGS & 040) ? '1' : '.',
 					(FLAGS & 020) ? '2' : '.',
 					(FLAGS & 010) ? '3' : '.',
