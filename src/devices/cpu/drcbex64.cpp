@@ -361,6 +361,7 @@ const drcbe_x64::opcode_table_entry drcbe_x64::s_opcode_table_source[] =
 	{ uml::OP_OR,      &drcbe_x64::op_or },         // OR      dst,src1,src2[,f]
 	{ uml::OP_XOR,     &drcbe_x64::op_xor },        // XOR     dst,src1,src2[,f]
 	{ uml::OP_LZCNT,   &drcbe_x64::op_lzcnt },      // LZCNT   dst,src[,f]
+	{ uml::OP_TZCNT,   &drcbe_x64::op_tzcnt },      // TZCNT   dst,src[,f]
 	{ uml::OP_BSWAP,   &drcbe_x64::op_bswap },      // BSWAP   dst,src
 	{ uml::OP_SHL,     &drcbe_x64::op_shl },        // SHL     dst,src,count[,f]
 	{ uml::OP_SHR,     &drcbe_x64::op_shr },        // SHR     dst,src,count[,f]
@@ -4302,7 +4303,7 @@ void drcbe_x64::op_add(x86code *&dst, const instruction &inst)
 
 		// dstp == src2p in memory
 		else if (dstp.is_memory() && dstp == src2p)
-			emit_add_m32_p32(dst, MABS(dstp.memory()), src1p, inst);					// add   [dstp],src1p
+			emit_add_m32_p32(dst, MABS(dstp.memory()), src1p, inst);                    // add   [dstp],src1p
 
 		// reg = reg + imm
 		else if (dstp.is_int_register() && src1p.is_int_register() && src2p.is_immediate() && inst.flags() == 0)
@@ -4330,7 +4331,7 @@ void drcbe_x64::op_add(x86code *&dst, const instruction &inst)
 
 		// dstp == src2p in memory
 		else if (dstp.is_memory() && dstp == src2p)
-			emit_add_m64_p64(dst, MABS(dstp.memory()), src1p, inst);					// add   [dstp],src1p
+			emit_add_m64_p64(dst, MABS(dstp.memory()), src1p, inst);                    // add   [dstp],src1p
 
 		// reg = reg + imm
 		else if (dstp.is_int_register() && src1p.is_int_register() && src2p.is_immediate() && short_immediate(src2p.immediate()) && inst.flags() == 0)
@@ -5215,7 +5216,7 @@ void drcbe_x64::op_or(x86code *&dst, const instruction &inst)
 
 		// dstp == src2p in memory
 		else if (dstp.is_memory() && dstp == src2p)
-			emit_or_m32_p32(dst, MABS(dstp.memory()), src1p, inst);						// or    [dstp],src1p
+			emit_or_m32_p32(dst, MABS(dstp.memory()), src1p, inst);                     // or    [dstp],src1p
 
 		// general case
 		else
@@ -5235,7 +5236,7 @@ void drcbe_x64::op_or(x86code *&dst, const instruction &inst)
 
 		// dstp == src2p in memory
 		else if (dstp.is_memory() && dstp == src2p)
-			emit_or_m64_p64(dst, MABS(dstp.memory()), src1p, inst);						// or    [dstp],src1p
+			emit_or_m64_p64(dst, MABS(dstp.memory()), src1p, inst);                     // or    [dstp],src1p
 
 		// general case
 		else
@@ -5277,11 +5278,11 @@ void drcbe_x64::op_xor(x86code *&dst, const instruction &inst)
 
 		// dstp == src2p in memory
 		else if (dstp.is_memory() && dstp == src2p)
-			emit_xor_m32_p32(dst, MABS(dstp.memory()), src1p, inst);					// xor   [dstp],src1p
+			emit_xor_m32_p32(dst, MABS(dstp.memory()), src1p, inst);                    // xor   [dstp],src1p
 
 		// dstp == src1p register
 		else if (dstp.is_int_register() && dstp == src1p)
-			emit_xor_r32_p32(dst, dstp.ireg(), src2p, inst);							// xor   dstp,src2p
+			emit_xor_r32_p32(dst, dstp.ireg(), src2p, inst);                            // xor   dstp,src2p
 
 		// general case
 		else
@@ -5301,11 +5302,11 @@ void drcbe_x64::op_xor(x86code *&dst, const instruction &inst)
 
 		// dstp == src2p in memory
 		else if (dstp.is_memory() && dstp == src2p)
-			emit_xor_m64_p64(dst, MABS(dstp.memory()), src1p, inst);					// xor   [dstp],src1p
+			emit_xor_m64_p64(dst, MABS(dstp.memory()), src1p, inst);                    // xor   [dstp],src1p
 
 		// dstp == src1p register
 		else if (dstp.is_int_register() && dstp == src1p)
-			emit_xor_r64_p64(dst, dstp.ireg(), src2p, inst);							// xor   dstp,src2p
+			emit_xor_r64_p64(dst, dstp.ireg(), src2p, inst);                            // xor   dstp,src2p
 
 		// general case
 		else
@@ -5355,6 +5356,45 @@ void drcbe_x64::op_lzcnt(x86code *&dst, const instruction &inst)
 		emit_bsr_r64_r64(dst, dstreg, dstreg);                                          // bsr   dstreg,dstreg
 		emit_cmovcc_r64_r64(dst, x64emit::COND_Z, dstreg, REG_RCX);                             // cmovz dstreg,rcx
 		emit_xor_r32_imm(dst, dstreg, 63);                                              // xor   dstreg,63
+		emit_mov_p64_r64(dst, dstp, dstreg);                                            // mov   dstp,dstreg
+	}
+}
+
+
+//-------------------------------------------------
+//  op_tzcnt - process a TZCNT opcode
+//-------------------------------------------------
+
+void drcbe_x64::op_tzcnt(x86code *&dst, const instruction &inst)
+{
+	// validate instruction
+	assert(inst.size() == 4 || inst.size() == 8);
+	assert_no_condition(inst);
+	assert_flags(inst, FLAG_Z | FLAG_S);
+
+	// normalize parameters
+	be_parameter dstp(*this, inst.param(0), PTYPE_MR);
+	be_parameter srcp(*this, inst.param(1), PTYPE_MRI);
+
+	// 32-bit form
+	if (inst.size() == 4)
+	{
+		int dstreg = dstp.select_register(REG_EAX);
+		emit_mov_r32_p32(dst, dstreg, srcp);                                            // mov   dstreg,srcp
+		emit_mov_r32_imm(dst, REG_ECX, 32);                                             // mov   ecx,32
+		emit_bsf_r32_r32(dst, dstreg, dstreg);                                          // bsf   dstreg,dstreg
+		emit_cmovcc_r32_r32(dst, x64emit::COND_Z, dstreg, REG_ECX);                     // cmovz dstreg,ecx
+		emit_mov_p32_r32(dst, dstp, dstreg);                                            // mov   dstp,dstreg
+	}
+
+	// 64-bit form
+	else if (inst.size() == 8)
+	{
+		int dstreg = dstp.select_register(REG_RAX);
+		emit_mov_r64_p64(dst, dstreg, srcp);                                            // mov   dstreg,srcp
+		emit_mov_r64_imm(dst, REG_RCX, 64);                                             // mov   rcx,64
+		emit_bsf_r64_r64(dst, dstreg, dstreg);                                          // bsf   dstreg,dstreg
+		emit_cmovcc_r64_r64(dst, x64emit::COND_Z, dstreg, REG_RCX);                     // cmovz dstreg,rcx
 		emit_mov_p64_r64(dst, dstp, dstreg);                                            // mov   dstp,dstreg
 	}
 }
