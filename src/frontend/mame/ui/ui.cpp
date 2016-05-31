@@ -315,7 +315,7 @@ UINT32 mame_ui_manager::set_handler(ui_callback callback, UINT32 param)
 //  various startup screens
 //-------------------------------------------------
 
-void ui_manager::display_startup_screens(bool first_time, bool show_disclaimer)
+void mame_ui_manager::display_startup_screens(bool first_time, bool show_disclaimer)
 {
 	const int maxstate = 3;
 	int str = machine().options().seconds_to_run();

@@ -196,12 +196,12 @@ static void hiscore_free (void)
 
 static void hiscore_load (running_machine &machine)
 {
-	file_error filerr;
+	osd_file::error filerr;
   	emu_file f(machine.options().hiscore_directory(), OPEN_FLAG_READ);
   	filerr = f.open(machine.basename(), ".hi");				
 	state.hiscores_have_been_loaded = 1;
 
-	if (filerr == FILERR_NONE)
+	if (filerr == osd_file::error::NONE)
 	{
 		memory_range *mem_range = state.mem_range;
 
@@ -226,11 +226,10 @@ static void hiscore_load (running_machine &machine)
 
 static void hiscore_save (running_machine &machine)
 {
-	file_error filerr;
   	emu_file f(machine.options().hiscore_directory(), OPEN_FLAG_WRITE | OPEN_FLAG_CREATE | OPEN_FLAG_CREATE_PATHS);
-  	filerr = f.open(machine.basename(), ".hi");
+  	osd_file::error filerr = f.open(machine.basename(), ".hi");
 
-	if (filerr == FILERR_NONE)
+	if (filerr == osd_file::error::NONE)
 	{
 		memory_range *mem_range = state.mem_range;
 
@@ -282,7 +281,7 @@ void hiscore_init (running_machine &machine)
 {
 	memory_range *mem_range = state.mem_range;
 	address_space *initspace;
-	file_error filerr;
+	osd_file::error filerr;
   	const char *name = machine.system().name;
 	state.hiscores_have_been_loaded = 0;
 
@@ -308,7 +307,7 @@ void hiscore_init (running_machine &machine)
 	emu_file f(OPEN_FLAG_READ);
   	filerr = f.open("hiscore", ".dat");
 
-	if(filerr == FILERR_NONE)
+	if(filerr == osd_file::error::NONE)
 	{
 		char buffer[MAX_CONFIG_LINE_SIZE];
 		enum { FIND_NAME, FIND_DATA, FETCH_DATA } mode;

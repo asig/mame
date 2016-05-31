@@ -176,7 +176,7 @@ public:
 	void initialize(running_machine &machine);
 	std::vector<ui::menu_item> slider_init(running_machine &machine);
 	UINT32 set_handler(ui_callback callback, UINT32 param);
-	void display_startup_screens(bool first_time);
+	void display_startup_screens(bool first_time, bool show_disclaimer = false);
 	virtual void set_startup_text(const char *text, bool force) override;
 	void update_and_render(render_container *container);
 	render_font *get_font();

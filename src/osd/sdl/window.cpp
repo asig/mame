@@ -540,7 +540,7 @@ osd_dim sdl_window_info::pick_best_mode()
 //  (main thread)
 //============================================================
 
-void sdl_window_info::update()
+void sdl_window_info::update(bool dont_draw)
 {
 	osd_ticks_t     event_wait_ticks;
 
@@ -612,7 +612,7 @@ void sdl_window_info::update()
 				if( video_config.perftest )
 					measure_fps(update);
 				else
-					renderer().draw(update);
+					renderer().draw(dont_draw ? 0 : update);
 			}
 
 			/* all done, ready for next */

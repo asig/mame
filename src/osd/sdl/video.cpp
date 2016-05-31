@@ -132,7 +132,7 @@ void sdl_monitor_info::refresh()
 //  update
 //============================================================
 
-void sdl_osd_interface::update(bool skip_redraw)
+void sdl_osd_interface::update(bool skip_redraw, bool dont_draw)
 {
 	osd_common_t::update(skip_redraw);
 
@@ -141,7 +141,7 @@ void sdl_osd_interface::update(bool skip_redraw)
 	{
 //      profiler_mark(PROFILER_BLIT);
 		for (auto window : sdl_window_list)
-			window->update();
+			window->update(dont_draw);
 //      profiler_mark(PROFILER_END);
 	}
 
