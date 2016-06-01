@@ -6,6 +6,7 @@
 #
 ###########################################################################
 
+PARAMS += --with-bundled-sdl1
 
 
 ###########################################################################
@@ -795,6 +796,7 @@ endif
 ifeq (posix,$(SHELLTYPE))
   MKDIR = $(SILENT) mkdir -p "$(1)"
   COPY  = $(SILENT) cp -fR "$(1)" "$(2)"
+  COPY2  = $(SILENT) cp -fR $(1) "$(2)"
 else
   MKDIR = $(SILENT) mkdir "$(subst /,\\,$(1))" 2> nul || exit 0
   COPY  = $(SILENT) copy /Y "$(subst /,\\,$(1))" "$(subst /,\\,$(2))" > nul || exit 0
@@ -1476,11 +1478,15 @@ generate: \
 		$(patsubst $(SRC)/%.lay,$(GENDIR)/%.lh,$(LAYOUTS)) \
 		$(GENDIR)/mame/drivers/ymmu100.hxx \
 		$(SRC)/devices/cpu/m68000/m68kops.cpp \
-		$(GENDIR)/includes/SDL2
+		$(GENDIR)/includes/SDL1
 
-$(GENDIR)/includes/SDL2:
+$(GENDIR)/includes/SDL1:
 	-$(call MKDIR,$@)
-	-$(call COPY,3rdparty/SDL2/include/,$(GENDIR)/includes/SDL2)
+	-$(call COPY,3rdparty/SDL1/SDL-1.2.15/include/,$(GENDIR)/includes/SDL1)
+	-$(call COPY2,3rdparty/SDL1/SDL_image-1.2.12/*.h,$(GENDIR)/includes/SDL1/include)
+	-$(call COPY2,3rdparty/SDL1/SDL_mixer-1.2.12/*.h,$(GENDIR)/includes/SDL1/include)
+	-$(call COPY2,3rdparty/SDL1/SDL_ttf-2.0.11/*.h,$(GENDIR)/includes/SDL1/include)
+
 
 $(GENDIR)/%.lh: $(SRC)/%.lay scripts/build/complay.py | $(GEN_FOLDERS)
 	@echo Compressing $<...

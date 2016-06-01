@@ -136,6 +136,11 @@ newoption {
 }
 
 newoption {
+	trigger = 'with-bundled-sdl1',
+	description = 'Build bundled SDL1 library',
+}
+
+newoption {
 	trigger = "distro",
 	description = "Choose distribution",
 	allowed = {
