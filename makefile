@@ -12,6 +12,14 @@
 #################   BEGIN USER-CONFIGURABLE OPTIONS   #####################
 ###########################################################################
 
+TARGET = mame
+SUBTARGET = arcade
+
+STRIP_SYMBOLS = 1
+DEBUG =
+SYMBOLS = 1
+PROFILER =
+
 # REGENIE = 1
 # VERBOSE = 1
 # NOWERROR = 1
