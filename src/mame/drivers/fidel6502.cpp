@@ -424,7 +424,7 @@ public:
 
 	TIMER_DEVICE_CALLBACK_MEMBER(irq_on) { m_maincpu->set_input_line(M6502_IRQ_LINE, ASSERT_LINE); }
 	TIMER_DEVICE_CALLBACK_MEMBER(irq_off) { m_maincpu->set_input_line(M6502_IRQ_LINE, CLEAR_LINE); }
-	
+
 	// CSC, SU9, RSC
 	void csc_prepare_display();
 	DECLARE_READ8_MEMBER(csc_speech_r);
@@ -879,7 +879,7 @@ READ8_MEMBER(fidel6502_state::fexcel_ttl_r)
 WRITE8_MEMBER(fidel6502_state::fdesdis_control_w)
 {
 	uint8_t q3_old = m_led_select & 8;
-	
+
 	// a0-a2,d7: 74259
 	uint8_t mask = 1 << offset;
 	m_led_select = (m_led_select & ~mask) | ((data & 0x80) ? mask : 0);
@@ -904,7 +904,7 @@ WRITE8_MEMBER(fidel6502_state::fdesdis_control_w)
 		for (int i = 0; i < 4; i++)
 			m_display_state[i+2] = m_7seg_data >> (8*i) & 0xff;
 	}
-	
+
 	m_display_maxy += 4;
 	set_display_segmask(0x3c, 0x7f);
 	display_update();
@@ -2134,7 +2134,7 @@ ROM_START( fexcel ) // PCB label 510.1117A02
 	ROM_LOAD("101-1080a01.ic5", 0x8000, 0x8000, CRC(846f8e40) SHA1(4e1d5b08d5ff3422192b54fa82cb3f505a69a971) ) // same as fexcelv
 ROM_END
 
-#define rom_fexceld rom_fexcelb /* model 6093, PCB label 510.1117A02 */
+#define rom_fexceld rom_fexcel /* model 6093, PCB label 510.1117A02 */
 
 ROM_START( fexcelv ) // model 6092, PCB label 510.1117A02, sound PCB 510.1117A01
 	ROM_REGION( 0x10000, "maincpu", 0 )
