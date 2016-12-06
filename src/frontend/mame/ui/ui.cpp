@@ -297,7 +297,9 @@ void mame_ui_manager::display_startup_screens(bool first_time)
 	// loop over states
 	using namespace std::placeholders;
 	set_handler(ui_callback_type::GENERAL, std::bind(&mame_ui_manager::handler_ingame, this, _1));
-	for (state = 0; state < maxstate && !machine().scheduled_event_pending() && !ui::menu::stack_has_special_main_menu(machine()); state++)
+
+	// asigner: Start from state == 3 to skip all the messaging done below.
+	for (state = 3; state < maxstate && !machine().scheduled_event_pending() && !ui::menu::stack_has_special_main_menu(machine()); state++)
 	{
 		// default to standard colors
 		messagebox_backcolor = UI_BACKGROUND_COLOR;
@@ -769,7 +771,7 @@ bool mame_ui_manager::is_menu_active(void)
 
 uint32_t mame_ui_manager::handler_messagebox(render_container &container)
 {
-	draw_text_box(container, messagebox_text.c_str(), ui::text_layout::LEFT, 0.5f, 0.5f, messagebox_backcolor);
+	// draw_text_box(container, messagebox_text.c_str(), ui::text_layout::LEFT, 0.5f, 0.5f, messagebox_backcolor);
 	return 0;
 }
 
@@ -782,6 +784,8 @@ uint32_t mame_ui_manager::handler_messagebox(render_container &container)
 
 uint32_t mame_ui_manager::handler_messagebox_anykey(render_container &container)
 {
+	return UI_HANDLER_CANCEL;
+	/*
 	uint32_t state = 0;
 
 	// draw a standard message window
@@ -799,6 +803,7 @@ uint32_t mame_ui_manager::handler_messagebox_anykey(render_container &container)
 		state = UI_HANDLER_CANCEL;
 
 	return state;
+	*/
 }
 
 
