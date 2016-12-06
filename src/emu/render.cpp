@@ -1397,6 +1397,8 @@ render_primitive_list &render_target::get_primitives()
 			}
 		}
 
+	/* asigner: do not draw white border.
+
 	// if we are not in the running stage, draw an outer box
 	else
 	{
@@ -1419,6 +1421,7 @@ render_primitive_list &render_target::get_primitives()
 			list.append(*prim);
 		}
 	}
+	*/
 
 	// process the debug containers
 	for (render_container &debug : m_debug_containers)
