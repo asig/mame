@@ -7,8 +7,10 @@
     Core rendering utilities.
 ***************************************************************************/
 
-#ifndef __RENDUTIL_H__
-#define __RENDUTIL_H__
+#ifndef MAME_EMU_RENDUTIL_H
+#define MAME_EMU_RENDUTIL_H
+
+#pragma once
 
 #include "render.h"
 
@@ -50,12 +52,12 @@ static inline float render_round_nearest(float f)
     bounds
 -------------------------------------------------*/
 
-static inline void set_render_bounds_xy(render_bounds *bounds, float x0, float y0, float x1, float y1)
+static inline void set_render_bounds_xy(render_bounds &bounds, float x0, float y0, float x1, float y1)
 {
-	bounds->x0 = x0;
-	bounds->y0 = y0;
-	bounds->x1 = x1;
-	bounds->y1 = y1;
+	bounds.x0 = x0;
+	bounds.y0 = y0;
+	bounds.x1 = x1;
+	bounds.y1 = y1;
 }
 
 
@@ -64,12 +66,12 @@ static inline void set_render_bounds_xy(render_bounds *bounds, float x0, float y
     bounds
 -------------------------------------------------*/
 
-static inline void set_render_bounds_wh(render_bounds *bounds, float x0, float y0, float width, float height)
+static inline void set_render_bounds_wh(render_bounds &bounds, float x0, float y0, float width, float height)
 {
-	bounds->x0 = x0;
-	bounds->y0 = y0;
-	bounds->x1 = x0 + width;
-	bounds->y1 = y0 + height;
+	bounds.x0 = x0;
+	bounds.y0 = y0;
+	bounds.x1 = x0 + width;
+	bounds.y1 = y0 + height;
 }
 
 
@@ -78,12 +80,12 @@ static inline void set_render_bounds_wh(render_bounds *bounds, float x0, float y
     of two render_bounds
 -------------------------------------------------*/
 
-static inline void sect_render_bounds(render_bounds *dest, const render_bounds *src)
+static inline void sect_render_bounds(render_bounds &dest, const render_bounds &src)
 {
-	dest->x0 = (dest->x0 > src->x0) ? dest->x0 : src->x0;
-	dest->x1 = (dest->x1 < src->x1) ? dest->x1 : src->x1;
-	dest->y0 = (dest->y0 > src->y0) ? dest->y0 : src->y0;
-	dest->y1 = (dest->y1 < src->y1) ? dest->y1 : src->y1;
+	dest.x0 = (std::max)(dest.x0, src.x0);
+	dest.x1 = (std::min)(dest.x1, src.x1);
+	dest.y0 = (std::max)(dest.y0, src.y0);
+	dest.y1 = (std::min)(dest.y1, src.y1);
 }
 
 
@@ -92,12 +94,12 @@ static inline void sect_render_bounds(render_bounds *dest, const render_bounds *
     render_bounds
 -------------------------------------------------*/
 
-static inline void union_render_bounds(render_bounds *dest, const render_bounds *src)
+static inline void union_render_bounds(render_bounds &dest, const render_bounds &src)
 {
-	dest->x0 = (dest->x0 < src->x0) ? dest->x0 : src->x0;
-	dest->x1 = (dest->x1 > src->x1) ? dest->x1 : src->x1;
-	dest->y0 = (dest->y0 < src->y0) ? dest->y0 : src->y0;
-	dest->y1 = (dest->y1 > src->y1) ? dest->y1 : src->y1;
+	dest.x0 = (std::min)(dest.x0, src.x0);
+	dest.x1 = (std::max)(dest.x1, src.x1);
+	dest.y0 = (std::min)(dest.y0, src.y0);
+	dest.y1 = (std::max)(dest.y1, src.y1);
 }
 
 
@@ -198,4 +200,4 @@ static inline u8 apply_brightness_contrast_gamma(u8 src, float brightness, float
 }
 
 
-#endif  /* __RENDUTIL_H__ */
+#endif // MAME_EMU_RENDUTIL_H

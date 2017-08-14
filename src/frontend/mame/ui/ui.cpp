@@ -27,6 +27,7 @@
 #include "ui/mainmenu.h"
 #include "ui/filemngr.h"
 #include "ui/sliders.h"
+#include "ui/state.h"
 #include "ui/viewgfx.h"
 #include "imagedev/cassette.h"
 
@@ -41,8 +42,6 @@ enum
 	LOADSAVE_LOAD,
 	LOADSAVE_SAVE
 };
-
-#define MAX_SAVED_STATE_JOYSTICK   4
 
 
 /***************************************************************************
@@ -172,20 +171,18 @@ static const uint32_t mouse_bitmap[32*32] =
 //-------------------------------------------------
 
 mame_ui_manager::mame_ui_manager(running_machine &machine)
-	: ui_manager(machine),
-		m_font(nullptr),
-		m_handler_callback(nullptr),
-		m_handler_param(0),
-		m_single_step(false),
-		m_showfps(false),
-		m_showfps_end(0),
-		m_show_profiler(false),
-		m_popup_text_end(0),
-		m_mouse_arrow_texture(nullptr),
-		m_mouse_show(false),
-		m_load_save_hold(false)
-{
-}
+	: ui_manager(machine)
+	, m_font(nullptr)
+	, m_handler_callback(nullptr)
+	, m_handler_callback_type(ui_callback_type::GENERAL)
+	, m_handler_param(0)
+	, m_single_step(false)
+	, m_showfps(false)
+	, m_showfps_end(0)
+	, m_show_profiler(false)
+	, m_popup_text_end(0)
+	, m_mouse_arrow_texture(nullptr)
+	, m_mouse_show(false) {}
 
 mame_ui_manager::~mame_ui_manager()
 {
@@ -205,7 +202,7 @@ void mame_ui_manager::init()
 	using namespace std::placeholders;
 	set_handler(ui_callback_type::GENERAL, std::bind(&mame_ui_manager::handler_messagebox, this, _1));
 	m_non_char_keys_down = std::make_unique<uint8_t[]>((ARRAY_LENGTH(non_char_keys) + 7) / 8);
-	m_mouse_show = machine().system().flags & MACHINE_CLICKABLE_ARTWORK ? true : false;
+	m_mouse_show = machine().system().flags & machine_flags::CLICKABLE_ARTWORK ? true : false;
 
 	// request a callback upon exiting
 	machine().add_notifier(MACHINE_NOTIFY_EXIT, machine_notify_delegate(&mame_ui_manager::exit, this));
@@ -256,6 +253,16 @@ void mame_ui_manager::initialize(running_machine &machine)
 	{
 		slider_current = nullptr;
 	}
+
+	// if no test switch found, assign its input sequence to a service mode DIP
+	if (!m_machine_info->has_test_switch() && m_machine_info->has_dips())
+	{
+		const char *const service_mode_dipname = ioport_configurer::string_from_token(DEF_STR(Service_Mode));
+		for (auto &port : machine.ioport().ports())
+			for (ioport_field &field : port.second->fields())
+				if (field.type() == IPT_DIPSWITCH && strcmp(field.name(), service_mode_dipname) == 0)
+					field.set_defseq(machine.ioport().type_seq(IPT_SERVICE));
+	}
 }
 
 
@@ -282,24 +289,23 @@ void mame_ui_manager::display_startup_screens(bool first_time)
 	int str = machine().options().seconds_to_run();
 	bool show_gameinfo = !machine().options().skip_gameinfo();
 	bool show_warnings = true, show_mandatory_fileman = true;
-	int state;
 
 	// disable everything if we are using -str for 300 or fewer seconds, or if we're the empty driver,
 	// or if we are debugging
 	if (!first_time || (str > 0 && str < 60*5) || &machine().system() == &GAME_NAME(___empty) || (machine().debug_flags & DEBUG_FLAG_ENABLED) != 0)
 		show_gameinfo = show_warnings = show_mandatory_fileman = false;
 
-	#if defined(EMSCRIPTEN)
+#if defined(EMSCRIPTEN)
 	// also disable for the JavaScript port since the startup screens do not run asynchronously
 	show_gameinfo = show_warnings = false;
-	#endif
+#endif
 
 	// loop over states
 	using namespace std::placeholders;
 	set_handler(ui_callback_type::GENERAL, std::bind(&mame_ui_manager::handler_ingame, this, _1));
 
 	// asigner: Start from state == 3 to skip all the messaging done below.
-	for (state = 3; state < maxstate && !machine().scheduled_event_pending() && !ui::menu::stack_has_special_main_menu(machine()); state++)
+	for (int state = 0; state < maxstate && !machine().scheduled_event_pending() && !ui::menu::stack_has_special_main_menu(machine()); state++)
 	{
 		// default to standard colors
 		messagebox_backcolor = UI_BACKGROUND_COLOR;
@@ -308,37 +314,32 @@ void mame_ui_manager::display_startup_screens(bool first_time)
 		// pick the next state
 		switch (state)
 		{
-			case 0:
-				if (show_warnings)
-					messagebox_text = machine_info().warnings_string();
-				if (!messagebox_text.empty())
-				{
-					set_handler(ui_callback_type::MODAL, std::bind(&mame_ui_manager::handler_messagebox_anykey, this, _1));
-					// TODO: don't think BTANB should be marked yellow? Also move this snippet to specific getter
-					if (machine().system().flags & (MACHINE_WARNING_FLAGS|MACHINE_BTANB_FLAGS))
-						messagebox_backcolor = UI_YELLOW_COLOR;
-					if (machine().system().flags & (MACHINE_FATAL_FLAGS))
-						messagebox_backcolor = UI_RED_COLOR;
-				}
-				break;
+		case 0:
+			if (show_warnings)
+				messagebox_text = machine_info().warnings_string();
+			if (!messagebox_text.empty())
+			{
+				set_handler(ui_callback_type::MODAL, std::bind(&mame_ui_manager::handler_messagebox_anykey, this, _1));
+				messagebox_backcolor = machine_info().warnings_color();
+			}
+			break;
 
-			case 1:
-				if (show_gameinfo)
-					messagebox_text = machine_info().game_info_string();
-				if (!messagebox_text.empty())
-					set_handler(ui_callback_type::MODAL, std::bind(&mame_ui_manager::handler_messagebox_anykey, this, _1));
-				break;
+		case 1:
+			if (show_gameinfo)
+				messagebox_text = machine_info().game_info_string();
+			if (!messagebox_text.empty())
+				set_handler(ui_callback_type::MODAL, std::bind(&mame_ui_manager::handler_messagebox_anykey, this, _1));
+			break;
 
-			case 2:
-				if (show_mandatory_fileman)
-					messagebox_text = machine_info().mandatory_images();
-				if (!messagebox_text.empty())
-				{
-					std::string warning;
-					warning.assign(_("This driver requires images to be loaded in the following device(s): ")).append(messagebox_text.substr(0, messagebox_text.length() - 2));
-					ui::menu_file_manager::force_file_manager(*this, machine().render().ui_container(), warning.c_str());
-				}
-				break;
+		case 2:
+			if (show_mandatory_fileman)
+				messagebox_text = machine_info().mandatory_images();
+			if (!messagebox_text.empty())
+			{
+				std::string warning = std::string(_("This driver requires images to be loaded in the following device(s): ")) + messagebox_text;
+				ui::menu_file_manager::force_file_manager(*this, machine().render().ui_container(), warning.c_str());
+			}
+			break;		
 		}
 
 		// clear the input memory
@@ -396,7 +397,7 @@ void mame_ui_manager::update_and_render(render_container &container)
 	container.empty();
 
 	// if we're paused, dim the whole screen
-	if (machine().phase() >= MACHINE_PHASE_RESET && (single_step() || machine().paused()))
+	if (machine().phase() >= machine_phase::RESET && (single_step() || machine().paused()))
 	{
 		int alpha = (1.0f - machine().options().pause_brightness()) * 255.0f;
 		if (ui::menu::stack_has_special_main_menu(machine()))
@@ -408,7 +409,7 @@ void mame_ui_manager::update_and_render(render_container &container)
 	}
 
 	// render any cheat stuff at the bottom
-	if (machine().phase() >= MACHINE_PHASE_RESET)
+	if (machine().phase() >= machine_phase::RESET)
 		mame_machine_manager::instance()->cheat().render_text(*this, container);
 
 	// call the current UI handler
@@ -985,10 +986,9 @@ void mame_ui_manager::draw_profiler(render_container &container)
 
 void mame_ui_manager::start_save_state()
 {
-	machine().pause();
-	m_load_save_hold = true;
-	using namespace std::placeholders;
-	set_handler(ui_callback_type::GENERAL, std::bind(&mame_ui_manager::handler_load_save, this, _1, uint32_t(LOADSAVE_SAVE)));
+	ui::menu::stack_reset(machine());
+	show_menu();
+	ui::menu::stack_push<ui::menu_save_state>(*this, machine().render().ui_container());
 }
 
 
@@ -998,10 +998,9 @@ void mame_ui_manager::start_save_state()
 
 void mame_ui_manager::start_load_state()
 {
-	machine().pause();
-	m_load_save_hold = true;
-	using namespace std::placeholders;
-	set_handler(ui_callback_type::GENERAL, std::bind(&mame_ui_manager::handler_load_save, this, _1, uint32_t(LOADSAVE_LOAD)));
+	ui::menu::stack_reset(machine());
+	show_menu();
+	ui::menu::stack_push<ui::menu_load_state>(*this, machine().render().ui_container());
 }
 
 
@@ -1013,7 +1012,7 @@ void mame_ui_manager::start_load_state()
 void mame_ui_manager::image_handler_ingame()
 {
 	// run display routine for devices
-	if (machine().phase() == MACHINE_PHASE_RUNNING)
+	if (machine().phase() == machine_phase::RUNNING)
 	{
 		auto layout = create_layout(machine().render().ui_container());
 
@@ -1108,7 +1107,7 @@ uint32_t mame_ui_manager::handler_ingame(render_container &container)
 	}
 
 	// is the natural keyboard enabled?
-	if (machine().ioport().natkeyboard().in_use() && (machine().phase() == MACHINE_PHASE_RUNNING))
+	if (machine().ioport().natkeyboard().in_use() && (machine().phase() == machine_phase::RUNNING))
 		process_natural_keyboard();
 
 	if (!ui_disabled)
@@ -1267,111 +1266,6 @@ uint32_t mame_ui_manager::handler_ingame(render_container &container)
 
 
 //-------------------------------------------------
-//  handler_load_save - leads the user through
-//  specifying a game to save or load
-//-------------------------------------------------
-
-uint32_t mame_ui_manager::handler_load_save(render_container &container, uint32_t state)
-{
-	char filename[20];
-	char file = 0;
-
-	// if we're not in the middle of anything, skip
-	if (state == LOADSAVE_NONE)
-		return 0;
-
-	// okay, we're waiting for a key to select a slot; display a message
-	if (state == LOADSAVE_SAVE)
-		draw_message_window(container, _("Select position to save to"));
-	else
-		draw_message_window(container, _("Select position to load from"));
-
-	// if load/save state sequence is still being pressed, do not read the filename yet
-	if (m_load_save_hold) {
-		bool seq_in_progress = false;
-		const input_seq &load_save_seq = state == LOADSAVE_SAVE ?
-			machine().ioport().type_seq(IPT_UI_SAVE_STATE) :
-			machine().ioport().type_seq(IPT_UI_LOAD_STATE);
-
-		for (int i = 0; i < load_save_seq.length(); i++)
-			if (machine().input().code_pressed_once(load_save_seq[i]))
-				seq_in_progress = true;
-
-		if (seq_in_progress)
-			return state;
-		else
-			m_load_save_hold = false;
-	}
-
-	// check for cancel key
-	if (machine().ui_input().pressed(IPT_UI_CANCEL))
-	{
-		// display a popup indicating things were cancelled
-		if (state == LOADSAVE_SAVE)
-			machine().popmessage(_("Save cancelled"));
-		else
-			machine().popmessage(_("Load cancelled"));
-
-		// reset the state
-		machine().resume();
-		return UI_HANDLER_CANCEL;
-	}
-
-	// check for A-Z or 0-9
-	for (input_item_id id = ITEM_ID_A; id <= ITEM_ID_Z; ++id)
-		if (machine().input().code_pressed_once(input_code(DEVICE_CLASS_KEYBOARD, 0, ITEM_CLASS_SWITCH, ITEM_MODIFIER_NONE, id)))
-			file = id - ITEM_ID_A + 'a';
-	if (file == 0)
-		for (input_item_id id = ITEM_ID_0; id <= ITEM_ID_9; ++id)
-			if (machine().input().code_pressed_once(input_code(DEVICE_CLASS_KEYBOARD, 0, ITEM_CLASS_SWITCH, ITEM_MODIFIER_NONE, id)))
-				file = id - ITEM_ID_0 + '0';
-	if (file == 0)
-		for (input_item_id id = ITEM_ID_0_PAD; id <= ITEM_ID_9_PAD; ++id)
-			if (machine().input().code_pressed_once(input_code(DEVICE_CLASS_KEYBOARD, 0, ITEM_CLASS_SWITCH, ITEM_MODIFIER_NONE, id)))
-				file = id - ITEM_ID_0_PAD + '0';
-	if (file == 0)
-	{
-		bool found = false;
-
-		for (int joy_index = 0; joy_index <= MAX_SAVED_STATE_JOYSTICK; joy_index++)
-			for (input_item_id id = ITEM_ID_BUTTON1; id <= ITEM_ID_BUTTON32; ++id)
-				if (machine().input().code_pressed_once(input_code(DEVICE_CLASS_JOYSTICK, joy_index, ITEM_CLASS_SWITCH, ITEM_MODIFIER_NONE, id)))
-				{
-					snprintf(filename, sizeof(filename), "joy%i-%i", joy_index, id - ITEM_ID_BUTTON1 + 1);
-					found = true;
-					break;
-				}
-
-		if (!found)
-			return state;
-	}
-	else
-	{
-		sprintf(filename, "%c", file);
-	}
-
-	// display a popup indicating that the save will proceed
-	if (state == LOADSAVE_SAVE)
-	{
-		machine().popmessage(_("Save to position %s"), filename);
-		machine().schedule_save(filename);
-	}
-	else
-	{
-		machine().popmessage(_("Load from position %s"), filename);
-		machine().schedule_load(filename);
-	}
-
-	// avoid handling the name of the save state slot as a seperate input
-	machine().ui_input().mark_all_as_pressed();
-
-	// remove the pause and reset the state
-	machine().resume();
-	return UI_HANDLER_CANCEL;
-}
-
-
-//-------------------------------------------------
 //  request_quit
 //-------------------------------------------------
 
@@ -1509,6 +1403,16 @@ std::vector<ui::menu_item> mame_ui_manager::slider_init(running_machine &machine
 			void *param = (void *)&exec.device();
 			std::string str = string_format(_("Overclock CPU %1$s"), exec.device().tag());
 			sliders.push_back(slider_alloc(machine, SLIDER_ID_OVERCLOCK + slider_index++, str.c_str(), 10, 1000, 2000, 1, param));
+		}
+		for (device_sound_interface &snd : sound_interface_iterator(machine.root_device()))
+		{
+			device_execute_interface *exec;
+			if (!snd.device().interface(exec) && snd.device().unscaled_clock() != 0)
+			{
+				void *param = (void *)&snd.device();
+				std::string str = string_format(_("Overclock %1$s sound"), snd.device().tag());
+				sliders.push_back(slider_alloc(machine, SLIDER_ID_OVERCLOCK + slider_index++, str.c_str(), 10, 1000, 2000, 1, param));
+			}
 		}
 	}
 
@@ -2120,7 +2024,7 @@ int32_t mame_ui_manager::slider_crossoffset(running_machine &machine, void *arg,
 
 
 //-------------------------------------------------
-//  wrap_text
+//  create_layout
 //-------------------------------------------------
 
 ui::text_layout mame_ui_manager::create_layout(render_container &container, float width, ui::text_layout::text_justify justify, ui::text_layout::word_wrapping wrap)
@@ -2225,14 +2129,18 @@ void mame_ui_manager::popup_time_string(int seconds, std::string message)
 void mame_ui_manager::load_ui_options()
 {
 	// parse the file
-	std::string error;
 	// attempt to open the output file
 	emu_file file(machine().options().ini_path(), OPEN_FLAG_READ);
 	if (file.open("ui.ini") == osd_file::error::NONE)
 	{
-		bool result = options().parse_ini_file((util::core_file&)file, OPTION_PRIORITY_MAME_INI, OPTION_PRIORITY_DRIVER_INI, error);
-		if (!result)
-			osd_printf_error("**Error loading ui.ini**");
+		try
+		{
+			options().parse_ini_file((util::core_file&)file, OPTION_PRIORITY_MAME_INI, OPTION_PRIORITY_MAME_INI < OPTION_PRIORITY_DRIVER_INI, true);
+		}
+		catch (options_exception &)
+		{
+			osd_printf_error("**Error loading ui.ini**\n");
+		}
 	}
 }
 
@@ -2263,28 +2171,37 @@ void mame_ui_manager::save_main_option()
 {
 	// parse the file
 	std::string error;
-	emu_options options(machine().options()); // This way we make sure that all OSD parts are in
-	std::string error_string;
+	emu_options options(emu_options::option_support::GENERAL_ONLY); // This way we make sure that all OSD parts are in
+
+	options.copy_from(machine().options());
 
 	// attempt to open the main ini file
 	{
 		emu_file file(machine().options().ini_path(), OPEN_FLAG_READ);
 		if (file.open(emulator_info::get_configname(), ".ini") == osd_file::error::NONE)
 		{
-			bool result = options.parse_ini_file((util::core_file&)file, OPTION_PRIORITY_MAME_INI, OPTION_PRIORITY_DRIVER_INI, error);
-			if (!result)
+			try
 			{
-				osd_printf_error("**Error loading %s.ini**", emulator_info::get_configname());
+				options.parse_ini_file((util::core_file&)file, OPTION_PRIORITY_MAME_INI, OPTION_PRIORITY_MAME_INI < OPTION_PRIORITY_DRIVER_INI, true);
+			}
+			catch(options_error_exception &)
+			{
+				osd_printf_error("**Error loading %s.ini**\n", emulator_info::get_configname());
 				return;
+			}
+			catch (options_exception &)
+			{
+				// ignore other exceptions related to options
 			}
 		}
 	}
 
-	for (emu_options::entry &f_entry : machine().options())
+	for (const auto &f_entry : machine().options().entries())
 	{
-		if (f_entry.is_changed())
+		const char *value = f_entry->value();
+		if (value && options.exists(f_entry->name()) && strcmp(value, options.value(f_entry->name().c_str())))
 		{
-			options.set_value(f_entry.name(), f_entry.value(), OPTION_PRIORITY_CMDLINE, error_string);
+			options.set_value(f_entry->name(), *f_entry->value(), OPTION_PRIORITY_CMDLINE);
 		}
 	}
 

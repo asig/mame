@@ -9,9 +9,10 @@
  * Driver by Gordon Jefferyes <mess_bbc@romvault.com>
  *
  ****************************************************************************/
+#ifndef MAME_INCLUDES_BBC_H
+#define MAME_INCLUDES_BBC_H
 
-#ifndef BBC_H_
-#define BBC_H_
+#pragma once
 
 #include "bus/rs232/rs232.h"
 #include "machine/6522via.h"
@@ -139,8 +140,6 @@ public:
 	DECLARE_WRITE8_MEMBER(bbcm_wd1772l_write);
 	DECLARE_WRITE8_MEMBER(bbc_videoULA_w);
 	DECLARE_READ8_MEMBER(bbc_fe_r);
-	DECLARE_DIRECT_UPDATE_MEMBER(bbcbp_direct_handler);
-	DECLARE_DIRECT_UPDATE_MEMBER(bbcm_direct_handler);
 
 	DECLARE_DRIVER_INIT(bbc);
 	DECLARE_VIDEO_START(bbc);
@@ -232,8 +231,8 @@ public: // HACK FOR MC6845
 	optional_device<mc146818_device> m_rtc;
 	optional_device<bbc_fdc_slot_device> m_fdc;
 	optional_device<i8271_device> m_i8271;
-	optional_device<wd1770_t> m_wd1770;
-	optional_device<wd1772_t> m_wd1772;
+	optional_device<wd1770_device> m_wd1770;
+	optional_device<wd1772_device> m_wd1772;
 	optional_device<generic_slot_device> m_exp1;
 	optional_device<generic_slot_device> m_exp2;
 	optional_device<generic_slot_device> m_exp3;
@@ -251,7 +250,7 @@ public: // HACK FOR MC6845
 	required_memory_bank m_bank7; // bbca bbcb bbcbp bbcbp128 bbcm
 	optional_memory_bank m_bank8; //                          bbcm
 
-	required_device<input_merger_active_high_device> m_irqs;
+	required_device<input_merger_device> m_irqs;
 
 	machine_type_t m_machinetype;
 
@@ -450,4 +449,12 @@ public: // HACK FOR MC6845
 	optional_ioport m_bbcconfig;
 };
 
-#endif /* BBC_H_ */
+
+class torch240_state : public bbc_state
+{
+public:
+	using bbc_state::bbc_state;
+	static constexpr feature_type imperfect_features() { return feature::KEYBOARD; }
+};
+
+#endif // MAME_INCLUDES_BBC_H

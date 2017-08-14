@@ -39,45 +39,45 @@ bool sorted_game_list(const game_driver *x, const game_driver *y)
 	bool cloney = (y->parent[0] != '0');
 
 	if (!clonex && !cloney)
-		return (cs_stricmp(x->description, y->description) < 0);
+		return (cs_stricmp(x->type.fullname(), y->type.fullname()) < 0);
 
 	int cx = -1, cy = -1;
 	if (clonex)
 	{
 		cx = driver_list::find(x->parent);
-		if (cx == -1 || (driver_list::driver(cx).flags & MACHINE_IS_BIOS_ROOT) != 0)
+		if ((0 > cx) || (driver_list::driver(cx).flags & machine_flags::IS_BIOS_ROOT))
 			clonex = false;
 	}
 
 	if (cloney)
 	{
 		cy = driver_list::find(y->parent);
-		if (cy == -1 || (driver_list::driver(cy).flags & MACHINE_IS_BIOS_ROOT) != 0)
+		if ((0 > cy) || (driver_list::driver(cy).flags & machine_flags::IS_BIOS_ROOT))
 			cloney = false;
 	}
 
 	if (!clonex && !cloney)
-		return (cs_stricmp(x->description, y->description) < 0);
+		return (cs_stricmp(x->type.fullname(), y->type.fullname()) < 0);
 	else if (clonex && cloney)
 	{
 		if (!cs_stricmp(x->parent, y->parent))
-			return (cs_stricmp(x->description, y->description) < 0);
+			return (cs_stricmp(x->type.fullname(), y->type.fullname()) < 0);
 		else
-			return (cs_stricmp(driver_list::driver(cx).description, driver_list::driver(cy).description) < 0);
+			return (cs_stricmp(driver_list::driver(cx).type.fullname(), driver_list::driver(cy).type.fullname()) < 0);
 	}
 	else if (!clonex && cloney)
 	{
 		if (!cs_stricmp(x->name, y->parent))
 			return true;
 		else
-			return (cs_stricmp(x->description, driver_list::driver(cy).description) < 0);
+			return (cs_stricmp(x->type.fullname(), driver_list::driver(cy).type.fullname()) < 0);
 	}
 	else
 	{
 		if (!cs_stricmp(x->parent, y->name))
 			return false;
 		else
-			return (cs_stricmp(driver_list::driver(cx).description, y->description) < 0);
+			return (cs_stricmp(driver_list::driver(cx).type.fullname(), y->type.fullname()) < 0);
 	}
 }
 

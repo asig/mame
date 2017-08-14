@@ -20,8 +20,6 @@
 #include "drawd3d.h"
 #include "modules/render/d3d/d3dhlsl.h"
 #include "modules/monitor/monitor_module.h"
-#undef min
-#undef max
 #include <utility>
 
 //============================================================
@@ -2156,7 +2154,7 @@ void texture_info::compute_size(int texwidth, int texheight)
 	m_xborderpix = 0;
 	m_yborderpix = 0;
 
- 	bool shaders_enabled = m_renderer->get_shaders()->enabled();
+	bool shaders_enabled = m_renderer->get_shaders()->enabled();
 	bool wrap_texture = (m_flags & PRIMFLAG_TEXWRAP_MASK) == PRIMFLAG_TEXWRAP_MASK;
 
 	// skip border when shaders are enabled

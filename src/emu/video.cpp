@@ -107,7 +107,6 @@ video_manager::video_manager(running_machine &machine)
 		m_avi_frame_period(attotime::zero),
 		m_avi_next_frame_time(attotime::zero),
 		m_avi_frame(0),
-		m_dummy_recording(false),
 		m_timecode_enabled(false),
 		m_timecode_write(false),
 		m_timecode_text(""),
@@ -160,10 +159,6 @@ video_manager::video_manager(running_machine &machine)
 	if (filename[0] != 0)
 		begin_recording(filename, MF_AVI);
 
-#ifdef MAME_DEBUG
-	m_dummy_recording = machine.options().dummy_write();
-#endif
-
 	// if no screens, create a periodic timer to drive updates
 	if (machine.first_screen() == nullptr)
 	{
@@ -206,9 +201,9 @@ void video_manager::set_frameskip(int frameskip)
 void video_manager::frame_update(bool from_debugger)
 {
 	// only render sound and video if we're in the running phase
-	int phase = machine().phase();
+	machine_phase const phase = machine().phase();
 	bool skipped_it = m_skipping_this_frame;
-	if (phase == MACHINE_PHASE_RUNNING && (!machine().paused() || machine().options().update_in_pause()))
+	if (phase == machine_phase::RUNNING && (!machine().paused() || machine().options().update_in_pause()))
 	{
 		bool anything_changed = finish_screen_updates();
 
@@ -249,7 +244,7 @@ void video_manager::frame_update(bool from_debugger)
 		recompute_speed(current_time);
 
 	// call the end-of-frame callback
-	if (phase == MACHINE_PHASE_RUNNING)
+	if (phase == machine_phase::RUNNING)
 	{
 		// reset partial updates if we're paused or if the debugger is active
 		screen_device *const screen = machine().first_screen();
@@ -317,7 +312,7 @@ void video_manager::save_snapshot(screen_device *screen, emu_file &file)
 
 	// add two text entries describing the image
 	std::string text1 = std::string(emulator_info::get_appname()).append(" ").append(emulator_info::get_build_version());
-	std::string text2 = std::string(machine().system().manufacturer).append(" ").append(machine().system().description);
+	std::string text2 = std::string(machine().system().manufacturer).append(" ").append(machine().system().type.fullname());
 	png_info pnginfo = { nullptr };
 	png_add_text(&pnginfo, "Software", text1.c_str());
 	png_add_text(&pnginfo, "System", text2.c_str());
@@ -889,41 +884,33 @@ osd_ticks_t video_manager::throttle_until_ticks(osd_ticks_t target_ticks)
 {
 	// we're allowed to sleep via the OSD code only if we're configured to do so
 	// and we're not frameskipping due to autoframeskip, or if we're paused
-	bool allowed_to_sleep = false;
-	if (machine().options().sleep() && (!effective_autoframeskip() || effective_frameskip() == 0))
-		allowed_to_sleep = true;
-	if (machine().paused())
-		allowed_to_sleep = true;
+	bool const allowed_to_sleep = (machine().options().sleep() && (!effective_autoframeskip() || effective_frameskip() == 0)) || machine().paused();
 
 	// loop until we reach our target
 	g_profiler.start(PROFILER_IDLE);
-	osd_ticks_t minimum_sleep = osd_ticks_per_second() / 1000;
 	osd_ticks_t current_ticks = osd_ticks();
 	while (current_ticks < target_ticks)
 	{
 		// compute how much time to sleep for, taking into account the average oversleep
-		osd_ticks_t delta = (target_ticks - current_ticks) * 1000 / (1000 + m_average_oversleep);
+		osd_ticks_t const delta = (target_ticks - current_ticks) * 1000 / (1000 + m_average_oversleep);
 
 		// see if we can sleep
-		bool slept = false;
-		if (allowed_to_sleep && delta >= minimum_sleep)
-		{
+		bool const slept = allowed_to_sleep && delta;
+		if (slept)
 			osd_sleep(delta);
-			slept = true;
-		}
 
 		// read the new value
-		osd_ticks_t new_ticks = osd_ticks();
+		osd_ticks_t const new_ticks = osd_ticks();
 
 		// keep some metrics on the sleeping patterns of the OSD layer
 		if (slept)
 		{
 			// if we overslept, keep an average of the amount
-			osd_ticks_t actual_ticks = new_ticks - current_ticks;
+			osd_ticks_t const actual_ticks = new_ticks - current_ticks;
 			if (actual_ticks > delta)
 			{
 				// take 90% of the previous average plus 10% of the new value
-				osd_ticks_t oversleep_milliticks = 1000 * (actual_ticks - delta) / delta;
+				osd_ticks_t const oversleep_milliticks = 1000 * (actual_ticks - delta) / delta;
 				m_average_oversleep = (m_average_oversleep * 99 + oversleep_milliticks) / 100;
 
 				if (LOG_THROTTLE)
@@ -1272,7 +1259,7 @@ osd_file::error video_manager::open_next(emu_file &file, const char *extension)
 void video_manager::record_frame()
 {
 	// ignore if nothing to do
-	if (m_mng_file == nullptr && m_avi_file == nullptr && !m_dummy_recording)
+	if (m_mng_file == nullptr && m_avi_file == nullptr)
 		return;
 
 	// start the profiler and get the current time
@@ -1314,7 +1301,7 @@ void video_manager::record_frame()
 			if (m_mng_frame == 0)
 			{
 				std::string text1 = std::string(emulator_info::get_appname()).append(" ").append(emulator_info::get_build_version());
-				std::string text2 = std::string(machine().system().manufacturer).append(" ").append(machine().system().description);
+				std::string text2 = std::string(machine().system().manufacturer).append(" ").append(machine().system().type.fullname());
 				png_add_text(&pnginfo, "Software", text1.c_str());
 				png_add_text(&pnginfo, "System", text2.c_str());
 			}

@@ -161,7 +161,7 @@ public:
 	running_machine &machine() const { return m_machine; }
 	bool single_step() const { return m_single_step; }
 	ui_options &options() { return m_ui_options; }
-	ui::machine_info &machine_info() const { assert(m_machine_info != nullptr); return *m_machine_info; }
+	ui::machine_info &machine_info() const { assert(m_machine_info); return *m_machine_info; }
 
 	// setters
 	void set_single_step(bool single_step) { m_single_step = single_step; }
@@ -245,7 +245,6 @@ private:
 	std::unique_ptr<uint8_t[]> m_non_char_keys_down;
 	render_texture *        m_mouse_arrow_texture;
 	bool                    m_mouse_show;
-	bool                    m_load_save_hold;
 	ui_options              m_ui_options;
 
 	std::unique_ptr<ui::machine_info> m_machine_info;

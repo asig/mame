@@ -81,20 +81,59 @@ struct imgtool_chainent
 	uint64_t block;
 };
 
-enum imgtool_forktype_t
+namespace imgtool
 {
-	FORK_END,
-	FORK_DATA,
-	FORK_RESOURCE,
-	FORK_ALTERNATE
-};
+	class fork_entry
+	{
+	public:
+		enum class type_t
+		{
+			DATA,
+			RESOURCE,
+			ALT
+		};
 
-struct imgtool_forkent
-{
-	imgtool_forktype_t type;
-	uint64_t size;
-	char forkname[64];
-};
+		fork_entry(uint64_t size, type_t type = type_t::DATA)
+			: m_size(size)
+			, m_type(type)
+			, m_name(default_name(type))
+		{
+
+		}
+
+		fork_entry(uint64_t size, std::string &&name)
+			: m_size(size)
+			, m_type(fork_entry::type_t::ALT)
+			, m_name(std::move(name))
+		{
+		}
+
+		fork_entry(const fork_entry &that) = default;
+		fork_entry(fork_entry &&that) = default;
+
+		uint64_t size() const { return m_size; }
+		type_t type() const { return m_type; }
+		const std::string &name() const { return m_name; }
+
+	private:
+		static std::string default_name(type_t type)
+		{
+			switch (type)
+			{
+			case type_t::DATA:
+				return std::string("");
+			case type_t::RESOURCE:
+				return std::string("RESOURCE_FORK");
+			default:
+				throw false;
+			}
+		}
+
+		uint64_t	m_size;
+		type_t		m_type;
+		std::string	m_name;
+	};
+}
 
 struct imgtool_transfer_suggestion
 {
@@ -165,7 +204,6 @@ enum
 	IMGTOOLINFO_INT_CREATION_UNTESTED,
 	IMGTOOLINFO_INT_SUPPORTS_BOOTBLOCK,
 	IMGTOOLINFO_INT_BLOCK_SIZE,
-	IMGTOOLINFO_INT_CHARSET,
 
 	IMGTOOLINFO_INT_CLASS_SPECIFIC = 0x08000,
 
@@ -205,6 +243,7 @@ enum
 	IMGTOOLINFO_PTR_WRITEFILE_OPTGUIDE,
 	IMGTOOLINFO_PTR_MAKE_CLASS,
 	IMGTOOLINFO_PTR_LIST_PARTITIONS,
+	IMGTOOLINFO_PTR_CHARCONVERTER,
 
 	IMGTOOLINFO_PTR_CLASS_SPECIFIC = 0x18000,
 
@@ -290,7 +329,7 @@ union imgtoolinfo
 	imgtoolerr_t    (*read_file)        (imgtool::partition &partition, const char *filename, const char *fork, imgtool::stream &destf);
 	imgtoolerr_t    (*write_file)       (imgtool::partition &partition, const char *filename, const char *fork, imgtool::stream &sourcef, util::option_resolution *opts);
 	imgtoolerr_t    (*delete_file)      (imgtool::partition &partition, const char *filename);
-	imgtoolerr_t    (*list_forks)       (imgtool::partition &partition, const char *path, imgtool_forkent *ents, size_t len);
+	imgtoolerr_t    (*list_forks)       (imgtool::partition &partition, const char *path, std::vector<imgtool::fork_entry> &forks);
 	imgtoolerr_t    (*create_dir)       (imgtool::partition &partition, const char *path);
 	imgtoolerr_t    (*delete_dir)       (imgtool::partition &partition, const char *path);
 	imgtoolerr_t    (*list_attrs)       (imgtool::partition &partition, const char *path, uint32_t *attrs, size_t len);
@@ -311,6 +350,7 @@ union imgtoolinfo
 
 	const util::option_guide *createimage_optguide;
 	const util::option_guide *writefile_optguide;
+	const imgtool::charconverter *charconverter;
 };
 
 

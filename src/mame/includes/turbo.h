@@ -10,6 +10,8 @@
 #include "machine/i8255.h"
 #include "sound/discrete.h"
 #include "sound/samples.h"
+#include "screen.h"
+
 /* sprites are scaled in the analog domain; to give a better */
 /* rendition of this, we scale in the X direction by this factor */
 #define TURBO_X_SCALE       2
@@ -128,7 +130,9 @@ public:
 	DECLARE_READ8_MEMBER(turbo_collision_r);
 	DECLARE_WRITE8_MEMBER(turbo_collision_clear_w);
 	DECLARE_WRITE8_MEMBER(turbo_analog_reset_w);
-	DECLARE_WRITE8_MEMBER(turbo_coin_and_lamp_w);
+	DECLARE_WRITE_LINE_MEMBER(coin_meter_1_w);
+	DECLARE_WRITE_LINE_MEMBER(coin_meter_2_w);
+	DECLARE_WRITE_LINE_MEMBER(start_lamp_w);
 	DECLARE_READ8_MEMBER(buckrog_cpu2_command_r);
 	DECLARE_READ8_MEMBER(buckrog_port_2_r);
 	DECLARE_READ8_MEMBER(buckrog_port_3_r);

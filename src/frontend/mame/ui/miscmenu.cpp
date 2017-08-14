@@ -127,14 +127,10 @@ void menu_bios_selection::handle()
 			if (val>cnt) val=1;
 			dev->set_system_bios(val);
 			if (strcmp(dev->tag(),":")==0) {
-				std::string error;
-				machine().options().set_value("bios", val-1, OPTION_PRIORITY_CMDLINE, error);
-				assert(error.empty());
+				machine().options().set_value("bios", val-1, OPTION_PRIORITY_CMDLINE);
 			} else {
-				std::string error;
-				std::string value = string_format("%s,bios=%d", machine().options().main_value(dev->owner()->tag()+1), val-1);
-				machine().options().set_value(dev->owner()->tag()+1, value.c_str(), OPTION_PRIORITY_CMDLINE, error);
-				assert(error.empty());
+				const char *slot_option_name = dev->owner()->tag() + 1;
+				machine().options().slot_option(slot_option_name).set_bios(string_format("%d", val - 1));
 			}
 			reset(reset_options::REMEMBER_REF);
 		}
@@ -568,91 +564,87 @@ void menu_export::handle()
 	const event *menu_event = process(PROCESS_NOIMAGE);
 	if (menu_event != nullptr && menu_event->itemref != nullptr)
 	{
-		switch ((uintptr_t)menu_event->itemref)
+		switch (uintptr_t(menu_event->itemref))
 		{
-			case 1:
-			case 3:
+		case 1:
+		case 3:
+			if (menu_event->iptkey == IPT_UI_SELECT)
 			{
-				if (menu_event->iptkey == IPT_UI_SELECT)
-				{
-					std::string filename("exported");
-					emu_file infile(ui().options().ui_path(), OPEN_FLAG_READ);
-					if (infile.open(filename.c_str(), ".xml") == osd_file::error::NONE)
-						for (int seq = 0; ; ++seq)
-						{
-							std::string seqtext = string_format("%s_%04d", filename, seq);
-							if (infile.open(seqtext.c_str(), ".xml") != osd_file::error::NONE)
-							{
-								filename = seqtext;
-								break;
-							}
-						}
-
-					// attempt to open the output file
-					emu_file file(ui().options().ui_path(), OPEN_FLAG_WRITE | OPEN_FLAG_CREATE | OPEN_FLAG_CREATE_PATHS);
-					if (file.open(filename.c_str(), ".xml") == osd_file::error::NONE)
+				std::string filename("exported");
+				emu_file infile(ui().options().ui_path(), OPEN_FLAG_READ);
+				if (infile.open(filename.c_str(), ".xml") == osd_file::error::NONE)
+					for (int seq = 0; ; ++seq)
 					{
-						FILE *pfile;
-						std::string fullpath(file.fullpath());
-						file.close();
-						pfile = fopen(fullpath.c_str(), "w");
-
-						// create the XML and save to file
-						driver_enumerator drvlist(machine().options());
-						drvlist.exclude_all();
-						for (auto & elem : m_list)
-							drvlist.include(driver_list::find(*elem));
-
-						info_xml_creator creator(drvlist);
-						creator.output(pfile, ((uintptr_t)menu_event->itemref == 1) ? false : true);
-						fclose(pfile);
-						machine().popmessage(_("%s.xml saved under ui folder."), filename.c_str());
+						std::string seqtext = string_format("%s_%04d", filename, seq);
+						if (infile.open(seqtext.c_str(), ".xml") != osd_file::error::NONE)
+						{
+							filename = seqtext;
+							break;
+						}
 					}
+
+				// attempt to open the output file
+				emu_file file(ui().options().ui_path(), OPEN_FLAG_WRITE | OPEN_FLAG_CREATE | OPEN_FLAG_CREATE_PATHS);
+				if (file.open(filename.c_str(), ".xml") == osd_file::error::NONE)
+				{
+					FILE *pfile;
+					std::string fullpath(file.fullpath());
+					file.close();
+					pfile = fopen(fullpath.c_str(), "w");
+
+					// create the XML and save to file
+					driver_enumerator drvlist(machine().options());
+					drvlist.exclude_all();
+					for (auto & elem : m_list)
+						drvlist.include(driver_list::find(*elem));
+
+					info_xml_creator creator(machine().options());
+					creator.output(pfile, drvlist, (uintptr_t(menu_event->itemref) == 1) ? false : true);
+					fclose(pfile);
+					machine().popmessage(_("%s.xml saved under ui folder."), filename.c_str());
 				}
-				break;
 			}
-			case 2:
+			break;
+		case 2:
+			if (menu_event->iptkey == IPT_UI_SELECT)
 			{
-				if (menu_event->iptkey == IPT_UI_SELECT)
-				{
-					std::string filename("exported");
-					emu_file infile(ui().options().ui_path(), OPEN_FLAG_READ);
-					if (infile.open(filename.c_str(), ".txt") == osd_file::error::NONE)
-						for (int seq = 0; ; ++seq)
-						{
-							std::string seqtext = string_format("%s_%04d", filename, seq);
-							if (infile.open(seqtext.c_str(), ".txt") != osd_file::error::NONE)
-							{
-								filename = seqtext;
-								break;
-							}
-						}
-
-					// attempt to open the output file
-					emu_file file(ui().options().ui_path(), OPEN_FLAG_WRITE | OPEN_FLAG_CREATE | OPEN_FLAG_CREATE_PATHS);
-					if (file.open(filename.c_str(), ".txt") == osd_file::error::NONE)
+				std::string filename("exported");
+				emu_file infile(ui().options().ui_path(), OPEN_FLAG_READ);
+				if (infile.open(filename.c_str(), ".txt") == osd_file::error::NONE)
+					for (int seq = 0; ; ++seq)
 					{
-						// print the header
-						std::ostringstream buffer;
-						buffer << _("Name:             Description:\n");
-						driver_enumerator drvlist(machine().options());
-						drvlist.exclude_all();
-						for (auto & elem : m_list)
-							drvlist.include(driver_list::find(*elem));
-
-						// iterate through drivers and output the info
-						while (drvlist.next())
-							if ((drvlist.driver().flags & MACHINE_NO_STANDALONE) == 0)
-								util::stream_format(buffer, "%-18s\"%s\"\n", drvlist.driver().name, drvlist.driver().description);
-						file.puts(buffer.str().c_str());
-						file.close();
-						machine().popmessage(_("%s.txt saved under ui folder."), filename.c_str());
+						std::string seqtext = string_format("%s_%04d", filename, seq);
+						if (infile.open(seqtext.c_str(), ".txt") != osd_file::error::NONE)
+						{
+							filename = seqtext;
+							break;
+						}
 					}
+
+				// attempt to open the output file
+				emu_file file(ui().options().ui_path(), OPEN_FLAG_WRITE | OPEN_FLAG_CREATE | OPEN_FLAG_CREATE_PATHS);
+				if (file.open(filename.c_str(), ".txt") == osd_file::error::NONE)
+				{
+					// print the header
+					std::ostringstream buffer;
+					buffer << _("Name:             Description:\n");
+					driver_enumerator drvlist(machine().options());
+					drvlist.exclude_all();
+					for (auto & elem : m_list)
+						drvlist.include(driver_list::find(*elem));
+
+					// iterate through drivers and output the info
+					while (drvlist.next())
+						if (!(drvlist.driver().flags & machine_flags::NO_STANDALONE))
+							util::stream_format(buffer, "%-18s\"%s\"\n", drvlist.driver().name, drvlist.driver().type.fullname());
+					file.puts(buffer.str().c_str());
+					file.close();
+					machine().popmessage(_("%s.txt saved under ui folder."), filename.c_str());
 				}
-				break;
 			}
-			default:
-				break;
+			break;
+		default:
+			break;
 		}
 	}
 }
@@ -677,15 +669,14 @@ void menu_export::populate(float &customtop, float &custombottom)
 menu_machine_configure::menu_machine_configure(mame_ui_manager &mui, render_container &container, const game_driver *prev, float _x0, float _y0)
 	: menu(mui, container)
 	, m_drv(prev)
-	, m_opts(mui.machine().options())
 	, x0(_x0)
 	, y0(_y0)
 	, m_curbios(0)
 	, m_fav_reset(false)
 {
 	// parse the INI file
-	std::string error;
-	mame_options::parse_standard_inis(m_opts,error, m_drv);
+	std::ostringstream error;
+	mame_options::parse_standard_inis(m_opts, error, m_drv);
 	setup_bios();
 }
 
@@ -756,9 +747,7 @@ void menu_machine_configure::handle()
 		else if (menu_event->iptkey == IPT_UI_LEFT || menu_event->iptkey == IPT_UI_RIGHT)
 		{
 			(menu_event->iptkey == IPT_UI_LEFT) ? --m_curbios : ++m_curbios;
-			std::string error;
-			m_opts.set_value(OPTION_BIOS, m_bios[m_curbios].second, OPTION_PRIORITY_CMDLINE, error);
-			m_opts.mark_changed(OPTION_BIOS);
+			m_opts.set_value(OPTION_BIOS, m_bios[m_curbios].second, OPTION_PRIORITY_CMDLINE);
 			reset(reset_options::REMEMBER_POSITION);
 		}
 	}
@@ -771,14 +760,14 @@ void menu_machine_configure::handle()
 void menu_machine_configure::populate(float &customtop, float &custombottom)
 {
 	// add options items
-	item_append(_("Bios"), "", FLAG_DISABLE | FLAG_UI_HEADING, nullptr);
+	item_append(_("BIOS"), "", FLAG_DISABLE | FLAG_UI_HEADING, nullptr);
 	if (!m_bios.empty())
 	{
 		uint32_t arrows = get_arrow_flags(std::size_t(0), m_bios.size() - 1, m_curbios);
 		item_append(_("Driver"), m_bios[m_curbios].first, arrows, (void *)(uintptr_t)BIOS);
 	}
 	else
-		item_append(_("This machine has no bios."), "", FLAG_DISABLE, nullptr);
+		item_append(_("This machine has no BIOS."), "", FLAG_DISABLE, nullptr);
 
 	item_append(menu_item_type::SEPARATOR);
 	item_append(_(submenu::advanced_options[0].description), "", 0, (void *)(uintptr_t)ADVANCED);
@@ -803,42 +792,12 @@ void menu_machine_configure::populate(float &customtop, float &custombottom)
 
 void menu_machine_configure::custom_render(void *selectedref, float top, float bottom, float origx1, float origy1, float origx2, float origy2)
 {
-	float width;
-	std::string text[2];
-	float maxwidth = origx2 - origx1;
-
-	text[0] = _("Configure machine:");
-	text[1] = m_drv->description;
-
-	for (auto & elem : text)
-	{
-		ui().draw_text_full(container(), elem.c_str(), 0.0f, 0.0f, 1.0f, ui::text_layout::CENTER, ui::text_layout::TRUNCATE,
-			mame_ui_manager::NONE, rgb_t::white(), rgb_t::black(), &width, nullptr);
-		width += 2 * UI_BOX_LR_BORDER;
-		maxwidth = std::max(maxwidth, width);
-	}
-
-	// compute our bounds
-	float x1 = 0.5f - 0.5f * maxwidth;
-	float x2 = x1 + maxwidth;
-	float y1 = origy1 - top;
-	float y2 = origy1 - UI_BOX_TB_BORDER;
-
-	// draw a box
-	ui().draw_outlined_box(container(), x1, y1, x2, y2, UI_GREEN_COLOR);
-
-	// take off the borders
-	x1 += UI_BOX_LR_BORDER;
-	x2 -= UI_BOX_LR_BORDER;
-	y1 += UI_BOX_TB_BORDER;
-
-	// draw the text within it
-	for (auto & elem : text)
-	{
-		ui().draw_text_full(container(), elem.c_str(), x1, y1, x2 - x1, ui::text_layout::CENTER, ui::text_layout::TRUNCATE,
-			mame_ui_manager::NORMAL, UI_TEXT_COLOR, UI_TEXT_BG_COLOR, nullptr, nullptr);
-		y1 += ui().get_line_height();
-	}
+	char const *const text[] = { _("Configure machine:"), m_drv->type.fullname() };
+	draw_text_box(
+			std::begin(text), std::end(text),
+			origx1, origx2, origy1 - top, origy1 - UI_BOX_TB_BORDER,
+			ui::text_layout::CENTER, ui::text_layout::TRUNCATE, false,
+			UI_TEXT_COLOR, UI_GREEN_COLOR, 1.0f);
 }
 
 void menu_machine_configure::setup_bios()
@@ -920,8 +879,7 @@ void menu_plugins_configure::handle()
 		if (menu_event->iptkey == IPT_UI_LEFT || menu_event->iptkey == IPT_UI_RIGHT || menu_event->iptkey == IPT_UI_SELECT)
 		{
 			int oldval = plugins.int_value((const char*)menu_event->itemref);
-			std::string error_string;
-			plugins.set_value((const char*)menu_event->itemref, oldval == 1 ? 0 : 1, OPTION_PRIORITY_CMDLINE, error_string);
+			plugins.set_value((const char*)menu_event->itemref, oldval == 1 ? 0 : 1, OPTION_PRIORITY_CMDLINE);
 			changed = true;
 		}
 	}
@@ -937,13 +895,13 @@ void menu_plugins_configure::populate(float &customtop, float &custombottom)
 {
 	plugin_options& plugins = mame_machine_manager::instance()->plugins();
 
-	for (auto &curentry : plugins)
+	for (auto &curentry : plugins.entries())
 	{
-		if (!curentry.is_header())
+		if (curentry->type() != OPTION_HEADER)
 		{
-			auto enabled = std::string(curentry.value()) == "1";
-			item_append(curentry.description(), enabled ? _("On") : _("Off"),
-				enabled ? FLAG_RIGHT_ARROW : FLAG_LEFT_ARROW, (void *)(uintptr_t)curentry.name());
+			auto enabled = !strcmp(curentry->value(), "1");
+			item_append(curentry->description(), enabled ? _("On") : _("Off"),
+				enabled ? FLAG_RIGHT_ARROW : FLAG_LEFT_ARROW, (void *)(uintptr_t)curentry->name().c_str());
 		}
 	}
 	item_append(menu_item_type::SEPARATOR);
@@ -956,30 +914,12 @@ void menu_plugins_configure::populate(float &customtop, float &custombottom)
 
 void menu_plugins_configure::custom_render(void *selectedref, float top, float bottom, float origx1, float origy1, float origx2, float origy2)
 {
-	float width;
-
-	ui().draw_text_full(container(), _("Plugins"), 0.0f, 0.0f, 1.0f, ui::text_layout::CENTER, ui::text_layout::TRUNCATE,
-		mame_ui_manager::NONE, rgb_t::white(), rgb_t::black(), &width, nullptr);
-	width += 2 * UI_BOX_LR_BORDER;
-	float maxwidth = std::max(origx2 - origx1, width);
-
-	// compute our bounds
-	float x1 = 0.5f - 0.5f * maxwidth;
-	float x2 = x1 + maxwidth;
-	float y1 = origy1 - top;
-	float y2 = origy1 - UI_BOX_TB_BORDER;
-
-	// draw a box
-	ui().draw_outlined_box(container(), x1, y1, x2, y2, UI_GREEN_COLOR);
-
-	// take off the borders
-	x1 += UI_BOX_LR_BORDER;
-	x2 -= UI_BOX_LR_BORDER;
-	y1 += UI_BOX_TB_BORDER;
-
-	// draw the text within it
-	ui().draw_text_full(container(), _("Plugins"), x1, y1, x2 - x1, ui::text_layout::CENTER, ui::text_layout::TRUNCATE,
-		mame_ui_manager::NORMAL, UI_TEXT_COLOR, UI_TEXT_BG_COLOR, nullptr, nullptr);
+	char const *const toptext[] = { _("Plugins") };
+	draw_text_box(
+			std::begin(toptext), std::end(toptext),
+			origx1, origx2, origy1 - top, origy1 - UI_BOX_TB_BORDER,
+			ui::text_layout::CENTER, ui::text_layout::TRUNCATE, false,
+			UI_TEXT_COLOR, UI_GREEN_COLOR, 1.0f);
 }
 
 } // namespace ui

@@ -325,8 +325,14 @@ WRITE8_MEMBER(combatsc_state::combatsc_pf_control_w)
 	k007121->ctrl_w(space, offset, data);
 
 	if (offset == 7)
+	{
 		m_bg_tilemap[m_video_circuit]->set_flip((data & 0x08) ? (TILEMAP_FLIPY | TILEMAP_FLIPX) : 0);
-
+		if(m_video_circuit == 0)
+		{
+			m_textflip = (data & 0x08) == 0x08;
+			m_textlayer->set_flip((data & 0x08) ? TILEMAP_FLIPY | TILEMAP_FLIPX : 0);
+		}
+	}
 	if (offset == 3)
 	{
 		if (data & 0x08)
@@ -397,7 +403,7 @@ uint32_t combatsc_state::screen_update_combatsc(screen_device &screen, bitmap_in
 	m_bg_tilemap[1]->set_scrolly(0, m_k007121_2->ctrlram_r(space, 2));
 
 	screen.priority().fill(0, cliprect);
-
+	
 	if (m_priority == 0)
 	{
 		m_bg_tilemap[1]->draw(screen, bitmap, cliprect, TILEMAP_DRAW_OPAQUE | 0, 4);
@@ -413,12 +419,15 @@ uint32_t combatsc_state::screen_update_combatsc(screen_device &screen, bitmap_in
 	{
 		m_bg_tilemap[0]->draw(screen, bitmap, cliprect, TILEMAP_DRAW_OPAQUE | 0, 1);
 		m_bg_tilemap[0]->draw(screen, bitmap, cliprect, TILEMAP_DRAW_OPAQUE | 1, 2);
+		
+		/* we use the priority buffer so sprites are drawn front to back */
+		// drill sergeant ribbons goes here, MT #06259
+		draw_sprites(bitmap, cliprect, m_spriteram[1].get(), 1, screen.priority(), 0x0f00);
+		// guess: move the face as well (should go behind hands but it isn't tested)
+		draw_sprites(bitmap, cliprect, m_spriteram[0].get(), 0, screen.priority(), 0x4444);
+
 		m_bg_tilemap[1]->draw(screen, bitmap, cliprect, 1, 4);
 		m_bg_tilemap[1]->draw(screen, bitmap, cliprect, 0, 8);
-
-		/* we use the priority buffer so sprites are drawn front to back */
-		draw_sprites(bitmap, cliprect, m_spriteram[1].get(), 1, screen.priority(), 0x0f00);
-		draw_sprites(bitmap, cliprect, m_spriteram[0].get(), 0, screen.priority(), 0x4444);
 	}
 
 	//if (m_k007121_1->ctrlram_r(space, 1) & 0x08)
@@ -429,8 +438,10 @@ uint32_t combatsc_state::screen_update_combatsc(screen_device &screen, bitmap_in
 		for (i = 0; i < 32; i++)
 		{
 			// scrollram [0x20]-[0x3f]: char enable (presumably bit 0 only)
-			if(m_scrollram[0x20 + i] == 0)
+			uint8_t base_scroll = m_textflip == true ? (0x3f - i) : (0x20 + i);
+			if(m_scrollram[base_scroll] == 0)
 				continue;
+
 
 			clip.min_y = i * 8;
 			clip.max_y = clip.min_y + 7;
