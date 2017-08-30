@@ -635,8 +635,7 @@ void menu_export::handle()
 
 					// iterate through drivers and output the info
 					while (drvlist.next())
-						if (!(drvlist.driver().flags & machine_flags::NO_STANDALONE))
-							util::stream_format(buffer, "%-18s\"%s\"\n", drvlist.driver().name, drvlist.driver().type.fullname());
+						util::stream_format(buffer, "%-18s\"%s\"\n", drvlist.driver().name, drvlist.driver().type.fullname());
 					file.puts(buffer.str().c_str());
 					file.close();
 					machine().popmessage(_("%s.txt saved under ui folder."), filename.c_str());
@@ -720,7 +719,7 @@ void menu_machine_configure::handle()
 					break;
 				case DELFAV:
 					mame_machine_manager::instance()->favorite().remove_favorite_game();
-					if (main_filters::actual == FILTER_FAVORITE)
+					if (main_filters::actual == machine_filter::FAVORITE)
 					{
 						m_fav_reset = true;
 						menu::stack_pop();

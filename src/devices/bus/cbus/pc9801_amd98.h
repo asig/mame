@@ -31,7 +31,7 @@ public:
 
 	DECLARE_READ8_MEMBER(read);
 	DECLARE_WRITE8_MEMBER(write);
-	
+
 protected:
 	// device-level overrides
 	virtual void device_validity_check(validity_checker &valid) const override;
@@ -43,6 +43,11 @@ protected:
 	virtual ioport_constructor device_input_ports() const override;
 
 private:
+	DECLARE_WRITE8_MEMBER(ay3_address_w);
+	DECLARE_WRITE8_MEMBER(ay3_data_latch_w);
+
+	uint8_t m_ay3_latch;
+
 //  required_device<cpu_device>  m_maincpu;
 	required_device<ay8910_device>  m_ay1;
 	required_device<ay8910_device>  m_ay2;

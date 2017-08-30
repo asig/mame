@@ -9,16 +9,13 @@
 *********************************************************************/
 
 #include "emu.h"
-
 #include "ui/optsmenu.h"
 
 #include "ui/ui.h"
 #include "ui/submenu.h"
-#include "ui/inifile.h"
 #include "ui/selector.h"
 #include "ui/custui.h"
 #include "ui/sndmenu.h"
-#include "ui/custmenu.h"
 #include "ui/inputmap.h"
 #include "ui/dirmenu.h"
 
@@ -26,7 +23,9 @@
 #include "mameopts.h"
 #include "rendfont.h"
 
+
 namespace ui {
+
 //-------------------------------------------------
 //  ctor
 //-------------------------------------------------
@@ -71,145 +70,104 @@ void menu_game_options::handle()
 	if (menu_event != nullptr && menu_event->itemref != nullptr)
 		switch ((uintptr_t)menu_event->itemref)
 		{
-			case FILTER_MENU:
+		case FILTER_MENU:
+			if (menu_event->iptkey == IPT_UI_LEFT || menu_event->iptkey == IPT_UI_RIGHT)
 			{
-				if (menu_event->iptkey == IPT_UI_LEFT || menu_event->iptkey == IPT_UI_RIGHT)
-				{
-					(menu_event->iptkey == IPT_UI_RIGHT) ? ++m_main : --m_main;
-					changed = true;
-				}
-				else if (menu_event->iptkey == IPT_UI_SELECT)
-				{
-					int total = main_filters::length;
-					std::vector<std::string> s_sel(total);
-					for (int index = 0; index < total; ++index)
-						s_sel[index] = main_filters::text[index];
-
-					menu::stack_push<menu_selector>(ui(), container(), s_sel, m_main);
-				}
-				break;
+				(menu_event->iptkey == IPT_UI_RIGHT) ? ++m_main : --m_main;
+				changed = true;
 			}
-			case FILE_CATEGORY_FILTER:
+			else if (menu_event->iptkey == IPT_UI_SELECT)
 			{
-				if (menu_event->iptkey == IPT_UI_LEFT)
-				{
-					mame_machine_manager::instance()->inifile().move_file(-1);
-					changed = true;
-				}
-				else if (menu_event->iptkey == IPT_UI_RIGHT)
-				{
-					mame_machine_manager::instance()->inifile().move_file(1);
-					changed = true;
-				}
-				else if (menu_event->iptkey == IPT_UI_SELECT)
-				{
-					inifile_manager &ifile = mame_machine_manager::instance()->inifile();
-					int total = ifile.total();
-					std::vector<std::string> s_sel(total);
-					mame_machine_manager::instance()->inifile().set_cat(0);
-					for (size_t index = 0; index < total; ++index)
-						s_sel[index] = ifile.get_file(index);
+				std::vector<std::string> s_sel(machine_filter::COUNT);
+				for (unsigned index = 0; index < s_sel.size(); ++index)
+					s_sel[index] = machine_filter::display_name(machine_filter::type(index));
 
-					menu::stack_push<menu_selector>(ui(), container(), s_sel, ifile.cur_file(), menu_selector::INIFILE);
-				}
-				break;
+				menu::stack_push<menu_selector>(
+						ui(), container(), std::move(s_sel), m_main,
+						[this] (int selection)
+						{
+							m_main = machine_filter::type(selection);
+							reset(reset_options::REMEMBER_REF);
+						});
 			}
-			case CATEGORY_FILTER:
+			break;
+		case FILTER_ADJUST:
+			if (menu_event->iptkey == IPT_UI_LEFT)
 			{
-				if (menu_event->iptkey == IPT_UI_LEFT)
-				{
-					mame_machine_manager::instance()->inifile().move_cat(-1);
-					changed = true;
-				}
-				else if (menu_event->iptkey == IPT_UI_RIGHT)
-				{
-					mame_machine_manager::instance()->inifile().move_cat(1);
-					changed = true;
-				}
-				else if (menu_event->iptkey == IPT_UI_SELECT)
-				{
-					inifile_manager &ifile = mame_machine_manager::instance()->inifile();
-					int total = ifile.cat_total();
-					std::vector<std::string> s_sel(total);
-					for (int index = 0; index < total; ++index)
-						s_sel[index] = ifile.get_category(index);
-
-					menu::stack_push<menu_selector>(ui(), container(), s_sel, ifile.cur_cat(), menu_selector::CATEGORY);
-				}
-				break;
+				changed = main_filters::filters.find(m_main)->second->adjust_left();
 			}
-			case MANUFACT_CAT_FILTER:
-				if (menu_event->iptkey == IPT_UI_LEFT || menu_event->iptkey == IPT_UI_RIGHT)
-				{
-					(menu_event->iptkey == IPT_UI_RIGHT) ? c_mnfct::actual++ : c_mnfct::actual--;
-					changed = true;
-				}
-				else if (menu_event->iptkey == IPT_UI_SELECT)
-					menu::stack_push<menu_selector>(ui(), container(), c_mnfct::ui, c_mnfct::actual);
-
-				break;
-			case YEAR_CAT_FILTER:
-				if (menu_event->iptkey == IPT_UI_LEFT || menu_event->iptkey == IPT_UI_RIGHT)
-				{
-					(menu_event->iptkey == IPT_UI_RIGHT) ? c_year::actual++ : c_year::actual--;
-					changed = true;
-				}
-				else if (menu_event->iptkey == IPT_UI_SELECT)
-					menu::stack_push<menu_selector>(ui(), container(), c_year::ui, c_year::actual);
-
-				break;
-			case CONF_DIR:
-				if (menu_event->iptkey == IPT_UI_SELECT)
-					menu::stack_push<menu_directory>(ui(), container());
-				break;
-			case MISC_MENU:
-				if (menu_event->iptkey == IPT_UI_SELECT)
-				{
-					menu::stack_push<submenu>(ui(), container(), submenu::misc_options);
-					ui_globals::reset = true;
-				}
-				break;
-			case SOUND_MENU:
-				if (menu_event->iptkey == IPT_UI_SELECT)
-				{
-					menu::stack_push<menu_sound_options>(ui(), container());
-					ui_globals::reset = true;
-				}
-				break;
-			case DISPLAY_MENU:
-				if (menu_event->iptkey == IPT_UI_SELECT)
-				{
-					menu::stack_push<submenu>(ui(), container(), submenu::video_options);
-					ui_globals::reset = true;
-				}
-				break;
-			case CUSTOM_MENU:
-				if (menu_event->iptkey == IPT_UI_SELECT)
-					menu::stack_push<menu_custom_ui>(ui(), container());
-				break;
-			case CONTROLLER_MENU:
-				if (menu_event->iptkey == IPT_UI_SELECT)
-					menu::stack_push<submenu>(ui(), container(), submenu::control_options);
-				break;
-			case CGI_MENU:
-				if (menu_event->iptkey == IPT_UI_SELECT)
-					menu::stack_push<menu_input_groups>(ui(), container());
-				break;
-			case CUSTOM_FILTER:
-				if (menu_event->iptkey == IPT_UI_SELECT)
-					menu::stack_push<menu_custom_filter>(ui(), container());
-				break;
-			case ADVANCED_MENU:
-				if (menu_event->iptkey == IPT_UI_SELECT)
-				{
-					menu::stack_push<submenu>(ui(), container(), submenu::advanced_options);
-					ui_globals::reset = true;
-				}
-				break;
-			case SAVE_CONFIG:
-				if (menu_event->iptkey == IPT_UI_SELECT)
-					ui().save_main_option();
-				break;
+			else if (menu_event->iptkey == IPT_UI_RIGHT)
+			{
+				changed = main_filters::filters.find(m_main)->second->adjust_right();
+			}
+			else if (menu_event->iptkey == IPT_UI_SELECT)
+			{
+				main_filters::filters.find(m_main)->second->show_ui(
+						ui(),
+						container(),
+						[this] (machine_filter &filter)
+						{
+							if (machine_filter::CUSTOM == filter.get_type())
+							{
+								emu_file file(ui().options().ui_path(), OPEN_FLAG_WRITE | OPEN_FLAG_CREATE | OPEN_FLAG_CREATE_PATHS);
+								if (file.open("custom_", emulator_info::get_configname(), "_filter.ini") == osd_file::error::NONE)
+								{
+									filter.save_ini(file, 0);
+									file.close();
+								}
+							}
+							reset(reset_options::REMEMBER_REF);
+						});
+			}
+			break;
+		case CONF_DIR:
+			if (menu_event->iptkey == IPT_UI_SELECT)
+				menu::stack_push<menu_directory>(ui(), container());
+			break;
+		case MISC_MENU:
+			if (menu_event->iptkey == IPT_UI_SELECT)
+			{
+				menu::stack_push<submenu>(ui(), container(), submenu::misc_options);
+				ui_globals::reset = true;
+			}
+			break;
+		case SOUND_MENU:
+			if (menu_event->iptkey == IPT_UI_SELECT)
+			{
+				menu::stack_push<menu_sound_options>(ui(), container());
+				ui_globals::reset = true;
+			}
+			break;
+		case DISPLAY_MENU:
+			if (menu_event->iptkey == IPT_UI_SELECT)
+			{
+				menu::stack_push<submenu>(ui(), container(), submenu::video_options);
+				ui_globals::reset = true;
+			}
+			break;
+		case CUSTOM_MENU:
+			if (menu_event->iptkey == IPT_UI_SELECT)
+				menu::stack_push<menu_custom_ui>(ui(), container());
+			break;
+		case CONTROLLER_MENU:
+			if (menu_event->iptkey == IPT_UI_SELECT)
+				menu::stack_push<submenu>(ui(), container(), submenu::control_options);
+			break;
+		case CGI_MENU:
+			if (menu_event->iptkey == IPT_UI_SELECT)
+				menu::stack_push<menu_input_groups>(ui(), container());
+			break;
+		case ADVANCED_MENU:
+			if (menu_event->iptkey == IPT_UI_SELECT)
+			{
+				menu::stack_push<submenu>(ui(), container(), submenu::advanced_options);
+				ui_globals::reset = true;
+			}
+			break;
+		case SAVE_CONFIG:
+			if (menu_event->iptkey == IPT_UI_SELECT)
+				ui().save_main_option();
+			break;
 		}
 
 	if (changed)
@@ -228,46 +186,18 @@ void menu_game_options::populate(float &customtop, float &custombottom)
 		std::string fbuff;
 
 		// add filter item
-		uint32_t arrow_flags = get_arrow_flags<uint16_t>(FILTER_FIRST, FILTER_LAST, m_main);
-		item_append(_("Filter"), main_filters::text[m_main], arrow_flags, (void *)(uintptr_t)FILTER_MENU);
+		uint32_t arrow_flags = get_arrow_flags<uint16_t>(machine_filter::FIRST, machine_filter::LAST, m_main);
+		auto active_filter(main_filters::filters.find(m_main));
+		if (main_filters::filters.end() == active_filter)
+			active_filter = main_filters::filters.emplace(m_main, machine_filter::create(m_main)).first;
+		item_append(_("Filter"), active_filter->second->display_name(), arrow_flags, (void *)(uintptr_t)FILTER_MENU);
 
-		// add category subitem
-		if (m_main == FILTER_CATEGORY && mame_machine_manager::instance()->inifile().total() > 0)
+		// add subitem if the filter wants it
+		if (active_filter->second->wants_adjuster())
 		{
-			inifile_manager &inif = mame_machine_manager::instance()->inifile();
-
-			arrow_flags = get_arrow_flags(uint16_t(0), uint16_t(inif.total() - 1), inif.cur_file());
-			fbuff = _(" ^!File");
-			convert_command_glyph(fbuff);
-			item_append(fbuff, inif.get_file(), arrow_flags, (void *)(uintptr_t)FILE_CATEGORY_FILTER);
-
-			arrow_flags = get_arrow_flags(uint16_t(0), uint16_t(inif.cat_total() - 1), inif.cur_cat());
-			fbuff = _(" ^!Category");
-			convert_command_glyph(fbuff);
-			item_append(fbuff, inif.get_category(), arrow_flags, (void *)(uintptr_t)CATEGORY_FILTER);
-		}
-		// add manufacturer subitem
-		else if (m_main == FILTER_MANUFACTURER && c_mnfct::ui.size() > 0)
-		{
-			arrow_flags = get_arrow_flags(uint16_t(0), uint16_t(c_mnfct::ui.size() - 1), c_mnfct::actual);
-			fbuff = _("^!Manufacturer");
-			convert_command_glyph(fbuff);
-			item_append(fbuff, c_mnfct::ui[c_mnfct::actual], arrow_flags, (void *)(uintptr_t)MANUFACT_CAT_FILTER);
-		}
-		// add year subitem
-		else if (m_main == FILTER_YEAR && c_year::ui.size() > 0)
-		{
-			arrow_flags = get_arrow_flags(uint16_t(0), uint16_t(c_year::ui.size() - 1), c_year::actual);
-			fbuff.assign(_("^!Year"));
-			convert_command_glyph(fbuff);
-			item_append(fbuff, c_year::ui[c_year::actual], arrow_flags, (void *)(uintptr_t)YEAR_CAT_FILTER);
-		}
-		// add custom subitem
-		else if (m_main == FILTER_CUSTOM)
-		{
-			fbuff = _("^!Setup custom filter");
-			convert_command_glyph(fbuff);
-			item_append(fbuff, "", 0, (void *)(uintptr_t)CUSTOM_FILTER);
+			std::string name("^!");
+			convert_command_glyph(name);
+			item_append(name, active_filter->second->adjust_text(), active_filter->second->arrow_flags(), (void *)(FILTER_ADJUST));
 		}
 
 		item_append(menu_item_type::SEPARATOR);
