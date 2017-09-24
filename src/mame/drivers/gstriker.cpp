@@ -30,7 +30,7 @@ TODO:
 - Tilemap scrolling/rotation/zooming or whatever effect it needs
 - Priorities are wrong. I suspect they need sprite orthogonality
 - Missing mixer registers (mainly layer enable/disable)
-- Tecmo World Cup '94 has missing protection emulation for draw buy-in 
+- Tecmo World Cup '94 has missing protection emulation for draw buy-in
   (as seen by code snippet 0x42ee, referenced in other places as well)
   It's unknown how the game logic should be at current stage.
 - Tecmo World Cup '94 also has no name entry whatsoever.
@@ -189,6 +189,12 @@ Frequencies: 68k is XTAL_32MHZ/2
 void gstriker_state::machine_start()
 {
 	membank("soundbank")->configure_entries(0, 8, memregion("audiocpu")->base(), 0x8000);
+
+	if (m_acia.found())
+	{
+		m_acia->write_cts(0);
+		m_acia->write_dcd(0);
+	}
 }
 
 /*** SOUND RELATED ***********************************************************/
@@ -240,7 +246,7 @@ GFXDECODE_END
 
 
 
-static ADDRESS_MAP_START( gstriker_map, AS_PROGRAM, 16, gstriker_state )
+static ADDRESS_MAP_START( twcup94_map, AS_PROGRAM, 16, gstriker_state )
 	AM_RANGE(0x000000, 0x0fffff) AM_ROM
 	AM_RANGE(0x100000, 0x103fff) AM_DEVREADWRITE("zoomtilemap", mb60553_zooming_tilemap_device,  vram_r, vram_w )
 	AM_RANGE(0x140000, 0x141fff) AM_RAM AM_SHARE("cg10103_m_vram")
@@ -251,12 +257,17 @@ static ADDRESS_MAP_START( gstriker_map, AS_PROGRAM, 16, gstriker_state )
 	AM_RANGE(0x200000, 0x20000f) AM_DEVREADWRITE("zoomtilemap", mb60553_zooming_tilemap_device,  regs_r, regs_w )
 	AM_RANGE(0x200010, 0x200011) AM_WRITENOP
 	AM_RANGE(0x200020, 0x200021) AM_WRITENOP
-	AM_RANGE(0x200040, 0x20005f) AM_RAM AM_SHARE("mixerregs1")
-	AM_RANGE(0x200060, 0x20007f) AM_RAM AM_SHARE("mixerregs2")
+	AM_RANGE(0x200040, 0x20005f) AM_RAM AM_SHARE("mixerregs")
 	AM_RANGE(0x200080, 0x20009f) AM_DEVREADWRITE8("io", vs9209_device, read, write, 0x00ff)
 	AM_RANGE(0x2000a0, 0x2000a1) AM_DEVWRITE8("soundlatch", generic_latch_8_device, write, 0x00ff)
 
 	AM_RANGE(0xffc000, 0xffffff) AM_RAM AM_SHARE("work_ram")
+ADDRESS_MAP_END
+
+static ADDRESS_MAP_START( gstriker_map, AS_PROGRAM, 16, gstriker_state )
+	AM_RANGE(0x200060, 0x200061) AM_DEVREADWRITE8("acia", acia6850_device, status_r, control_w, 0x00ff)
+	AM_RANGE(0x200062, 0x200063) AM_DEVREADWRITE8("acia", acia6850_device, data_r, data_w, 0x00ff)
+	AM_IMPORT_FROM(twcup94_map)
 ADDRESS_MAP_END
 
 static ADDRESS_MAP_START( sound_map, AS_PROGRAM, 8, gstriker_state )
@@ -371,7 +382,7 @@ static INPUT_PORTS_START( twcup94 )
 	PORT_BIT( 0x10, IP_ACTIVE_LOW, IPT_BUTTON1 ) PORT_PLAYER(2) PORT_NAME("P2 Pass")
 	PORT_BIT( 0x20, IP_ACTIVE_LOW, IPT_BUTTON2 ) PORT_PLAYER(2) PORT_NAME("P2 Shoot")
 	PORT_BIT( 0xc0, IP_ACTIVE_LOW, IPT_UNUSED )
-	
+
 	PORT_START("DSW1")
 	PORT_DIPNAME( 0x07, 0x07, DEF_STR( Coin_A ) )
 	PORT_DIPSETTING(    0x00, DEF_STR( 4C_1C ) )
@@ -499,6 +510,11 @@ static MACHINE_CONFIG_START( gstriker )
 
 	MCFG_DEVICE_ADD("watchdog", MB3773, 0)
 
+	MCFG_DEVICE_ADD("acia", ACIA6850, 0)
+	MCFG_ACIA6850_IRQ_HANDLER(INPUTLINE("maincpu", M68K_IRQ_2))
+	//MCFG_ACIA6850_TXD_HANDLER(DEVWRITELINE("link", rs232_port_device, write_txd))
+	//MCFG_ACIA6850_RTS_HANDLER(DEVWRITELINE("link", rs232_port_device, write_rts))
+
 	MCFG_SCREEN_ADD("screen", RASTER)
 //  MCFG_SCREEN_VIDEO_ATTRIBUTES(VIDEO_UPDATE_AFTER_VBLANK)
 	MCFG_SCREEN_REFRESH_RATE(60)
@@ -545,12 +561,14 @@ MACHINE_CONFIG_END
 
 static MACHINE_CONFIG_DERIVED( twc94, gstriker )
 	MCFG_CPU_REPLACE("maincpu", M68000, 16000000)
-	MCFG_CPU_PROGRAM_MAP(gstriker_map)
+	MCFG_CPU_PROGRAM_MAP(twcup94_map)
 	MCFG_CPU_VBLANK_INT_DRIVER("screen", gstriker_state,  irq1_line_hold)
 
 	MCFG_DEVICE_MODIFY("io")
 	MCFG_VS9209_OUT_PORTH_CB(WRITE8(gstriker_state, twcup94_prot_reg_w))
 	MCFG_DEVCB_CHAIN_OUTPUT(DEVWRITELINE("watchdog", mb3773_device, write_line_ck)) MCFG_DEVCB_BIT(3)
+
+	MCFG_DEVICE_REMOVE("acia")
 MACHINE_CONFIG_END
 
 
@@ -814,7 +832,7 @@ WRITE8_MEMBER(gstriker_state::twcup94_prot_reg_w)
 	// Command byte is also written to VS9209 port F, which is set for input only.
 	// Does the MCU somehow strobe it out of there?
 	uint8_t mcu_data = m_work_ram[0x00f/2] & 0x00ff;
-	
+
 	if( ((m_prot_reg[1] & 4) == 0) && ((m_prot_reg[0] & 4) == 4) )
 	{
 		switch( m_gametype )
@@ -883,14 +901,14 @@ WRITE8_MEMBER(gstriker_state::twcup94_prot_reg_w)
 						logerror("Unknown MCU CMD %04x\n",mcu_data);
 						PC(NULL_SUB);
 						break;
-						
+
 					#undef NULL_SUB
 				}
 				break;
-			
+
 			// same as above but with +0x10 displacement offsets
 			case TECMO_WCUP94A_MCU:
-				
+
 				switch (mcu_data)
 				{
 					#define NULL_SUB 0x0000829E
@@ -909,12 +927,12 @@ WRITE8_MEMBER(gstriker_state::twcup94_prot_reg_w)
 					case 0x6e: PC(0x00010E38); break; // loop
 					case 0x6b: PC(0x00010EFC); break; // attract even
 					case 0x69: PC(0x0001121A); break; // attract odd
-					
+
 					default:
 						logerror("Unknown MCU CMD %04x\n",mcu_data);
 						PC(NULL_SUB);
 						break;
-					
+
 					#undef NULL_SUB
 				}
 				break;

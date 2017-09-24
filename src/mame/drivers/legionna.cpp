@@ -429,7 +429,7 @@ static INPUT_PORTS_START( legionna )
 	PORT_DIPSETTING(      0x0200, "1" )
 	PORT_DIPSETTING(      0x0300, "2" )
 	PORT_DIPSETTING(      0x0100, "3" )
-	PORT_DIPSETTING(      0x0000, DEF_STR( Infinite ) )
+	PORT_DIPSETTING(      0x0000, "4" )
 	PORT_DIPNAME( 0x0400, 0x0400, "Extend" )
 	PORT_DIPSETTING(      0x0000, DEF_STR( Off ) )
 	PORT_DIPSETTING(      0x0400, DEF_STR( On ) )
@@ -2535,7 +2535,7 @@ GAME( 1992, heatbrle, heatbrl,  heatbrl,  heatbrl,  legionna_state, 0,         R
 
 GAME( 1993, godzilla, 0,        godzilla, godzilla, legionna_state, 0,         ROT0, "Banpresto", "Godzilla (Japan)", 0 )
 GAME( 1993, grainbow, 0,        grainbow, grainbow, legionna_state, 0,         ROT0, "Banpresto", "SD Gundam Sangokushi Rainbow Tairiku Senki", MACHINE_UNEMULATED_PROTECTION | MACHINE_NOT_WORKING )
-GAME( 1993, denjinmk, 0,        denjinmk, denjinmk, legionna_state, 0,         ROT0, "Winkysoft (Banpresto license)", "Denjin Makai", MACHINE_IMPERFECT_COLORS )
+GAME( 1993, denjinmk, 0,        denjinmk, denjinmk, legionna_state, 0,         ROT0, "Winkysoft (Banpresto license)", "Denjin Makai", 0 )
 
 GAME( 1992, cupsoc,   0,        cupsoc,   cupsoc,   legionna_state, cupsoc,    ROT0, "Seibu Kaihatsu", "Seibu Cup Soccer (set 1)", MACHINE_UNEMULATED_PROTECTION | MACHINE_NOT_WORKING )
 GAME( 1992, cupsoca,  cupsoc,   cupsoc,   cupsoc,   legionna_state, cupsoc,    ROT0, "Seibu Kaihatsu", "Seibu Cup Soccer (set 2)", MACHINE_UNEMULATED_PROTECTION | MACHINE_NOT_WORKING )
