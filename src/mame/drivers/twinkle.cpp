@@ -9,7 +9,7 @@ driver by smf and R. Belmont
 TODO:
 
 dvd check for bmiidx, bmiidxa, bmiidxc & bmiidxca
-remove dummy 8mb bank
+The first 128k of RF5C400 bank 0 is uploaded by the 68000, the rest is unused. It may be using 16J & 18J
 emulate dvd player and video mixing
 16seg led font
 
@@ -28,14 +28,14 @@ beatmania IIDX + DDR Club Kit(newer)  1999     896 JA BBM       *?             *
 beatmania IIDX Substream              1999     *?               GC983 A04      *?           ?
 beatmania IIDX Club Version 2         1999     GE984 A01(BM)    *?             *984 A02     ?
                                              + GE984 A01(DDR)
-beatmania IIDX 2nd Style              1999     GC985 A01        GC985 A04      *           *985 HDD A01
-beatmania IIDX 3rd Style              2000     GC992-JA A01     GC992-JA A04   *           *992 HDD A01
-beatmania IIDX 3rd Style(newer)       2000     GC992-JA C01     GC992-JA A04   *           *992 HDD A01
-beatmania IIDX 4th Style              2000     A03 JA A01       A03 JA A02     *A03        A03 JA A03
-beatmania IIDX 5th Style              2001     A17 JA A01       A17 JA A02     *           *A17 JA A03
-beatmania IIDX 6th Style              2001     B4U JA A01       B4U JA A02     *           B4U JA A03
-beatmania IIDX 6th Style(newer)       2001     B4U JA B01       B4U JA A02     *           B4U JA A03
-beatmania IIDX 7th Style              2002     B44 JA A01       B44 JA A02     *           B44 JA A03
+beatmania IIDX 2nd Style              1999     GC985 A01        GC985 A04      *?          *985 HDD A01
+beatmania IIDX 3rd Style              2000     GC992-JA A01     GC992-JA A04   *?          *992 HDD A01
+beatmania IIDX 3rd Style(newer)       2000     GC992-JA C01     GC992-JA A04   *?          *992 HDD A01
+beatmania IIDX 4th Style              2000     A03 JA A01       A03 JA A02     A03         A03 JA A03
+beatmania IIDX 5th Style              2001     A17 JA A01       A17 JA A02     A17         *A17 JA A03
+beatmania IIDX 6th Style              2001     B4U JA A01       B4U JA A02     *?          B4U JA A03
+beatmania IIDX 6th Style(newer)       2001     B4U JA B01       B4U JA A02     *?          B4U JA A03
+beatmania IIDX 7th Style              2002     B44 JA A01       B44 JA A02     *?          B44 JA A03
 beatmania IIDX 8th Style              2002     C44 JA A01       C44 JA A02     *C44        C44 JA A03
 
 * = Not dumped.
@@ -267,7 +267,7 @@ public:
 
 	required_device<am53cf96_device> m_am53cf96;
 	required_device<ata_interface_device> m_ata;
-	required_region_ptr<uint16_t> m_waveram;
+	required_shared_ptr<uint16_t> m_waveram;
 
 	uint16_t m_spu_ctrl;      // SPU board control register
 	uint8_t m_spu_shared[0x400];  // SPU/PSX shared dual-ported RAM
@@ -923,6 +923,10 @@ static ADDRESS_MAP_START( sound_map, AS_PROGRAM, 16, twinkle_state )
 	AM_RANGE(0x800000, 0xffffff) AM_READWRITE(twinkle_waveram_r, twinkle_waveram_w)
 ADDRESS_MAP_END
 
+static ADDRESS_MAP_START(rf5c400_map, 0, 16, twinkle_state)
+	AM_RANGE(0x0000000, 0x1ffffff) AM_RAM AM_SHARE("rfsnd")
+ADDRESS_MAP_END
+
 /* SCSI */
 
 static void scsi_dma_read( twinkle_state *state, uint32_t *p_n_psxram, uint32_t n_address, int32_t n_size )
@@ -1069,6 +1073,7 @@ static MACHINE_CONFIG_START( twinkle )
 	MCFG_SOUND_ROUTE( 1, "speakerright", 0.75 )
 
 	MCFG_RF5C400_ADD("rfsnd", XTAL_33_8688MHz/2);
+	MCFG_DEVICE_ADDRESS_MAP(0, rf5c400_map)
 	MCFG_SOUND_ROUTE(0, "speakerleft", 1.0)
 	MCFG_SOUND_ROUTE(1, "speakerright", 1.0)
 MACHINE_CONFIG_END
@@ -1170,9 +1175,7 @@ INPUT_PORTS_END
 	ROM_LOAD( "863a03.7b",    0x000000, 0x080000, CRC(81498f73) SHA1(3599b40a5872eab3a00d345287635355fcb25a71) )\
 \
 	ROM_REGION32_LE( 0x080000, "audiocpu", 0 )\
-	ROM_LOAD16_WORD_SWAP( "863a05.2x",    0x000000, 0x080000, CRC(6f42a09e) SHA1(cab5209f90f47b9ee6e721479913ad74e3ba84b1) )\
-\
-	ROM_REGION16_LE(0x2000000, "rfsnd", ROMREGION_ERASE00) // the first 8mb isn't populated
+	ROM_LOAD16_WORD_SWAP( "863a05.2x",    0x000000, 0x080000, CRC(6f42a09e) SHA1(cab5209f90f47b9ee6e721479913ad74e3ba84b1) )
 
 ROM_START( gq863 )
 	TWINKLE_BIOS
@@ -1214,7 +1217,7 @@ ROM_START( bmiidx2 )
 	TWINKLE_BIOS
 
 	ROM_REGION( 0x100, "security", 0 )
-	ROM_LOAD( "985a02", 0x000000, 0x000100, BAD_DUMP CRC(a35143a9) SHA1(1c0feeab60d9dc50dc4b9a2f3dac73ca619e74b0) )
+	ROM_LOAD( "985a02", 0x000000, 0x000100, BAD_DUMP CRC(a290f534) SHA1(e7089f5f9c4c90d6c082539f3d839ac7798a27e4) )
 
 	DISK_REGION( "scsi:" SCSI_PORT_DEVICE1 ":cdrom" )
 	DISK_IMAGE_READONLY( "gc985a01", 0, SHA1(0b783f11317f64552ebf3323459139529e7f315f) )
@@ -1230,7 +1233,7 @@ ROM_START( bmiidx3 )
 	TWINKLE_BIOS
 
 	ROM_REGION( 0x100, "security", 0 )
-	ROM_LOAD( "992a02", 0x000000, 0x000100, BAD_DUMP CRC(51f24913) SHA1(574b555e3d0c234011198d218d7ae5e95091acb1) )
+	ROM_LOAD( "992a02", 0x000000, 0x000100, BAD_DUMP CRC(4b35d2ad) SHA1(4a9015e7f11d1aab9f79f070af9906e71eb4eb6d) )
 
 	DISK_REGION( "scsi:" SCSI_PORT_DEVICE1 ":cdrom" )
 	DISK_IMAGE_READONLY( "gc992-jac01", 0, SHA1(c02d6e58439be678ec0d7171eae2dfd53a21acc7) )
@@ -1246,7 +1249,7 @@ ROM_START( bmiidx3a )
 	TWINKLE_BIOS
 
 	ROM_REGION( 0x100, "security", 0 )
-	ROM_LOAD( "992a02", 0x000000, 0x000100, BAD_DUMP CRC(51f24913) SHA1(574b555e3d0c234011198d218d7ae5e95091acb1) )
+	ROM_LOAD( "992a02", 0x000000, 0x000100, BAD_DUMP CRC(4b35d2ad) SHA1(4a9015e7f11d1aab9f79f070af9906e71eb4eb6d) )
 
 	DISK_REGION( "scsi:" SCSI_PORT_DEVICE1 ":cdrom" )
 	DISK_IMAGE_READONLY( "gc992-jaa01", 0, BAD_DUMP SHA1(7e5389735dff379bb286ba3744edf59b7dfcc74b) )
@@ -1262,7 +1265,7 @@ ROM_START( bmiidx4 )
 	TWINKLE_BIOS
 
 	ROM_REGION( 0x100, "security", 0 )
-	ROM_LOAD( "a03", 0x000000, 0x000100, BAD_DUMP CRC(8860cfb6) SHA1(85a5b27f24d4baa7960e692b91c0cf3dc5388e72) )
+	ROM_LOAD( "a03", 0x000000, 0x000100, CRC(056816a5) SHA1(125d24d1c22b8d3da6fe53f519c8d83eba627e9f) )
 
 	DISK_REGION( "scsi:" SCSI_PORT_DEVICE1 ":cdrom" )
 	DISK_IMAGE_READONLY( "a03jaa01", 0, SHA1(f54fc778c2187ccd950402a159babef956b71492) )
@@ -1278,7 +1281,7 @@ ROM_START( bmiidx5 )
 	TWINKLE_BIOS
 
 	ROM_REGION( 0x100, "security", 0 )
-	ROM_LOAD( "a17", 0x000000, 0x000100, BAD_DUMP CRC(9428afb0) SHA1(ba907d3361256b022583d6a42fe223e90590e3c6) )
+	ROM_LOAD( "a17", 0x000000, 0x000100, CRC(8eef340e) SHA1(631521baf9ec5db111e62cf0439ae31400447a57) )
 
 	DISK_REGION( "scsi:" SCSI_PORT_DEVICE1 ":cdrom" )
 	DISK_IMAGE_READONLY( "a17jaa01", 0, SHA1(5ac46973b42b2c66ae63297d1a7fd69b33ef4d1d) )
@@ -1294,7 +1297,7 @@ ROM_START( bmiidx6 )
 	TWINKLE_BIOS
 
 	ROM_REGION( 0x100, "security", 0 )
-	ROM_LOAD( "b4u", 0x000000, 0x000100, BAD_DUMP CRC(0ab15633) SHA1(df004ff41f35b16089f69808ccf53a5e5cc13ac3) )
+	ROM_LOAD( "b4u", 0x000000, 0x000100, BAD_DUMP CRC(1076cd8d) SHA1(e4bdadbf675221cc0170e5d4a37fe1f439c2e72b) )
 
 	DISK_REGION( "scsi:" SCSI_PORT_DEVICE1 ":cdrom" )
 	DISK_IMAGE_READONLY( "b4ujab01", 0, SHA1(aaae77f473c4a44ce6838da3ef6dab27e4afa0e4) )
@@ -1310,7 +1313,7 @@ ROM_START( bmiidx6a )
 	TWINKLE_BIOS
 
 	ROM_REGION( 0x100, "security", 0 )
-	ROM_LOAD( "b4u", 0x000000, 0x000100, BAD_DUMP CRC(0ab15633) SHA1(df004ff41f35b16089f69808ccf53a5e5cc13ac3) )
+	ROM_LOAD( "b4u", 0x000000, 0x000100, BAD_DUMP CRC(1076cd8d) SHA1(e4bdadbf675221cc0170e5d4a37fe1f439c2e72b) )
 
 	DISK_REGION( "scsi:" SCSI_PORT_DEVICE1 ":cdrom" )
 	DISK_IMAGE_READONLY( "b4ujaa01", 0, BAD_DUMP SHA1(d8f5d56b8728bea761dc4cdbc04851094d276bd6) )
@@ -1326,7 +1329,7 @@ ROM_START( bmiidx7 )
 	TWINKLE_BIOS
 
 	ROM_REGION( 0x100, "security", 0 )
-	ROM_LOAD( "b44", 0x000000, 0x000100, BAD_DUMP CRC(5baf4761) SHA1(aa7e07eb2cada03b85bdf11ac6a3de65f4253eef) )
+	ROM_LOAD( "b44", 0x000000, 0x000100, BAD_DUMP CRC(4168dcdf) SHA1(66ef68783a69b04af6bc85cef90a36085dfee612) )
 
 	DISK_REGION( "scsi:" SCSI_PORT_DEVICE1 ":cdrom" )
 	DISK_IMAGE_READONLY( "b44jaa01", 0, SHA1(57fb0312d8102e959658e48a97e46aa16e592b60) )
@@ -1342,7 +1345,7 @@ ROM_START( bmiidx8 )
 	TWINKLE_BIOS
 
 	ROM_REGION( 0x100, "security", 0 )
-	ROM_LOAD( "c44", 0x000000, 0x000100, BAD_DUMP CRC(04c22349) SHA1(d1cb78911cb1ca660d393a81ed3ed07b24c51525) )
+	ROM_LOAD( "c44", 0x000000, 0x000100, BAD_DUMP CRC(198de0a2) SHA1(9526e98aaeb7ab3198e7a63715c4fc2d7c9d6021) )
 
 	DISK_REGION( "scsi:" SCSI_PORT_DEVICE1 ":cdrom" )
 	DISK_IMAGE_READONLY( "c44jaa01", 0, BAD_DUMP SHA1(8b544c81bc56b19e4aa1649e68824811d6d51ce5) )

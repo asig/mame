@@ -51,6 +51,8 @@
 // core state/playback options
 #define OPTION_STATE                "state"
 #define OPTION_AUTOSAVE             "autosave"
+#define OPTION_REWIND               "rewind"
+#define OPTION_REWIND_CAPACITY      "rewind_capacity"
 #define OPTION_PLAYBACK             "playback"
 #define OPTION_RECORD               "record"
 #define OPTION_RECORD_TIMECODE      "record_timecode"
@@ -166,6 +168,7 @@
 #define OPTION_UI_FONT              "uifont"
 #define OPTION_UI                   "ui"
 #define OPTION_RAMSIZE              "ramsize"
+#define OPTION_NVRAM_SAVE           "nvram_save"
 
 // core comm options
 #define OPTION_COMM_LOCAL_HOST      "comm_localhost"
@@ -327,6 +330,8 @@ public:
 	// core state/playback options
 	const char *state() const { return value(OPTION_STATE); }
 	bool autosave() const { return bool_value(OPTION_AUTOSAVE); }
+	int rewind() const { return bool_value(OPTION_REWIND); }
+	int rewind_capacity() const { return int_value(OPTION_REWIND_CAPACITY); }
 	const char *playback() const { return value(OPTION_PLAYBACK); }
 	const char *record() const { return value(OPTION_RECORD); }
 	bool record_timecode() const { return bool_value(OPTION_RECORD_TIMECODE); }
@@ -440,6 +445,7 @@ public:
 	const char *ui_font() const { return value(OPTION_UI_FONT); }
 	ui_option ui() const { return m_ui; }
 	const char *ram_size() const { return value(OPTION_RAMSIZE); }
+	bool nvram_save() const { return bool_value(OPTION_NVRAM_SAVE); }
 
 	// core comm options
 	const char *comm_localhost() const { return value(OPTION_COMM_LOCAL_HOST); }

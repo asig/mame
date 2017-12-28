@@ -115,11 +115,11 @@ READ16_MEMBER(metro_state::metro_irq_cause_r)
 	/* interrupt cause, used by
 
 	int[0] vblank
-	int[1] hblank (bangball for faster intermission skip, 
-	               puzzli for gameplay water effect, 
-				   blzntrnd title screen scroll (enabled all the time then?),
-				   unused/empty in balcube, daitoride, karatour,
-				   unchecked mouja & other i4300 games )
+	int[1] hblank (bangball for faster intermission skip,
+	               puzzli for gameplay water effect,
+	               blzntrnd title screen scroll (enabled all the time then?),
+	               unused/empty in balcube, daitoride, karatour,
+	               unchecked mouja & other i4300 games )
 	int[2] blitter
 	int[3] ?            KARATOUR
 	int[4] ?
@@ -5535,7 +5535,7 @@ DRIVER_INIT_MEMBER(metro_state,balcube)
 
 	for (unsigned i = 0; i < len; i+=2)
 	{
-		ROM[i]  = BITSWAP8(ROM[i],0,1,2,3,4,5,6,7);
+		ROM[i]  = bitswap<8>(ROM[i],0,1,2,3,4,5,6,7);
 	}
 
 	metro_common();
@@ -5552,11 +5552,11 @@ DRIVER_INIT_MEMBER(metro_state,dharmak)
 	{
 		uint8_t dat;
 		dat = src[i + 1];
-		dat = BITSWAP8(dat, 7,3,2,4, 5,6,1,0);
+		dat = bitswap<8>(dat, 7,3,2,4, 5,6,1,0);
 		src[i + 1] = dat;
 
 		dat = src[i + 3];
-		dat = BITSWAP8(dat, 7,2,5,4, 3,6,1,0);
+		dat = bitswap<8>(dat, 7,2,5,4, 3,6,1,0);
 		src[i + 3] = dat;
 	}
 

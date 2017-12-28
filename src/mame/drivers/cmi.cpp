@@ -122,7 +122,7 @@
 #include "speaker.h"
 
 
-#define Q209_CPU_CLOCK      4000000 // ?
+#define Q209_CPU_CLOCK      40210000 / 40 // divider not verified (very complex circuit)
 
 #define M6809_CLOCK             8000000 // wrong
 #define MASTER_OSCILLATOR       34291712
@@ -559,12 +559,12 @@ public:
 
 protected:
 
-	required_device<m6809e_device> m_maincpu1;
-	required_device<m6809e_device> m_maincpu2;
+	required_device<mc6809e_device> m_maincpu1;
+	required_device<mc6809e_device> m_maincpu2;
 	required_device<m6802_cpu_device> m_muskeyscpu;
 	required_device<m6802_cpu_device> m_alphakeyscpu;
 	required_device<m68000_device> m_midicpu;
-	required_device<m6809e_device> m_cmi07cpu;
+	required_device<mc6809e_device> m_cmi07cpu;
 
 	required_device<msm5832_device> m_msm5832;
 	required_device<i8214_device> m_i8214_0;
@@ -2738,13 +2738,13 @@ static SLOT_INTERFACE_START( cmi2x_floppies )
 SLOT_INTERFACE_END
 
 static MACHINE_CONFIG_START( cmi2x )
-	MCFG_CPU_ADD("maincpu1", M6809E, Q209_CPU_CLOCK)
+	MCFG_CPU_ADD("maincpu1", MC6809E, Q209_CPU_CLOCK)
 	MCFG_CPU_PROGRAM_MAP(maincpu1_map)
 	MCFG_CPU_VBLANK_INT_DRIVER("screen", cmi_state, cmi_iix_vblank)
 	MCFG_CPU_IRQ_ACKNOWLEDGE_DRIVER(cmi_state, cpu1_interrupt_callback)
 	MCFG_QUANTUM_PERFECT_CPU("maincpu1")
 
-	MCFG_CPU_ADD("maincpu2", M6809E, Q209_CPU_CLOCK)
+	MCFG_CPU_ADD("maincpu2", MC6809E, Q209_CPU_CLOCK)
 	MCFG_CPU_PROGRAM_MAP(maincpu2_map)
 	MCFG_CPU_IRQ_ACKNOWLEDGE_DRIVER(cmi_state, cpu2_interrupt_callback)
 	MCFG_QUANTUM_PERFECT_CPU("maincpu2")
@@ -2756,10 +2756,10 @@ static MACHINE_CONFIG_START( cmi2x )
 	MCFG_CPU_PROGRAM_MAP(alphakeys_map)
 	MCFG_CPU_PERIODIC_INT_DRIVER(cmi_state, irq0_line_hold, 9600) // TODO: PIA controls this
 
-	MCFG_CPU_ADD("smptemidi", M68000, 10000000)
+	MCFG_CPU_ADD("smptemidi", M68000, XTAL_20MHz / 2)
 	MCFG_CPU_PROGRAM_MAP(midicpu_map)
 
-	MCFG_CPU_ADD("cmi07cpu", M6809E, 4000000) // ?
+	MCFG_CPU_ADD("cmi07cpu", MC6809E, Q209_CPU_CLOCK) // ?
 	MCFG_CPU_PROGRAM_MAP(cmi07cpu_map)
 
 	/* alpha-numeric display */
