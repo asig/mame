@@ -570,20 +570,20 @@ READ16_MEMBER(namcos21_state::dspcuskey_r)
 	uint16_t result = 0;
 	if( m_gametype == NAMCOS21_SOLVALOU )
 	{
-		switch( space.device().safe_pc() )
+		switch( m_dspmaster->pc() )
 		{
 		case 0x805e: result = 0x0000; break;
 		case 0x805f: result = 0xfeba; break;
 		case 0x8067: result = 0xffff; break;
 		case 0x806e: result = 0x0145; break;
 		default:
-			logerror( "unk cuskey_r; pc=0x%x\n", space.device().safe_pc() );
+			logerror( "unk cuskey_r; pc=0x%x\n", m_dspmaster->pc() );
 			break;
 		}
 	}
 	else if( m_gametype == NAMCOS21_CYBERSLED )
 	{
-		switch( space.device().safe_pc() )
+		switch( m_dspmaster->pc() )
 		{
 		case 0x8061: result = 0xfe95; break;
 		case 0x8069: result = 0xffff; break;
@@ -1289,7 +1289,7 @@ WRITE16_MEMBER(namcos21_state::winrun_dspcomram_w)
 
 READ16_MEMBER(namcos21_state::winrun_cuskey_r)
 {
-	int pc = space.device().safe_pc();
+	int pc = m_dsp->pc();
 	switch( pc )
 	{
 	case 0x0064: /* winrun91 */

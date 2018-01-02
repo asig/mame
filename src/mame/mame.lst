@@ -12901,6 +12901,7 @@ jolycdic                        // 1993 bootleg
 jolycdid                        // 1990 bootleg
 jolycdie                        // 1990 bootleg
 jolycdif                        // 1990 bootleg
+jolycdig                        // 1993 bootleg
 jolycdit                        // 199? bootleg
 jolycdsp                        // (c) 1992 TAB-Austria
 jolycmzs                        // (c) 1993 MZS Tech
@@ -14761,6 +14762,7 @@ tbtoads                         // Tiger
 tddragon                        // Tiger
 tgaiden                         // Tiger
 tgaunt                          // Tiger
+tigarden                        // Tronica
 tjdredd                         // Tiger
 tkarnov                         // Tiger
 tmchammer                       // Tiger
@@ -14777,6 +14779,7 @@ tswampt                         // Tiger
 
 @source:hh_tms1k.cpp
 7in1ss                          // Tiger Electronics
+alphie                          // Playskool
 arcmania                        // Milton Bradley
 arrball                         // A-One LSI
 amaztron                        // Coleco
@@ -14844,6 +14847,7 @@ tbreakup                        // Tomy
 tc4                             // Coleco
 tcfball                         // Tandy Radio Shack
 tcfballa                        // Tandy Radio Shack
+timaze                          // Texas Instruments
 xl25                            // Vulcan
 zodiac                          // Coleco
 
@@ -15491,6 +15495,7 @@ timekill121                     // (c) 1992 Strata/Incredible Technologies
 timekill131                     // (c) 1992 Strata/Incredible Technologies
 timekill132i                    // (c) 1992 Strata/Incredible Technologies
 wcbowl                          // (c) 1995 Incredible Technologies
+wcbowl10                        // (c) 1995 Incredible Technologies
 wcbowl11                        // (c) 1995 Incredible Technologies
 wcbowl12                        // (c) 1995 Incredible Technologies
 wcbowl13                        // (c) 1995 Incredible Technologies
@@ -32347,6 +32352,10 @@ quizpun2                        // (c) 1989 Space Computer System of Korea
 @source:quizshow.cpp
 quizshow                        // 005464           1976/04 [2650]
 
+@source:qvt6800.cpp
+qvt102                          //
+qvt190                          //
+
 @source:qx10.cpp
 qx10                            //
 
@@ -36451,15 +36460,11 @@ t4490                           // Terco 4490 Mill CNC Control (c) 1986
 @source:terminals.cpp
 aaa
 qvt70
-qvt102
 qvt103
-qvt190
 qvt201
-tr175
 tv912c
 tv955
 tv965
-vt420
 
 @source:terracre.cpp
 amatelas                        // (c) 1986
@@ -37050,6 +37055,9 @@ toypop                          // (c) 1986
 tp84                            // GX388 (c) 1984
 tp84a                           // GX388 (c) 1984
 tp84b                           // GX388 (c) 1984
+
+@source:tr175.cpp
+tr175                           // Relisys
 
 @source:tr606.cpp
 tr606                           // Roland
@@ -37889,6 +37897,7 @@ vt320                           // 1987 Digital Equipment Corporation
 vt330                           // 1987 Digital Equipment Corporation
 
 @source:vt520.cpp
+vt420                           // 1990 Digital Equipment Corporation
 vt520                           // 1994 Digital Equipment Corporation
 
 @source:vta2000.cpp

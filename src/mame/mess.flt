@@ -561,6 +561,7 @@ px8.cpp
 pyl601.cpp
 ql.cpp
 qtsbc.cpp
+qvt6800.cpp
 qx10.cpp
 r9751.cpp
 radio86.cpp
@@ -696,6 +697,7 @@ tmc1800.cpp
 tmc2000e.cpp
 tmc600.cpp
 tosh1000.cpp
+tr175.cpp
 tr606.cpp
 tranz330.cpp
 tricep.cpp
