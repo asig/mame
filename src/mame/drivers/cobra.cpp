@@ -842,6 +842,10 @@ public:
 	INTERRUPT_GEN_MEMBER(cobra_vblank);
 	void cobra_video_exit();
 	int decode_debug_state_value(int v);
+	void cobra(machine_config &config);
+	void cobra_gfx_map(address_map &map);
+	void cobra_main_map(address_map &map);
+	void cobra_sub_map(address_map &map);
 };
 
 void cobra_renderer::render_color_scan(int32_t scanline, const extent_t &extent, const cobra_polydata &extradata, int threadid)
@@ -1736,7 +1740,7 @@ WRITE32_MEMBER(cobra_state::main_cpu_dc_store)
 	}
 }
 
-static ADDRESS_MAP_START( cobra_main_map, AS_PROGRAM, 64, cobra_state )
+ADDRESS_MAP_START(cobra_state::cobra_main_map)
 	AM_RANGE(0x00000000, 0x003fffff) AM_RAM AM_SHARE("main_ram")
 	AM_RANGE(0x07c00000, 0x07ffffff) AM_RAM
 	AM_RANGE(0x80000cf8, 0x80000cff) AM_READWRITE(main_mpc106_r, main_mpc106_w)
@@ -2076,7 +2080,7 @@ WRITE8_MEMBER(cobra_state::sub_jvs_w)
 	}
 }
 
-static ADDRESS_MAP_START( cobra_sub_map, AS_PROGRAM, 32, cobra_state )
+ADDRESS_MAP_START(cobra_state::cobra_sub_map)
 	AM_RANGE(0x00000000, 0x003fffff) AM_RAM AM_SHARE("sub_ram")                       // Main RAM
 	AM_RANGE(0x70000000, 0x7003ffff) AM_READWRITE(sub_comram_r, sub_comram_w)         // Double buffered shared RAM between Main and Sub
 //  AM_RANGE(0x78000000, 0x780000ff) AM_NOP                                           // SCSI controller (unused)
@@ -3088,7 +3092,7 @@ WRITE64_MEMBER(cobra_state::gfx_buf_w)
 
 	// teximage_load() / mbuslib_prc_read():    0x00A00001 0x10520800
 
-//  printf("prc_read %08X%08X at %08X\n", (uint32_t)(data >> 32), (uint32_t)(data), space.device().safe_pc());
+//  printf("prc_read %08X%08X at %08X\n", (uint32_t)(data >> 32), (uint32_t)(data), m_gfxcpu->pc());
 
 	m_renderer->gfx_fifo_exec();
 
@@ -3133,14 +3137,14 @@ WRITE32_MEMBER(cobra_state::gfx_cpu_dc_store)
 
 		uint32_t a = (offset / 8) & 0xff;
 
-		fifo_in->push(&space.device(), (uint32_t)(m_gfx_fifo_mem[a+0] >> 32) | i);
-		fifo_in->push(&space.device(), (uint32_t)(m_gfx_fifo_mem[a+0] >>  0) | i);
-		fifo_in->push(&space.device(), (uint32_t)(m_gfx_fifo_mem[a+1] >> 32) | i);
-		fifo_in->push(&space.device(), (uint32_t)(m_gfx_fifo_mem[a+1] >>  0) | i);
-		fifo_in->push(&space.device(), (uint32_t)(m_gfx_fifo_mem[a+2] >> 32) | i);
-		fifo_in->push(&space.device(), (uint32_t)(m_gfx_fifo_mem[a+2] >>  0) | i);
-		fifo_in->push(&space.device(), (uint32_t)(m_gfx_fifo_mem[a+3] >> 32) | i);
-		fifo_in->push(&space.device(), (uint32_t)(m_gfx_fifo_mem[a+3] >>  0) | i);
+		fifo_in->push(m_gfxcpu, (uint32_t)(m_gfx_fifo_mem[a+0] >> 32) | i);
+		fifo_in->push(m_gfxcpu, (uint32_t)(m_gfx_fifo_mem[a+0] >>  0) | i);
+		fifo_in->push(m_gfxcpu, (uint32_t)(m_gfx_fifo_mem[a+1] >> 32) | i);
+		fifo_in->push(m_gfxcpu, (uint32_t)(m_gfx_fifo_mem[a+1] >>  0) | i);
+		fifo_in->push(m_gfxcpu, (uint32_t)(m_gfx_fifo_mem[a+2] >> 32) | i);
+		fifo_in->push(m_gfxcpu, (uint32_t)(m_gfx_fifo_mem[a+2] >>  0) | i);
+		fifo_in->push(m_gfxcpu, (uint32_t)(m_gfx_fifo_mem[a+3] >> 32) | i);
+		fifo_in->push(m_gfxcpu, (uint32_t)(m_gfx_fifo_mem[a+3] >>  0) | i);
 
 		m_renderer->gfx_fifo_exec();
 	}
@@ -3182,7 +3186,7 @@ WRITE64_MEMBER(cobra_state::gfx_debug_state_w)
 	}
 }
 
-static ADDRESS_MAP_START( cobra_gfx_map, AS_PROGRAM, 64, cobra_state )
+ADDRESS_MAP_START(cobra_state::cobra_gfx_map)
 	AM_RANGE(0x00000000, 0x003fffff) AM_RAM AM_SHARE("gfx_main_ram_0")
 	AM_RANGE(0x07c00000, 0x07ffffff) AM_RAM AM_SHARE("gfx_main_ram_1")
 	AM_RANGE(0x10000000, 0x100007ff) AM_WRITE(gfx_fifo0_w)
@@ -3318,11 +3322,11 @@ void cobra_state::machine_reset()
 	dmadac_set_frequency(&m_dmadac[1], 1, 44100);
 }
 
-static MACHINE_CONFIG_START( cobra )
+MACHINE_CONFIG_START(cobra_state::cobra)
 
 	/* basic machine hardware */
 	MCFG_CPU_ADD("maincpu", PPC603, 100000000)      /* 603EV, 100? MHz */
-	MCFG_PPC_BUS_FREQUENCY(XTAL_66_6667MHz)  /* Multiplier 1.5, Bus = 66MHz, Core = 100MHz */
+	MCFG_PPC_BUS_FREQUENCY(XTAL(66'666'700))  /* Multiplier 1.5, Bus = 66MHz, Core = 100MHz */
 	MCFG_CPU_PROGRAM_MAP(cobra_main_map)
 	MCFG_CPU_VBLANK_INT_DRIVER("screen", cobra_state,  cobra_vblank)
 
@@ -3330,7 +3334,7 @@ static MACHINE_CONFIG_START( cobra )
 	MCFG_CPU_PROGRAM_MAP(cobra_sub_map)
 
 	MCFG_CPU_ADD("gfxcpu", PPC604, 100000000)       /* 604, 100? MHz */
-	MCFG_PPC_BUS_FREQUENCY(XTAL_66_6667MHz)   /* Multiplier 1.5, Bus = 66MHz, Core = 100MHz */
+	MCFG_PPC_BUS_FREQUENCY(XTAL(66'666'700))   /* Multiplier 1.5, Bus = 66MHz, Core = 100MHz */
 	MCFG_CPU_PROGRAM_MAP(cobra_gfx_map)
 
 	MCFG_QUANTUM_TIME(attotime::from_hz(15005))
@@ -3353,7 +3357,7 @@ static MACHINE_CONFIG_START( cobra )
 
 	MCFG_SPEAKER_STANDARD_STEREO("lspeaker", "rspeaker")
 
-	MCFG_RF5C400_ADD("rfsnd", XTAL_16_9344MHz)
+	MCFG_RF5C400_ADD("rfsnd", XTAL(16'934'400))
 	MCFG_SOUND_ROUTE(0, "lspeaker", 1.0)
 	MCFG_SOUND_ROUTE(1, "rspeaker", 1.0)
 

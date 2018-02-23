@@ -26,6 +26,10 @@ public:
 	DECLARE_READ8_MEMBER(fff400_r);
 	SCN2674_DRAW_CHARACTER_MEMBER(draw_character);
 
+	void tr175(machine_config &config);
+	void mem_map(address_map &map);
+	void ramdac_map(address_map &map);
+	void vram_map(address_map &map);
 private:
 	required_device<cpu_device> m_maincpu;
 };
@@ -45,7 +49,7 @@ READ8_MEMBER(tr175_state::fff400_r)
 	return 0;
 }
 
-static ADDRESS_MAP_START( mem_map, AS_PROGRAM, 16, tr175_state )
+ADDRESS_MAP_START(tr175_state::mem_map)
 	AM_RANGE(0x000000, 0x01ffff) AM_ROM AM_REGION("maincpu", 0)
 	AM_RANGE(0xfe8000, 0xfebfff) AM_RAM // 8-bit?
 	AM_RANGE(0xfefe00, 0xfefedd) AM_WRITENOP // 8-bit; cleared at startup
@@ -66,37 +70,34 @@ SCN2674_DRAW_CHARACTER_MEMBER(tr175_state::draw_character)
 {
 }
 
-static ADDRESS_MAP_START( vram_map, 0, 8, tr175_state )
+ADDRESS_MAP_START(tr175_state::vram_map)
 	AM_RANGE(0x0000, 0x3fff) AM_READNOP
 ADDRESS_MAP_END
 
-static ADDRESS_MAP_START( ramdac_map, 0, 8, tr175_state )
+ADDRESS_MAP_START(tr175_state::ramdac_map)
 	AM_RANGE(0x000, 0x3ff) AM_DEVREADWRITE("ramdac", ramdac_device, ramdac_pal_r, ramdac_rgb666_w)
 ADDRESS_MAP_END
 
 static INPUT_PORTS_START( tr175 )
 INPUT_PORTS_END
 
-static MACHINE_CONFIG_START( tr175 )
+MACHINE_CONFIG_START(tr175_state::tr175)
 	MCFG_CPU_ADD("maincpu", M68000, 12'000'000)
 	MCFG_CPU_PROGRAM_MAP(mem_map)
 
 	MCFG_SCREEN_ADD("screen", RASTER)
-	MCFG_SCREEN_REFRESH_RATE(50)
-	MCFG_SCREEN_VBLANK_TIME(ATTOSECONDS_IN_USEC(2500)) /* not accurate */
-	MCFG_SCREEN_SIZE(720, 360)
-	MCFG_SCREEN_VISIBLE_AREA(0, 720-1, 0, 360-1)
+	MCFG_SCREEN_RAW_PARAMS(XTAL(28'322'000), 900, 0, 720, 449, 0, 416) // guess
 	MCFG_SCREEN_UPDATE_DEVICE("avdc", scn2674_device, screen_update)
 
-	MCFG_DEVICE_ADD("avdc", SCN2674, 4000000)
+	MCFG_DEVICE_ADD("avdc", SCN2674, XTAL(28'322'000) / 18) // guess
 	MCFG_SCN2674_INTR_CALLBACK(INPUTLINE("maincpu", M68K_IRQ_2))
-	MCFG_SCN2674_TEXT_CHARACTER_WIDTH(8)
-	MCFG_SCN2674_GFX_CHARACTER_WIDTH(8)
+	MCFG_SCN2674_TEXT_CHARACTER_WIDTH(18) // guess
+	MCFG_SCN2674_GFX_CHARACTER_WIDTH(18) // guess
 	MCFG_SCN2674_DRAW_CHARACTER_CALLBACK_OWNER(tr175_state, draw_character)
 	MCFG_DEVICE_ADDRESS_MAP(0, vram_map)
 	MCFG_VIDEO_SET_SCREEN("screen")
 
-	MCFG_DEVICE_ADD("duart", SCN2681, XTAL_11_0592MHz / 3) // is this the right clock?
+	MCFG_DEVICE_ADD("duart", SCN2681, XTAL(11'059'200) / 3) // is this the right clock?
 	MCFG_MC68681_IRQ_CALLBACK(INPUTLINE("maincpu", M68K_IRQ_1))
 
 	MCFG_PALETTE_ADD("palette", 0x100)
@@ -110,7 +111,7 @@ MACHINE_CONFIG_END
 Relisys TR-175 II.
 Chips: MC68000P12, HM82C11C, SCN2681, 3x W24257-70L, KDA0476BCN-66 (RAMDAC), 4 undumped proms, Beeper, Button battery
 Crystals: 28.322, 46.448, 11.0592, unknown.
-Colour screen.
+Colour screen (VGA).
 
 ***************************************************************************************************************/
 

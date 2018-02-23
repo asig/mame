@@ -102,6 +102,9 @@ public:
 	TIMER_CALLBACK_MEMBER(z80_irq_clear);
 	TIMER_DEVICE_CALLBACK_MEMBER(z80_irq);
 	TIMER_DEVICE_CALLBACK_MEMBER(vg5k_scanline);
+	void vg5k(machine_config &config);
+	void vg5k_io(address_map &map);
+	void vg5k_mem(address_map &map);
 };
 
 
@@ -156,14 +159,14 @@ WRITE8_MEMBER ( vg5k_state::cassette_w )
 }
 
 
-static ADDRESS_MAP_START( vg5k_mem, AS_PROGRAM, 8, vg5k_state)
+ADDRESS_MAP_START(vg5k_state::vg5k_mem)
 	ADDRESS_MAP_UNMAP_HIGH
 	AM_RANGE( 0x0000, 0x3fff ) AM_ROM
 	AM_RANGE( 0x4000, 0x7fff ) AM_RAM
 	AM_RANGE( 0x8000, 0xffff ) AM_NOP /* messram expansion memory */
 ADDRESS_MAP_END
 
-static ADDRESS_MAP_START( vg5k_io , AS_IO, 8, vg5k_state)
+ADDRESS_MAP_START(vg5k_state::vg5k_io)
 	ADDRESS_MAP_UNMAP_HIGH
 	ADDRESS_MAP_GLOBAL_MASK (0xff)
 
@@ -358,10 +361,10 @@ DRIVER_INIT_MEMBER(vg5k_state,vg5k)
 }
 
 
-static MACHINE_CONFIG_START( vg5k )
+MACHINE_CONFIG_START(vg5k_state::vg5k)
 
 	/* basic machine hardware */
-	MCFG_CPU_ADD("maincpu",Z80, XTAL_4MHz)
+	MCFG_CPU_ADD("maincpu",Z80, XTAL(4'000'000))
 	MCFG_CPU_PROGRAM_MAP(vg5k_mem)
 	MCFG_CPU_IO_MAP(vg5k_io)
 

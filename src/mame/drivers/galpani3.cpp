@@ -123,6 +123,8 @@ public:
 	uint32_t screen_update_galpani3(screen_device &screen, bitmap_rgb32 &bitmap, const rectangle &cliprect);
 	TIMER_DEVICE_CALLBACK_MEMBER(galpani3_vblank);
 	int gp3_is_alpha_pen(int pen);
+	void galpani3(machine_config &config);
+	void galpani3_map(address_map &map);
 };
 
 
@@ -464,11 +466,11 @@ WRITE16_MEMBER(galpani3_state::galpani3_priority_buffer_scrolly_w)
 
 
 
-static ADDRESS_MAP_START( galpani3_map, AS_PROGRAM, 16, galpani3_state )
+ADDRESS_MAP_START(galpani3_state::galpani3_map)
 	AM_RANGE(0x000000, 0x17ffff) AM_ROM
 
 	AM_RANGE(0x200000, 0x20ffff) AM_RAM // area [B] - Work RAM
-	AM_RANGE(0x280000, 0x287fff) AM_RAM_DEVWRITE("palette", palette_device, write) AM_SHARE("palette") // area [A] - palette for sprites
+	AM_RANGE(0x280000, 0x287fff) AM_RAM_DEVWRITE("palette", palette_device, write16) AM_SHARE("palette") // area [A] - palette for sprites
 
 	AM_RANGE(0x300000, 0x303fff) AM_RAM_WRITE(galpani3_suprnova_sprite32_w) AM_SHARE("spriteram")
 	AM_RANGE(0x380000, 0x38003f) AM_RAM_WRITE(galpani3_suprnova_sprite32regs_w) AM_SHARE("sprregs")
@@ -502,8 +504,8 @@ static ADDRESS_MAP_START( galpani3_map, AS_PROGRAM, 16, galpani3_state )
 ADDRESS_MAP_END
 
 
-static MACHINE_CONFIG_START( galpani3 )
-	MCFG_CPU_ADD("maincpu", M68000, XTAL_28_63636MHz/2) // Confirmed from PCB
+MACHINE_CONFIG_START(galpani3_state::galpani3)
+	MCFG_CPU_ADD("maincpu", M68000, XTAL(28'636'363)/2) // Confirmed from PCB
 	MCFG_CPU_PROGRAM_MAP(galpani3_map)
 	MCFG_TIMER_DRIVER_ADD_SCANLINE("scantimer", galpani3_state, galpani3_vblank, "screen", 0, 1)
 
@@ -527,22 +529,22 @@ static MACHINE_CONFIG_START( galpani3 )
 	MCFG_DEVICE_ADD("spritegen", SKNS_SPRITE, 0)
 
 	MCFG_DEVICE_ADD("grap2_0", KANEKO_GRAP2, 0)
-	kaneko_grap2_device::set_chipnum(*device, 0);
+	MCFG_KANEKO_GRAP2_CHIPNUM(0)
 	MCFG_KANEKO_GRAP2_PALETTE("palette")
 
 	MCFG_DEVICE_ADD("grap2_1", KANEKO_GRAP2, 0)
-	kaneko_grap2_device::set_chipnum(*device, 1);
+	MCFG_KANEKO_GRAP2_CHIPNUM(1)
 	MCFG_KANEKO_GRAP2_PALETTE("palette")
 
 	MCFG_DEVICE_ADD("grap2_2", KANEKO_GRAP2, 0)
-	kaneko_grap2_device::set_chipnum(*device, 2);
+	MCFG_KANEKO_GRAP2_CHIPNUM(2)
 	MCFG_KANEKO_GRAP2_PALETTE("palette")
 
 
 	/* sound hardware */
 	MCFG_SPEAKER_STANDARD_MONO("mono")
 
-	MCFG_SOUND_ADD("ymz", YMZ280B, XTAL_33_333MHz / 2)  // Confirmed from PCB
+	MCFG_SOUND_ADD("ymz", YMZ280B, XTAL(33'333'000) / 2)  // Confirmed from PCB
 	MCFG_SOUND_ROUTE(0, "mono", 1.0)
 	MCFG_SOUND_ROUTE(1, "mono", 1.0)
 MACHINE_CONFIG_END

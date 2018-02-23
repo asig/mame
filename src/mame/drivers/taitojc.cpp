@@ -618,7 +618,7 @@ WRITE8_MEMBER(taitojc_state::jc_lan_w)
 }
 
 
-static ADDRESS_MAP_START( taitojc_map, AS_PROGRAM, 32, taitojc_state )
+ADDRESS_MAP_START(taitojc_state::taitojc_map)
 	AM_RANGE(0x00000000, 0x001fffff) AM_ROM AM_MIRROR(0x200000)
 	AM_RANGE(0x00400000, 0x01bfffff) AM_ROM AM_REGION("gfx1", 0)
 	AM_RANGE(0x04000000, 0x040f7fff) AM_RAM AM_SHARE("vram")
@@ -634,9 +634,9 @@ static ADDRESS_MAP_START( taitojc_map, AS_PROGRAM, 32, taitojc_state )
 	AM_RANGE(0x06a00000, 0x06a01fff) AM_DEVREADWRITE8("taito_en:dpram", mb8421_device, left_r, left_w, 0xff000000)
 	AM_RANGE(0x06c00000, 0x06c0001f) AM_READWRITE8(jc_lan_r, jc_lan_w, 0x00ff0000)
 	AM_RANGE(0x08000000, 0x080fffff) AM_RAM AM_SHARE("main_ram")
+	AM_RANGE(0x10000000, 0x10001fff) AM_READWRITE16(dsp_shared_r, dsp_shared_w, 0xffff0000)
 	AM_RANGE(0x10001ff8, 0x10001ffb) AM_READ16(dsp_to_main_7fe_r, 0xffff0000)
 	AM_RANGE(0x10001ffc, 0x10001fff) AM_WRITE16(main_to_dsp_7ff_w, 0xffff0000)
-	AM_RANGE(0x10000000, 0x10001fff) AM_READWRITE16(dsp_shared_r, dsp_shared_w, 0xffff0000)
 ADDRESS_MAP_END
 
 
@@ -668,11 +668,11 @@ WRITE8_MEMBER(taitojc_state::dendego_brakemeter_w)
 	}
 }
 
-static ADDRESS_MAP_START( dendego_map, AS_PROGRAM, 32, taitojc_state )
+ADDRESS_MAP_START(taitojc_state::dendego_map)
+	AM_IMPORT_FROM( taitojc_map )
 	AM_RANGE(0x06e00000, 0x06e00003) AM_WRITE8(dendego_speedmeter_w, 0x00ff0000)
 	AM_RANGE(0x06e00004, 0x06e00007) AM_WRITE8(dendego_brakemeter_w, 0x00ff0000)
 	AM_RANGE(0x06e0000c, 0x06e0000f) AM_DEVREADWRITE8("oki", okim6295_device, read, write, 0x00ff0000)
-	AM_IMPORT_FROM( taitojc_map )
 ADDRESS_MAP_END
 
 
@@ -743,12 +743,12 @@ READ8_MEMBER(taitojc_state::hc11_analog_r)
 }
 
 
-static ADDRESS_MAP_START( hc11_pgm_map, AS_PROGRAM, 8, taitojc_state )
+ADDRESS_MAP_START(taitojc_state::hc11_pgm_map)
 	AM_RANGE(0x4000, 0x5fff) AM_RAM
 	AM_RANGE(0x8000, 0xffff) AM_ROM
 ADDRESS_MAP_END
 
-static ADDRESS_MAP_START( hc11_io_map, AS_IO, 8, taitojc_state )
+ADDRESS_MAP_START(taitojc_state::hc11_io_map)
 	AM_RANGE(MC68HC11_IO_PORTA,     MC68HC11_IO_PORTA    ) AM_READNOP // ?
 	AM_RANGE(MC68HC11_IO_PORTG,     MC68HC11_IO_PORTG    ) AM_READWRITE(hc11_comm_r, hc11_comm_w)
 	AM_RANGE(MC68HC11_IO_PORTH,     MC68HC11_IO_PORTH    ) AM_READWRITE(hc11_output_r, hc11_output_w)
@@ -845,12 +845,12 @@ WRITE16_MEMBER(taitojc_state::dsp_rom_w)
 	}
 }
 
-static ADDRESS_MAP_START( tms_program_map, AS_PROGRAM, 16, taitojc_state )
+ADDRESS_MAP_START(taitojc_state::tms_program_map)
 	AM_RANGE(0x0000, 0x1fff) AM_RAM AM_MIRROR(0x4000)
 	AM_RANGE(0x6000, 0x7fff) AM_RAM
 ADDRESS_MAP_END
 
-static ADDRESS_MAP_START( tms_data_map, AS_DATA, 16, taitojc_state )
+ADDRESS_MAP_START(taitojc_state::tms_data_map)
 	AM_RANGE(0x6a01, 0x6a02) AM_DEVWRITE("tc0780fpa", tc0780fpa_device, render_w)
 	AM_RANGE(0x6a11, 0x6a12) AM_NOP     // same as 0x6a01..02 for the second renderer chip?
 	AM_RANGE(0x6b20, 0x6b20) AM_DEVWRITE("tc0780fpa", tc0780fpa_device, poly_fifo_w)
@@ -864,8 +864,8 @@ static ADDRESS_MAP_START( tms_data_map, AS_DATA, 16, taitojc_state )
 	AM_RANGE(0x701d, 0x701d) AM_READ(dsp_math_projection_y_r)
 	AM_RANGE(0x701f, 0x701f) AM_READ(dsp_math_projection_x_r)
 	AM_RANGE(0x7022, 0x7022) AM_READ(dsp_math_unk_r)
-	AM_RANGE(0x7ffe, 0x7ffe) AM_WRITE(dsp_to_main_7fe_w)
 	AM_RANGE(0x7800, 0x7fff) AM_RAM AM_SHARE("dsp_shared")
+	AM_RANGE(0x7ffe, 0x7ffe) AM_WRITE(dsp_to_main_7fe_w)
 	AM_RANGE(0x8000, 0xffff) AM_RAM
 ADDRESS_MAP_END
 
@@ -1068,19 +1068,19 @@ void taitojc_state::machine_start()
 }
 
 
-static MACHINE_CONFIG_START( taitojc )
+MACHINE_CONFIG_START(taitojc_state::taitojc)
 
 	/* basic machine hardware */
-	MCFG_CPU_ADD("maincpu", M68040, XTAL_10MHz*2) // 20MHz, clock source = CY7C991
+	MCFG_CPU_ADD("maincpu", M68040, XTAL(10'000'000)*2) // 20MHz, clock source = CY7C991
 	MCFG_CPU_PROGRAM_MAP(taitojc_map)
 	MCFG_CPU_VBLANK_INT_DRIVER("screen", taitojc_state, taitojc_vblank)
 
-	MCFG_CPU_ADD("sub", MC68HC11, XTAL_16MHz/2) // 8MHz, MC68HC11M0
+	MCFG_CPU_ADD("sub", MC68HC11, XTAL(16'000'000)/2) // 8MHz, MC68HC11M0
 	MCFG_CPU_PROGRAM_MAP(hc11_pgm_map)
 	MCFG_CPU_IO_MAP(hc11_io_map)
 	MCFG_MC68HC11_CONFIG( 1, 1280, 0x00 )
 
-	MCFG_CPU_ADD("dsp", TMS32051, XTAL_10MHz*4) // 40MHz, clock source = CY7C991
+	MCFG_CPU_ADD("dsp", TMS32051, XTAL(10'000'000)*4) // 40MHz, clock source = CY7C991
 	MCFG_CPU_PROGRAM_MAP(tms_program_map)
 	MCFG_CPU_DATA_MAP(tms_data_map)
 
@@ -1112,7 +1112,8 @@ static MACHINE_CONFIG_START( taitojc )
 	MCFG_DEVICE_ADD("taito_en", TAITO_EN, 0)
 MACHINE_CONFIG_END
 
-static MACHINE_CONFIG_DERIVED( dendego, taitojc )
+MACHINE_CONFIG_START(taitojc_state::dendego)
+	taitojc(config);
 
 	/* basic machine hardware */
 	MCFG_CPU_MODIFY("maincpu")
@@ -1139,16 +1140,16 @@ MACHINE_CONFIG_END
 
 READ16_MEMBER(taitojc_state::taitojc_dsp_idle_skip_r)
 {
-	if (space.device().safe_pc() == 0x404c)
-		space.device().execute().spin_until_time(attotime::from_usec(500));
+	if (m_dsp->pc() == 0x404c)
+		m_dsp->spin_until_time(attotime::from_usec(500));
 
 	return m_dsp_shared_ram[0x7f0];
 }
 
 READ16_MEMBER(taitojc_state::dendego2_dsp_idle_skip_r)
 {
-	if (space.device().safe_pc() == 0x402e)
-		space.device().execute().spin_until_time(attotime::from_usec(500));
+	if (m_dsp->pc() == 0x402e)
+		m_dsp->spin_until_time(attotime::from_usec(500));
 
 	return m_dsp_shared_ram[0x7f0];
 }

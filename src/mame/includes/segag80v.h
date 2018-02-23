@@ -11,11 +11,11 @@
 #include "video/vector.h"
 #include "screen.h"
 
-class segag80v_state : public driver_device
+class segag80v_state : public segag80snd_common
 {
 public:
 	segag80v_state(const machine_config &mconfig, device_type type, const char *tag)
-		: driver_device(mconfig, type, tag),
+		: segag80snd_common(mconfig, type, tag),
 		m_mainram(*this, "mainram"),
 		m_vectorram(*this, "vectorram"),
 		m_maincpu(*this, "maincpu"),
@@ -76,4 +76,12 @@ public:
 	void sega_generate_vector_list();
 	offs_t decrypt_offset(address_space &space, offs_t offset);
 	inline uint8_t demangle(uint8_t d7d6, uint8_t d5d4, uint8_t d3d2, uint8_t d1d0);
+	void g80v_base(machine_config &config);
+	void tacscan(machine_config &config);
+	void elim2(machine_config &config);
+	void startrek(machine_config &config);
+	void zektor(machine_config &config);
+	void spacfury(machine_config &config);
+	void main_map(address_map &map);
+	void main_portmap(address_map &map);
 };

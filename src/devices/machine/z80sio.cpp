@@ -242,12 +242,12 @@ DEFINE_DEVICE_TYPE(UPD7201_NEW,    upd7201_new_device, "upd7201_new",    "NEC uP
 //-------------------------------------------------
 //  device_add_mconfig - add device configuration
 //-------------------------------------------------
-MACHINE_CONFIG_MEMBER( z80sio_device::device_add_mconfig )
+MACHINE_CONFIG_START(z80sio_device::device_add_mconfig)
 	MCFG_DEVICE_ADD(CHANA_TAG, Z80SIO_CHANNEL, 0)
 	MCFG_DEVICE_ADD(CHANB_TAG, Z80SIO_CHANNEL, 0)
 MACHINE_CONFIG_END
 
-MACHINE_CONFIG_MEMBER( i8274_new_device::device_add_mconfig )
+MACHINE_CONFIG_START(i8274_new_device::device_add_mconfig)
 	MCFG_DEVICE_ADD(CHANA_TAG, I8274_CHANNEL, 0)
 	MCFG_DEVICE_ADD(CHANB_TAG, I8274_CHANNEL, 0)
 MACHINE_CONFIG_END
@@ -1359,7 +1359,7 @@ uint8_t z80sio_channel::do_sioreg_rr1()
    NEC upd7201 MPSC2 Technical Manual: "When the MPSC2 is used in vectored mode, the
    contents of this register are placed on the bus during the appropriate portion of
    interrupt acknowledge sequence. You can read the value of CR2B at any time.
-   This is particularly useful in determining the cause of an interrup when using the
+   This is particularly useful in determining the cause of an interrupt when using the
    MPSC2 in Non-vectored mode."
 */
 uint8_t z80sio_channel::do_sioreg_rr2()

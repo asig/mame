@@ -172,10 +172,12 @@ public:
 	virtual void machine_start() override;
 	DECLARE_PALETTE_INIT(pitagjr);
 	uint32_t screen_update(screen_device &screen, bitmap_ind16 &bitmap, const rectangle &cliprect);
+	void pitajr(machine_config &config);
+	void pitajr_mem(address_map &map);
 };
 
 
-static ADDRESS_MAP_START(pitajr_mem, AS_PROGRAM, 8, pitagjr_state)
+ADDRESS_MAP_START(pitagjr_state::pitajr_mem)
 	AM_RANGE(0x0000, 0x00ff) AM_RAM
 	AM_RANGE(0x1000, 0x1fff) AM_ROM // boot ROM ???
 	AM_RANGE(0x2000, 0x3fff) AM_ROMBANK("rombank")
@@ -202,9 +204,9 @@ uint32_t pitagjr_state::screen_update(screen_device &screen, bitmap_ind16 &bitma
 	return 0;
 }
 
-static MACHINE_CONFIG_START( pitajr )
+MACHINE_CONFIG_START(pitagjr_state::pitajr)
 	/* basic machine hardware */
-	MCFG_CPU_ADD("maincpu", HD63705, XTAL_2MHz)   // probably a m6805-based MCU with internal boot ROM
+	MCFG_CPU_ADD("maincpu", HD63705, XTAL(2'000'000))   // probably a m6805-based MCU with internal boot ROM
 	MCFG_CPU_PROGRAM_MAP(pitajr_mem)
 
 	/* video hardware */

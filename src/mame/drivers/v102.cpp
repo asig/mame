@@ -10,13 +10,14 @@ Skeleton driver for Visual 102 display terminal.
 #include "cpu/z80/z80.h"
 #include "cpu/mcs48/mcs48.h"
 #include "machine/eeprompar.h"
+#include "machine/input_merger.h"
 #include "machine/i8251.h"
 #include "machine/i8255.h"
 #include "machine/pit8253.h"
 #include "machine/z80sio.h"
 //#include "video/crt9007.h"
 //#include "video/crt9021.h"
-//#include "screen.h"
+#include "screen.h"
 
 class v102_state : public driver_device
 {
@@ -27,13 +28,25 @@ public:
 		, m_p_chargen(*this, "chargen")
 	{ }
 
+	u32 screen_update(screen_device &screen, bitmap_rgb32 &bitmap, const rectangle &cliprect);
+
+	void v102(machine_config &config);
+	void io_map(address_map &map);
+	void kbd_map(address_map &map);
+	void mem_map(address_map &map);
 private:
 	required_device<cpu_device> m_maincpu;
 	required_region_ptr<u8> m_p_chargen;
 };
 
 
-static ADDRESS_MAP_START( mem_map, AS_PROGRAM, 8, v102_state )
+u32 v102_state::screen_update(screen_device &screen, bitmap_rgb32 &bitmap, const rectangle &cliprect)
+{
+	return 0;
+}
+
+
+ADDRESS_MAP_START(v102_state::mem_map)
 	ADDRESS_MAP_UNMAP_HIGH
 	AM_RANGE(0x0000, 0x3fff) AM_ROM AM_REGION("maincpu", 0)
 	AM_RANGE(0x8000, 0x8fff) AM_RAM
@@ -41,7 +54,7 @@ static ADDRESS_MAP_START( mem_map, AS_PROGRAM, 8, v102_state )
 	AM_RANGE(0xb800, 0xb9ff) AM_DEVREADWRITE("eeprom", eeprom_parallel_28xx_device, read, write)
 ADDRESS_MAP_END
 
-static ADDRESS_MAP_START( io_map, AS_IO, 8, v102_state )
+ADDRESS_MAP_START(v102_state::io_map)
 	ADDRESS_MAP_GLOBAL_MASK(0xff)
 	//AM_RANGE(0x00, 0x3f) AM_DEVREADWRITE("vpac", crt9007_device, read, write)
 	AM_RANGE(0x18, 0x19) AM_WRITENOP
@@ -53,23 +66,36 @@ static ADDRESS_MAP_START( io_map, AS_IO, 8, v102_state )
 	//AM_RANGE(0xbf, 0xbf) ???
 ADDRESS_MAP_END
 
-static ADDRESS_MAP_START( kbd_map, AS_PROGRAM, 8, v102_state )
+ADDRESS_MAP_START(v102_state::kbd_map)
 	AM_RANGE(0x000, 0x7ff) AM_ROM AM_REGION("keyboard", 0)
 ADDRESS_MAP_END
 
 static INPUT_PORTS_START( v102 )
 INPUT_PORTS_END
 
-static MACHINE_CONFIG_START( v102 )
-	MCFG_CPU_ADD("maincpu", Z80, XTAL_18_575MHz / 5) // divider not verified
+MACHINE_CONFIG_START(v102_state::v102)
+	MCFG_CPU_ADD("maincpu", Z80, XTAL(18'575'000) / 5) // divider not verified
 	MCFG_CPU_PROGRAM_MAP(mem_map)
 	MCFG_CPU_IO_MAP(io_map)
 
+	MCFG_SCREEN_ADD("screen", RASTER)
+	MCFG_SCREEN_RAW_PARAMS(XTAL(18'575'000), 970, 0, 800, 319, 0, 300)
+	//MCFG_SCREEN_RAW_PARAMS(XTAL(18'575'000), 948, 0, 792, 319, 0, 300)
+	MCFG_SCREEN_UPDATE_DRIVER(v102_state, screen_update)
+
+	//MCFG_DEVICE_ADD("vpac", CRT9007, CRTC_CLOCK)
+	//MCFG_CRT9007_CHARACTER_WIDTH(6 or 10)
+
 	MCFG_EEPROM_2804_ADD("eeprom")
 
-	MCFG_DEVICE_ADD("mpsc", UPD7201_NEW, XTAL_18_575MHz / 5) // divider not verified
+	MCFG_DEVICE_ADD("mpsc", UPD7201_NEW, XTAL(18'575'000) / 5) // divider not verified
+	MCFG_Z80SIO_OUT_INT_CB(DEVWRITELINE("mainirq", input_merger_device, in_w<0>))
 
-	MCFG_DEVICE_ADD("usart", I8251, XTAL_18_575MHz / 5) // divider not verified
+	MCFG_DEVICE_ADD("usart", I8251, XTAL(18'575'000) / 5) // divider not verified
+	MCFG_I8251_RXRDY_HANDLER(DEVWRITELINE("mainirq", input_merger_device, in_w<1>))
+
+	MCFG_INPUT_MERGER_ANY_HIGH("mainirq")
+	MCFG_INPUT_MERGER_OUTPUT_HANDLER(INPUTLINE("maincpu", 0))
 
 	MCFG_DEVICE_ADD("pit", PIT8253, 0)
 

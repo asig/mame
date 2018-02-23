@@ -81,6 +81,11 @@ public:
 	DECLARE_WRITE8_MEMBER(bram_w);
 	DECLARE_READ8_MEMBER(bram_r);
 
+	static void cfg_fdc_35(device_t *device);
+	void tosh1000(machine_config &config);
+	void tosh1000_io(address_map &map);
+	void tosh1000_map(address_map &map);
+	void tosh1000_romdos(address_map &map);
 protected:
 	required_device<cpu_device> m_maincpu;
 	required_device<address_map_bank_device> m_bankdev;
@@ -211,7 +216,7 @@ READ8_MEMBER(tosh1000_state::bram_r)
 }
 
 
-static ADDRESS_MAP_START( tosh1000_romdos, AS_PROGRAM, 8, tosh1000_state )
+ADDRESS_MAP_START(tosh1000_state::tosh1000_romdos)
 	AM_RANGE(0x00000, 0x0ffff) AM_ROM AM_REGION("romdos", 0)
 	AM_RANGE(0x10000, 0x1ffff) AM_ROM AM_REGION("romdos", 0x10000)
 	AM_RANGE(0x20000, 0x2ffff) AM_ROM AM_REGION("romdos", 0x20000)
@@ -222,13 +227,13 @@ static ADDRESS_MAP_START( tosh1000_romdos, AS_PROGRAM, 8, tosh1000_state )
 	AM_RANGE(0x70000, 0x7ffff) AM_ROM AM_REGION("romdos", 0x70000)
 ADDRESS_MAP_END
 
-static ADDRESS_MAP_START( tosh1000_map, AS_PROGRAM, 8, tosh1000_state )
+ADDRESS_MAP_START(tosh1000_state::tosh1000_map)
 	ADDRESS_MAP_UNMAP_HIGH
 	AM_RANGE(0xa0000, 0xaffff) AM_DEVREADWRITE("bankdev", address_map_bank_device, read8, write8)
 	AM_RANGE(0xf8000, 0xfffff) AM_ROM AM_REGION("bios", 0)
 ADDRESS_MAP_END
 
-static ADDRESS_MAP_START( tosh1000_io, AS_IO, 8, tosh1000_state )
+ADDRESS_MAP_START(tosh1000_state::tosh1000_io)
 	ADDRESS_MAP_UNMAP_HIGH
 	AM_RANGE(0x0000, 0x00ff) AM_DEVICE("mb", ibm5160_mb_device, map)
 	AM_RANGE(0x00c0, 0x00c3) AM_READWRITE(bram_r, bram_w)
@@ -237,16 +242,15 @@ static ADDRESS_MAP_START( tosh1000_io, AS_IO, 8, tosh1000_state )
 ADDRESS_MAP_END
 
 
-static MACHINE_CONFIG_START( cfg_fdc_35 )
-	MCFG_DEVICE_MODIFY("fdc:0")
-	MCFG_SLOT_DEFAULT_OPTION("35dd")
-	MCFG_SLOT_FIXED(true)
+void tosh1000_state::cfg_fdc_35(device_t *device)
+{
+	device_slot_interface::static_set_default_option(*device->subdevice("fdc:0"), "35dd");
+	device_slot_interface::static_set_fixed(*device->subdevice("fdc:0"), true);
+	device_slot_interface::static_set_default_option(*device->subdevice("fdc:1"), "");
+}
 
-	MCFG_DEVICE_REMOVE("fdc:1")
-MACHINE_CONFIG_END
-
-static MACHINE_CONFIG_START( tosh1000 )
-	MCFG_CPU_ADD("maincpu", I8088, XTAL_5MHz)
+MACHINE_CONFIG_START(tosh1000_state::tosh1000)
+	MCFG_CPU_ADD("maincpu", I8088, XTAL(5'000'000))
 	MCFG_CPU_PROGRAM_MAP(tosh1000_map)
 	MCFG_CPU_IO_MAP(tosh1000_io)
 	MCFG_CPU_IRQ_ACKNOWLEDGE_DEVICE("mb:pic8259", pic8259_device, inta_cb)
@@ -262,7 +266,7 @@ static MACHINE_CONFIG_START( tosh1000 )
 
 	MCFG_IBM5160_MOTHERBOARD_ADD("mb", "maincpu")
 
-	MCFG_DEVICE_ADD("rtc", TC8521, XTAL_32_768kHz)
+	MCFG_DEVICE_ADD("rtc", TC8521, XTAL(32'768))
 
 	MCFG_ISA8_SLOT_ADD("mb:isa", "isa1", pc_isa8_cards, "cga", false)
 	MCFG_ISA8_SLOT_ADD("mb:isa", "isa2", pc_isa8_cards, "fdc_xt", false)

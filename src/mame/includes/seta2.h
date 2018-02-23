@@ -130,6 +130,40 @@ public:
 	TIMER_DEVICE_CALLBACK_MEMBER(funcube_interrupt);
 
 	void funcube_debug_outputs();
+	void seta2(machine_config &config);
+	void funcube(machine_config &config);
+	void funcube3(machine_config &config);
+	void funcube2(machine_config &config);
+	void grdians(machine_config &config);
+	void myangel(machine_config &config);
+	void mj4simai(machine_config &config);
+	void penbros(machine_config &config);
+	void pzlbowl(machine_config &config);
+	void myangel2(machine_config &config);
+	void reelquak(machine_config &config);
+	void ablastb(machine_config &config);
+	void gundamex(machine_config &config);
+	void telpacfl(machine_config &config);
+	void samshoot(machine_config &config);
+	void namcostr(machine_config &config);
+	void ablastb_map(address_map &map);
+	void funcube2_map(address_map &map);
+	void funcube2_sub_io(address_map &map);
+	void funcube_map(address_map &map);
+	void funcube_sub_io(address_map &map);
+	void funcube_sub_map(address_map &map);
+	void grdians_map(address_map &map);
+	void gundamex_map(address_map &map);
+	void mj4simai_map(address_map &map);
+	void myangel2_map(address_map &map);
+	void myangel_map(address_map &map);
+	void namcostr_map(address_map &map);
+	void penbros_base_map(address_map &map);
+	void penbros_map(address_map &map);
+	void pzlbowl_map(address_map &map);
+	void reelquak_map(address_map &map);
+	void samshoot_map(address_map &map);
+	void telpacfl_map(address_map &map);
 };
 
 
@@ -151,6 +185,8 @@ public:
 
 	uint32_t staraudi_screen_update(screen_device &screen, bitmap_ind16 &bitmap, const rectangle &cliprect);
 
+	void staraudi(machine_config &config);
+	void staraudi_map(address_map &map);
 protected:
 	virtual void driver_start() override;
 

@@ -373,7 +373,7 @@ ROM_START( sb16 )
 	ROM_LOAD("ct1741_v413_xor.bin", 0x00, 0x40, CRC(5243d15a) SHA1(c7637c92828843f47e6e2f956af639b07aee4571))
 ROM_END
 
-static ADDRESS_MAP_START(sb16_io, AS_IO, 8, sb16_lle_device)
+ADDRESS_MAP_START(sb16_lle_device::sb16_io)
 	AM_RANGE(0x0000, 0x0000) AM_MIRROR(0xff00) AM_READWRITE(dsp_data_r, dsp_data_w)
 //  AM_RANGE(0x0001, 0x0001) // MIDI related?
 //  AM_RANGE(0x0002, 0x0002)
@@ -410,12 +410,12 @@ const tiny_rom_entry *sb16_lle_device::device_rom_region() const
 	return ROM_NAME( sb16 );
 }
 
-MACHINE_CONFIG_MEMBER( sb16_lle_device::device_add_mconfig )
-	MCFG_CPU_ADD("sb16_cpu", I80C52, XTAL_24MHz)
+MACHINE_CONFIG_START(sb16_lle_device::device_add_mconfig)
+	MCFG_CPU_ADD("sb16_cpu", I80C52, XTAL(24'000'000))
 	MCFG_CPU_IO_MAP(sb16_io)
 
 	MCFG_SPEAKER_STANDARD_STEREO("lspeaker", "rspeaker")
-	MCFG_SOUND_ADD("ymf262", YMF262, XTAL_14_31818MHz)
+	MCFG_SOUND_ADD("ymf262", YMF262, XTAL(14'318'181))
 	MCFG_SOUND_ROUTE(0, "lspeaker", 1.00)
 	MCFG_SOUND_ROUTE(1, "rspeaker", 1.00)
 	MCFG_SOUND_ROUTE(2, "lspeaker", 1.00)

@@ -617,6 +617,11 @@ public:
 	void video_reg_w(uint32_t reg, uint32_t data);
 	void init_taitotz_152();
 	void init_taitotz_111a();
+	void taitotz(machine_config &config);
+	void landhigh(machine_config &config);
+	void landhigh_tlcs900h_mem(address_map &map);
+	void ppc603e_mem(address_map &map);
+	void tlcs900h_mem(address_map &map);
 };
 
 class taitotz_renderer : public poly_manager<float, taitotz_polydata, 6, 50000>
@@ -1725,7 +1730,7 @@ WRITE64_MEMBER(taitotz_state::video_chip_w)
 					case 0xb:
 					{
 						m_video_ram_ptr = m_video_reg & 0xfffffff;
-						//logerror("video_chip_ram sel %08X at %08X\n", m_video_reg & 0x0fffffff, space.device().safe_pc());
+						//logerror("video_chip_ram sel %08X at %08X\n", m_video_reg & 0x0fffffff, m_maincpu->pc());
 						break;
 					}
 					case 0x0:
@@ -1814,7 +1819,7 @@ WRITE64_MEMBER(taitotz_state::video_fifo_w)
 			if (m_video_fifo_ptr >= 8)
 			{
 				m_renderer->push_direct_poly_fifo((uint32_t)(data >> 32));
-				//logerror("FIFO packet w: %08X at %08X\n", (uint32_t)(data >> 32), space.device().safe_pc());
+				//logerror("FIFO packet w: %08X at %08X\n", (uint32_t)(data >> 32), m_maincpu->pc());
 			}
 			m_video_fifo_ptr++;
 		}
@@ -1823,7 +1828,7 @@ WRITE64_MEMBER(taitotz_state::video_fifo_w)
 			if (m_video_fifo_ptr >= 8)
 			{
 				m_renderer->push_direct_poly_fifo((uint32_t)(data));
-				//logerror("FIFO packet w: %08X at %08X\n", (uint32_t)(data), space.device().safe_pc());
+				//logerror("FIFO packet w: %08X at %08X\n", (uint32_t)(data), m_maincpu->pc());
 			}
 			m_video_fifo_ptr++;
 		}
@@ -2057,7 +2062,7 @@ WRITE64_MEMBER(taitotz_state::ppc_common_w)
 // 0x40000000...0x400fffff: BIOS Work RAM
 // 0x40100000...0x40ffffff: User Work RAM
 
-static ADDRESS_MAP_START( ppc603e_mem, AS_PROGRAM, 64, taitotz_state)
+ADDRESS_MAP_START(taitotz_state::ppc603e_mem)
 	AM_RANGE(0x00000000, 0x0000001f) AM_READWRITE(video_chip_r, video_chip_w)
 	AM_RANGE(0x10000000, 0x1000001f) AM_READWRITE(video_fifo_r, video_fifo_w)
 	AM_RANGE(0x40000000, 0x40ffffff) AM_RAM AM_SHARE("work_ram")                // Work RAM
@@ -2217,7 +2222,7 @@ READ16_MEMBER(taitotz_state::tlcs_ide1_r)
 // 0xfc0d55:    INTRX1          Serial 1 receive
 // 0xfc0ce1:    INTTX1          Serial 1 transmit
 
-static ADDRESS_MAP_START( tlcs900h_mem, AS_PROGRAM, 16, taitotz_state)
+ADDRESS_MAP_START(taitotz_state::tlcs900h_mem)
 	AM_RANGE(0x010000, 0x02ffff) AM_RAM                                                     // Work RAM
 	AM_RANGE(0x040000, 0x041fff) AM_RAM AM_SHARE("nvram")                                   // Backup RAM
 	AM_RANGE(0x044000, 0x04400f) AM_READWRITE8(tlcs_rtc_r, tlcs_rtc_w, 0xffff)
@@ -2228,7 +2233,7 @@ static ADDRESS_MAP_START( tlcs900h_mem, AS_PROGRAM, 16, taitotz_state)
 	AM_RANGE(0xfc0000, 0xffffff) AM_ROM AM_REGION("io_cpu", 0)
 ADDRESS_MAP_END
 
-static ADDRESS_MAP_START( landhigh_tlcs900h_mem, AS_PROGRAM, 16, taitotz_state)
+ADDRESS_MAP_START(taitotz_state::landhigh_tlcs900h_mem)
 	AM_RANGE(0x200000, 0x21ffff) AM_RAM                                                     // Work RAM
 	AM_RANGE(0x400000, 0x401fff) AM_RAM AM_SHARE("nvram")                                   // Backup RAM
 	AM_RANGE(0x404000, 0x40400f) AM_READWRITE8(tlcs_rtc_r, tlcs_rtc_w, 0xffff)
@@ -2557,10 +2562,10 @@ WRITE_LINE_MEMBER(taitotz_state::ide_interrupt)
 	m_iocpu->set_input_line(TLCS900_INT2, state);
 }
 
-static MACHINE_CONFIG_START( taitotz )
+MACHINE_CONFIG_START(taitotz_state::taitotz)
 	/* IBM EMPPC603eBG-100 */
 	MCFG_CPU_ADD("maincpu", PPC603E, 100000000)
-	MCFG_PPC_BUS_FREQUENCY(XTAL_66_6667MHz)    /* Multiplier 1.5, Bus = 66MHz, Core = 100MHz */
+	MCFG_PPC_BUS_FREQUENCY(XTAL(66'666'700))    /* Multiplier 1.5, Bus = 66MHz, Core = 100MHz */
 	MCFG_CPU_PROGRAM_MAP(ppc603e_mem)
 
 	/* TMP95C063F I/O CPU */
@@ -2599,7 +2604,8 @@ static MACHINE_CONFIG_START( taitotz )
 
 MACHINE_CONFIG_END
 
-static MACHINE_CONFIG_DERIVED( landhigh, taitotz )
+MACHINE_CONFIG_START(taitotz_state::landhigh)
+	taitotz(config);
 	MCFG_CPU_MODIFY("iocpu")
 	MCFG_CPU_PROGRAM_MAP(landhigh_tlcs900h_mem)
 MACHINE_CONFIG_END

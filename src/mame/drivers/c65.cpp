@@ -33,7 +33,7 @@ http://www.zimmers.net/anonftp/pub/cbm/schematics/computers/C64DX_aka_C65_System
 #include "softlist_dev.h"
 #include "speaker.h"
 
-#define MAIN_CLOCK XTAL_28_37516MHz/8
+#define MAIN_CLOCK XTAL(28'375'160)/8
 
 class c65_state : public driver_device
 {
@@ -98,6 +98,8 @@ public:
 	DECLARE_DRIVER_INIT(c65pal);
 
 	INTERRUPT_GEN_MEMBER(vic3_vblank_irq);
+	void c65(machine_config &config);
+	void c65_map(address_map &map);
 protected:
 	// driver_device overrides
 	virtual void machine_start() override;
@@ -482,7 +484,7 @@ READ8_MEMBER(c65_state::dummy_r)
 	return 0;
 }
 
-static ADDRESS_MAP_START( c65_map, AS_PROGRAM, 8, c65_state )
+ADDRESS_MAP_START(c65_state::c65_map)
 	AM_RANGE(0x00000, 0x07fff) AM_RAM AM_SHARE("wram") // TODO: bank
 	AM_RANGE(0x0c800, 0x0cfff) AM_ROM AM_REGION("maincpu", 0xc800)
 	AM_RANGE(0x0d000, 0x0d07f) AM_READWRITE(vic4567_dummy_r,vic4567_dummy_w) // 0x0d000, 0x0d07f VIC-4567
@@ -680,7 +682,7 @@ WRITE_LINE_MEMBER(c65_state::cia0_irq)
 //  c65_irq(state || m_vicirq);
 }
 
-static MACHINE_CONFIG_START( c65 )
+MACHINE_CONFIG_START(c65_state::c65)
 
 	/* basic machine hardware */
 	MCFG_CPU_ADD("maincpu", M4510, MAIN_CLOCK)

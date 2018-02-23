@@ -183,6 +183,14 @@ public:
 	void draw_triangles(uint32_t attr);
 
 
+	void micro3d(machine_config &config);
+	void botss11(machine_config &config);
+	void drmath_data(address_map &map);
+	void drmath_prg(address_map &map);
+	void hostmem(address_map &map);
+	void soundmem_io(address_map &map);
+	void soundmem_prg(address_map &map);
+	void vgbmem(address_map &map);
 protected:
 	virtual void device_timer(emu_timer &timer, device_timer_id id, int param, void *ptr) override;
 

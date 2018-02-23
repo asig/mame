@@ -14,7 +14,7 @@
   - tispeak: TI Speak & Spell series gen. 1
 
   Let's use this driver for a list of known devices and their serials,
-  excluding TI's own products(they didn't use "MP" codes).
+  excluding most of TI's own products(they normally didn't use "MP" codes).
 
   serial   device    etc.
 --------------------------------------------------------------------
@@ -37,7 +37,9 @@
  @MP0919   TMS1000   1979, Tiger Copy Cat (model 7-520)
  @MP0920   TMS1000   1979, Entex Space Battle (6004)
  @MP0923   TMS1000   1979, Entex Baseball 2 (6002)
+ *MP1022   TMS1100   1979, Texas Instruments unknown thermostat
  @MP1030   TMS1100   1980, APF Mathemagician
+ *MP1072   TMS1100   198?, unknown device, Germany (have decap)
  @MP1133   TMS1470   1979, Kosmos Astro
  @MP1180   TMS1100   1980, Tomy Power House Pinball
  @MP1181   TMS1100   1979, Conic Football 2
@@ -53,7 +55,7 @@
  *MP1296   TMS1100?  1982, Entex Black Knight
  @MP1312   TMS1100   1983, Gakken FX-Micom R-165/Tandy Radio Shack Science Fair Microcomputer Trainer
  *MP1359   TMS1100?  1985, Capsela CRC2000
- @MP1525   TMS1170   1980, Coleco Head to Head Baseball
+ @MP1525   TMS1170   1980, Coleco Head to Head: Electronic Baseball
  @MP1604   TMS1370   1982, Gakken Invader 2000/Tandy Cosmic Fire Away 3000
  @MP1801   TMS1700   1981, Tiger Ditto/Tandy Pocket Repeat (model 60-2152)
  @MP2105   TMS1370   1979, Gakken/Entex Poker (6005)
@@ -67,7 +69,8 @@
  *MP3232   TMS1000   1979, Fonas 2-Player Baseball (no "MP" on chip label)
  @MP3300   TMS1000   1979, Milton Bradley Simon (Rev F)
  @MP3301A  TMS1000   1979, Milton Bradley Big Trak
- *MP3320A  TMS1000   1979, Coleco Head to Head Basketball
+ *MP3320A  TMS1000   1979, Coleco Head to Head: Electronic Basketball
+ @MP3321A  TMS1000   1979, Coleco Head to Head: Electronic Hockey
  @M32001   TMS1000   1981, Coleco Quiz Wiz Challenger (note: MP3398, MP3399, M3200x?)
  *M32018   TMS1000   1990, unknown device (have decap/dump)
   M32045B  TMS1000   1983, Chrysler Electronic Voice Alert (11-function) -> eva.cpp
@@ -81,7 +84,7 @@
   MP3454   TMS1100   1979, MicroVision cartridge: Star Trek Phaser Strike
   MP3455   TMS1100   1980, MicroVision cartridge: Pinball
   MP3457   TMS1100   1979, MicroVision cartridge: Mindbuster
- @MP3460   TMS1100   1980, Coleco Head to Head Football
+ @MP3460   TMS1100   1979, Coleco Head to Head: Electronic Football
   MP3474   TMS1100   1979, MicroVision cartridge: Vegas Slots
   MP3475   TMS1100   1979, MicroVision cartridge: Bowling
  @MP3476   TMS1100   1979, Milton Bradley Super Simon
@@ -96,11 +99,12 @@
  @M34012   TMS1100   1980, Mattel Dungeons & Dragons - Computer Labyrinth Game
  *M34014   TMS1100   1981, Coleco Bowlatronic
   M34017   TMS1100   1981, MicroVision cartridge: Cosmic Hunter
- @M34018   TMS1100   1981, Coleco Head to Head Boxing
+ @M34018   TMS1100   1981, Coleco Head to Head: Electronic Boxing
  @M34038   TMS1100   1982, Parker Brothers Lost Treasure
   M34047   TMS1100   1982, MicroVision cartridge: Super Blockbuster
  @M34078A  TMS1100   1983, Milton Bradley Electronic Arcade Mania
  @MP4486A  TMS1000C  1983, Vulcan XL 25
+ *MP6061   TMS0970   1979, Texas Instruments Electronic Digital Thermostat
  @MP6100A  TMS0980   1979, Ideal Electronic Detective
  @MP6101B  TMS0980   1979, Parker Brothers Stop Thief
  *MP6361   ?         1983, Defender Strikes (? note: VFD-capable)
@@ -138,6 +142,8 @@
   - bship discrete sound, netlist is documented
   - finish bshipb SN76477 sound
   - improve elecbowl driver
+  - is alphie(patent) the same as the final version?
+  - h2hhockey R9 timing is wrong: passing seems too slow, and in-game clock too fast
 
 ***************************************************************************/
 
@@ -196,6 +202,7 @@
 #include "h2hbaseb.lh"
 #include "h2hboxing.lh"
 #include "h2hfootb.lh"
+#include "h2hhockey.lh"
 #include "horseran.lh"
 #include "lostreas.lh" // clickable
 #include "matchnum.lh" // clickable
@@ -442,6 +449,7 @@ public:
 	DECLARE_WRITE16_MEMBER(write_r);
 	DECLARE_WRITE16_MEMBER(write_o);
 	DECLARE_READ8_MEMBER(read_k);
+	void matchnum(machine_config &config);
 };
 
 // handlers
@@ -478,7 +486,6 @@ READ8_MEMBER(matchnum_state::read_k)
 	// K: multiplexed inputs
 	return read_inputs(6);
 }
-
 
 // config
 
@@ -523,7 +530,7 @@ INPUT_PORTS_END
 
 static const s16 matchnum_speaker_levels[4] = { 0, 0x7fff, -0x8000, 0 };
 
-static MACHINE_CONFIG_START( matchnum )
+MACHINE_CONFIG_START(matchnum_state::matchnum)
 
 	/* basic machine hardware */
 	MCFG_CPU_ADD("maincpu", TMS1000, 325000) // approximation - RC osc. R=47K, C=47pF
@@ -571,6 +578,7 @@ public:
 	DECLARE_WRITE16_MEMBER(write_r);
 	DECLARE_WRITE16_MEMBER(write_o);
 	DECLARE_READ8_MEMBER(read_k);
+	void arrball(machine_config &config);
 };
 
 // handlers
@@ -608,7 +616,6 @@ READ8_MEMBER(arrball_state::read_k)
 	return read_inputs(1);
 }
 
-
 // config
 
 static INPUT_PORTS_START( arrball )
@@ -623,7 +630,7 @@ INPUT_PORTS_END
 
 static const s16 arrball_speaker_levels[4] = { 0, 0x7fff, -0x8000, 0 };
 
-static MACHINE_CONFIG_START( arrball )
+MACHINE_CONFIG_START(arrball_state::arrball)
 
 	/* basic machine hardware */
 	MCFG_CPU_ADD("maincpu", TMS1000, 325000) // approximation - RC osc. R=47K, C=47pF
@@ -679,6 +686,7 @@ public:
 	DECLARE_WRITE16_MEMBER(write_r);
 	DECLARE_WRITE16_MEMBER(write_o);
 	DECLARE_READ8_MEMBER(read_k);
+	void mathmagi(machine_config &config);
 };
 
 // handlers
@@ -715,7 +723,6 @@ READ8_MEMBER(mathmagi_state::read_k)
 	// K: multiplexed inputs
 	return read_inputs(6);
 }
-
 
 // config
 
@@ -803,7 +810,7 @@ static const u16 mathmagi_output_pla[0x20] =
 	lA+lF+lE+lD+lC          // G
 };
 
-static MACHINE_CONFIG_START( mathmagi )
+MACHINE_CONFIG_START(mathmagi_state::mathmagi)
 
 	/* basic machine hardware */
 	MCFG_CPU_ADD("maincpu", TMS1100, 175000) // approximation - RC osc. R=68K, C=82pF
@@ -850,6 +857,7 @@ public:
 	DECLARE_WRITE16_MEMBER(write_r);
 	DECLARE_WRITE16_MEMBER(write_o);
 	DECLARE_READ8_MEMBER(read_k);
+	void bcheetah(machine_config &config);
 };
 
 // handlers
@@ -877,7 +885,6 @@ READ8_MEMBER(bcheetah_state::read_k)
 	// K: multiplexed inputs
 	return read_inputs(5);
 }
-
 
 // config
 
@@ -909,7 +916,7 @@ static INPUT_PORTS_START( bcheetah )
 	PORT_BIT( 0x08, IP_ACTIVE_HIGH, IPT_KEYPAD ) PORT_CODE(KEYCODE_4) PORT_CODE(KEYCODE_4_PAD) PORT_NAME("4")
 INPUT_PORTS_END
 
-static MACHINE_CONFIG_START( bcheetah )
+MACHINE_CONFIG_START(bcheetah_state::bcheetah)
 
 	/* basic machine hardware */
 	MCFG_CPU_ADD("maincpu", TMS1000, 100000) // approximation - RC osc. R=47K, C=47pF
@@ -949,6 +956,7 @@ public:
 	DECLARE_WRITE16_MEMBER(write_r);
 	DECLARE_WRITE16_MEMBER(write_o);
 	DECLARE_READ8_MEMBER(read_k);
+	void amaztron(machine_config &config);
 };
 
 // handlers
@@ -990,7 +998,6 @@ READ8_MEMBER(amaztron_state::read_k)
 	if (k & 0x10) k |= 0xc;
 	return k & 0xf;
 }
-
 
 // config
 
@@ -1036,7 +1043,7 @@ static INPUT_PORTS_START( amaztron )
 	PORT_BIT( 0x1c, IP_ACTIVE_HIGH, IPT_UNUSED )
 INPUT_PORTS_END
 
-static MACHINE_CONFIG_START( amaztron )
+MACHINE_CONFIG_START(amaztron_state::amaztron)
 
 	/* basic machine hardware */
 	MCFG_CPU_ADD("maincpu", TMS1100, 300000) // approximation - RC osc. R=33K?, C=100pF
@@ -1059,7 +1066,7 @@ MACHINE_CONFIG_END
 
 /***************************************************************************
 
-  Coleco Zodiac - The Astrology Computer
+  Coleco Zodiac - The Astrology Computer (model 2110)
   * TMS1100 MP3435 (no decap)
   * 8-digit 7seg display, 12 other LEDs, 1-bit sound
 
@@ -1079,6 +1086,7 @@ public:
 	DECLARE_WRITE16_MEMBER(write_r);
 	DECLARE_WRITE16_MEMBER(write_o);
 	DECLARE_READ8_MEMBER(read_k);
+	void zodiac(machine_config &config);
 };
 
 // handlers
@@ -1115,7 +1123,6 @@ READ8_MEMBER(zodiac_state::read_k)
 	// K: multiplexed inputs
 	return read_inputs(6);
 }
-
 
 // config
 
@@ -1213,7 +1220,7 @@ static const u16 zodiac_output_pla[0x20] =
 	lB+lC+lD+lE+lF          // U
 };
 
-static MACHINE_CONFIG_START( zodiac )
+MACHINE_CONFIG_START(zodiac_state::zodiac)
 
 	/* basic machine hardware */
 	MCFG_CPU_ADD("maincpu", TMS1100, 500000) // approximation - RC osc. R=18K, C=100pF
@@ -1237,7 +1244,7 @@ MACHINE_CONFIG_END
 
 /***************************************************************************
 
-  Coleco Electronic Quarterback
+  Coleco Electronic Quarterback (model 2120)
   * TMS1100NLL MP3415 (die label same)
   * 9-digit LED grid, 1-bit sound
 
@@ -1258,6 +1265,7 @@ public:
 	DECLARE_WRITE16_MEMBER(write_r);
 	DECLARE_WRITE16_MEMBER(write_o);
 	DECLARE_READ8_MEMBER(read_k);
+	void cqback(machine_config &config);
 };
 
 // handlers
@@ -1299,7 +1307,6 @@ READ8_MEMBER(cqback_state::read_k)
 	return read_rotated_inputs(5);
 }
 
-
 // config
 
 static INPUT_PORTS_START( cqback )
@@ -1329,7 +1336,7 @@ static INPUT_PORTS_START( cqback )
 	PORT_BIT( 0x02, IP_ACTIVE_HIGH, IPT_JOYSTICK_RIGHT ) PORT_16WAY
 INPUT_PORTS_END
 
-static MACHINE_CONFIG_START( cqback )
+MACHINE_CONFIG_START(cqback_state::cqback)
 
 	/* basic machine hardware */
 	MCFG_CPU_ADD("maincpu", TMS1100, 310000) // approximation - RC osc. R=33K, C=100pF
@@ -1352,7 +1359,7 @@ MACHINE_CONFIG_END
 
 /***************************************************************************
 
-  Coleco Head to Head Football
+  Coleco Head to Head: Electronic Football (model 2140)
   * TMS1100NLLE (rev. E!) MP3460 (die label same)
   * 2*SN75492N LED display drivers, 9-digit LED grid, 1-bit sound
 
@@ -1360,7 +1367,7 @@ MACHINE_CONFIG_END
   offense blips (should) appear brighter. The hardware is similar to cqback.
 
   known releases:
-  - USA(1): Head to Head Football
+  - USA(1): Head to Head: Electronic Football
   - USA(2): Team Play Football, published by Sears
 
 ***************************************************************************/
@@ -1376,6 +1383,7 @@ public:
 	DECLARE_WRITE16_MEMBER(write_r);
 	DECLARE_WRITE16_MEMBER(write_o);
 	DECLARE_READ8_MEMBER(read_k);
+	void h2hfootb(machine_config &config);
 };
 
 // handlers
@@ -1413,7 +1421,6 @@ READ8_MEMBER(h2hfootb_state::read_k)
 	return read_rotated_inputs(9);
 }
 
-
 // config
 
 static INPUT_PORTS_START( h2hfootb )
@@ -1447,7 +1454,7 @@ static INPUT_PORTS_START( h2hfootb )
 	PORT_BIT( 0x02, IP_ACTIVE_HIGH, IPT_JOYSTICK_RIGHT ) PORT_16WAY
 INPUT_PORTS_END
 
-static MACHINE_CONFIG_START( h2hfootb )
+MACHINE_CONFIG_START(h2hfootb_state::h2hfootb)
 
 	/* basic machine hardware */
 	MCFG_CPU_ADD("maincpu", TMS1100, 310000) // approximation - RC osc. R=39K, C=100pF
@@ -1470,13 +1477,156 @@ MACHINE_CONFIG_END
 
 /***************************************************************************
 
-  Coleco Head to Head Baseball
+  Coleco Head to Head: Electronic Hockey (model 2160)
+  * TMS1000NLL E MP3321A (die label 1000E MP3321A)
+  * 2-digit 7seg LED display, LED grid display, 1-bit sound
+
+  Unlike the COP420 version(see hh_cop400.cpp driver), each game has its own MCU.
+
+***************************************************************************/
+
+class h2hhockey_state : public hh_tms1k_state
+{
+public:
+	h2hhockey_state(const machine_config &mconfig, device_type type, const char *tag)
+		: hh_tms1k_state(mconfig, type, tag),
+		m_cap_empty_timer(*this, "cap_empty")
+	{ }
+
+	required_device<timer_device> m_cap_empty_timer;
+	TIMER_DEVICE_CALLBACK_MEMBER(cap_empty_callback);
+	bool m_cap;
+
+	void prepare_display();
+	DECLARE_WRITE16_MEMBER(write_r);
+	DECLARE_WRITE16_MEMBER(write_o);
+	DECLARE_READ8_MEMBER(read_k);
+	void h2hhockey(machine_config &config);
+
+protected:
+	virtual void machine_start() override;
+};
+
+// handlers
+
+TIMER_DEVICE_CALLBACK_MEMBER(h2hhockey_state::cap_empty_callback)
+{
+	if (~m_r & 0x200)
+		m_cap = false;
+}
+
+void h2hhockey_state::prepare_display()
+{
+	// R6,R7 are commons for R0-R5
+	u16 sel = 0;
+	if (m_r & 0x40) sel |= (m_r & 0x3f);
+	if (m_r & 0x80) sel |= (m_r & 0x3f) << 6;
+
+	set_display_segmask(0xc0, 0x7f);
+	display_matrix(7, 6+6, m_o, sel);
+}
+
+WRITE16_MEMBER(h2hhockey_state::write_r)
+{
+	// R0-R3: input mux
+	m_inp_mux = (data & 0xf);
+
+	// R8: speaker out
+	m_speaker->level_w(data >> 8 & 1);
+
+	// R9: K8 and 15uF cap to V- (used as timer)
+	if (data & 0x200)
+		m_cap = true;
+	else if (m_r & 0x200) // falling edge
+		m_cap_empty_timer->adjust(attotime::from_msec(28)); // not accurate
+
+	// R0-R7: led select
+	m_r = data;
+	prepare_display();
+}
+
+WRITE16_MEMBER(h2hhockey_state::write_o)
+{
+	// O1-O7: led data
+	m_o = data >> 1 & 0x7f;
+	prepare_display();
+}
+
+READ8_MEMBER(h2hhockey_state::read_k)
+{
+	// K1-K4: multiplexed inputs, K8: R9 and capacitor
+	return (read_inputs(4) & 7) | (m_cap ? 8 : 0);
+}
+
+// config
+
+static INPUT_PORTS_START( h2hhockey )
+	PORT_START("IN.0") // R0
+	PORT_BIT( 0x01, IP_ACTIVE_HIGH, IPT_JOYSTICK_RIGHT ) PORT_16WAY PORT_NAME("P1 Pass CW") // clockwise
+	PORT_BIT( 0x02, IP_ACTIVE_HIGH, IPT_JOYSTICK_LEFT ) PORT_16WAY PORT_NAME("P1 Pass CCW") // counter-clockwise
+	PORT_CONFNAME( 0x04, 0x00, DEF_STR( Players ) )
+	PORT_CONFSETTING(    0x00, "1" )
+	PORT_CONFSETTING(    0x04, "2" )
+
+	PORT_START("IN.1") // R1
+	PORT_BIT( 0x01, IP_ACTIVE_HIGH, IPT_BUTTON1 ) PORT_NAME("P1 Shoot")
+	PORT_BIT( 0x02, IP_ACTIVE_HIGH, IPT_START ) PORT_NAME("Start/Display")
+	PORT_BIT( 0x04, IP_ACTIVE_HIGH, IPT_UNUSED )
+
+	PORT_START("IN.2") // R2
+	PORT_BIT( 0x01, IP_ACTIVE_HIGH, IPT_JOYSTICK_RIGHT ) PORT_COCKTAIL PORT_16WAY PORT_NAME("P2 Defense Right")
+	PORT_BIT( 0x02, IP_ACTIVE_HIGH, IPT_JOYSTICK_LEFT ) PORT_COCKTAIL PORT_16WAY PORT_NAME("P2 Defense Left")
+	PORT_CONFNAME( 0x04, 0x00, DEF_STR( Difficulty ) )
+	PORT_CONFSETTING(    0x00, "1" )
+	PORT_CONFSETTING(    0x04, "2" )
+
+	PORT_START("IN.3") // R3
+	PORT_BIT( 0x01, IP_ACTIVE_HIGH, IPT_BUTTON2 ) PORT_COCKTAIL PORT_NAME("P2 Goalie Right")
+	PORT_BIT( 0x02, IP_ACTIVE_HIGH, IPT_BUTTON1 ) PORT_COCKTAIL PORT_NAME("P2 Goalie Left")
+	PORT_BIT( 0x04, IP_ACTIVE_HIGH, IPT_UNUSED )
+INPUT_PORTS_END
+
+void h2hhockey_state::machine_start()
+{
+	hh_tms1k_state::machine_start();
+
+	// zerofill/register for savestates
+	m_cap = false;
+	save_item(NAME(m_cap));
+}
+
+MACHINE_CONFIG_START(h2hhockey_state::h2hhockey)
+
+	/* basic machine hardware */
+	MCFG_CPU_ADD("maincpu", TMS1000, 375000) // approximation - RC osc. R=43K, C=100pF
+	MCFG_TMS1XXX_READ_K_CB(READ8(h2hhockey_state, read_k))
+	MCFG_TMS1XXX_WRITE_R_CB(WRITE16(h2hhockey_state, write_r))
+	MCFG_TMS1XXX_WRITE_O_CB(WRITE16(h2hhockey_state, write_o))
+
+	MCFG_TIMER_DRIVER_ADD("cap_empty", h2hhockey_state, cap_empty_callback)
+
+	MCFG_TIMER_DRIVER_ADD_PERIODIC("display_decay", hh_tms1k_state, display_decay_tick, attotime::from_msec(1))
+	MCFG_DEFAULT_LAYOUT(layout_h2hhockey)
+
+	/* sound hardware */
+	MCFG_SPEAKER_STANDARD_MONO("mono")
+	MCFG_SOUND_ADD("speaker", SPEAKER_SOUND, 0)
+	MCFG_SOUND_ROUTE(ALL_OUTPUTS, "mono", 0.25)
+MACHINE_CONFIG_END
+
+
+
+
+
+/***************************************************************************
+
+  Coleco Head to Head: Electronic Baseball (model 2180)
   * PCB labels Coleco rev C 73891/2
   * TMS1170NLN MP1525-N2 (die label MP1525)
   * 9-digit cyan VFD display, and other LEDs behind bezel, 1-bit sound
 
   known releases:
-  - USA: Head to Head Baseball
+  - USA: Head to Head: Electronic Baseball
   - Japan: Computer Baseball, published by Tsukuda
 
 ***************************************************************************/
@@ -1495,6 +1645,7 @@ public:
 
 	void set_clock();
 	DECLARE_INPUT_CHANGED_MEMBER(skill_switch);
+	void h2hbaseb(machine_config &config);
 
 protected:
 	virtual void machine_reset() override;
@@ -1535,7 +1686,6 @@ READ8_MEMBER(h2hbaseb_state::read_k)
 	// K: multiplexed inputs (note: K8(Vss row) is always on)
 	return m_inp_matrix[4]->read() | read_inputs(4);
 }
-
 
 // config
 
@@ -1586,7 +1736,7 @@ void h2hbaseb_state::machine_reset()
 	set_clock();
 }
 
-static MACHINE_CONFIG_START( h2hbaseb )
+MACHINE_CONFIG_START(h2hbaseb_state::h2hbaseb)
 
 	/* basic machine hardware */
 	MCFG_CPU_ADD("maincpu", TMS1170, 350000) // see set_clock
@@ -1609,7 +1759,7 @@ MACHINE_CONFIG_END
 
 /***************************************************************************
 
-  Coleco Head to Head Boxing
+  Coleco Head to Head: Electronic Boxing (model 2190)
   * TMS1100NLL M34018-N2 (die label M34018)
   * 2-digit 7seg LED display, LED grid display, 1-bit sound
 
@@ -1628,6 +1778,7 @@ public:
 	DECLARE_WRITE16_MEMBER(write_r);
 	DECLARE_WRITE16_MEMBER(write_o);
 	DECLARE_READ8_MEMBER(read_k);
+	void h2hboxing(machine_config &config);
 };
 
 // handlers
@@ -1665,7 +1816,6 @@ READ8_MEMBER(h2hboxing_state::read_k)
 	return read_inputs(5);
 }
 
-
 // config
 
 static INPUT_PORTS_START( h2hboxing )
@@ -1698,7 +1848,7 @@ static INPUT_PORTS_START( h2hboxing )
 	PORT_BIT( 0x08, IP_ACTIVE_HIGH, IPT_BUTTON1 ) PORT_COCKTAIL PORT_NAME("P2 Block")
 INPUT_PORTS_END
 
-static MACHINE_CONFIG_START( h2hboxing )
+MACHINE_CONFIG_START(h2hboxing_state::h2hboxing)
 
 	/* basic machine hardware */
 	MCFG_CPU_ADD("maincpu", TMS1100, 350000) // approximation - RC osc. R=39K, C=100pF
@@ -1759,6 +1909,7 @@ public:
 	DECLARE_WRITE16_MEMBER(write_r);
 	DECLARE_WRITE16_MEMBER(write_o);
 	DECLARE_READ8_MEMBER(read_k);
+	void quizwizc(machine_config &config);
 
 protected:
 	virtual void machine_start() override;
@@ -1820,7 +1971,6 @@ READ8_MEMBER(quizwizc_state::read_k)
 	return read_inputs(6) | ((m_r & m_pinout) ? 1 : 0);
 }
 
-
 // config
 
 static INPUT_PORTS_START( quizwizc )
@@ -1855,7 +2005,7 @@ static INPUT_PORTS_START( quizwizc )
 	PORT_BIT( 0x08, IP_ACTIVE_HIGH, IPT_BUTTON5 ) PORT_NAME("Slow Forward")
 
 	PORT_START("IN.5") // R5
-	PORT_CONFNAME( 0x02, 0x00, "Game Select")
+	PORT_CONFNAME( 0x02, 0x00, "Game Select" )
 	PORT_CONFSETTING(    0x00, "1" )
 	PORT_CONFSETTING(    0x02, "2" )
 	PORT_BIT( 0x0d, IP_ACTIVE_HIGH, IPT_UNUSED )
@@ -1869,7 +2019,7 @@ void quizwizc_state::machine_start()
 	save_item(NAME(m_pinout));
 }
 
-static MACHINE_CONFIG_START( quizwizc )
+MACHINE_CONFIG_START(quizwizc_state::quizwizc)
 
 	/* basic machine hardware */
 	MCFG_CPU_ADD("maincpu", TMS1000, 300000) // approximation - RC osc. R=43K, C=100pF
@@ -1936,6 +2086,7 @@ public:
 	DECLARE_WRITE16_MEMBER(write_r);
 	DECLARE_WRITE16_MEMBER(write_o);
 	DECLARE_READ8_MEMBER(read_k);
+	void tc4(machine_config &config);
 
 protected:
 	virtual void machine_start() override;
@@ -1996,7 +2147,6 @@ READ8_MEMBER(tc4_state::read_k)
 	return read_inputs(6) | ((m_r & 0x200) ? m_pinout : 0);
 }
 
-
 // config
 
 static INPUT_PORTS_START( tc4 )
@@ -2045,7 +2195,7 @@ void tc4_state::machine_start()
 	save_item(NAME(m_pinout));
 }
 
-static MACHINE_CONFIG_START( tc4 )
+MACHINE_CONFIG_START(tc4_state::tc4)
 
 	/* basic machine hardware */
 	MCFG_CPU_ADD("maincpu", TMS1400, 450000) // approximation - RC osc. R=27.3K, C=100pF
@@ -2099,6 +2249,7 @@ public:
 	DECLARE_WRITE16_MEMBER(write_r);
 	DECLARE_WRITE16_MEMBER(write_o);
 	DECLARE_READ8_MEMBER(read_k);
+	void cnbaskb(machine_config &config);
 };
 
 // handlers
@@ -2138,7 +2289,6 @@ READ8_MEMBER(cnbaskb_state::read_k)
 	return read_inputs(3);
 }
 
-
 // config
 
 static INPUT_PORTS_START( cnbaskb )
@@ -2160,7 +2310,7 @@ static INPUT_PORTS_START( cnbaskb )
 	PORT_BIT( 0x0e, IP_ACTIVE_HIGH, IPT_UNUSED )
 INPUT_PORTS_END
 
-static MACHINE_CONFIG_START( cnbaskb )
+MACHINE_CONFIG_START(cnbaskb_state::cnbaskb)
 
 	/* basic machine hardware */
 	MCFG_CPU_ADD("maincpu", TMS1000, 400000) // approximation - RC osc. R=39K, C=47pF
@@ -2210,6 +2360,7 @@ public:
 	DECLARE_WRITE16_MEMBER(write_r);
 	DECLARE_WRITE16_MEMBER(write_o);
 	DECLARE_READ8_MEMBER(read_k);
+	void cmsport(machine_config &config);
 };
 
 // handlers
@@ -2247,7 +2398,6 @@ READ8_MEMBER(cmsport_state::read_k)
 	return read_inputs(3);
 }
 
-
 // config
 
 static INPUT_PORTS_START( cmsport )
@@ -2273,7 +2423,7 @@ static INPUT_PORTS_START( cmsport )
 	PORT_CONFSETTING(    0x08, "2" ) // professional
 INPUT_PORTS_END
 
-static MACHINE_CONFIG_START( cmsport )
+MACHINE_CONFIG_START(cmsport_state::cmsport)
 
 	/* basic machine hardware */
 	MCFG_CPU_ADD("maincpu", TMS1000, 375000) // approximation - RC osc. R=47K, C=47pF
@@ -2325,6 +2475,7 @@ public:
 	DECLARE_WRITE16_MEMBER(write_r);
 	DECLARE_WRITE16_MEMBER(write_o);
 	DECLARE_READ8_MEMBER(read_k);
+	void cnfball(machine_config &config);
 };
 
 // handlers
@@ -2374,7 +2525,6 @@ READ8_MEMBER(cnfball_state::read_k)
 	return read_inputs(2) | (m_r << 3 & 8);
 }
 
-
 // config
 
 static INPUT_PORTS_START( cnfball )
@@ -2399,7 +2549,7 @@ INPUT_PORTS_END
 
 static const s16 cnfball_speaker_levels[4] = { 0, 0x7fff, -0x8000, 0 };
 
-static MACHINE_CONFIG_START( cnfball )
+MACHINE_CONFIG_START(cnfball_state::cnfball)
 
 	/* basic machine hardware */
 	MCFG_CPU_ADD("maincpu", TMS1000, 400000) // approximation - RC osc. R=39K, C=47pF
@@ -2446,6 +2596,7 @@ public:
 	DECLARE_WRITE16_MEMBER(write_r);
 	DECLARE_WRITE16_MEMBER(write_o);
 	DECLARE_READ8_MEMBER(read_k);
+	void cnfball2(machine_config &config);
 };
 
 // handlers
@@ -2487,7 +2638,6 @@ READ8_MEMBER(cnfball2_state::read_k)
 	return read_inputs(3);
 }
 
-
 // config
 
 static INPUT_PORTS_START( cnfball2 )
@@ -2525,7 +2675,7 @@ static const u16 cnfball2_output_pla[0x20] =
 	0, 0, 0, 0, 0, 0, 0, 0
 };
 
-static MACHINE_CONFIG_START( cnfball2 )
+MACHINE_CONFIG_START(cnfball2_state::cnfball2)
 
 	/* basic machine hardware */
 	MCFG_CPU_ADD("maincpu", TMS1100, 375000) // approximation - RC osc. R=47K, C=47pF
@@ -2576,6 +2726,7 @@ public:
 	DECLARE_READ8_MEMBER(read_k);
 
 	DECLARE_INPUT_CHANGED_MEMBER(reset_button);
+	void eleciq(machine_config &config);
 };
 
 // handlers
@@ -2613,7 +2764,6 @@ READ8_MEMBER(eleciq_state::read_k)
 	// K: multiplexed inputs
 	return read_inputs(7);
 }
-
 
 // config
 
@@ -2658,7 +2808,7 @@ static INPUT_PORTS_START( eleciq )
 	PORT_BIT( 0x0e, IP_ACTIVE_HIGH, IPT_UNUSED )
 
 	PORT_START("RESET")
-	PORT_BIT( 0x01, IP_ACTIVE_HIGH, IPT_KEYPAD ) PORT_CODE(KEYCODE_R) PORT_NAME("Reset") PORT_CHANGED_MEMBER(DEVICE_SELF, eleciq_state, reset_button, 0)
+	PORT_BIT( 0x01, IP_ACTIVE_HIGH, IPT_KEYPAD ) PORT_CODE(KEYCODE_R) PORT_NAME("Reset") PORT_CHANGED_MEMBER(DEVICE_SELF, eleciq_state, reset_button, nullptr)
 INPUT_PORTS_END
 
 INPUT_CHANGED_MEMBER(eleciq_state::reset_button)
@@ -2667,7 +2817,7 @@ INPUT_CHANGED_MEMBER(eleciq_state::reset_button)
 	m_maincpu->set_input_line(INPUT_LINE_RESET, newval ? ASSERT_LINE : CLEAR_LINE);
 }
 
-static MACHINE_CONFIG_START( eleciq )
+MACHINE_CONFIG_START(eleciq_state::eleciq)
 
 	/* basic machine hardware */
 	MCFG_CPU_ADD("maincpu", TMS1000, 325000) // approximation - RC osc. R=47K, C=50pF
@@ -2711,6 +2861,7 @@ public:
 	DECLARE_WRITE16_MEMBER(write_r);
 	DECLARE_WRITE16_MEMBER(write_o);
 	DECLARE_READ8_MEMBER(read_k);
+	void esoccer(machine_config &config);
 };
 
 // handlers
@@ -2748,7 +2899,6 @@ READ8_MEMBER(esoccer_state::read_k)
 	return read_inputs(3);
 }
 
-
 // config
 
 static INPUT_PORTS_START( esoccer )
@@ -2772,7 +2922,7 @@ static INPUT_PORTS_START( esoccer )
 	PORT_BIT( 0x08, IP_ACTIVE_HIGH, IPT_BUTTON1 ) PORT_COCKTAIL
 INPUT_PORTS_END
 
-static MACHINE_CONFIG_START( esoccer )
+MACHINE_CONFIG_START(esoccer_state::esoccer)
 
 	/* basic machine hardware */
 	MCFG_CPU_ADD("maincpu", TMS1000, 350000) // approximation - RC osc. R=47K, C=33pF
@@ -2835,6 +2985,7 @@ public:
 	DECLARE_WRITE16_MEMBER(write_r);
 	DECLARE_WRITE16_MEMBER(write_o);
 	DECLARE_READ8_MEMBER(read_k);
+	void ebball(machine_config &config);
 };
 
 // handlers
@@ -2873,7 +3024,6 @@ READ8_MEMBER(ebball_state::read_k)
 	return m_inp_matrix[5]->read() | read_inputs(5);
 }
 
-
 // config
 
 static INPUT_PORTS_START( ebball )
@@ -2906,7 +3056,7 @@ static INPUT_PORTS_START( ebball )
 	PORT_BIT( 0x08, IP_ACTIVE_HIGH, IPT_BUTTON1 ) PORT_NAME("P1 Batter")
 INPUT_PORTS_END
 
-static MACHINE_CONFIG_START( ebball )
+MACHINE_CONFIG_START(ebball_state::ebball)
 
 	/* basic machine hardware */
 	MCFG_CPU_ADD("maincpu", TMS1000, 375000) // approximation - RC osc. R=43K, C=47pF
@@ -2965,6 +3115,7 @@ public:
 	DECLARE_WRITE16_MEMBER(write_r);
 	DECLARE_WRITE16_MEMBER(write_o);
 	DECLARE_READ8_MEMBER(read_k);
+	void ebball2(machine_config &config);
 };
 
 // handlers
@@ -3002,7 +3153,6 @@ READ8_MEMBER(ebball2_state::read_k)
 	return read_inputs(4);
 }
 
-
 // config
 
 static INPUT_PORTS_START( ebball2 )
@@ -3029,7 +3179,7 @@ static INPUT_PORTS_START( ebball2 )
 	PORT_BIT( 0x0a, IP_ACTIVE_HIGH, IPT_UNUSED )
 INPUT_PORTS_END
 
-static MACHINE_CONFIG_START( ebball2 )
+MACHINE_CONFIG_START(ebball2_state::ebball2)
 
 	/* basic machine hardware */
 	MCFG_CPU_ADD("maincpu", TMS1000, 350000) // approximation - RC osc. R=47K, C=47pF
@@ -3096,6 +3246,7 @@ public:
 
 	void set_clock();
 	DECLARE_INPUT_CHANGED_MEMBER(skill_switch);
+	void ebball3(machine_config &config);
 
 protected:
 	virtual void machine_reset() override;
@@ -3147,7 +3298,6 @@ READ8_MEMBER(ebball3_state::read_k)
 	// K: multiplexed inputs
 	return read_inputs(3);
 }
-
 
 // config
 
@@ -3209,7 +3359,7 @@ void ebball3_state::machine_reset()
 	set_clock();
 }
 
-static MACHINE_CONFIG_START( ebball3 )
+MACHINE_CONFIG_START(ebball3_state::ebball3)
 
 	/* basic machine hardware */
 	MCFG_CPU_ADD("maincpu", TMS1100, 340000) // see set_clock
@@ -3264,6 +3414,7 @@ public:
 	DECLARE_WRITE16_MEMBER(write_r);
 	DECLARE_WRITE16_MEMBER(write_o);
 	DECLARE_READ8_MEMBER(read_k);
+	void esbattle(machine_config &config);
 };
 
 // handlers
@@ -3301,7 +3452,6 @@ READ8_MEMBER(esbattle_state::read_k)
 	return read_inputs(2);
 }
 
-
 // config
 
 static INPUT_PORTS_START( esbattle )
@@ -3320,7 +3470,7 @@ static INPUT_PORTS_START( esbattle )
 	PORT_CONFSETTING(    0x00, "2" ) // Manual
 INPUT_PORTS_END
 
-static MACHINE_CONFIG_START( esbattle )
+MACHINE_CONFIG_START(esbattle_state::esbattle)
 
 	/* basic machine hardware */
 	MCFG_CPU_ADD("maincpu", TMS1000, 425000) // approximation - RC osc. R=47K, C=33pF
@@ -3366,6 +3516,7 @@ public:
 
 	void set_clock();
 	DECLARE_INPUT_CHANGED_MEMBER(skill_switch);
+	void einvader(machine_config &config);
 
 protected:
 	virtual void machine_reset() override;
@@ -3396,7 +3547,6 @@ WRITE16_MEMBER(einvader_state::write_o)
 	m_o = data;
 	prepare_display();
 }
-
 
 // config
 
@@ -3429,7 +3579,7 @@ void einvader_state::machine_reset()
 	set_clock();
 }
 
-static MACHINE_CONFIG_START( einvader )
+MACHINE_CONFIG_START(einvader_state::einvader)
 
 	/* basic machine hardware */
 	MCFG_CPU_ADD("maincpu", TMS1100, 320000) // see set_clock
@@ -3474,6 +3624,7 @@ public:
 	DECLARE_WRITE16_MEMBER(write_r);
 	DECLARE_WRITE16_MEMBER(write_o);
 	DECLARE_READ8_MEMBER(read_k);
+	void efootb4(machine_config &config);
 };
 
 // handlers
@@ -3509,7 +3660,6 @@ READ8_MEMBER(efootb4_state::read_k)
 {
 	return read_inputs(5);
 }
-
 
 // config
 
@@ -3549,7 +3699,7 @@ static INPUT_PORTS_START( efootb4 )
 	PORT_BIT( 0x08, IP_ACTIVE_HIGH, IPT_UNUSED )
 INPUT_PORTS_END
 
-static MACHINE_CONFIG_START( efootb4 )
+MACHINE_CONFIG_START(efootb4_state::efootb4)
 
 	/* basic machine hardware */
 	MCFG_CPU_ADD("maincpu", TMS1670, 475000) // approximation - RC osc. R=42K, C=47pF
@@ -3601,6 +3751,7 @@ public:
 	DECLARE_WRITE16_MEMBER(write_r);
 	DECLARE_WRITE16_MEMBER(write_o);
 	DECLARE_READ8_MEMBER(read_k);
+	void ebaskb2(machine_config &config);
 };
 
 // handlers
@@ -3638,7 +3789,6 @@ READ8_MEMBER(ebaskb2_state::read_k)
 	return read_inputs(4);
 }
 
-
 // config
 
 static INPUT_PORTS_START( ebaskb2 )
@@ -3670,7 +3820,7 @@ static INPUT_PORTS_START( ebaskb2 )
 	PORT_BIT( 0x08, IP_ACTIVE_HIGH, IPT_JOYSTICK_RIGHT ) PORT_16WAY
 INPUT_PORTS_END
 
-static MACHINE_CONFIG_START( ebaskb2 )
+MACHINE_CONFIG_START(ebaskb2_state::ebaskb2)
 
 	/* basic machine hardware */
 	MCFG_CPU_ADD("maincpu", TMS1100, 360000) // approximation - RC osc. R=33K, C=82pF
@@ -3728,6 +3878,7 @@ public:
 
 	void set_clock();
 	DECLARE_INPUT_CHANGED_MEMBER(skill_switch);
+	void raisedvl(machine_config &config);
 
 protected:
 	virtual void machine_reset() override;
@@ -3769,7 +3920,6 @@ READ8_MEMBER(raisedvl_state::read_k)
 	return read_inputs(2) & 0xf;
 }
 
-
 // config
 
 static INPUT_PORTS_START( raisedvl )
@@ -3809,7 +3959,7 @@ void raisedvl_state::machine_reset()
 	set_clock();
 }
 
-static MACHINE_CONFIG_START( raisedvl )
+MACHINE_CONFIG_START(raisedvl_state::raisedvl)
 
 	/* basic machine hardware */
 	MCFG_CPU_ADD("maincpu", TMS1100, 350000) // see set_clock
@@ -3869,6 +4019,7 @@ public:
 	DECLARE_READ8_MEMBER(read_k);
 
 	DECLARE_INPUT_CHANGED_MEMBER(reset_button);
+	void f2pbball(machine_config &config);
 };
 
 // handlers
@@ -3906,7 +4057,6 @@ READ8_MEMBER(f2pbball_state::read_k)
 	return read_inputs(3);
 }
 
-
 // config
 
 static INPUT_PORTS_START( f2pbball )
@@ -3931,7 +4081,7 @@ static INPUT_PORTS_START( f2pbball )
 	PORT_BIT( 0x08, IP_ACTIVE_HIGH, IPT_BUTTON4 ) PORT_COCKTAIL PORT_NAME("P2 Fast")
 
 	PORT_START("RESET")
-	PORT_BIT( 0x01, IP_ACTIVE_HIGH, IPT_BUTTON5 ) PORT_NAME("P1 Reset") PORT_CHANGED_MEMBER(DEVICE_SELF, f2pbball_state, reset_button, 0)
+	PORT_BIT( 0x01, IP_ACTIVE_HIGH, IPT_BUTTON5 ) PORT_NAME("P1 Reset") PORT_CHANGED_MEMBER(DEVICE_SELF, f2pbball_state, reset_button, nullptr)
 INPUT_PORTS_END
 
 INPUT_CHANGED_MEMBER(f2pbball_state::reset_button)
@@ -3940,7 +4090,7 @@ INPUT_CHANGED_MEMBER(f2pbball_state::reset_button)
 	m_maincpu->set_input_line(INPUT_LINE_RESET, newval ? ASSERT_LINE : CLEAR_LINE);
 }
 
-static MACHINE_CONFIG_START( f2pbball )
+MACHINE_CONFIG_START(f2pbball_state::f2pbball)
 
 	/* basic machine hardware */
 	MCFG_CPU_ADD("maincpu", TMS1000, 325000) // approximation - RC osc. R=51K, C=39pF
@@ -3987,6 +4137,7 @@ public:
 
 	void set_clock();
 	DECLARE_INPUT_CHANGED_MEMBER(skill_switch);
+	void f3in1(machine_config &config);
 
 protected:
 	virtual void machine_reset() override;
@@ -4026,7 +4177,6 @@ READ8_MEMBER(f3in1_state::read_k)
 	// K: multiplexed inputs
 	return read_inputs(4);
 }
-
 
 // config
 
@@ -4077,7 +4227,7 @@ void f3in1_state::machine_reset()
 	set_clock();
 }
 
-static MACHINE_CONFIG_START( f3in1 )
+MACHINE_CONFIG_START(f3in1_state::f3in1)
 
 	/* basic machine hardware */
 	MCFG_CPU_ADD("maincpu", TMS1100, 300000) // see set_clock
@@ -4125,6 +4275,7 @@ public:
 	virtual DECLARE_WRITE16_MEMBER(write_r);
 	virtual DECLARE_WRITE16_MEMBER(write_o);
 	virtual DECLARE_READ8_MEMBER(read_k);
+	void gpoker(machine_config &config);
 
 protected:
 	virtual void machine_reset() override;
@@ -4165,7 +4316,6 @@ READ8_MEMBER(gpoker_state::read_k)
 	// K: multiplexed inputs
 	return read_inputs(7);
 }
-
 
 // config
 
@@ -4222,7 +4372,7 @@ void gpoker_state::machine_reset()
 	m_beeper->set_state(0);
 }
 
-static MACHINE_CONFIG_START( gpoker )
+MACHINE_CONFIG_START(gpoker_state::gpoker)
 
 	/* basic machine hardware */
 	MCFG_CPU_ADD("maincpu", TMS1370, 350000) // approximation - RC osc. R=47K, C=47pF
@@ -4264,6 +4414,7 @@ public:
 	{ }
 
 	virtual DECLARE_WRITE16_MEMBER(write_r) override;
+	void gjackpot(machine_config &config);
 };
 
 // handlers
@@ -4274,7 +4425,6 @@ WRITE16_MEMBER(gjackpot_state::write_r)
 	gpoker_state::write_r(space, offset, data);
 	m_inp_mux = (data & 0x3f) | (data >> 4 & 0x40);
 }
-
 
 // config
 
@@ -4335,7 +4485,7 @@ static INPUT_PORTS_START( gjackpot )
 	PORT_BIT( 0x09, IP_ACTIVE_HIGH, IPT_UNUSED )
 INPUT_PORTS_END
 
-static MACHINE_CONFIG_START( gjackpot )
+MACHINE_CONFIG_START(gjackpot_state::gjackpot)
 
 	/* basic machine hardware */
 	MCFG_CPU_ADD("maincpu", TMS1670, 450000) // approximation - RC osc. R=47K, C=47pF
@@ -4381,6 +4531,7 @@ public:
 	virtual DECLARE_WRITE16_MEMBER(write_r);
 	virtual DECLARE_WRITE16_MEMBER(write_o);
 	virtual DECLARE_READ8_MEMBER(read_k);
+	void ginv1000(machine_config &config);
 };
 
 // handlers
@@ -4420,7 +4571,6 @@ READ8_MEMBER(ginv1000_state::read_k)
 	return m_inp_matrix[2]->read() | read_inputs(2);
 }
 
-
 // config
 
 static INPUT_PORTS_START( ginv1000 )
@@ -4440,7 +4590,7 @@ static INPUT_PORTS_START( ginv1000 )
 	PORT_BIT( 0x08, IP_ACTIVE_HIGH, IPT_BUTTON1 )
 INPUT_PORTS_END
 
-static MACHINE_CONFIG_START( ginv1000 )
+MACHINE_CONFIG_START(ginv1000_state::ginv1000)
 
 	/* basic machine hardware */
 	MCFG_CPU_ADD("maincpu", TMS1370, 340000) // approximation
@@ -4495,6 +4645,7 @@ public:
 	virtual DECLARE_WRITE16_MEMBER(write_r);
 	virtual DECLARE_WRITE16_MEMBER(write_o);
 	virtual DECLARE_READ8_MEMBER(read_k);
+	void ginv2000(machine_config &config);
 
 protected:
 	virtual void machine_reset() override;
@@ -4545,7 +4696,6 @@ READ8_MEMBER(ginv2000_state::read_k)
 	return m_inp_matrix[2]->read() | read_inputs(2);
 }
 
-
 // config
 
 static INPUT_PORTS_START( ginv2000 )
@@ -4570,7 +4720,7 @@ void ginv2000_state::machine_reset()
 	m_expander->write_ms(1); // Vss
 }
 
-static MACHINE_CONFIG_START( ginv2000 )
+MACHINE_CONFIG_START(ginv2000_state::ginv2000)
 
 	/* basic machine hardware */
 	MCFG_CPU_ADD("maincpu", TMS1370, 425000) // approximation - RC osc. R=36K, C=47pF
@@ -4631,6 +4781,7 @@ public:
 	DECLARE_WRITE16_MEMBER(write_r);
 	DECLARE_WRITE16_MEMBER(write_o);
 	DECLARE_READ8_MEMBER(read_k);
+	void fxmcr165(machine_config &config);
 };
 
 // handlers
@@ -4676,7 +4827,6 @@ READ8_MEMBER(fxmcr165_state::read_k)
 	return read_inputs(5);
 }
 
-
 // config
 
 /* physical button layout and labels is like this:
@@ -4719,10 +4869,10 @@ static INPUT_PORTS_START( fxmcr165 )
 	PORT_BIT( 0x08, IP_ACTIVE_HIGH, IPT_KEYPAD ) PORT_CODE(KEYCODE_MINUS) PORT_CODE(KEYCODE_MINUS_PAD) PORT_NAME("Address Set")
 INPUT_PORTS_END
 
-static MACHINE_CONFIG_START( fxmcr165 )
+MACHINE_CONFIG_START(fxmcr165_state::fxmcr165)
 
 	/* basic machine hardware */
-	MCFG_CPU_ADD("maincpu", TMS1100, XTAL_400kHz)
+	MCFG_CPU_ADD("maincpu", TMS1100, 400_kHz_XTAL)
 	MCFG_TMS1XXX_READ_K_CB(READ8(fxmcr165_state, read_k))
 	MCFG_TMS1XXX_WRITE_R_CB(WRITE16(fxmcr165_state, write_r))
 	MCFG_TMS1XXX_WRITE_O_CB(WRITE16(fxmcr165_state, write_o))
@@ -4765,6 +4915,7 @@ public:
 	DECLARE_WRITE16_MEMBER(write_r);
 	DECLARE_WRITE16_MEMBER(write_o);
 	DECLARE_READ8_MEMBER(read_k);
+	void elecdet(machine_config &config);
 };
 
 // handlers
@@ -4794,7 +4945,6 @@ READ8_MEMBER(elecdet_state::read_k)
 	// K: multiplexed inputs (note: the Vss row is always on)
 	return m_inp_matrix[4]->read() | read_inputs(4);
 }
-
 
 // config
 
@@ -4847,7 +4997,7 @@ INPUT_PORTS_END
 
 static const s16 elecdet_speaker_levels[4] = { 0, 0x3fff, 0x3fff, 0x7fff };
 
-static MACHINE_CONFIG_START( elecdet )
+MACHINE_CONFIG_START(elecdet_state::elecdet)
 
 	/* basic machine hardware */
 	MCFG_CPU_ADD("maincpu", TMS0980, 425000) // approximation
@@ -4893,6 +5043,7 @@ public:
 	DECLARE_WRITE16_MEMBER(write_r);
 	DECLARE_WRITE16_MEMBER(write_o);
 	DECLARE_READ8_MEMBER(read_k);
+	void starwbc(machine_config &config);
 };
 
 // handlers
@@ -4929,7 +5080,6 @@ READ8_MEMBER(starwbc_state::read_k)
 	// K: multiplexed inputs
 	return read_inputs(5);
 }
-
 
 // config
 
@@ -4975,7 +5125,7 @@ static INPUT_PORTS_START( starwbc )
 	PORT_BIT( 0x08, IP_ACTIVE_HIGH, IPT_KEYPAD ) PORT_CODE(KEYCODE_RIGHT) PORT_NAME("Right")
 INPUT_PORTS_END
 
-static MACHINE_CONFIG_START( starwbc )
+MACHINE_CONFIG_START(starwbc_state::starwbc)
 
 	/* basic machine hardware */
 	MCFG_CPU_ADD("maincpu", TMS1100, 325000) // approximation - RC osc. R=51K, C=47pF
@@ -5018,6 +5168,7 @@ public:
 	DECLARE_WRITE16_MEMBER(write_r);
 	DECLARE_WRITE16_MEMBER(write_o);
 	DECLARE_READ8_MEMBER(read_k);
+	void astro(machine_config &config);
 };
 
 // handlers
@@ -5050,7 +5201,6 @@ READ8_MEMBER(astro_state::read_k)
 	// K: multiplexed inputs
 	return read_inputs(8);
 }
-
 
 // config
 
@@ -5102,7 +5252,7 @@ static INPUT_PORTS_START( astro )
 	PORT_CONFSETTING(    0x08, "Astro" )
 INPUT_PORTS_END
 
-static MACHINE_CONFIG_START( astro )
+MACHINE_CONFIG_START(astro_state::astro)
 
 	/* basic machine hardware */
 	MCFG_CPU_ADD("maincpu", TMS1470, 450000) // approximation - RC osc. R=4.7K, C=33pF
@@ -5157,6 +5307,7 @@ public:
 	DECLARE_WRITE16_MEMBER(write_r);
 	DECLARE_WRITE16_MEMBER(write_o);
 	DECLARE_READ8_MEMBER(read_k);
+	void elecbowl(machine_config &config);
 };
 
 // handlers
@@ -5219,7 +5370,6 @@ READ8_MEMBER(elecbowl_state::read_k)
 	return read_inputs(4);
 }
 
-
 // config
 
 static INPUT_PORTS_START( elecbowl )
@@ -5267,7 +5417,7 @@ static const u16 elecbowl_output_pla[0x20] =
 	0x98, 0x99, 0x9a, 0x9b, 0x9c, 0x9d, 0x9e, 0x9f
 };
 
-static MACHINE_CONFIG_START( elecbowl )
+MACHINE_CONFIG_START(elecbowl_state::elecbowl)
 
 	/* basic machine hardware */
 	MCFG_CPU_ADD("maincpu", TMS1100, 350000) // approximation - RC osc. R=33K, C=100pF
@@ -5319,6 +5469,7 @@ public:
 	DECLARE_WRITE32_MEMBER(lcd_output_w);
 	DECLARE_WRITE16_MEMBER(write_r);
 	DECLARE_READ8_MEMBER(read_k);
+	void horseran(machine_config &config);
 };
 
 // handlers
@@ -5359,7 +5510,6 @@ READ8_MEMBER(horseran_state::read_k)
 	// K: multiplexed inputs
 	return read_inputs(8);
 }
-
 
 // config
 
@@ -5424,7 +5574,7 @@ static INPUT_PORTS_START( horseran )
 	PORT_BIT( 0x08, IP_ACTIVE_HIGH, IPT_KEYPAD ) PORT_CODE(KEYCODE_6) PORT_CODE(KEYCODE_7_PAD) PORT_NAME("7")
 INPUT_PORTS_END
 
-static MACHINE_CONFIG_START( horseran )
+MACHINE_CONFIG_START(horseran_state::horseran)
 
 	/* basic machine hardware */
 	MCFG_CPU_ADD("maincpu", TMS1100, 300000) // approximation - RC osc. R=56K, C=47pF
@@ -5465,6 +5615,7 @@ public:
 	DECLARE_WRITE16_MEMBER(write_r);
 	DECLARE_WRITE16_MEMBER(write_o);
 	DECLARE_READ8_MEMBER(read_k);
+	void mdndclab(machine_config &config);
 };
 
 // handlers
@@ -5489,7 +5640,6 @@ READ8_MEMBER(mdndclab_state::read_k)
 	// K: multiplexed inputs
 	return read_inputs(18);
 }
-
 
 // config
 
@@ -5603,7 +5753,7 @@ static INPUT_PORTS_START( mdndclab )
 	PORT_BIT( 0x08, IP_ACTIVE_HIGH, IPT_KEYPAD ) PORT_CODE(KEYCODE_2) PORT_CODE(KEYCODE_2_PAD) PORT_NAME("Dragon Attacks / Dragon Wakes")
 INPUT_PORTS_END
 
-static MACHINE_CONFIG_START( mdndclab )
+MACHINE_CONFIG_START(mdndclab_state::mdndclab)
 
 	/* basic machine hardware */
 	MCFG_CPU_ADD("maincpu", TMS1100, 475000) // approximation - RC osc. R=27K, C=100pF
@@ -5652,6 +5802,7 @@ public:
 	DECLARE_WRITE16_MEMBER(write_r);
 	DECLARE_WRITE16_MEMBER(write_o);
 	DECLARE_READ8_MEMBER(read_k);
+	void comp4(machine_config &config);
 };
 
 // handlers
@@ -5684,7 +5835,6 @@ READ8_MEMBER(comp4_state::read_k)
 	return read_inputs(3);
 }
 
-
 // config
 
 static INPUT_PORTS_START( comp4 )
@@ -5707,7 +5857,7 @@ static INPUT_PORTS_START( comp4 )
 	PORT_BIT( 0x08, IP_ACTIVE_HIGH, IPT_KEYPAD ) PORT_CODE(KEYCODE_9) PORT_CODE(KEYCODE_9_PAD) PORT_NAME("9")
 INPUT_PORTS_END
 
-static MACHINE_CONFIG_START( comp4 )
+MACHINE_CONFIG_START(comp4_state::comp4)
 
 	/* basic machine hardware */
 	MCFG_CPU_ADD("maincpu", TMS0970, 250000) // approximation
@@ -5756,6 +5906,7 @@ public:
 	DECLARE_WRITE16_MEMBER(write_r);
 	DECLARE_WRITE16_MEMBER(write_o);
 	DECLARE_READ8_MEMBER(read_k);
+	void bship(machine_config &config);
 };
 
 // handlers
@@ -5779,7 +5930,6 @@ READ8_MEMBER(bship_state::read_k)
 	// K: multiplexed inputs (note: the Vss row is always on)
 	return m_inp_matrix[11]->read() | read_inputs(11);
 }
-
 
 // config
 
@@ -5857,7 +6007,7 @@ static INPUT_PORTS_START( bship )
 	PORT_BIT( 0x08, IP_ACTIVE_HIGH, IPT_KEYPAD ) PORT_NAME("P2 Clear Last Entry")
 INPUT_PORTS_END
 
-static MACHINE_CONFIG_START( bship )
+MACHINE_CONFIG_START(bship_state::bship)
 
 	/* basic machine hardware */
 	MCFG_CPU_ADD("maincpu", TMS1000, 200000) // approximation - RC osc. R=100K, C=47pF
@@ -5901,6 +6051,7 @@ public:
 	DECLARE_WRITE16_MEMBER(write_r);
 	DECLARE_WRITE16_MEMBER(write_o);
 	DECLARE_READ8_MEMBER(read_k);
+	void bshipb(machine_config &config);
 };
 
 // handlers
@@ -5955,12 +6106,11 @@ READ8_MEMBER(bshipb_state::read_k)
 	return m_inp_matrix[11]->read() | read_inputs(11);
 }
 
-
 // config
 
 // buttons are same as bship set
 
-static MACHINE_CONFIG_START( bshipb )
+MACHINE_CONFIG_START(bshipb_state::bshipb)
 
 	/* basic machine hardware */
 	MCFG_CPU_ADD("maincpu", TMS1000, 200000) // approximation - RC osc. R=100K, C=47pF
@@ -6019,6 +6169,7 @@ public:
 
 	DECLARE_WRITE16_MEMBER(write_r);
 	DECLARE_READ8_MEMBER(read_k);
+	void simon(machine_config &config);
 };
 
 // handlers
@@ -6046,7 +6197,6 @@ READ8_MEMBER(simon_state::read_k)
 	// K: multiplexed inputs
 	return read_inputs(4);
 }
-
 
 // config
 
@@ -6078,7 +6228,7 @@ static INPUT_PORTS_START( simon )
 	PORT_CONFSETTING(    0x01, "4" )
 INPUT_PORTS_END
 
-static MACHINE_CONFIG_START( simon )
+MACHINE_CONFIG_START(simon_state::simon)
 
 	/* basic machine hardware */
 	MCFG_CPU_ADD("maincpu", TMS1000, 350000) // approximation - RC osc. R=33K, C=100pF
@@ -6121,6 +6271,7 @@ public:
 
 	void set_clock();
 	DECLARE_INPUT_CHANGED_MEMBER(speed_switch);
+	void ssimon(machine_config &config);
 
 protected:
 	virtual void machine_reset() override;
@@ -6148,7 +6299,6 @@ READ8_MEMBER(ssimon_state::read_k)
 	// K: multiplexed inputs
 	return read_inputs(6);
 }
-
 
 // config
 
@@ -6219,7 +6369,7 @@ void ssimon_state::machine_reset()
 	set_clock();
 }
 
-static MACHINE_CONFIG_START( ssimon )
+MACHINE_CONFIG_START(ssimon_state::ssimon)
 
 	/* basic machine hardware */
 	MCFG_CPU_ADD("maincpu", TMS1100, 275000) // see set_clock
@@ -6270,6 +6420,7 @@ public:
 	int m_gearbox_pos;
 	bool sensor_state() { return m_gearbox_pos < 0 && m_display_decay[0][0] != 0; }
 	TIMER_DEVICE_CALLBACK_MEMBER(gearbox_sim_tick);
+	void bigtrak(machine_config &config);
 
 protected:
 	virtual void machine_start() override;
@@ -6329,7 +6480,6 @@ READ8_MEMBER(bigtrak_state::read_k)
 	// K8: IR sensor
 	return read_inputs(7) | (sensor_state() ? 8 : 0);
 }
-
 
 // config
 
@@ -6399,7 +6549,7 @@ void bigtrak_state::machine_start()
 
 static const s16 bigtrak_speaker_levels[8] = { 0, 0x7fff/3, 0x7fff/3, 0x7fff/3*2, 0x7fff/3, 0x7fff/3*2, 0x7fff/3*2, 0x7fff };
 
-static MACHINE_CONFIG_START( bigtrak )
+MACHINE_CONFIG_START(bigtrak_state::bigtrak)
 
 	/* basic machine hardware */
 	MCFG_CPU_ADD("maincpu", TMS1000, 200000) // approximation - RC osc. R=83K, C=100pF
@@ -6462,6 +6612,7 @@ public:
 	DECLARE_WRITE16_MEMBER(write_r);
 	DECLARE_WRITE16_MEMBER(write_o);
 	DECLARE_READ8_MEMBER(read_k);
+	void mbdtower(machine_config &config);
 
 protected:
 	virtual void machine_start() override;
@@ -6572,7 +6723,6 @@ READ8_MEMBER(mbdtower_state::read_k)
 	return read_inputs(3) | ((!m_sensor_blind && sensor_led_on()) ? 8 : 0);
 }
 
-
 // config
 
 /* physical button layout and labels is like this:
@@ -6632,7 +6782,7 @@ void mbdtower_state::machine_start()
 	save_item(NAME(m_sensor_blind));
 }
 
-static MACHINE_CONFIG_START( mbdtower )
+MACHINE_CONFIG_START(mbdtower_state::mbdtower)
 
 	/* basic machine hardware */
 	MCFG_CPU_ADD("maincpu", TMS1400, 425000) // approximation - RC osc. R=43K, C=56pF
@@ -6675,6 +6825,7 @@ public:
 	DECLARE_WRITE16_MEMBER(write_r);
 	DECLARE_WRITE16_MEMBER(write_o);
 	DECLARE_READ8_MEMBER(read_k);
+	void arcmania(machine_config &config);
 };
 
 // handlers
@@ -6703,7 +6854,6 @@ READ8_MEMBER(arcmania_state::read_k)
 	// K: multiplexed inputs
 	return read_inputs(3);
 }
-
 
 // config
 
@@ -6743,7 +6893,7 @@ INPUT_PORTS_END
 
 static const s16 arcmania_speaker_levels[8] = { 0, 0x7fff/3, 0x7fff/3, 0x7fff/3*2, 0x7fff/3, 0x7fff/3*2, 0x7fff/3*2, 0x7fff };
 
-static MACHINE_CONFIG_START( arcmania )
+MACHINE_CONFIG_START(arcmania_state::arcmania)
 
 	/* basic machine hardware */
 	MCFG_CPU_ADD("maincpu", TMS1100, 250000) // approximation - RC osc. R=56K, C=100pF
@@ -6787,6 +6937,7 @@ public:
 	DECLARE_WRITE16_MEMBER(write_r);
 	DECLARE_WRITE16_MEMBER(write_o);
 	DECLARE_READ8_MEMBER(read_k);
+	void cnsector(machine_config &config);
 };
 
 // handlers
@@ -6813,7 +6964,6 @@ READ8_MEMBER(cnsector_state::read_k)
 	// K: multiplexed inputs
 	return read_inputs(5);
 }
-
 
 // config
 
@@ -6862,7 +7012,7 @@ static INPUT_PORTS_START( cnsector )
 	PORT_BIT( 0x08, IP_ACTIVE_HIGH, IPT_KEYPAD ) PORT_CODE(KEYCODE_B) PORT_NAME("Teach Mode")
 INPUT_PORTS_END
 
-static MACHINE_CONFIG_START( cnsector )
+MACHINE_CONFIG_START(cnsector_state::cnsector)
 
 	/* basic machine hardware */
 	MCFG_CPU_ADD("maincpu", TMS0970, 250000) // approximation
@@ -6912,6 +7062,7 @@ public:
 	virtual DECLARE_WRITE16_MEMBER(write_r);
 	virtual DECLARE_WRITE16_MEMBER(write_o);
 	virtual DECLARE_READ8_MEMBER(read_k);
+	void merlin(machine_config &config);
 };
 
 // handlers
@@ -6945,7 +7096,6 @@ READ8_MEMBER(merlin_state::read_k)
 	return read_inputs(4);
 }
 
-
 // config
 
 static INPUT_PORTS_START( merlin )
@@ -6976,7 +7126,7 @@ INPUT_PORTS_END
 
 static const s16 merlin_speaker_levels[8] = { 0, 0x7fff/3, 0x7fff/3, 0x7fff/3*2, 0x7fff/3, 0x7fff/3*2, 0x7fff/3*2, 0x7fff };
 
-static MACHINE_CONFIG_START( merlin )
+MACHINE_CONFIG_START(merlin_state::merlin)
 
 	/* basic machine hardware */
 	MCFG_CPU_ADD("maincpu", TMS1100, 350000) // approximation - RC osc. R=33K, C=100pF
@@ -7026,10 +7176,11 @@ public:
 	mmerlin_state(const machine_config &mconfig, device_type type, const char *tag)
 		: merlin_state(mconfig, type, tag)
 	{ }
+
+	void mmerlin(machine_config &config);
 };
 
 // handlers: uses the ones in merlin_state
-
 
 // config
 
@@ -7040,7 +7191,7 @@ static INPUT_PORTS_START( mmerlin )
 	PORT_BIT( 0x04, IP_ACTIVE_HIGH, IPT_KEYPAD ) PORT_CODE(KEYCODE_S) PORT_NAME("Score") // instead of Hit Me
 INPUT_PORTS_END
 
-static MACHINE_CONFIG_START( mmerlin )
+MACHINE_CONFIG_START(mmerlin_state::mmerlin)
 
 	/* basic machine hardware */
 	MCFG_CPU_ADD("maincpu", TMS1400, 425000) // approximation - RC osc. R=30K, C=100pF
@@ -7084,6 +7235,7 @@ public:
 	DECLARE_WRITE16_MEMBER(write_r);
 	DECLARE_WRITE16_MEMBER(write_o);
 	DECLARE_READ8_MEMBER(read_k);
+	void stopthief(machine_config &config);
 };
 
 // handlers
@@ -7116,7 +7268,6 @@ READ8_MEMBER(stopthief_state::read_k)
 	// K: multiplexed inputs (note: the Vss row is always on)
 	return m_inp_matrix[2]->read() | read_inputs(2);
 }
-
 
 // config
 
@@ -7155,7 +7306,7 @@ INPUT_PORTS_END
 
 static const s16 stopthief_speaker_levels[7] = { 0, 0x7fff/6, 0x7fff/5, 0x7fff/4, 0x7fff/3, 0x7fff/2, 0x7fff };
 
-static MACHINE_CONFIG_START( stopthief )
+MACHINE_CONFIG_START(stopthief_state::stopthief)
 
 	/* basic machine hardware */
 	MCFG_CPU_ADD("maincpu", TMS0980, 425000) // approximation
@@ -7205,13 +7356,14 @@ public:
 	DECLARE_WRITE16_MEMBER(write_r);
 	DECLARE_WRITE16_MEMBER(write_o);
 	DECLARE_READ8_MEMBER(read_k);
+	void bankshot(machine_config &config);
 };
 
 // handlers
 
 void bankshot_state::prepare_display()
 {
-	display_matrix(7, 11, m_o, m_r & ~3);
+	display_matrix(8, 11, m_o, m_r & ~3);
 }
 
 WRITE16_MEMBER(bankshot_state::write_r)
@@ -7229,9 +7381,8 @@ WRITE16_MEMBER(bankshot_state::write_r)
 
 WRITE16_MEMBER(bankshot_state::write_o)
 {
-	// O0-O6: led state
-	// O7: N/C
-	m_o = data & 0x7f;
+	// O0-O7: led state
+	m_o = data;
 	prepare_display();
 }
 
@@ -7240,7 +7391,6 @@ READ8_MEMBER(bankshot_state::read_k)
 	// K: multiplexed inputs
 	return read_inputs(2);
 }
-
 
 // config
 
@@ -7270,7 +7420,7 @@ static INPUT_PORTS_START( bankshot )
 	PORT_BIT( 0x08, IP_ACTIVE_HIGH, IPT_UNUSED )
 INPUT_PORTS_END
 
-static MACHINE_CONFIG_START( bankshot )
+MACHINE_CONFIG_START(bankshot_state::bankshot)
 
 	/* basic machine hardware */
 	MCFG_CPU_ADD("maincpu", TMS1400, 475000) // approximation - RC osc. R=24K, C=100pF
@@ -7334,6 +7484,7 @@ public:
 	DECLARE_WRITE16_MEMBER(write_r);
 	DECLARE_WRITE16_MEMBER(write_o);
 	DECLARE_READ8_MEMBER(read_k);
+	void splitsec(machine_config &config);
 };
 
 // handlers
@@ -7370,7 +7521,6 @@ READ8_MEMBER(splitsec_state::read_k)
 	return read_inputs(2);
 }
 
-
 // config
 
 static INPUT_PORTS_START( splitsec )
@@ -7387,7 +7537,7 @@ static INPUT_PORTS_START( splitsec )
 	PORT_BIT( 0x08, IP_ACTIVE_HIGH, IPT_UNUSED )
 INPUT_PORTS_END
 
-static MACHINE_CONFIG_START( splitsec )
+MACHINE_CONFIG_START(splitsec_state::splitsec)
 
 	/* basic machine hardware */
 	MCFG_CPU_ADD("maincpu", TMS1400, 475000) // approximation - RC osc. R=24K, C=100pF
@@ -7429,6 +7579,7 @@ public:
 	DECLARE_WRITE16_MEMBER(write_r);
 	DECLARE_WRITE16_MEMBER(write_o);
 	DECLARE_READ8_MEMBER(read_k);
+	void lostreas(machine_config &config);
 };
 
 // handlers
@@ -7456,7 +7607,6 @@ READ8_MEMBER(lostreas_state::read_k)
 	// K: multiplexed inputs
 	return read_inputs(4);
 }
-
 
 // config
 
@@ -7505,7 +7655,7 @@ static const s16 lostreas_speaker_levels[16] =
 	0x7fff/8, 0x7fff/7, 0x7fff/6, 0x7fff/5, 0x7fff/4, 0x7fff/3, 0x7fff/2, 0x7fff/1
 };
 
-static MACHINE_CONFIG_START( lostreas )
+MACHINE_CONFIG_START(lostreas_state::lostreas)
 
 	/* basic machine hardware */
 	MCFG_CPU_ADD("maincpu", TMS1100, 425000) // approximation - RC osc. R=39K, C=47pF
@@ -7558,6 +7708,7 @@ public:
 	DECLARE_WRITE16_MEMBER(write_r);
 	DECLARE_WRITE16_MEMBER(write_o);
 	DECLARE_READ8_MEMBER(read_k);
+	void alphie(machine_config &config);
 };
 
 // handlers
@@ -7596,7 +7747,6 @@ READ8_MEMBER(alphie_state::read_k)
 	return read_rotated_inputs(6);
 }
 
-
 // config
 
 static const ioport_value alphie_armpos_table[5] = { 0x01, 0x02, 0x04, 0x08, 0x10 };
@@ -7626,7 +7776,7 @@ static const u16 alphie_output_pla[0x20] =
 	0, 1, 0, 1, 0, 1, 0, 1, 0, 1, 0, 1, 0, 1, 0, 1
 };
 
-static MACHINE_CONFIG_START( alphie )
+MACHINE_CONFIG_START(alphie_state::alphie)
 
 	/* basic machine hardware */
 	MCFG_CPU_ADD("maincpu", TMS1000, 350000) // approximation
@@ -7672,6 +7822,7 @@ public:
 	virtual DECLARE_WRITE16_MEMBER(write_r);
 	virtual DECLARE_WRITE16_MEMBER(write_o);
 	virtual DECLARE_READ8_MEMBER(read_k);
+	void tcfball(machine_config &config);
 };
 
 // handlers
@@ -7714,7 +7865,6 @@ READ8_MEMBER(tcfball_state::read_k)
 	return read_inputs(3);
 }
 
-
 // config
 
 static INPUT_PORTS_START( tcfball )
@@ -7737,7 +7887,7 @@ static INPUT_PORTS_START( tcfball )
 	PORT_CONFSETTING(    0x08, "2" ) // professional
 INPUT_PORTS_END
 
-static MACHINE_CONFIG_START( tcfball )
+MACHINE_CONFIG_START(tcfball_state::tcfball)
 
 	/* basic machine hardware */
 	MCFG_CPU_ADD("maincpu", TMS1100, 375000) // approximation - RC osc. R=56K, C=24pF
@@ -7779,10 +7929,11 @@ public:
 	tcfballa_state(const machine_config &mconfig, device_type type, const char *tag)
 		: tcfball_state(mconfig, type, tag)
 	{ }
+
+	void tcfballa(machine_config &config);
 };
 
 // handlers: uses the ones in tcfball_state
-
 
 // config
 
@@ -7801,7 +7952,7 @@ static const u16 tcfballa_output_pla[0x20] =
 	0x01, 0x02, 0x04, 0x08, 0x10, 0x20, 0x40, 0x80, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00
 };
 
-static MACHINE_CONFIG_START( tcfballa )
+MACHINE_CONFIG_START(tcfballa_state::tcfballa)
 
 	/* basic machine hardware */
 	MCFG_CPU_ADD("maincpu", TMS1100, 375000) // approximation - RC osc. R=47K, C=50pF
@@ -7861,6 +8012,7 @@ public:
 	DECLARE_WRITE16_MEMBER(write_r);
 	DECLARE_WRITE16_MEMBER(write_o);
 	DECLARE_READ8_MEMBER(read_k);
+	void tandy12(machine_config &config);
 };
 
 // handlers
@@ -7895,7 +8047,6 @@ READ8_MEMBER(tandy12_state::read_k)
 	// K: multiplexed inputs
 	return read_inputs(5);
 }
-
 
 // config
 
@@ -7965,7 +8116,7 @@ static const u16 tandy12_output_pla[0x20] =
 	0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00
 };
 
-static MACHINE_CONFIG_START( tandy12 )
+MACHINE_CONFIG_START(tandy12_state::tandy12)
 
 	/* basic machine hardware */
 	MCFG_CPU_ADD("maincpu", TMS1100, 400000) // approximation - RC osc. R=39K, C=47pF
@@ -8013,6 +8164,7 @@ public:
 	DECLARE_WRITE16_MEMBER(write_r);
 	DECLARE_WRITE16_MEMBER(write_o);
 	DECLARE_READ8_MEMBER(read_k);
+	void monkeysee(machine_config &config);
 };
 
 // handlers
@@ -8038,7 +8190,6 @@ READ8_MEMBER(monkeysee_state::read_k)
 	// K: multiplexed inputs
 	return read_inputs(5);
 }
-
 
 // config
 
@@ -8074,7 +8225,7 @@ static INPUT_PORTS_START( monkeysee )
 	PORT_BIT( 0x08, IP_ACTIVE_HIGH, IPT_KEYPAD ) PORT_CODE(KEYCODE_STOP) PORT_CODE(KEYCODE_DEL_PAD) PORT_NAME(".")
 INPUT_PORTS_END
 
-static MACHINE_CONFIG_START( monkeysee )
+MACHINE_CONFIG_START(monkeysee_state::monkeysee)
 
 	/* basic machine hardware */
 	MCFG_CPU_ADD("maincpu", TMS1000, 250000) // approximation - RC osc. R=68K, C=47pF
@@ -8122,6 +8273,7 @@ public:
 	virtual DECLARE_WRITE16_MEMBER(write_r);
 	virtual DECLARE_WRITE16_MEMBER(write_o);
 	virtual DECLARE_READ8_MEMBER(read_k);
+	void speechp(machine_config &config);
 };
 
 // handlers
@@ -8160,7 +8312,6 @@ READ8_MEMBER(speechp_state::read_k)
 	// K: multiplexed inputs
 	return m_inp_matrix[10]->read() | (read_inputs(10) & 7);
 }
-
 
 // config
 
@@ -8223,7 +8374,7 @@ static INPUT_PORTS_START( speechp )
 	PORT_CONFSETTING(    0x00, DEF_STR( Normal ) )
 INPUT_PORTS_END
 
-static MACHINE_CONFIG_START( speechp )
+MACHINE_CONFIG_START(speechp_state::speechp)
 
 	/* basic machine hardware */
 	MCFG_CPU_ADD("maincpu", TMS1000, 400000) // approximation - RC osc. R=39K, C=47pF
@@ -8271,6 +8422,7 @@ public:
 	DECLARE_WRITE16_MEMBER(write_r);
 	DECLARE_WRITE16_MEMBER(write_o);
 	DECLARE_READ8_MEMBER(read_k);
+	void timaze(machine_config &config);
 };
 
 // handlers
@@ -8294,7 +8446,6 @@ READ8_MEMBER(timaze_state::read_k)
 	return read_inputs(1);
 }
 
-
 // config
 
 static INPUT_PORTS_START( timaze )
@@ -8305,7 +8456,7 @@ static INPUT_PORTS_START( timaze )
 	PORT_BIT( 0x08, IP_ACTIVE_HIGH, IPT_JOYSTICK_UP ) PORT_16WAY
 INPUT_PORTS_END
 
-static MACHINE_CONFIG_START( timaze )
+MACHINE_CONFIG_START(timaze_state::timaze)
 
 	/* basic machine hardware */
 	MCFG_CPU_ADD("maincpu", TMS1000, 200000) // approximation - RC osc. R=80K, C=27pF
@@ -8315,6 +8466,8 @@ static MACHINE_CONFIG_START( timaze )
 
 	MCFG_TIMER_DRIVER_ADD_PERIODIC("display_decay", hh_tms1k_state, display_decay_tick, attotime::from_msec(1))
 	MCFG_DEFAULT_LAYOUT(layout_timaze)
+
+	/* no sound! */
 MACHINE_CONFIG_END
 
 
@@ -8345,6 +8498,7 @@ public:
 	DECLARE_WRITE16_MEMBER(write_r);
 	DECLARE_WRITE16_MEMBER(write_o);
 	DECLARE_READ8_MEMBER(read_k);
+	void copycat(machine_config &config);
 };
 
 // handlers
@@ -8371,7 +8525,6 @@ READ8_MEMBER(copycat_state::read_k)
 	// K: multiplexed inputs
 	return read_inputs(4);
 }
-
 
 // config
 
@@ -8405,7 +8558,7 @@ INPUT_PORTS_END
 
 static const s16 copycat_speaker_levels[4] = { 0, 0x7fff, -0x8000, 0 };
 
-static MACHINE_CONFIG_START( copycat )
+MACHINE_CONFIG_START(copycat_state::copycat)
 
 	/* basic machine hardware */
 	MCFG_CPU_ADD("maincpu", TMS1000, 320000) // approximation - RC osc. R=47K, C=47pF
@@ -8454,6 +8607,7 @@ public:
 
 	DECLARE_WRITE16_MEMBER(write_r);
 	DECLARE_WRITE16_MEMBER(write_o);
+	void copycatm2(machine_config &config);
 };
 
 // handlers
@@ -8470,7 +8624,6 @@ WRITE16_MEMBER(copycatm2_state::write_o)
 	m_speaker->level_w((data & 1) | (data >> 5 & 2));
 }
 
-
 // config
 
 static INPUT_PORTS_START( copycatm2 )
@@ -8481,7 +8634,7 @@ static INPUT_PORTS_START( copycatm2 )
 	PORT_BIT( 0x08, IP_ACTIVE_HIGH, IPT_BUTTON4 ) PORT_NAME("Green Button")
 INPUT_PORTS_END
 
-static MACHINE_CONFIG_START( copycatm2 )
+MACHINE_CONFIG_START(copycatm2_state::copycatm2)
 
 	/* basic machine hardware */
 	MCFG_CPU_ADD("maincpu", TMS1730, 275000) // approximation - RC osc. R=100K, C=47pF
@@ -8525,6 +8678,7 @@ public:
 
 	DECLARE_WRITE16_MEMBER(write_r);
 	DECLARE_WRITE16_MEMBER(write_o);
+	void ditto(machine_config &config);
 };
 
 // handlers
@@ -8541,7 +8695,6 @@ WRITE16_MEMBER(ditto_state::write_o)
 	m_speaker->level_w(data >> 5 & 3);
 }
 
-
 // config
 
 static INPUT_PORTS_START( ditto )
@@ -8552,7 +8705,7 @@ static INPUT_PORTS_START( ditto )
 	PORT_BIT( 0x08, IP_ACTIVE_HIGH, IPT_BUTTON4 ) PORT_NAME("Red Button")
 INPUT_PORTS_END
 
-static MACHINE_CONFIG_START( ditto )
+MACHINE_CONFIG_START(ditto_state::ditto)
 
 	/* basic machine hardware */
 	MCFG_CPU_ADD("maincpu", TMS1730, 275000) // approximation - RC osc. R=100K, C=47pF
@@ -8601,6 +8754,7 @@ public:
 	DECLARE_WRITE16_MEMBER(write_r);
 	DECLARE_WRITE16_MEMBER(write_o);
 	DECLARE_READ8_MEMBER(read_k);
+	void ss7in1(machine_config &config);
 };
 
 // handlers
@@ -8634,9 +8788,9 @@ WRITE16_MEMBER(ss7in1_state::write_o)
 
 READ8_MEMBER(ss7in1_state::read_k)
 {
+	// K: multiplexed inputs
 	return read_inputs(4);
 }
-
 
 // config
 
@@ -8667,7 +8821,7 @@ static INPUT_PORTS_START( ss7in1 )
 	PORT_BIT( 0x0c, IP_ACTIVE_LOW, IPT_UNUSED )
 INPUT_PORTS_END
 
-static MACHINE_CONFIG_START( ss7in1 )
+MACHINE_CONFIG_START(ss7in1_state::ss7in1)
 
 	/* basic machine hardware */
 	MCFG_CPU_ADD("maincpu", TMS1400, 450000) // approximation - RC osc. R=47K, C=47pF
@@ -8742,6 +8896,7 @@ public:
 
 	void set_clock();
 	DECLARE_INPUT_CHANGED_MEMBER(skill_switch);
+	void tbreakup(machine_config &config);
 
 protected:
 	virtual void machine_reset() override;
@@ -8812,7 +8967,6 @@ READ8_MEMBER(tbreakup_state::read_k)
 	return (m_inp_matrix[2]->read() & 4) | (read_inputs(2) & 8);
 }
 
-
 // config
 
 static INPUT_PORTS_START( tbreakup )
@@ -8860,7 +9014,7 @@ void tbreakup_state::machine_start()
 	save_item(NAME(m_exp_port));
 }
 
-static MACHINE_CONFIG_START( tbreakup )
+MACHINE_CONFIG_START(tbreakup_state::tbreakup)
 
 	/* basic machine hardware */
 	MCFG_CPU_ADD("maincpu", TMS1040, 325000) // see set_clock
@@ -8932,6 +9086,7 @@ public:
 	DECLARE_READ8_MEMBER(read_k);
 
 	DECLARE_INPUT_CHANGED_MEMBER(flipper_button);
+	void phpball(machine_config &config);
 };
 
 // handlers
@@ -8974,7 +9129,6 @@ READ8_MEMBER(phpball_state::read_k)
 	return m_inp_matrix[1]->read() | read_inputs(1);
 }
 
-
 // config
 
 static INPUT_PORTS_START( phpball )
@@ -8993,7 +9147,7 @@ INPUT_CHANGED_MEMBER(phpball_state::flipper_button)
 	prepare_display();
 }
 
-static MACHINE_CONFIG_START( phpball )
+MACHINE_CONFIG_START(phpball_state::phpball)
 
 	/* basic machine hardware */
 	MCFG_CPU_ADD("maincpu", TMS1100, 375000) // approximation - RC osc. R=47K, C=47pF
@@ -9038,6 +9192,7 @@ public:
 	DECLARE_WRITE16_MEMBER(write_r);
 	DECLARE_WRITE16_MEMBER(write_o);
 	DECLARE_READ8_MEMBER(read_k);
+	void ssports4(machine_config &config);
 };
 
 // handlers
@@ -9074,7 +9229,6 @@ READ8_MEMBER(ssports4_state::read_k)
 	m_inp_mux = (m_r & 3) | (m_r >> 3 & 4) | (m_r >> 5 & 0x18) | (m_o >> 2 & 0x20);
 	return read_inputs(6);
 }
-
 
 // config
 
@@ -9128,7 +9282,7 @@ static const u16 ssports4_output_pla[0x20] =
 	0x3f, 0x06, 0x5b, 0x4f, 0x66, 0x6d, 0x7d, 0x07, 0x7f, 0x6f, 0x00, 0x40, 0x40, 0x40, 0x40, 0x40
 };
 
-static MACHINE_CONFIG_START( ssports4 )
+MACHINE_CONFIG_START(ssports4_state::ssports4)
 
 	/* basic machine hardware */
 	MCFG_CPU_ADD("maincpu", TMS1100, 375000) // approximation - RC osc. R=47K, C=47pF
@@ -9175,6 +9329,7 @@ public:
 	DECLARE_WRITE16_MEMBER(write_r);
 	DECLARE_WRITE16_MEMBER(write_o);
 	DECLARE_READ8_MEMBER(read_k);
+	void xl25(machine_config &config);
 
 protected:
 	virtual void machine_reset() override;
@@ -9221,7 +9376,6 @@ READ8_MEMBER(xl25_state::read_k)
 	// K4 also goes to MCU halt
 	return read_inputs(10);
 }
-
 
 // config
 
@@ -9298,7 +9452,7 @@ void xl25_state::machine_reset()
 	update_halt();
 }
 
-static MACHINE_CONFIG_START( xl25 )
+MACHINE_CONFIG_START(xl25_state::xl25)
 
 	/* basic machine hardware */
 	MCFG_CPU_ADD("maincpu", TMS1000C, 300000) // approximation - RC osc. R=5.6K, C=47pF
@@ -9410,6 +9564,17 @@ ROM_START( h2hfootb )
 	ROM_LOAD( "tms1100_common1_micro.pla", 0, 867, CRC(62445fc9) SHA1(d6297f2a4bc7a870b76cc498d19dbb0ce7d69fec) )
 	ROM_REGION( 365, "maincpu:opla", 0 )
 	ROM_LOAD( "tms1100_h2hfootb_output.pla", 0, 365, CRC(c8d85873) SHA1(16bd6fc8e3cd16d5f8fd32d0c74e67de77f5487e) )
+ROM_END
+
+
+ROM_START( h2hhockey )
+	ROM_REGION( 0x0400, "maincpu", 0 )
+	ROM_LOAD( "mp3321a", 0x0000, 0x0400, CRC(e974e604) SHA1(ed740c98ce96ad70ee5237eccae1f54a75ad8100) )
+
+	ROM_REGION( 867, "maincpu:mpla", 0 )
+	ROM_LOAD( "tms1000_common1_micro.pla", 0, 867, CRC(4becec19) SHA1(3c8a9be0f00c88c81f378b76886c39b10304f330) )
+	ROM_REGION( 365, "maincpu:opla", 0 )
+	ROM_LOAD( "tms1000_h2hhockey_output.pla", 0, 365, CRC(9d1a91e1) SHA1(96303eb22375129b0dfbfcd823c8ca5b919511bc) )
 ROM_END
 
 
@@ -10155,9 +10320,10 @@ CONS( 1979, bcheetah,   0,         0, bcheetah,  bcheetah,  bcheetah_state,  0, 
 CONS( 1978, amaztron,   0,         0, amaztron,  amaztron,  amaztron_state,  0, "Coleco", "Amaze-A-Tron", MACHINE_SUPPORTS_SAVE | MACHINE_CLICKABLE_ARTWORK | MACHINE_IMPERFECT_CONTROLS ) // ***
 COMP( 1979, zodiac,     0,         0, zodiac,    zodiac,    zodiac_state,    0, "Coleco", "Zodiac - The Astrology Computer", MACHINE_SUPPORTS_SAVE )
 CONS( 1978, cqback,     0,         0, cqback,    cqback,    cqback_state,    0, "Coleco", "Electronic Quarterback", MACHINE_SUPPORTS_SAVE )
-CONS( 1980, h2hfootb,   0,         0, h2hfootb,  h2hfootb,  h2hfootb_state,  0, "Coleco", "Head to Head Football", MACHINE_SUPPORTS_SAVE )
-CONS( 1980, h2hbaseb,   0,         0, h2hbaseb,  h2hbaseb,  h2hbaseb_state,  0, "Coleco", "Head to Head Baseball", MACHINE_SUPPORTS_SAVE )
-CONS( 1981, h2hboxing,  0,         0, h2hboxing, h2hboxing, h2hboxing_state, 0, "Coleco", "Head to Head Boxing", MACHINE_SUPPORTS_SAVE )
+CONS( 1979, h2hfootb,   0,         0, h2hfootb,  h2hfootb,  h2hfootb_state,  0, "Coleco", "Head to Head: Electronic Football", MACHINE_SUPPORTS_SAVE )
+CONS( 1979, h2hhockey,  0,         0, h2hhockey, h2hhockey, h2hhockey_state, 0, "Coleco", "Head to Head: Electronic Hockey (TMS1000 version)", MACHINE_SUPPORTS_SAVE )
+CONS( 1980, h2hbaseb,   0,         0, h2hbaseb,  h2hbaseb,  h2hbaseb_state,  0, "Coleco", "Head to Head: Electronic Baseball", MACHINE_SUPPORTS_SAVE )
+CONS( 1981, h2hboxing,  0,         0, h2hboxing, h2hboxing, h2hboxing_state, 0, "Coleco", "Head to Head: Electronic Boxing", MACHINE_SUPPORTS_SAVE )
 CONS( 1981, quizwizc,   0,         0, quizwizc,  quizwizc,  quizwizc_state,  0, "Coleco", "Quiz Wiz Challenger", MACHINE_SUPPORTS_SAVE ) // ***
 CONS( 1981, tc4,        0,         0, tc4,       tc4,       tc4_state,       0, "Coleco", "Total Control 4", MACHINE_SUPPORTS_SAVE | MACHINE_REQUIRES_ARTWORK )
 

@@ -267,6 +267,17 @@ public:
 
 	TIMER_DEVICE_CALLBACK_MEMBER(sun3_timer);
 
+	void sun3(machine_config &config);
+	void sun3e(machine_config &config);
+	void sun3_60(machine_config &config);
+	void sun3200(machine_config &config);
+	void sun3_50(machine_config &config);
+	void sun3_mem(address_map &map);
+	void vmetype0space_map(address_map &map);
+	void vmetype0space_novram_map(address_map &map);
+	void vmetype1space_map(address_map &map);
+	void vmetype2space_map(address_map &map);
+	void vmetype3space_map(address_map &map);
 private:
 	uint32_t *m_rom_ptr, *m_ram_ptr;
 	uint8_t *m_idprom_ptr;
@@ -708,24 +719,24 @@ WRITE32_MEMBER(sun3_state::parity_w)
 	}
 }
 
-static ADDRESS_MAP_START(sun3_mem, AS_PROGRAM, 32, sun3_state)
+ADDRESS_MAP_START(sun3_state::sun3_mem)
 	AM_RANGE(0x00000000, 0xffffffff) AM_READWRITE( tl_mmu_r, tl_mmu_w )
 ADDRESS_MAP_END
 
 // type 0 device space
-static ADDRESS_MAP_START(vmetype0space_map, AS_PROGRAM, 32, sun3_state)
+ADDRESS_MAP_START(sun3_state::vmetype0space_map)
 	AM_RANGE(0x00000000, 0x08ffffff) AM_READWRITE(ram_r, ram_w)
 	AM_RANGE(0xfe400000, 0xfe41ffff) AM_RAM // not sure what's going on here (3/110)
 	AM_RANGE(0xff000000, 0xff03ffff) AM_RAM AM_SHARE("bw2_vram")
 ADDRESS_MAP_END
 
 // type 0 without VRAM (3/50)
-static ADDRESS_MAP_START(vmetype0space_novram_map, AS_PROGRAM, 32, sun3_state)
+ADDRESS_MAP_START(sun3_state::vmetype0space_novram_map)
 	AM_RANGE(0x00000000, 0x08ffffff) AM_READWRITE(ram_r, ram_w)
 ADDRESS_MAP_END
 
 // type 1 device space
-static ADDRESS_MAP_START(vmetype1space_map, AS_PROGRAM, 32, sun3_state)
+ADDRESS_MAP_START(sun3_state::vmetype1space_map)
 	AM_RANGE(0x00000000, 0x0000000f) AM_DEVREADWRITE8(SCC1_TAG, z80scc_device, ba_cd_inv_r, ba_cd_inv_w, 0xff00ff00)
 	AM_RANGE(0x00020000, 0x0002000f) AM_DEVREADWRITE8(SCC2_TAG, z80scc_device, ba_cd_inv_r, ba_cd_inv_w, 0xff00ff00)
 	AM_RANGE(0x00040000, 0x000407ff) AM_RAM AM_SHARE("nvram")   // type 2816 parallel EEPROM
@@ -737,11 +748,11 @@ static ADDRESS_MAP_START(vmetype1space_map, AS_PROGRAM, 32, sun3_state)
 ADDRESS_MAP_END
 
 // type 2 device space
-static ADDRESS_MAP_START(vmetype2space_map, AS_PROGRAM, 32, sun3_state)
+ADDRESS_MAP_START(sun3_state::vmetype2space_map)
 ADDRESS_MAP_END
 
 // type 3 device space
-static ADDRESS_MAP_START(vmetype3space_map, AS_PROGRAM, 32, sun3_state)
+ADDRESS_MAP_START(sun3_state::vmetype3space_map)
 ADDRESS_MAP_END
 
 READ32_MEMBER(sun3_state::irqctrl_r)
@@ -951,7 +962,7 @@ void sun3_state::machine_reset()
 }
 
 // The base Sun 3004 CPU board
-static MACHINE_CONFIG_START( sun3 )
+MACHINE_CONFIG_START(sun3_state::sun3)
 	/* basic machine hardware */
 	MCFG_CPU_ADD("maincpu", M68020, 16670000)
 	MCFG_CPU_PROGRAM_MAP(sun3_mem)
@@ -999,13 +1010,13 @@ static MACHINE_CONFIG_START( sun3 )
 
 	MCFG_TIMER_DRIVER_ADD_PERIODIC("timer", sun3_state, sun3_timer, attotime::from_hz(100))
 
-	MCFG_SCC8530_ADD(SCC1_TAG, XTAL_4_9152MHz, 0, 0, 0, 0)
+	MCFG_SCC8530_ADD(SCC1_TAG, XTAL(4'915'200), 0, 0, 0, 0)
 	MCFG_Z80SCC_OUT_TXDA_CB(DEVWRITELINE(KEYBOARD_TAG, sun_keyboard_port_device, write_txd))
 
 	MCFG_SUNKBD_PORT_ADD(KEYBOARD_TAG, default_sun_keyboard_devices, "type3hle")
 	MCFG_SUNKBD_RXD_HANDLER(DEVWRITELINE(SCC1_TAG, z80scc_device, rxa_w))
 
-	MCFG_SCC8530_ADD(SCC2_TAG, XTAL_4_9152MHz, 0, 0, 0, 0)
+	MCFG_SCC8530_ADD(SCC2_TAG, XTAL(4'915'200), 0, 0, 0, 0)
 	MCFG_Z80SCC_OUT_TXDA_CB(DEVWRITELINE(RS232A_TAG, rs232_port_device, write_txd))
 	MCFG_Z80SCC_OUT_TXDB_CB(DEVWRITELINE(RS232B_TAG, rs232_port_device, write_txd))
 
@@ -1021,7 +1032,8 @@ static MACHINE_CONFIG_START( sun3 )
 MACHINE_CONFIG_END
 
 // Sun 3/60
-static MACHINE_CONFIG_DERIVED( sun3_60, sun3 )
+MACHINE_CONFIG_START(sun3_state::sun3_60)
+	sun3(config);
 	MCFG_CPU_REPLACE("maincpu", M68020, 20000000)
 	MCFG_CPU_PROGRAM_MAP(sun3_mem)
 
@@ -1033,13 +1045,15 @@ static MACHINE_CONFIG_DERIVED( sun3_60, sun3 )
 MACHINE_CONFIG_END
 
 // Sun 3/E
-static MACHINE_CONFIG_DERIVED( sun3e, sun3 )
+MACHINE_CONFIG_START(sun3_state::sun3e)
+	sun3(config);
 	MCFG_CPU_REPLACE("maincpu", M68020, 20000000)
 	MCFG_CPU_PROGRAM_MAP(sun3_mem)
 MACHINE_CONFIG_END
 
 // 3/260 and 3/280 (the Sun 3200 board)
-static MACHINE_CONFIG_DERIVED( sun3200, sun3 )
+MACHINE_CONFIG_START(sun3_state::sun3200)
+	sun3(config);
 	MCFG_CPU_REPLACE("maincpu", M68020, 25000000)
 	MCFG_CPU_PROGRAM_MAP(sun3_mem)
 
@@ -1054,7 +1068,7 @@ static MACHINE_CONFIG_DERIVED( sun3200, sun3 )
 	MCFG_RAM_EXTRA_OPTIONS("64M,96M,128M")
 MACHINE_CONFIG_END
 
-static MACHINE_CONFIG_START( sun3_50 )
+MACHINE_CONFIG_START(sun3_state::sun3_50)
 	/* basic machine hardware */
 	MCFG_CPU_ADD("maincpu", M68020, 15700000)
 	MCFG_CPU_PROGRAM_MAP(sun3_mem)
@@ -1101,13 +1115,13 @@ static MACHINE_CONFIG_START( sun3_50 )
 	MCFG_ADDRESS_MAP_BANK_DATA_WIDTH(32)
 	MCFG_ADDRESS_MAP_BANK_STRIDE(0x80000000)
 
-	MCFG_SCC8530_ADD(SCC1_TAG, XTAL_4_9152MHz, 0, 0, 0, 0)
+	MCFG_SCC8530_ADD(SCC1_TAG, XTAL(4'915'200), 0, 0, 0, 0)
 	MCFG_Z80SCC_OUT_TXDA_CB(DEVWRITELINE(KEYBOARD_TAG, sun_keyboard_port_device, write_txd))
 
 	MCFG_SUNKBD_PORT_ADD(KEYBOARD_TAG, default_sun_keyboard_devices, "type3hle")
 	MCFG_SUNKBD_RXD_HANDLER(DEVWRITELINE(SCC1_TAG, z80scc_device, rxa_w))
 
-	MCFG_SCC8530_ADD(SCC2_TAG, XTAL_4_9152MHz, 0, 0, 0, 0)
+	MCFG_SCC8530_ADD(SCC2_TAG, XTAL(4'915'200), 0, 0, 0, 0)
 	MCFG_Z80SCC_OUT_TXDA_CB(DEVWRITELINE(RS232A_TAG, rs232_port_device, write_txd))
 	MCFG_Z80SCC_OUT_TXDB_CB(DEVWRITELINE(RS232B_TAG, rs232_port_device, write_txd))
 

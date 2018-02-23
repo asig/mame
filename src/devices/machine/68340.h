@@ -71,6 +71,39 @@ public:
 
 	uint16_t get_cs(offs_t address);
 
+	static void set_crystal(device_t &device, const XTAL &crystal) { set_crystal(device, crystal.value()); }
+
+	// Timer input methods, can be used instead of the corresponding polling MCFG callbacks
+	DECLARE_WRITE_LINE_MEMBER( tin1_w )  { m_timer1->tin_w(state);  }
+	DECLARE_WRITE_LINE_MEMBER( tgate1_w ){ m_timer1->tgate_w(state); }
+	DECLARE_WRITE_LINE_MEMBER( tin2_w )  { m_timer2->tin_w(state);  }
+	DECLARE_WRITE_LINE_MEMBER( tgate2_w ){ m_timer2->tgate_w(state); }
+
+protected:
+	virtual void device_start() override;
+	virtual void device_reset() override;
+	virtual void device_add_mconfig(machine_config &config) override;
+
+private:
+	required_device<mc68340_serial_module_device> m_serial;
+	required_device<mc68340_timer_module_device> m_timer1;
+	required_device<mc68340_timer_module_device> m_timer2;
+
+	TIMER_CALLBACK_MEMBER(periodic_interrupt_timer_callback);
+
+	void start_68340_sim();
+	void do_pit_irq();
+	void do_tick_pit();
+
+	int calc_cs(offs_t address) const;
+	int get_timer_index(mc68340_timer_module_device *timer) { return (timer == m_timer1) ? 0 : 1; }
+
+	int m_currentcs;
+	uint32_t m_clock_mode;
+	uint32_t m_modck;
+	uint32_t m_crystal;
+	uint32_t m_extal;
+
 	// TODO: Support Limp mode and external clock with no PLL
 	static void set_crystal(device_t &device, int crystal)
 	{
@@ -94,35 +127,7 @@ public:
 	DECLARE_WRITE_LINE_MEMBER( set_modck );
 	DECLARE_WRITE_LINE_MEMBER( extal_w );
 
-	// Timer input methods, can be used instead of the corresponding polling MCFG callbacks
-	DECLARE_WRITE_LINE_MEMBER( tin1_w )  { m_timer1->tin_w(state);  }
-	DECLARE_WRITE_LINE_MEMBER( tgate1_w ){ m_timer1->tgate_w(state); }
-	DECLARE_WRITE_LINE_MEMBER( tin2_w )  { m_timer2->tin_w(state);  }
-	DECLARE_WRITE_LINE_MEMBER( tgate2_w ){ m_timer2->tgate_w(state); }
-
-protected:
-	virtual void device_start() override;
-	virtual void device_reset() override;
-	virtual void device_add_mconfig(machine_config &config) override;
-
-	required_device<mc68340_serial_module_device> m_serial;
-	required_device<mc68340_timer_module_device> m_timer1;
-	required_device<mc68340_timer_module_device> m_timer2;
-
-	TIMER_CALLBACK_MEMBER(periodic_interrupt_timer_callback);
-
-	void start_68340_sim();
-	void do_pit_irq();
-	void do_tick_pit();
-
-	int calc_cs(offs_t address) const;
-	int get_timer_index(mc68340_timer_module_device *timer) { return (timer == m_timer1) ? 0 : 1; }
-
-	int m_currentcs;
-	uint32_t m_clock_mode;
-	uint32_t m_modck;
-	uint32_t m_crystal;
-	uint32_t m_extal;
+	void m68340_internal_map(address_map &map);
 
 	/* 68340 peripheral modules */
 	m68340_sim*    m_m68340SIM;

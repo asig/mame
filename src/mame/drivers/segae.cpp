@@ -341,6 +341,18 @@ public:
 
 	uint32_t screen_update(screen_device &screen, bitmap_rgb32 &bitmap, const rectangle &cliprect);
 
+	void systemex_315_5177(machine_config &config);
+	void systemex(machine_config &config);
+	void ridleofp(machine_config &config);
+	void hangonjr(machine_config &config);
+	void systeme(machine_config &config);
+	void systemeb(machine_config &config);
+	void banked_decrypted_opcodes_map(address_map &map);
+	void decrypted_opcodes_map(address_map &map);
+	void io_map(address_map &map);
+	void systeme_map(address_map &map);
+	void vdp1_map(address_map &map);
+	void vdp2_map(address_map &map);
 private:
 	// Devices
 	required_device<cpu_device>          m_maincpu;
@@ -366,26 +378,26 @@ private:
 ****************************************************************************************/
 
 /* we have to fill in the ROM addresses for systeme due to the encrypted games */
-static ADDRESS_MAP_START( systeme_map, AS_PROGRAM, 8, systeme_state )
+ADDRESS_MAP_START(systeme_state::systeme_map)
 	AM_RANGE(0x0000, 0x7fff) AM_ROM                                                     /* Fixed ROM */
 	AM_RANGE(0x8000, 0xbfff) AM_READ_BANK("bank1") AM_WRITE_BANK("vram_write")          /* Banked ROM */
 	AM_RANGE(0xc000, 0xffff) AM_RAM AM_SHARE("mainram")
 ADDRESS_MAP_END
 
-static ADDRESS_MAP_START( decrypted_opcodes_map, AS_OPCODES, 8, systeme_state )
+ADDRESS_MAP_START(systeme_state::decrypted_opcodes_map)
 	AM_RANGE(0x0000, 0x7fff) AM_ROM AM_SHARE("decrypted_opcodes")
 	AM_RANGE(0x8000, 0xbfff) AM_ROMBANK("bank1")
 	AM_RANGE(0xc000, 0xffff) AM_RAM AM_SHARE("mainram")
 ADDRESS_MAP_END
 
-static ADDRESS_MAP_START( banked_decrypted_opcodes_map, AS_OPCODES, 8, systeme_state )
+ADDRESS_MAP_START(systeme_state::banked_decrypted_opcodes_map)
 	AM_RANGE(0x0000, 0x7fff) AM_ROMBANK("bank0d")
 	AM_RANGE(0x8000, 0xbfff) AM_ROMBANK("bank1d")
 	AM_RANGE(0xc000, 0xffff) AM_RAM AM_SHARE("mainram")
 ADDRESS_MAP_END
 
 
-static ADDRESS_MAP_START( io_map, AS_IO, 8, systeme_state )
+ADDRESS_MAP_START(systeme_state::io_map)
 	ADDRESS_MAP_GLOBAL_MASK(0xff)
 
 	AM_RANGE(0x7b, 0x7b) AM_DEVWRITE("sn1", segapsg_device, write)
@@ -405,12 +417,12 @@ static ADDRESS_MAP_START( io_map, AS_IO, 8, systeme_state )
 ADDRESS_MAP_END
 
 
-static ADDRESS_MAP_START( vdp1_map, 0, 8, systeme_state )
+ADDRESS_MAP_START(systeme_state::vdp1_map)
 	AM_RANGE( 0x0000, 0x3fff ) AM_RAMBANK("vdp1_bank")
 ADDRESS_MAP_END
 
 
-static ADDRESS_MAP_START( vdp2_map, 0, 8, systeme_state )
+ADDRESS_MAP_START(systeme_state::vdp2_map)
 	AM_RANGE( 0x0000, 0x3fff ) AM_RAMBANK("vdp2_bank")
 ADDRESS_MAP_END
 
@@ -860,8 +872,8 @@ uint32_t systeme_state::screen_update(screen_device &screen, bitmap_rgb32 &bitma
 	return 0;
 }
 
-static MACHINE_CONFIG_START( systeme )
-	MCFG_CPU_ADD("maincpu", Z80, XTAL_10_738635MHz/2) /* Z80B @ 5.3693Mhz */
+MACHINE_CONFIG_START(systeme_state::systeme)
+	MCFG_CPU_ADD("maincpu", Z80, XTAL(10'738'635)/2) /* Z80B @ 5.3693Mhz */
 	MCFG_CPU_PROGRAM_MAP(systeme_map)
 	MCFG_CPU_IO_MAP(io_map)
 
@@ -870,7 +882,7 @@ static MACHINE_CONFIG_START( systeme )
 	MCFG_I8255_TRISTATE_PORTB_CB(CONSTANT(0))
 
 	MCFG_SCREEN_ADD("screen", RASTER)
-	MCFG_SCREEN_RAW_PARAMS(XTAL_10_738635MHz/2, \
+	MCFG_SCREEN_RAW_PARAMS(XTAL(10'738'635)/2, \
 			sega315_5124_device::WIDTH , sega315_5124_device::LBORDER_START + sega315_5124_device::LBORDER_WIDTH, sega315_5124_device::LBORDER_START + sega315_5124_device::LBORDER_WIDTH + 256, \
 			sega315_5124_device::HEIGHT_NTSC, sega315_5124_device::TBORDER_START + sega315_5124_device::NTSC_192_TBORDER_HEIGHT, sega315_5124_device::TBORDER_START + sega315_5124_device::NTSC_192_TBORDER_HEIGHT + 192)
 	MCFG_SCREEN_UPDATE_DRIVER(systeme_state, screen_update)
@@ -887,21 +899,23 @@ static MACHINE_CONFIG_START( systeme )
 	/* sound hardware */
 	MCFG_SPEAKER_STANDARD_MONO("mono")
 
-	MCFG_SOUND_ADD("sn1", SEGAPSG, XTAL_10_738635MHz/3)
+	MCFG_SOUND_ADD("sn1", SEGAPSG, XTAL(10'738'635)/3)
 	MCFG_SOUND_ROUTE(ALL_OUTPUTS, "mono", 0.50)
 
-	MCFG_SOUND_ADD("sn2", SEGAPSG, XTAL_10_738635MHz/3)
+	MCFG_SOUND_ADD("sn2", SEGAPSG, XTAL(10'738'635)/3)
 	MCFG_SOUND_ROUTE(ALL_OUTPUTS, "mono", 0.50)
 MACHINE_CONFIG_END
 
-static MACHINE_CONFIG_DERIVED( hangonjr, systeme )
+MACHINE_CONFIG_START(systeme_state::hangonjr)
+	systeme(config);
 	MCFG_DEVICE_MODIFY("ppi")
 	MCFG_I8255_IN_PORTA_CB(READ8(systeme_state, hangonjr_port_f8_read))
 	MCFG_I8255_IN_PORTC_CB(CONSTANT(0)) // bit 4 must be the ADC0804 /INTR signal
 	MCFG_I8255_OUT_PORTC_CB(WRITE8(systeme_state, hangonjr_port_fa_write)) // CD4051 selector input
 MACHINE_CONFIG_END
 
-static MACHINE_CONFIG_DERIVED( ridleofp, systeme )
+MACHINE_CONFIG_START(systeme_state::ridleofp)
+	systeme(config);
 	MCFG_DEVICE_ADD("upd4701", UPD4701A, 0) // on 834-6193 I/O sub board
 	MCFG_UPD4701_PORTX("PAD1")
 	MCFG_UPD4701_PORTY("PAD2")
@@ -915,26 +929,29 @@ static MACHINE_CONFIG_DERIVED( ridleofp, systeme )
 	MCFG_DEVCB_CHAIN_OUTPUT(DEVWRITELINE("upd4701", upd4701_device, resety_w)) MCFG_DEVCB_BIT(0) // or possibly bit 1
 MACHINE_CONFIG_END
 
-static MACHINE_CONFIG_DERIVED( systemex, systeme )
-	MCFG_CPU_REPLACE("maincpu", MC8123, XTAL_10_738635MHz/2) /* Z80B @ 5.3693Mhz */
+MACHINE_CONFIG_START(systeme_state::systemex)
+	systeme(config);
+	MCFG_CPU_REPLACE("maincpu", MC8123, XTAL(10'738'635)/2) /* Z80B @ 5.3693Mhz */
 	MCFG_CPU_PROGRAM_MAP(systeme_map)
 	MCFG_CPU_IO_MAP(io_map)
-	MCFG_CPU_DECRYPTED_OPCODES_MAP(decrypted_opcodes_map)
+	MCFG_CPU_OPCODES_MAP(decrypted_opcodes_map)
 MACHINE_CONFIG_END
 
-static MACHINE_CONFIG_DERIVED( systemex_315_5177, systeme )
-	MCFG_CPU_REPLACE("maincpu", SEGA_315_5177, XTAL_10_738635MHz/2) /* Z80B @ 5.3693Mhz */
+MACHINE_CONFIG_START(systeme_state::systemex_315_5177)
+	systeme(config);
+	MCFG_CPU_REPLACE("maincpu", SEGA_315_5177, XTAL(10'738'635)/2) /* Z80B @ 5.3693Mhz */
 	MCFG_CPU_PROGRAM_MAP(systeme_map)
 	MCFG_CPU_IO_MAP(io_map)
-	MCFG_CPU_DECRYPTED_OPCODES_MAP(decrypted_opcodes_map)
+	MCFG_CPU_OPCODES_MAP(decrypted_opcodes_map)
 	MCFG_SEGAZ80_SET_DECRYPTED_TAG(":decrypted_opcodes")
 MACHINE_CONFIG_END
 
-static MACHINE_CONFIG_DERIVED( systemeb, systeme )
-	MCFG_CPU_REPLACE("maincpu", MC8123, XTAL_10_738635MHz/2) /* Z80B @ 5.3693Mhz */
+MACHINE_CONFIG_START(systeme_state::systemeb)
+	systeme(config);
+	MCFG_CPU_REPLACE("maincpu", MC8123, XTAL(10'738'635)/2) /* Z80B @ 5.3693Mhz */
 	MCFG_CPU_PROGRAM_MAP(systeme_map)
 	MCFG_CPU_IO_MAP(io_map)
-	MCFG_CPU_DECRYPTED_OPCODES_MAP(banked_decrypted_opcodes_map)
+	MCFG_CPU_OPCODES_MAP(banked_decrypted_opcodes_map)
 MACHINE_CONFIG_END
 
 

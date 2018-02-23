@@ -49,7 +49,7 @@ DEFINE_DEVICE_TYPE(TMS9129,  tms9129_device,  "tms9129",  "TMS9129 VDP")
 /*
     The TMS9928 has an own address space.
 */
-static ADDRESS_MAP_START(memmap, AS_DATA, 8, tms9928a_device)
+ADDRESS_MAP_START(tms9928a_device::memmap)
 	ADDRESS_MAP_GLOBAL_MASK(0x3fff)
 	AM_RANGE(0x0000, 0x3fff) AM_RAM
 ADDRESS_MAP_END
@@ -64,9 +64,8 @@ tms9928a_device::tms9928a_device(const machine_config &mconfig, device_type type
 	, m_50hz(is_50hz)
 	, m_reva(is_reva)
 	, m_99(is_99)
-	, m_space_config("vram", ENDIANNESS_BIG, 8, 14, 0, nullptr, *ADDRESS_MAP_NAME(memmap))
+	, m_space_config("vram", ENDIANNESS_BIG, 8, 14, 0, address_map_constructor(), address_map_constructor(FUNC(tms9928a_device::memmap), this))
 {
-//  static_set_addrmap(*this, AS_DATA, ADDRESS_MAP_NAME(memmap));
 }
 
 
@@ -353,8 +352,8 @@ void tms9928a_device::device_timer(emu_timer &timer, device_timer_id id, int par
 		return;
 	}
 
-	int raw_vpos = m_screen->vpos();
-	int vpos = raw_vpos * m_vertical_size / m_screen->height();
+	int raw_vpos = screen().vpos();
+	int vpos = raw_vpos * m_vertical_size / screen().height();
 	uint16_t BackColour = m_Regs[7] & 15;
 	uint32_t *p = &m_tmpbmp.pix32(vpos);
 
@@ -647,7 +646,7 @@ void tms9928a_device::device_timer(emu_timer &timer, device_timer_id id, int par
 	}
 
 	/* Schedule next callback */
-	m_line_timer->adjust( m_screen->time_until_pos( ( raw_vpos + 1 ) % m_screen->height() , HORZ_DISPLAY_START ) );
+	m_line_timer->adjust( screen().time_until_pos( ( raw_vpos + 1 ) % screen().height() , HORZ_DISPLAY_START ) );
 }
 
 
@@ -780,7 +779,7 @@ void tms9928a_device::device_reset()
 	m_latch = 0;
 	m_mode = 0;
 
-	m_line_timer->adjust( m_screen->time_until_pos( 0, HORZ_DISPLAY_START ) );
+	m_line_timer->adjust( screen().time_until_pos( 0, HORZ_DISPLAY_START ) );
 
 	// TODO: Check clock freq settings in all drivers
 	if (!m_out_gromclk_cb.isnull() && m_99) m_gromclk_timer->adjust(attotime::zero, 0, attotime::from_hz(clock()/12));

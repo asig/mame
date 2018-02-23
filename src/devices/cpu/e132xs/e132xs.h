@@ -46,14 +46,14 @@
 #define EXECUTE_UNMAPPED_CODE           2
 #define EXECUTE_RESET_CACHE             3
 
-#define E132XS_STRICT_VERIFY      		0x0001          /* verify all instructions */
+#define E132XS_STRICT_VERIFY            0x0001          /* verify all instructions */
 
 #define SINGLE_INSTRUCTION_MODE         (1)
 
-#define ENABLE_E132XS_DRC				(1)
+#define ENABLE_E132XS_DRC               (1)
 
-#define E132XS_LOG_DRC_REGS				(0)
-#define E132XS_LOG_INTERPRETER_REGS		(0)
+#define E132XS_LOG_DRC_REGS             (0)
+#define E132XS_LOG_INTERPRETER_REGS     (0)
 #define E132XS_COUNT_INSTRUCTIONS       (0)
 
 //**************************************************************************
@@ -138,6 +138,12 @@ public:
 	void compute_tr();
 	void adjust_timer_interrupt();
 
+	void e116_16k_iram_map(address_map &map);
+	void e116_4k_iram_map(address_map &map);
+	void e116_8k_iram_map(address_map &map);
+	void e132_16k_iram_map(address_map &map);
+	void e132_4k_iram_map(address_map &map);
+	void e132_8k_iram_map(address_map &map);
 protected:
 	struct internal_hyperstone_state
 	{
@@ -443,9 +449,9 @@ private:
 	/* internal compiler state */
 	struct compiler_state
 	{
-		uint32_t m_cycles;			/* accumulated cycles */
-		uint8_t m_checkints;		/* need to check interrupts before next instruction */
-		uml::code_label m_labelnum;	/* index for local labels */
+		uint32_t m_cycles;          /* accumulated cycles */
+		uint8_t m_checkints;        /* need to check interrupts before next instruction */
+		uml::code_label m_labelnum; /* index for local labels */
 	};
 
 	void execute_run_drc();

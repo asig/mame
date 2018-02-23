@@ -54,6 +54,8 @@ public:
 	DECLARE_WRITE16_MEMBER(cal_vdp_w);
 
 	uint32_t screen_update_calcune(screen_device &screen, bitmap_rgb32 &bitmap, const rectangle &cliprect);
+	void calcune(machine_config &config);
+	void calcune_map(address_map &map);
 private:
 	int vdp_state;
 
@@ -121,7 +123,7 @@ WRITE16_MEMBER(calcune_state::cal_vdp_w)
 		m_vdp2->vdp_w(space, offset, data, mem_mask);
 }
 
-static ADDRESS_MAP_START( calcune_map, AS_PROGRAM, 16, calcune_state )
+ADDRESS_MAP_START(calcune_state::calcune_map)
 	AM_RANGE(0x000000, 0x1fffff) AM_ROM
 
 	AM_RANGE(0x700000, 0x700001) AM_READ(cal_700000_r)
@@ -245,7 +247,7 @@ MACHINE_START_MEMBER(calcune_state,calcune)
 	m_vdp2->stop_timers();
 }
 
-static MACHINE_CONFIG_START( calcune )
+MACHINE_CONFIG_START(calcune_state::calcune)
 	MCFG_CPU_ADD("maincpu", M68000, MASTER_CLOCK_NTSC / 7) /* 7.67 MHz */
 	MCFG_CPU_PROGRAM_MAP(calcune_map)
 	MCFG_CPU_IRQ_ACKNOWLEDGE_DRIVER(calcune_state,genesis_int_callback)
@@ -292,7 +294,7 @@ static MACHINE_CONFIG_START( calcune )
 	/* sound hardware */
 	MCFG_SPEAKER_STANDARD_STEREO("lspeaker", "rspeaker")
 
-	MCFG_SOUND_ADD("ymz", YMZ280B, XTAL_16_9344MHz)
+	MCFG_SOUND_ADD("ymz", YMZ280B, XTAL(16'934'400))
 	MCFG_SOUND_ROUTE(0, "lspeaker", 1.0)
 	MCFG_SOUND_ROUTE(1, "rspeaker", 1.0)
 

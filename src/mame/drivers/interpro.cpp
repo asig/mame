@@ -320,110 +320,110 @@ READ8_MEMBER(interpro_state::nodeid_r)
 }
 
 // these maps connect the cpu virtual addresses to the mmu
-static ADDRESS_MAP_START(c300_insn_map, AS_PROGRAM, 32, interpro_state)
+ADDRESS_MAP_START(interpro_state::c300_insn_map)
 	AM_RANGE(0x00000000, 0xffffffff) AM_DEVREAD(INTERPRO_MMU_TAG "_i", cammu_device, read)
 ADDRESS_MAP_END
 
-static ADDRESS_MAP_START(c300_data_map, AS_DATA, 32, interpro_state)
+ADDRESS_MAP_START(interpro_state::c300_data_map)
 	AM_RANGE(0x00000000, 0xffffffff) AM_DEVREADWRITE(INTERPRO_MMU_TAG "_d", cammu_device, read, write)
 ADDRESS_MAP_END
 
-static ADDRESS_MAP_START(c400_insn_map, AS_PROGRAM, 32, interpro_state)
+ADDRESS_MAP_START(interpro_state::c400_insn_map)
 	AM_RANGE(0x00000000, 0xffffffff) AM_DEVREAD(INTERPRO_MMU_TAG, cammu_device, read)
 ADDRESS_MAP_END
 
-static ADDRESS_MAP_START(c400_data_map, AS_DATA, 32, interpro_state)
+ADDRESS_MAP_START(interpro_state::c400_data_map)
 	AM_RANGE(0x00000000, 0xffffffff) AM_DEVREADWRITE(INTERPRO_MMU_TAG, cammu_device, read, write)
 ADDRESS_MAP_END
 
-static ADDRESS_MAP_START(interpro_common_map, 0, 32, interpro_state)
+ADDRESS_MAP_START(interpro_state::interpro_common_map)
 	// FIXME: don't know what this range is for
 	AM_RANGE(0x08000000, 0x08000fff) AM_NOP
 
 	AM_RANGE(0x4f007e00, 0x4f007eff) AM_DEVICE(INTERPRO_SGA_TAG, interpro_sga_device, map)
 
-	AM_RANGE(0x7f000100, 0x7f00011f) AM_DEVICE8(INTERPRO_FDC_TAG, upd765_family_device, map, 0xff)
+	AM_RANGE(0x7f000100, 0x7f00011f) AM_DEVICE8(INTERPRO_FDC_TAG, upd765_family_device, map, 0x000000ff)
 	AM_RANGE(0x7f000200, 0x7f0002ff) AM_DEVICE(INTERPRO_ARBGA_TAG, interpro_arbga_device, map)
-	AM_RANGE(0x7f000300, 0x7f000303) AM_READ16(sreg_error_r, 0xffff)
-	AM_RANGE(0x7f000304, 0x7f000307) AM_READWRITE16(sreg_status_r, sreg_led_w, 0xffff)
-	AM_RANGE(0x7f000308, 0x7f00030b) AM_READWRITE16(sreg_ctrl1_r, sreg_ctrl1_w, 0xffff)
-	AM_RANGE(0x7f00030c, 0x7f00030f) AM_READWRITE16(sreg_ctrl2_r, sreg_ctrl2_w, 0xffff)
+	AM_RANGE(0x7f000300, 0x7f000303) AM_READ16(sreg_error_r, 0x0000ffff)
+	AM_RANGE(0x7f000304, 0x7f000307) AM_READWRITE16(sreg_status_r, sreg_led_w, 0x0000ffff)
+	AM_RANGE(0x7f000308, 0x7f00030b) AM_READWRITE16(sreg_ctrl1_r, sreg_ctrl1_w, 0x0000ffff)
+	AM_RANGE(0x7f00030c, 0x7f00030f) AM_READWRITE16(sreg_ctrl2_r, sreg_ctrl2_w, 0x0000ffff)
 
-	AM_RANGE(0x7f00031c, 0x7f00031f) AM_READWRITE16(sreg_ctrl3_r, sreg_ctrl3_w, 0xffff)
+	AM_RANGE(0x7f00031c, 0x7f00031f) AM_READWRITE16(sreg_ctrl3_r, sreg_ctrl3_w, 0x0000ffff)
 
-	AM_RANGE(0x7f000400, 0x7f00040f) AM_DEVREADWRITE8(INTERPRO_SCC1_TAG, z80scc_device, ba_cd_inv_r, ba_cd_inv_w, 0xff)
-	AM_RANGE(0x7f000410, 0x7f00041f) AM_DEVREADWRITE8(INTERPRO_SCC2_TAG, z80scc_device, ba_cd_inv_r, ba_cd_inv_w, 0xff)
+	AM_RANGE(0x7f000400, 0x7f00040f) AM_DEVREADWRITE8(INTERPRO_SCC1_TAG, z80scc_device, ba_cd_inv_r, ba_cd_inv_w, 0x000000ff)
+	AM_RANGE(0x7f000410, 0x7f00041f) AM_DEVREADWRITE8(INTERPRO_SCC2_TAG, z80scc_device, ba_cd_inv_r, ba_cd_inv_w, 0x000000ff)
 
-	AM_RANGE(0x7f000500, 0x7f000503) AM_DEVREADWRITE8_MOD(INTERPRO_RTC_TAG, mc146818_device, read, write, xor<0x1>, 0xff)
-	AM_RANGE(0x7f000600, 0x7f000603) AM_DEVWRITE8(INTERPRO_RTC_TAG, mc146818_device, write, 0xff)
+	;map(0x7f000500, 0x7f000503).lrw8("rtc_rw", [this](address_space &space, offs_t offset, u8 mem_mask){ return m_rtc->read(space, offset^1, mem_mask); }, [this](address_space &space, offs_t offset, u8 data, u8 mem_mask){ m_rtc->write(space, offset^1, data, mem_mask); }).umask32(0x000000ff);
+	AM_RANGE(0x7f000600, 0x7f000603) AM_DEVWRITE8(INTERPRO_RTC_TAG, mc146818_device, write, 0x000000ff)
 	AM_RANGE(0x7f000600, 0x7f00060f) AM_READ8(nodeid_r, 0xff)
 
 	// the system board id prom
 	AM_RANGE(0x7f000700, 0x7f00077f) AM_ROM AM_REGION(INTERPRO_IDPROM_TAG, 0)
 
 	// scsi registers have unusual address mapping
-	AM_RANGE(0x7f001000, 0x7f001003) AM_DEVREADWRITE8(INTERPRO_SCSI_DEVICE_TAG, ncr53c90a_device, tcounter_lo_r, tcount_lo_w, 0xff00)
-	AM_RANGE(0x7f001100, 0x7f001103) AM_DEVREADWRITE8(INTERPRO_SCSI_DEVICE_TAG, ncr53c90a_device, tcounter_hi_r, tcount_hi_w, 0xff00)
-	AM_RANGE(0x7f001200, 0x7f001203) AM_DEVREADWRITE8(INTERPRO_SCSI_DEVICE_TAG, ncr53c90a_device, fifo_r, fifo_w, 0xff00)
-	AM_RANGE(0x7f001300, 0x7f001303) AM_DEVREADWRITE8(INTERPRO_SCSI_DEVICE_TAG, ncr53c90a_device, command_r, command_w, 0xff00)
-	AM_RANGE(0x7f001400, 0x7f001403) AM_DEVREADWRITE8(INTERPRO_SCSI_DEVICE_TAG, ncr53c90a_device, status_r, bus_id_w, 0xff00)
-	AM_RANGE(0x7f001500, 0x7f001503) AM_DEVREADWRITE8(INTERPRO_SCSI_DEVICE_TAG, ncr53c90a_device, istatus_r, timeout_w, 0xff00)
-	AM_RANGE(0x7f001600, 0x7f001603) AM_DEVREADWRITE8(INTERPRO_SCSI_DEVICE_TAG, ncr53c90a_device, seq_step_r, sync_period_w, 0xff00)
-	AM_RANGE(0x7f001700, 0x7f001703) AM_DEVREADWRITE8(INTERPRO_SCSI_DEVICE_TAG, ncr53c90a_device, fifo_flags_r, sync_offset_w, 0xff00)
-	AM_RANGE(0x7f001800, 0x7f001803) AM_DEVREADWRITE8(INTERPRO_SCSI_DEVICE_TAG, ncr53c90a_device, conf_r, conf_w, 0xff00)
-	AM_RANGE(0x7f001900, 0x7f001903) AM_DEVWRITE8(INTERPRO_SCSI_DEVICE_TAG, ncr53c90a_device, clock_w, 0xff00)
-	AM_RANGE(0x7f001a00, 0x7f001a03) AM_DEVWRITE8(INTERPRO_SCSI_DEVICE_TAG, ncr53c90a_device, test_w, 0xff00)
-	AM_RANGE(0x7f001b00, 0x7f001b03) AM_DEVREADWRITE8(INTERPRO_SCSI_DEVICE_TAG, ncr53c90a_device, conf2_r, conf2_w, 0xff00)
+	AM_RANGE(0x7f001000, 0x7f001003) AM_DEVREADWRITE8(INTERPRO_SCSI_DEVICE_TAG, ncr53c90a_device, tcounter_lo_r, tcount_lo_w, 0x0000ff00)
+	AM_RANGE(0x7f001100, 0x7f001103) AM_DEVREADWRITE8(INTERPRO_SCSI_DEVICE_TAG, ncr53c90a_device, tcounter_hi_r, tcount_hi_w, 0x0000ff00)
+	AM_RANGE(0x7f001200, 0x7f001203) AM_DEVREADWRITE8(INTERPRO_SCSI_DEVICE_TAG, ncr53c90a_device, fifo_r, fifo_w, 0x0000ff00)
+	AM_RANGE(0x7f001300, 0x7f001303) AM_DEVREADWRITE8(INTERPRO_SCSI_DEVICE_TAG, ncr53c90a_device, command_r, command_w, 0x0000ff00)
+	AM_RANGE(0x7f001400, 0x7f001403) AM_DEVREAD8(INTERPRO_SCSI_DEVICE_TAG, ncr53c90a_device, status_r, 0xff00) AM_DEVWRITE8(INTERPRO_SCSI_DEVICE_TAG, ncr53c90a_device, bus_id_w, 0x0000ff00)
+	AM_RANGE(0x7f001500, 0x7f001503) AM_DEVREADWRITE8(INTERPRO_SCSI_DEVICE_TAG, ncr53c90a_device, istatus_r, timeout_w, 0x0000ff00)
+	AM_RANGE(0x7f001600, 0x7f001603) AM_DEVREADWRITE8(INTERPRO_SCSI_DEVICE_TAG, ncr53c90a_device, seq_step_r, sync_period_w, 0x0000ff00)
+	AM_RANGE(0x7f001700, 0x7f001703) AM_DEVREADWRITE8(INTERPRO_SCSI_DEVICE_TAG, ncr53c90a_device, fifo_flags_r, sync_offset_w, 0x0000ff00)
+	AM_RANGE(0x7f001800, 0x7f001803) AM_DEVREADWRITE8(INTERPRO_SCSI_DEVICE_TAG, ncr53c90a_device, conf_r, conf_w, 0x0000ff00)
+	AM_RANGE(0x7f001900, 0x7f001903) AM_DEVWRITE8(INTERPRO_SCSI_DEVICE_TAG, ncr53c90a_device, clock_w, 0x0000ff00)
+	AM_RANGE(0x7f001a00, 0x7f001a03) AM_DEVWRITE8(INTERPRO_SCSI_DEVICE_TAG, ncr53c90a_device, test_w, 0x0000ff00)
+	AM_RANGE(0x7f001b00, 0x7f001b03) AM_DEVREADWRITE8(INTERPRO_SCSI_DEVICE_TAG, ncr53c90a_device, conf2_r, conf2_w, 0x0000ff00)
 
 	AM_RANGE(0x7f0fff00, 0x7f0fffff) AM_DEVICE(INTERPRO_IOGA_TAG, interpro_ioga_device, map)
 ADDRESS_MAP_END
 
-static ADDRESS_MAP_START(turquoise_base_map, 0, 32, turquoise_state)
-	AM_RANGE(0x40000000, 0x4000003f) AM_DEVICE(INTERPRO_MCGA_TAG, interpro_mcga_device, map)
-	AM_RANGE(0x7f000300, 0x7f000303) AM_WRITE8(sreg_error_w, 0xff)
-
+ADDRESS_MAP_START(turquoise_state::turquoise_base_map)
 	AM_IMPORT_FROM(interpro_common_map)
+
+	AM_RANGE(0x40000000, 0x4000003f) AM_DEVICE(INTERPRO_MCGA_TAG, interpro_mcga_device, map)
+	AM_RANGE(0x7f000300, 0x7f000303) AM_WRITE8(sreg_error_w, 0x000000ff)
 ADDRESS_MAP_END
 
-static ADDRESS_MAP_START(turquoise_main_map, 0, 32, turquoise_state)
+ADDRESS_MAP_START(turquoise_state::turquoise_main_map)
+	AM_IMPORT_FROM(turquoise_base_map)
+
 	AM_RANGE(0x00000000, 0x00ffffff) AM_RAM AM_SHARE(RAM_TAG)
 	AM_RANGE(0x7f100000, 0x7f13ffff) AM_ROM AM_REGION(INTERPRO_EPROM_TAG, 0)
-
-	AM_IMPORT_FROM(turquoise_base_map)
 ADDRESS_MAP_END
 
-static ADDRESS_MAP_START(sapphire_base_map, 0, 32, sapphire_state)
-	AM_RANGE(0x40000000, 0x4000004f) AM_DEVICE(INTERPRO_MCGA_TAG, interpro_fmcc_device, map)
-	AM_RANGE(0x7f001c00, 0x7f001c03) AM_DEVWRITE8(INTERPRO_SCSI_DEVICE_TAG, ncr53c94_device, conf3_w, 0xff00)
-	AM_RANGE(0x7f001f00, 0x7f001f03) AM_DEVWRITE8(INTERPRO_SCSI_DEVICE_TAG, ncr53c94_device, fifo_align_w, 0xff00)
-
+ADDRESS_MAP_START(sapphire_state::sapphire_base_map)
 	AM_IMPORT_FROM(interpro_common_map)
+
+	AM_RANGE(0x40000000, 0x4000004f) AM_DEVICE(INTERPRO_MCGA_TAG, interpro_fmcc_device, map)
+	AM_RANGE(0x7f001c00, 0x7f001c03) AM_DEVWRITE8(INTERPRO_SCSI_DEVICE_TAG, ncr53c94_device, conf3_w, 0x0000ff00)
+	AM_RANGE(0x7f001f00, 0x7f001f03) AM_DEVWRITE8(INTERPRO_SCSI_DEVICE_TAG, ncr53c94_device, fifo_align_w, 0x0000ff00)
 ADDRESS_MAP_END
 
-static ADDRESS_MAP_START(sapphire_main_map, 0, 32, sapphire_state)
+ADDRESS_MAP_START(sapphire_state::sapphire_main_map)
+	AM_IMPORT_FROM(sapphire_base_map)
+
 	AM_RANGE(0x00000000, 0x00ffffff) AM_RAM AM_SHARE(RAM_TAG)
 	AM_RANGE(0x7f100000, 0x7f11ffff) AM_ROM AM_REGION(INTERPRO_EPROM_TAG, 0)
 	AM_RANGE(0x7f180000, 0x7f1fffff) AM_DEVREADWRITE8(INTERPRO_FLASH_TAG "_lo", intel_28f010_device, read, write, 0x00ff00ff) AM_MASK(0x3ffff)
 	AM_RANGE(0x7f180000, 0x7f1fffff) AM_DEVREADWRITE8(INTERPRO_FLASH_TAG "_hi", intel_28f010_device, read, write, 0xff00ff00) AM_MASK(0x3ffff)
-
-	AM_IMPORT_FROM(sapphire_base_map)
 ADDRESS_MAP_END
 
-static ADDRESS_MAP_START(turquoise_io_map, 1, 32, interpro_state)
+ADDRESS_MAP_START(turquoise_state::turquoise_io_map)
+	AM_IMPORT_FROM(turquoise_base_map)
+
 	AM_RANGE(0x00000800, 0x000009ff) AM_DEVICE(INTERPRO_MMU_TAG "_d", cammu_c3_device, map)
 	AM_RANGE(0x00000a00, 0x00000bff) AM_DEVICE(INTERPRO_MMU_TAG "_i", cammu_c3_device, map)
 	AM_RANGE(0x00000c00, 0x00000dff) AM_DEVICE(INTERPRO_MMU_TAG "_d", cammu_c3_device, map_global)
-
-	AM_IMPORT_FROM(turquoise_base_map)
 ADDRESS_MAP_END
 
-static ADDRESS_MAP_START(sapphire_io_map, 1, 32, interpro_state)
-	AM_RANGE(0x00000000, 0x00001fff) AM_DEVICE(INTERPRO_MMU_TAG, cammu_c4_device, map)
-
+ADDRESS_MAP_START(sapphire_state::sapphire_io_map)
 	AM_IMPORT_FROM(sapphire_base_map)
+
+	AM_RANGE(0x00000000, 0x00001fff) AM_DEVICE(INTERPRO_MMU_TAG, cammu_c4_device, map)
 ADDRESS_MAP_END
 
-static ADDRESS_MAP_START(interpro_boot_map, 2, 32, interpro_state)
+ADDRESS_MAP_START(interpro_state::interpro_boot_map)
 	// FIXME: the real system may have some initial boot instructions in this boot
 	// memory space which jump to the start of the boot eprom code, or there may
 	// be some special address decoding logic for boot. For now, we fake it in the
@@ -431,11 +431,11 @@ static ADDRESS_MAP_START(interpro_boot_map, 2, 32, interpro_state)
 	AM_RANGE(0x00000000, 0x00001fff) AM_RAM
 ADDRESS_MAP_END
 
-static ADDRESS_MAP_START(interpro_82586_map, 0, 16, turquoise_state)
+ADDRESS_MAP_START(turquoise_state::interpro_82586_map)
 	AM_RANGE(0x00000000, 0x00ffffff) AM_DEVREADWRITE(INTERPRO_IOGA_TAG, turquoise_ioga_device, eth_r, eth_w)
 ADDRESS_MAP_END
 
-static ADDRESS_MAP_START(interpro_82596_map, 0, 32, sapphire_state)
+ADDRESS_MAP_START(sapphire_state::interpro_82596_map)
 	AM_RANGE(0x00000000, 0xffffffff) AM_DEVREADWRITE(INTERPRO_IOGA_TAG, sapphire_ioga_device, eth_r, eth_w)
 ADDRESS_MAP_END
 
@@ -448,7 +448,9 @@ static SLOT_INTERFACE_START(interpro_floppies)
 	SLOT_INTERFACE("35hd", FLOPPY_35_HD)
 SLOT_INTERFACE_END
 
-static MACHINE_CONFIG_START(interpro_serial1)
+MACHINE_CONFIG_START(interpro_state::interpro_serial1)
+	MCFG_SCC85C30_ADD(INTERPRO_SCC1_TAG, XTAL(4'915'200), 0, 0, 0, 0)
+
 	MCFG_Z80SCC_OUT_TXDA_CB(DEVWRITELINE(INTERPRO_SERIAL_PORT1_TAG, rs232_port_device, write_txd))
 	MCFG_Z80SCC_OUT_TXDB_CB(DEVWRITELINE(INTERPRO_SERIAL_PORT2_TAG, rs232_port_device, write_txd))
 	MCFG_Z80SCC_OUT_INT_CB(DEVWRITELINE(INTERPRO_IOGA_TAG, interpro_ioga_device, ir11_w))
@@ -466,7 +468,8 @@ static MACHINE_CONFIG_START(interpro_serial1)
 	MCFG_RS232_CTS_HANDLER(DEVWRITELINE(INTERPRO_SCC1_TAG, z80scc_device, ctsb_w))
 MACHINE_CONFIG_END
 
-static MACHINE_CONFIG_START(interpro_serial2)
+MACHINE_CONFIG_START(interpro_state::interpro_serial2)
+	MCFG_SCC85C30_ADD(INTERPRO_SCC2_TAG, XTAL(4'915'200), 0, 0, 0, 0)
 	MCFG_Z80SCC_OUT_TXDA_CB(DEVWRITELINE(INTERPRO_KEYBOARD_PORT_TAG, interpro_keyboard_port_device, write_txd))
 	MCFG_Z80SCC_OUT_TXDB_CB(DEVWRITELINE(INTERPRO_SERIAL_PORT0_TAG, rs232_port_device, write_txd))
 	MCFG_Z80SCC_OUT_INT_CB(DEVWRITELINE(INTERPRO_IOGA_TAG, interpro_ioga_device, ir11_w))
@@ -494,13 +497,17 @@ static SLOT_INTERFACE_START(sapphire_scsi_devices)
 	SLOT_INTERFACE_INTERNAL(INTERPRO_SCSI_ADAPTER_TAG, NCR53C94)
 SLOT_INTERFACE_END
 
-static MACHINE_CONFIG_START(interpro_scsi_adapter)
-	MCFG_DEVICE_CLOCK(XTAL_24MHz)
+void interpro_state::interpro_scsi_adapter(device_t *device)
+{
+	devcb_base *devcb;
+	(void)devcb;
+	MCFG_DEVICE_CLOCK(XTAL(24'000'000))
 	MCFG_NCR5390_IRQ_HANDLER(DEVWRITELINE(":" INTERPRO_IOGA_TAG, interpro_ioga_device, ir0_w))
 	MCFG_NCR5390_DRQ_HANDLER(DEVWRITELINE(":" INTERPRO_IOGA_TAG, interpro_ioga_device, drq_scsi))
-MACHINE_CONFIG_END
+}
 
-static MACHINE_CONFIG_START(ioga)
+MACHINE_CONFIG_START(interpro_state::ioga)
+	MCFG_DEVICE_MODIFY(INTERPRO_IOGA_TAG)
 	MCFG_INTERPRO_IOGA_NMI_CB(INPUTLINE(INTERPRO_CPU_TAG, INPUT_LINE_NMI))
 	MCFG_INTERPRO_IOGA_IRQ_CB(INPUTLINE(INTERPRO_CPU_TAG, INPUT_LINE_IRQ0))
 	MCFG_INTERPRO_IOGA_IVEC_CB(DEVWRITE8(INTERPRO_CPU_TAG, clipper_device, set_ivec))
@@ -522,7 +529,7 @@ MACHINE_CONFIG_END
 static INPUT_PORTS_START(interpro)
 INPUT_PORTS_END
 
-static MACHINE_CONFIG_START(interpro)
+MACHINE_CONFIG_START(interpro_state::interpro)
 	MCFG_RAM_ADD(RAM_TAG)
 	MCFG_RAM_DEFAULT_SIZE("16M")
 	MCFG_RAM_EXTRA_OPTIONS("32M,64M,128M,256M")
@@ -541,7 +548,7 @@ static MACHINE_CONFIG_START(interpro)
 	// serial
 
 	// real-time clock/non-volatile memory
-	MCFG_MC146818_ADD(INTERPRO_RTC_TAG, XTAL_32_768kHz)
+	MCFG_MC146818_ADD(INTERPRO_RTC_TAG, XTAL(32'768))
 	MCFG_MC146818_UTC(true)
 	MCFG_MC146818_IRQ_HANDLER(DEVWRITELINE(INTERPRO_IOGA_TAG, interpro_ioga_device, ir9_w))
 
@@ -568,8 +575,9 @@ static MACHINE_CONFIG_START(interpro)
 	MCFG_DEFAULT_LAYOUT(layout_interpro)
 MACHINE_CONFIG_END
 
-static MACHINE_CONFIG_DERIVED(turquoise, interpro)
-	MCFG_CPU_ADD(INTERPRO_CPU_TAG, CLIPPER_C300, XTAL_12_5MHz)
+MACHINE_CONFIG_START(turquoise_state::turquoise)
+	interpro(config);
+	MCFG_CPU_ADD(INTERPRO_CPU_TAG, CLIPPER_C300, XTAL(12'500'000))
 	MCFG_CPU_PROGRAM_MAP(c300_insn_map)
 	MCFG_CPU_DATA_MAP(c300_data_map)
 	MCFG_CPU_IRQ_ACKNOWLEDGE_DEVICE(INTERPRO_IOGA_TAG, interpro_ioga_device, acknowledge_interrupt)
@@ -609,10 +617,8 @@ static MACHINE_CONFIG_DERIVED(turquoise, interpro)
 	MCFG_FLOPPY_DRIVE_SOUND(false)
 
 	// serial controllers and ports
-	MCFG_SCC85C30_ADD(INTERPRO_SCC1_TAG, XTAL_4_9152MHz, 0, 0, 0, 0)
-	MCFG_FRAGMENT_ADD(interpro_serial1)
-	MCFG_SCC85C30_ADD(INTERPRO_SCC2_TAG, XTAL_4_9152MHz, 0, 0, 0, 0)
-	MCFG_FRAGMENT_ADD(interpro_serial2)
+	interpro_serial1(config);
+	interpro_serial2(config);
 
 	// scsi controller
 	MCFG_NSCSI_ADD(INTERPRO_SCSI_TAG ":7", turquoise_scsi_devices, INTERPRO_SCSI_ADAPTER_TAG, true)
@@ -626,14 +632,15 @@ static MACHINE_CONFIG_DERIVED(turquoise, interpro)
 	// i/o gate array
 	MCFG_DEVICE_ADD(INTERPRO_IOGA_TAG, TURQUOISE_IOGA, 0)
 	MCFG_INTERPRO_IOGA_MEMORY(INTERPRO_MMU_TAG "_d", 0)
-	MCFG_FRAGMENT_ADD(ioga)
+	ioga(config);
 
 	MCFG_DEVICE_MODIFY(INTERPRO_SRBUS_TAG)
 	MCFG_SR_MEMORY(INTERPRO_MMU_TAG "_d", 0, 1)
 MACHINE_CONFIG_END
 
-static MACHINE_CONFIG_DERIVED(sapphire, interpro)
-	MCFG_CPU_ADD(INTERPRO_CPU_TAG, CLIPPER_C400, XTAL_12_5MHz)
+MACHINE_CONFIG_START(sapphire_state::sapphire)
+	interpro(config);
+	MCFG_CPU_ADD(INTERPRO_CPU_TAG, CLIPPER_C400, XTAL(12'500'000))
 	MCFG_CPU_PROGRAM_MAP(c400_insn_map)
 	MCFG_CPU_DATA_MAP(c400_data_map)
 	MCFG_CPU_IRQ_ACKNOWLEDGE_DEVICE(INTERPRO_IOGA_TAG, interpro_ioga_device, acknowledge_interrupt)
@@ -659,24 +666,22 @@ static MACHINE_CONFIG_DERIVED(sapphire, interpro)
 	MCFG_FLOPPY_DRIVE_SOUND(false)
 
 	// serial controllers and ports
-	MCFG_SCC85230_ADD(INTERPRO_SCC1_TAG, XTAL_4_9152MHz, 0, 0, 0, 0)
-	MCFG_FRAGMENT_ADD(interpro_serial1)
-	MCFG_SCC85C30_ADD(INTERPRO_SCC2_TAG, XTAL_4_9152MHz, 0, 0, 0, 0)
-	MCFG_FRAGMENT_ADD(interpro_serial2)
+	interpro_serial1(config);
+	interpro_serial2(config);
 
 	// scsi controller
 	MCFG_NSCSI_ADD(INTERPRO_SCSI_TAG ":7", sapphire_scsi_devices, INTERPRO_SCSI_ADAPTER_TAG, true)
 	MCFG_DEVICE_CARD_MACHINE_CONFIG(INTERPRO_SCSI_ADAPTER_TAG, interpro_scsi_adapter)
 
 	// ethernet controller
-	MCFG_DEVICE_ADD(INTERPRO_ETH_TAG, I82596_LE32, XTAL_20MHz)
+	MCFG_DEVICE_ADD(INTERPRO_ETH_TAG, I82596_LE32, XTAL(20'000'000))
 	MCFG_I82586_IRQ_CB(DEVWRITELINE(INTERPRO_IOGA_TAG, interpro_ioga_device, ir12_w))
 	MCFG_DEVICE_ADDRESS_MAP(0, interpro_82596_map)
 
 	// i/o gate array
 	MCFG_DEVICE_ADD(INTERPRO_IOGA_TAG, SAPPHIRE_IOGA, 0)
 	MCFG_INTERPRO_IOGA_MEMORY(INTERPRO_MMU_TAG, 0)
-	MCFG_FRAGMENT_ADD(ioga)
+	ioga(config);
 
 	// flash memory
 	MCFG_DEVICE_ADD(INTERPRO_FLASH_TAG "_lo", INTEL_28F010, 0)
@@ -687,27 +692,32 @@ static MACHINE_CONFIG_DERIVED(sapphire, interpro)
 	MCFG_SR_MEMORY(INTERPRO_MMU_TAG, 0, 1)
 MACHINE_CONFIG_END
 
-MACHINE_CONFIG_DERIVED(ip2000, turquoise)
+MACHINE_CONFIG_START(turquoise_state::ip2000)
+	turquoise(config);
 	//MCFG_DEVICE_MODIFY(INTERPRO_CPU_TAG)
-	//MCFG_DEVICE_CLOCK(XTAL_40MHz)
+	//MCFG_DEVICE_CLOCK(XTAL(40'000'000))
 MACHINE_CONFIG_END
 
-MACHINE_CONFIG_DERIVED(ip2400, sapphire)
+MACHINE_CONFIG_START(sapphire_state::ip2400)
+	sapphire(config);
 	//MCFG_DEVICE_MODIFY(INTERPRO_CPU_TAG)
-	//MCFG_DEVICE_CLOCK(XTAL_40MHz)
+	//MCFG_DEVICE_CLOCK(XTAL(40'000'000))
 MACHINE_CONFIG_END
 
-MACHINE_CONFIG_DERIVED(ip2500, sapphire)
+MACHINE_CONFIG_START(sapphire_state::ip2500)
+	sapphire(config);
 	//MCFG_DEVICE_MODIFY(INTERPRO_CPU_TAG)
-	//MCFG_DEVICE_CLOCK(XTAL_50MHz)
+	//MCFG_DEVICE_CLOCK(XTAL(50'000'000))
 MACHINE_CONFIG_END
 
-MACHINE_CONFIG_DERIVED(ip2700, sapphire)
+MACHINE_CONFIG_START(sapphire_state::ip2700)
+	sapphire(config);
 	//MCFG_DEVICE_MODIFY(INTERPRO_CPU_TAG)
 	//MCFG_DEVICE_CLOCK(XTAL_70MHz)
 MACHINE_CONFIG_END
 
-MACHINE_CONFIG_DERIVED(ip2800, sapphire)
+MACHINE_CONFIG_START(sapphire_state::ip2800)
+	sapphire(config);
 	//MCFG_DEVICE_MODIFY(INTERPRO_CPU_TAG)
 	//MCFG_DEVICE_CLOCK(XTAL_80MHz)
 MACHINE_CONFIG_END

@@ -91,4 +91,11 @@ public:
 	DECLARE_MACHINE_RESET(jpmsys5);
 	uint32_t screen_update_jpmsys5v(screen_device &screen, bitmap_rgb32 &bitmap, const rectangle &cliprect);
 	TIMER_CALLBACK_MEMBER(touch_cb);
+	void jpmsys5(machine_config &config);
+	void jpmsys5_ym(machine_config &config);
+	void jpmsys5v(machine_config &config);
+	void jpm_sys5_common_map(address_map &map);
+	void m68000_awp_map(address_map &map);
+	void m68000_awp_map_saa(address_map &map);
+	void m68000_map(address_map &map);
 };

@@ -122,6 +122,11 @@ public:
 	DECLARE_VIDEO_START(vertical);
 	uint32_t screen_update_statriv2(screen_device &screen, bitmap_ind16 &bitmap, const rectangle &cliprect);
 	INTERRUPT_GEN_MEMBER(statriv2_interrupt);
+	void statriv2(machine_config &config);
+	void funcsino(machine_config &config);
+	void statriv2v(machine_config &config);
+	void statriv2_io_map(address_map &map);
+	void statriv2_map(address_map &map);
 };
 
 
@@ -281,14 +286,14 @@ WRITE8_MEMBER(statriv2_state::ppi_portc_hi_w)
  *
  *************************************/
 
-static ADDRESS_MAP_START( statriv2_map, AS_PROGRAM, 8, statriv2_state )
+ADDRESS_MAP_START(statriv2_state::statriv2_map)
 	AM_RANGE(0x0000, 0x3fff) AM_ROM
 	AM_RANGE(0x4000, 0x43ff) AM_RAM
 	AM_RANGE(0x4800, 0x48ff) AM_RAM AM_SHARE("nvram")
 	AM_RANGE(0xc800, 0xcfff) AM_RAM_WRITE(statriv2_videoram_w) AM_SHARE("videoram")
 ADDRESS_MAP_END
 
-static ADDRESS_MAP_START( statriv2_io_map, AS_IO, 8, statriv2_state )
+ADDRESS_MAP_START(statriv2_state::statriv2_io_map)
 	AM_RANGE(0x20, 0x23) AM_DEVREADWRITE("ppi8255", i8255_device, read, write)
 	AM_RANGE(0x28, 0x2b) AM_READ(question_data_r) AM_WRITEONLY AM_SHARE("question_offset")
 	AM_RANGE(0xb0, 0xb1) AM_DEVWRITE("aysnd", ay8910_device, address_data_w)
@@ -590,7 +595,7 @@ GFXDECODE_END
  *
  *************************************/
 
-static MACHINE_CONFIG_START( statriv2 )
+MACHINE_CONFIG_START(statriv2_state::statriv2)
 	/* basic machine hardware */
 	/* FIXME: The 8085A had a max clock of 6MHz, internally divided by 2! */
 	MCFG_CPU_ADD("maincpu", I8085A, MASTER_CLOCK)
@@ -629,7 +634,8 @@ static MACHINE_CONFIG_START( statriv2 )
 	MCFG_SOUND_ROUTE(ALL_OUTPUTS, "mono", 1.0)
 MACHINE_CONFIG_END
 
-static MACHINE_CONFIG_DERIVED( statriv2v, statriv2 )
+MACHINE_CONFIG_START(statriv2_state::statriv2v)
+	statriv2(config);
 
 	/* basic machine hardware */
 
@@ -640,7 +646,8 @@ static MACHINE_CONFIG_DERIVED( statriv2v, statriv2 )
 	MCFG_GFXDECODE_MODIFY("gfxdecode", vertical)
 MACHINE_CONFIG_END
 
-static MACHINE_CONFIG_DERIVED( funcsino, statriv2 )
+MACHINE_CONFIG_START(statriv2_state::funcsino)
+	statriv2(config);
 
 	/* basic machine hardware */
 

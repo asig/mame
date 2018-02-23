@@ -239,7 +239,7 @@ WRITE8_MEMBER(eolith_state::soundcpu_to_qs1000)
  *
  *************************************/
 
-static ADDRESS_MAP_START( eolith_map, AS_PROGRAM, 32, eolith_state )
+ADDRESS_MAP_START(eolith_state::eolith_map)
 	AM_RANGE(0x00000000, 0x001fffff) AM_RAM // fort2b wants ram here
 	AM_RANGE(0x40000000, 0x401fffff) AM_RAM
 	AM_RANGE(0x90000000, 0x9003ffff) AM_READWRITE(eolith_vram_r, eolith_vram_w)
@@ -259,11 +259,11 @@ ADDRESS_MAP_END
  *
  *************************************/
 
-static ADDRESS_MAP_START( sound_prg_map, AS_PROGRAM, 8, eolith_state )
+ADDRESS_MAP_START(eolith_state::sound_prg_map)
 	AM_RANGE(0x0000, 0x7fff) AM_ROM
 ADDRESS_MAP_END
 
-static ADDRESS_MAP_START( sound_io_map, AS_IO, 8, eolith_state )
+ADDRESS_MAP_START(eolith_state::sound_io_map)
 	AM_RANGE(0x0000, 0x7fff) AM_ROMBANK("sound_bank")
 	AM_RANGE(0x8000, 0x8000) AM_READ(sound_cmd_r)
 	AM_RANGE(MCS51_PORT_P1, MCS51_PORT_P1) AM_WRITE(sound_p1_w)
@@ -544,13 +544,13 @@ INPUT_PORTS_END
  *
  *************************************/
 
-static MACHINE_CONFIG_START( eolith45 )
+MACHINE_CONFIG_START(eolith_state::eolith45)
 	MCFG_CPU_ADD("maincpu", E132N, 45000000)         /* 45 MHz */
 	MCFG_CPU_PROGRAM_MAP(eolith_map)
 	MCFG_TIMER_DRIVER_ADD_SCANLINE("scantimer", eolith_state, eolith_speedup, "screen", 0, 1)
 
 	/* Sound CPU */
-	MCFG_CPU_ADD("soundcpu", I8032, XTAL_12MHz)
+	MCFG_CPU_ADD("soundcpu", I8032, XTAL(12'000'000))
 	MCFG_CPU_PROGRAM_MAP(sound_prg_map)
 	MCFG_CPU_IO_MAP(sound_io_map)
 	MCFG_MCS51_SERIAL_TX_CB(WRITE8(eolith_state, soundcpu_to_qs1000)) // Sound CPU -> QS1000 CPU serial link
@@ -581,7 +581,7 @@ static MACHINE_CONFIG_START( eolith45 )
 	/* sound hardware */
 	MCFG_SPEAKER_STANDARD_STEREO("lspeaker", "rspeaker")
 
-	MCFG_SOUND_ADD("qs1000", QS1000, XTAL_24MHz)
+	MCFG_SOUND_ADD("qs1000", QS1000, XTAL(24'000'000))
 	MCFG_QS1000_EXTERNAL_ROM(true)
 	MCFG_QS1000_IN_P1_CB(READ8(eolith_state, qs1000_p1_r))
 	MCFG_QS1000_OUT_P1_CB(WRITE8(eolith_state, qs1000_p1_w))
@@ -589,12 +589,14 @@ static MACHINE_CONFIG_START( eolith45 )
 	MCFG_SOUND_ROUTE(1, "rspeaker", 1.0)
 MACHINE_CONFIG_END
 
-static MACHINE_CONFIG_DERIVED( eolith50, eolith45 )
+MACHINE_CONFIG_START(eolith_state::eolith50)
+	eolith45(config);
 	MCFG_CPU_MODIFY("maincpu")
 	MCFG_CPU_CLOCK(50000000)         /* 50 MHz */
 MACHINE_CONFIG_END
 
-static MACHINE_CONFIG_DERIVED( ironfort, eolith45 )
+MACHINE_CONFIG_START(eolith_state::ironfort)
+	eolith45(config);
 	MCFG_CPU_MODIFY("maincpu")
 	MCFG_CPU_CLOCK(44900000) /* Normally 45MHz??? but PCB actually had a 44.9MHz OSC, so it's value is used */
 MACHINE_CONFIG_END
@@ -1612,7 +1614,7 @@ DRIVER_INIT_MEMBER(eolith_state,hidctch3)
 void eolith_state::speedup_read()
 {
 	/* for debug */
-	//if ((space.device().safe_pc()!=m_speedup_address) && (m_speedup_vblank!=1) )
+	//if ((m_maincpu->pc()!=m_speedup_address) && (m_speedup_vblank!=1) )
 	//    printf("%s:eolith speedup_read data %02x\n",machine().describe_context(), m_speedup_vblank);
 
 	if (m_speedup_vblank==0 && m_speedup_scanline < m_speedup_resume_scanline)
@@ -1751,5 +1753,5 @@ GAME( 1999, penfan,    0,        eolith45, penfan,    eolith_state, eolith,   RO
 GAME( 1999, penfana,   penfan,   eolith45, penfan,    eolith_state, eolith,   ROT0, "Eolith", "Penfan Girls - Step1. Mild Mind (set 2)",  MACHINE_IMPERFECT_SOUND | MACHINE_SUPPORTS_SAVE )
 GAME( 2000, stealsee,  0,        eolith45, stealsee,  eolith_state, eolith,   ROT0, "Moov Generation / Eolith", "Steal See",  MACHINE_IMPERFECT_SOUND | MACHINE_SUPPORTS_SAVE )
 GAME( 2000, hidctch3,  0,        eolith50, hidctch3,  eolith_state, hidctch3, ROT0, "Eolith", "Hidden Catch 3 (ver 1.00 / pcb ver 3.05)", MACHINE_IMPERFECT_SOUND | MACHINE_SUPPORTS_SAVE )
-GAME( 2001, fort2b,    0,        eolith50, common,    eolith_state, eolith,   ROT0, "Eolith", "Fortress 2 Blue Arcade (ver 1.01 / pcb ver 3.05)",  MACHINE_IMPERFECT_SOUND | MACHINE_SUPPORTS_SAVE )
-GAME( 2001, fort2ba,   fort2b,   eolith50, common,    eolith_state, eolith,   ROT0, "Eolith", "Fortress 2 Blue Arcade (ver 1.00 / pcb ver 3.05)",  MACHINE_IMPERFECT_SOUND | MACHINE_SUPPORTS_SAVE )
+GAME( 2001, fort2b,    0,        eolith50, common,    eolith_state, eolith,   ROT0, "Eolith", "Fortress 2 Blue Arcade (World) (ver 1.01 / pcb ver 3.05)",  MACHINE_IMPERFECT_SOUND | MACHINE_SUPPORTS_SAVE ) // Language selection is greyed out in Service Mode
+GAME( 2001, fort2ba,   fort2b,   eolith50, common,    eolith_state, eolith,   ROT0, "Eolith", "Fortress 2 Blue Arcade (Korea) (ver 1.00 / pcb ver 3.05)",  MACHINE_IMPERFECT_SOUND | MACHINE_SUPPORTS_SAVE ) // ^^

@@ -34,11 +34,13 @@ public:
 		m_maincpu(*this, "maincpu")
 	{ }
 
+	void vsmilpro(machine_config &config);
+	void vsmilpro_map(address_map &map);
 private:
 	required_device<cpu_device> m_maincpu;
 };
 
-static ADDRESS_MAP_START(vsmilpro_map, AS_PROGRAM, 32, vsmilpro_state)
+ADDRESS_MAP_START(vsmilpro_state::vsmilpro_map)
 	AM_RANGE(0x00000000, 0x0007ffff) AM_ROM
 ADDRESS_MAP_END
 
@@ -47,7 +49,7 @@ ADDRESS_MAP_END
 static INPUT_PORTS_START( vsmilpro )
 INPUT_PORTS_END
 
-static MACHINE_CONFIG_START( vsmilpro )
+MACHINE_CONFIG_START(vsmilpro_state::vsmilpro)
 	/* basic machine hardware */
 	MCFG_CPU_ADD("maincpu", ARM9, 150000000)
 	MCFG_CPU_PROGRAM_MAP(vsmilpro_map)

@@ -58,7 +58,7 @@ and 2764 eprom (swapped D3/D4 and D5/D6 data lines)
 #include "screen.h"
 
 
-static ADDRESS_MAP_START( main_map, AS_PROGRAM, 8, travrusa_state )
+ADDRESS_MAP_START(travrusa_state::main_map)
 	AM_RANGE(0x0000, 0x7fff) AM_ROM
 	AM_RANGE(0x8000, 0x8fff) AM_RAM_WRITE(travrusa_videoram_w) AM_SHARE("videoram")
 	AM_RANGE(0x9000, 0x9000) AM_WRITE(travrusa_scroll_x_low_w)
@@ -303,7 +303,7 @@ void travrusa_state::machine_reset()
 	m_scrollx[1] = 0;
 }
 
-static MACHINE_CONFIG_START( travrusa )
+MACHINE_CONFIG_START(travrusa_state::travrusa)
 
 	/* basic machine hardware */
 	MCFG_CPU_ADD("maincpu", Z80, 4000000)   /* 4 MHz (?) */
@@ -329,12 +329,13 @@ static MACHINE_CONFIG_START( travrusa )
 	MCFG_PALETTE_INIT_OWNER(travrusa_state, travrusa)
 
 	/* sound hardware */
-	//MCFG_FRAGMENT_ADD(m52_sound_c_audio)
+	//m52_sound_c_audio(config);
 	MCFG_DEVICE_ADD("irem_audio", IREM_M52_SOUNDC_AUDIO, 0)
 
 MACHINE_CONFIG_END
 
-static MACHINE_CONFIG_DERIVED( shtrider, travrusa )
+MACHINE_CONFIG_START(travrusa_state::shtrider)
+	travrusa(config);
 
 	/* video hardware */
 	MCFG_GFXDECODE_MODIFY("gfxdecode", shtrider)
@@ -342,7 +343,8 @@ static MACHINE_CONFIG_DERIVED( shtrider, travrusa )
 	MCFG_PALETTE_INIT_OWNER(travrusa_state,shtrider)
 MACHINE_CONFIG_END
 
-static MACHINE_CONFIG_DERIVED( shtriderb, travrusa )
+MACHINE_CONFIG_START(travrusa_state::shtriderb)
+	travrusa(config);
 
 	/* video hardware */
 	MCFG_GFXDECODE_MODIFY("gfxdecode", shtrider)
@@ -604,7 +606,7 @@ DRIVER_INIT_MEMBER(travrusa_state,shtridra)
 
 READ8_MEMBER(travrusa_state::shtridrb_port11_r)
 {
-	printf("shtridrb_port11_r %04x\n", space.device().safe_pc());
+	printf("shtridrb_port11_r %04x\n", m_maincpu->pc());
 	// reads, masks with 0xa8, checks for 0x88, resets game if not happy with value?
 	return 0x88;
 }

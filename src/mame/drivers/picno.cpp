@@ -41,27 +41,30 @@ public:
 		, m_maincpu(*this, "maincpu")
 	{ }
 
+	void picno(machine_config &config);
+	void io_map(address_map &map);
+	void mem_map(address_map &map);
 private:
 	required_device<cpu_device> m_maincpu;
 };
 
-static ADDRESS_MAP_START( mem_map, AS_PROGRAM, 16, picno_state )
+ADDRESS_MAP_START(picno_state::mem_map)
 	AM_RANGE(0x00000, 0x07fff) AM_ROM AM_REGION("roms", 0) // 32kb internal rom
 	AM_RANGE(0x0fb80, 0x0ff7f) AM_RAM // internal ram
 	AM_RANGE(0x0ff80, 0x0ffff) // internal controls
 	AM_RANGE(0x10000, 0x8ffff) AM_ROM AM_REGION("roms", 0x8000) // guess
 ADDRESS_MAP_END
 
-static ADDRESS_MAP_START( io_map, AS_IO, 8, picno_state )
+ADDRESS_MAP_START(picno_state::io_map)
 //  ADDRESS_MAP_GLOBAL_MASK(0xff)
 ADDRESS_MAP_END
 
 static INPUT_PORTS_START( picno )
 INPUT_PORTS_END
 
-static MACHINE_CONFIG_START( picno )
+MACHINE_CONFIG_START(picno_state::picno)
 	/* basic machine hardware */
-	MCFG_CPU_ADD("maincpu",  H83002, XTAL_20MHz) /* TODO: correct CPU type (H8/532), crystal is a guess, divided by 2 in the cpu */
+	MCFG_CPU_ADD("maincpu",  H83002, XTAL(20'000'000)) /* TODO: correct CPU type (H8/532), crystal is a guess, divided by 2 in the cpu */
 	MCFG_CPU_PROGRAM_MAP(mem_map)
 	MCFG_CPU_IO_MAP(io_map)
 

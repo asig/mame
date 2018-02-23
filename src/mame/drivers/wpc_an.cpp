@@ -30,6 +30,10 @@ public:
 			m_wpc(*this,"wpc")
 	{ }
 
+	void wpc_an_dd(machine_config &config);
+	void wpc_an(machine_config &config);
+	void wpc_an_base(machine_config &config);
+	void wpc_an_map(address_map &map);
 protected:
 
 	// devices
@@ -67,7 +71,7 @@ private:
 };
 
 
-static ADDRESS_MAP_START( wpc_an_map, AS_PROGRAM, 8, wpc_an_state )
+ADDRESS_MAP_START(wpc_an_state::wpc_an_map)
 	AM_RANGE(0x0000, 0x2fff) AM_READWRITE(ram_r,ram_w)
 	AM_RANGE(0x3000, 0x3faf) AM_RAM
 	AM_RANGE(0x3fb0, 0x3fff) AM_DEVREADWRITE("wpc",wpc_device,read,write) // WPC device
@@ -315,9 +319,9 @@ DRIVER_INIT_MEMBER(wpc_an_state,wpc_an)
 	memcpy(fixed,&ROM[codeoff],0x8000);  // copy static code from end of U6 ROM.
 }
 
-static MACHINE_CONFIG_START( wpc_an_base )
+MACHINE_CONFIG_START(wpc_an_state::wpc_an_base)
 	/* basic machine hardware */
-	MCFG_CPU_ADD("maincpu", MC6809E, XTAL_8MHz / 4) // 68B09E
+	MCFG_CPU_ADD("maincpu", MC6809E, XTAL(8'000'000) / 4) // 68B09E
 	MCFG_CPU_PROGRAM_MAP(wpc_an_map)
 
 	MCFG_WMS_WPC_ADD("wpc")
@@ -331,8 +335,8 @@ static MACHINE_CONFIG_START( wpc_an_base )
 	MCFG_DEFAULT_LAYOUT(layout_wpc_an)
 MACHINE_CONFIG_END
 
-static MACHINE_CONFIG_START( wpc_an )
-	MCFG_FRAGMENT_ADD(wpc_an_base)
+MACHINE_CONFIG_START(wpc_an_state::wpc_an)
+	wpc_an_base(config);
 
 	MCFG_SPEAKER_STANDARD_MONO("speaker")
 	MCFG_SOUND_ADD("wpcsnd", WPCSND, 0)
@@ -341,8 +345,8 @@ static MACHINE_CONFIG_START( wpc_an )
 	MCFG_SOUND_ROUTE(ALL_OUTPUTS, "speaker", 1.0)
 MACHINE_CONFIG_END
 
-static MACHINE_CONFIG_START( wpc_an_dd )
-	MCFG_FRAGMENT_ADD(wpc_an_base)
+MACHINE_CONFIG_START(wpc_an_state::wpc_an_dd)
+	wpc_an_base(config);
 
 	MCFG_SPEAKER_STANDARD_MONO("speaker")
 	MCFG_SOUND_ADD("bg", S11C_BG, 0)

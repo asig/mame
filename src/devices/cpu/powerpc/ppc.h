@@ -214,6 +214,7 @@ protected:
 
 public:
 	static void set_bus_frequency(device_t &device, uint32_t bus_frequency) { downcast<ppc_device &>(device).c_bus_frequency = bus_frequency; }
+	static void set_bus_frequency(device_t &device, const XTAL &xtal) { set_bus_frequency(device, xtal.value()); }
 
 	void ppc_set_dcstore_callback(write32_delegate callback);
 
@@ -759,6 +760,7 @@ public:
 	DECLARE_READ8_MEMBER( ppc4xx_spu_r );
 	DECLARE_WRITE8_MEMBER( ppc4xx_spu_w );
 
+	void internal_ppc4xx(address_map &map);
 protected:
 	ppc4xx_device(const machine_config &mconfig, device_type type, const char *tag, device_t *owner, uint32_t clock, powerpc_flavor flavor, uint32_t cap, uint32_t tb_divisor);
 

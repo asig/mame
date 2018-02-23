@@ -42,6 +42,9 @@ public:
 	required_device<ticket_dispenser_device> m_ticket;
 	uint8_t   m_ctrl;
 	uint8_t   m_digit_idx;
+	void piggypas(machine_config &config);
+	void piggypas_io(address_map &map);
+	void piggypas_map(address_map &map);
 };
 
 
@@ -62,11 +65,11 @@ WRITE8_MEMBER(piggypas_state::mcs51_tx_callback)
 	output().set_digit_value(m_digit_idx++, bitswap<8>(data,7,6,4,3,2,1,0,5) & 0x7f);
 }
 
-static ADDRESS_MAP_START( piggypas_map, AS_PROGRAM, 8, piggypas_state )
+ADDRESS_MAP_START(piggypas_state::piggypas_map)
 	AM_RANGE(0x0000, 0x7fff) AM_ROM
 ADDRESS_MAP_END
 
-static ADDRESS_MAP_START( piggypas_io, AS_IO, 8, piggypas_state )
+ADDRESS_MAP_START(piggypas_state::piggypas_io)
 	AM_RANGE(0x0000, 0x07ff) AM_RAM AM_SHARE("nvram")
 	AM_RANGE(0x0800, 0x0803) AM_DEVREADWRITE("ppi", i8255_device, read, write)
 	AM_RANGE(0x1000, 0x1000) AM_DEVREADWRITE("oki", okim6295_device, read, write)
@@ -124,10 +127,10 @@ HD44780_PIXEL_UPDATE(piggypas_state::piggypas_pixel_update)
 		bitmap.pix16(y, (line * 8 + pos) * 6 + x) = state;
 }
 
-static MACHINE_CONFIG_START( piggypas )
+MACHINE_CONFIG_START(piggypas_state::piggypas)
 
 	/* basic machine hardware */
-	MCFG_CPU_ADD("maincpu", I80C31, XTAL_8_448MHz) // OKI M80C31F or M80C154S
+	MCFG_CPU_ADD("maincpu", I80C31, XTAL(8'448'000)) // OKI M80C31F or M80C154S
 	MCFG_CPU_PROGRAM_MAP(piggypas_map)
 	MCFG_CPU_IO_MAP(piggypas_io)
 	MCFG_MCS51_SERIAL_TX_CB(WRITE8(piggypas_state, mcs51_tx_callback))
@@ -152,7 +155,7 @@ static MACHINE_CONFIG_START( piggypas )
 	/* sound hardware */
 	MCFG_SPEAKER_STANDARD_MONO("mono")
 
-	MCFG_OKIM6295_ADD("oki", XTAL_8_448MHz / 8, PIN7_HIGH) // clock and pin 7 not verified
+	MCFG_OKIM6295_ADD("oki", XTAL(8'448'000) / 8, PIN7_HIGH) // clock and pin 7 not verified
 	MCFG_SOUND_ROUTE(ALL_OUTPUTS, "mono", 1.0)
 
 	MCFG_DEVICE_ADD("ppi", I8255A, 0) // OKI M82C55A-2

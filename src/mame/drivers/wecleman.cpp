@@ -334,7 +334,7 @@ WRITE16_MEMBER(wecleman_state::irqctrl_w)
 {
 	if (ACCESSING_BITS_0_7)
 	{
-		// logerror("CPU #0 - PC = %06X - $140005 <- %02X (old value: %02X)\n",space.device().safe_pc(), data&0xFF, old_data&0xFF);
+		// logerror("CPU #0 - PC = %06X - $140005 <- %02X (old value: %02X)\n",m_maincpu->pc(), data&0xFF, old_data&0xFF);
 
 		// Bit 0 : SUBINT
 		if ( (m_irqctrl & 1) && (!(data & 1)) ) // 1->0 transition
@@ -435,6 +435,7 @@ WRITE16_MEMBER(wecleman_state::blitter_w)
 	/* do a blit if $80010.b has been written */
 	if ( (offset == 0x10/2) && (ACCESSING_BITS_8_15) )
 	{
+		auto &mspace = m_maincpu->space(AS_PROGRAM);
 		/* 80000.b = ?? usually 0 - other values: 02 ; 00 - ? logic function ? */
 		/* 80001.b = ?? usually 0 - other values: 3f ; 01 - ? height ? */
 		int minterm  = ( m_blitter_regs[0x0/2] & 0xFF00 ) >> 8;
@@ -467,7 +468,7 @@ WRITE16_MEMBER(wecleman_state::blitter_w)
 			for ( ; size > 0 ; size--)
 			{
 				/* maybe slower than a memcpy but safer (and errors are logged) */
-				space.write_word(dest, space.read_word(src));
+				mspace.write_word(dest, mspace.read_word(src));
 				src += 2;
 				dest += 2;
 			}
@@ -480,23 +481,23 @@ WRITE16_MEMBER(wecleman_state::blitter_w)
 				int i, j, destptr;
 
 				/* Read offset of source from the list of blits */
-				i = src + space.read_word(list+2);
+				i = src + mspace.read_word(list+2);
 				j = i + (size<<1);
 				destptr = dest;
 
 				for (; i<j; destptr+=2, i+=2)
-					space.write_word(destptr, space.read_word(i));
+					mspace.write_word(destptr, mspace.read_word(i));
 
 				destptr = dest + 14;
-				i = space.read_word(list) + m_spr_color_offs;
-				space.write_word(destptr, i);
+				i = mspace.read_word(list) + m_spr_color_offs;
+				mspace.write_word(destptr, i);
 
 				dest += 16;
 				list += 4;
 			}
 
 			/* hack for the blit to Sprites RAM - Sprite list end-marker */
-			space.write_word(dest, 0xFFFF);
+			mspace.write_word(dest, 0xFFFF);
 		}
 	}
 }
@@ -506,10 +507,10 @@ WRITE16_MEMBER(wecleman_state::blitter_w)
                     WEC Le Mans 24 Main CPU Handlers
 ***************************************************************************/
 
-static ADDRESS_MAP_START( wecleman_map, AS_PROGRAM, 16, wecleman_state )
+ADDRESS_MAP_START(wecleman_state::wecleman_map)
 	AM_RANGE(0x000000, 0x03ffff) AM_ROM // ROM (03c000-03ffff used as RAM sometimes!)
-	AM_RANGE(0x040494, 0x040495) AM_WRITE(wecleman_videostatus_w) AM_SHARE("videostatus")   // cloud blending control (HACK)
 	AM_RANGE(0x040000, 0x043fff) AM_RAM // RAM
+	AM_RANGE(0x040494, 0x040495) AM_WRITE(wecleman_videostatus_w) AM_SHARE("videostatus")   // cloud blending control (HACK)
 	AM_RANGE(0x060000, 0x060005) AM_WRITE(wecleman_protection_w) AM_SHARE("protection_ram")
 	AM_RANGE(0x060006, 0x060007) AM_READ(wecleman_protection_r) // MCU read
 	AM_RANGE(0x080000, 0x080011) AM_RAM_WRITE(blitter_w) AM_SHARE("blitter_regs")   // Blitter
@@ -538,7 +539,7 @@ ADDRESS_MAP_END
 
 
 
-static ADDRESS_MAP_START( hotchase_map, AS_PROGRAM, 16, wecleman_state )
+ADDRESS_MAP_START(wecleman_state::hotchase_map)
 	AM_RANGE(0x000000, 0x03ffff) AM_ROM
 	AM_RANGE(0x040000, 0x041fff) AM_RAM                                 // RAM
 	AM_RANGE(0x060000, 0x063fff) AM_RAM                                 // RAM
@@ -568,7 +569,7 @@ ADDRESS_MAP_END
                     WEC Le Mans 24 Sub CPU Handlers
 ***************************************************************************/
 
-static ADDRESS_MAP_START( wecleman_sub_map, AS_PROGRAM, 16, wecleman_state )
+ADDRESS_MAP_START(wecleman_state::wecleman_sub_map)
 	AM_RANGE(0x000000, 0x00ffff) AM_ROM // ROM
 	AM_RANGE(0x060000, 0x060fff) AM_RAM AM_SHARE("roadram") // Road
 	AM_RANGE(0x070000, 0x073fff) AM_RAM AM_SHARE("share1")  // RAM (Shared with main CPU)
@@ -579,7 +580,7 @@ ADDRESS_MAP_END
                         Hot Chase Sub CPU Handlers
 ***************************************************************************/
 
-static ADDRESS_MAP_START( hotchase_sub_map, AS_PROGRAM, 16, wecleman_state )
+ADDRESS_MAP_START(wecleman_state::hotchase_sub_map)
 	AM_RANGE(0x000000, 0x01ffff) AM_ROM // ROM
 	AM_RANGE(0x020000, 0x020fff) AM_RAM AM_SHARE("roadram") // Road
 	AM_RANGE(0x040000, 0x043fff) AM_RAM AM_SHARE("share1") // Shared with main CPU
@@ -639,7 +640,7 @@ WRITE8_MEMBER(wecleman_state::wecleman_K00723216_bank_w)
 	m_k007232->set_bank(0, ~data&1 );  //* (wecleman062gre)
 }
 
-static ADDRESS_MAP_START( wecleman_sound_map, AS_PROGRAM, 8, wecleman_state )
+ADDRESS_MAP_START(wecleman_state::wecleman_sound_map)
 	AM_RANGE(0x0000, 0x7fff) AM_ROM
 	AM_RANGE(0x8000, 0x83ff) AM_RAM
 	AM_RANGE(0x8500, 0x8500) AM_WRITENOP            // increased with speed (global volume)?
@@ -755,7 +756,7 @@ WRITE8_MEMBER(wecleman_state::hotchase_3_k007232_w)
 	m_k007232_3->write(space, offset ^ 1, data);
 }
 
-static ADDRESS_MAP_START( hotchase_sound_map, AS_PROGRAM, 8, wecleman_state )
+ADDRESS_MAP_START(wecleman_state::hotchase_sound_map)
 	AM_RANGE(0x0000, 0x07ff) AM_RAM
 	AM_RANGE(0x1000, 0x100d) AM_READWRITE(hotchase_1_k007232_r, hotchase_1_k007232_w)   // 3 x K007232
 	AM_RANGE(0x2000, 0x200d) AM_READWRITE(hotchase_2_k007232_r, hotchase_2_k007232_w)
@@ -1069,7 +1070,7 @@ MACHINE_RESET_MEMBER(wecleman_state,wecleman)
 	m_k007232->set_bank( 0, 1 );
 }
 
-static MACHINE_CONFIG_START( wecleman )
+MACHINE_CONFIG_START(wecleman_state::wecleman)
 
 	/* basic machine hardware */
 	MCFG_CPU_ADD("maincpu", M68000, 10000000)   /* Schems show 10MHz */
@@ -1140,7 +1141,7 @@ MACHINE_RESET_MEMBER(wecleman_state,hotchase)
 }
 
 
-static MACHINE_CONFIG_START( hotchase )
+MACHINE_CONFIG_START(wecleman_state::hotchase)
 
 	/* basic machine hardware */
 	MCFG_CPU_ADD("maincpu", M68000, 10000000)   /* 10 MHz - PCB is drawn in one set's readme */

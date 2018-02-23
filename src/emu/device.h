@@ -330,6 +330,8 @@ class device_t : public delegate_late_bind
 	friend class simple_list<device_t>;
 	friend class running_machine;
 	friend class finder_base;
+	friend class devcb_read_base;
+	friend class devcb_write_base;
 
 	class subdevice_list
 	{
@@ -477,6 +479,8 @@ public:
 	// owned object helpers
 	subdevice_list &subdevices() { return m_subdevices; }
 	const subdevice_list &subdevices() const { return m_subdevices; }
+	const std::list<devcb_read_base *> input_callbacks() const { return m_input_callbacks; }
+	const std::list<devcb_write_base *> output_callbacks() const { return m_output_callbacks; }
 
 	// device-relative tag lookups
 	std::string subtag(const char *tag) const;
@@ -494,6 +498,7 @@ public:
 	// configuration helpers
 	void add_machine_configuration(machine_config &config) { device_add_mconfig(config); }
 	static void static_set_clock(device_t &device, u32 clock);
+	static void static_set_clock(device_t &device, const XTAL &xtal) { static_set_clock(device, xtal.value()); }
 	static void static_set_input_default(device_t &device, const input_device_default *config) { device.m_input_defaults = config; }
 	static void static_set_default_bios_tag(device_t &device, const char *tag) { device.m_default_bios_tag = tag; }
 
@@ -508,6 +513,7 @@ public:
 	u32 clock() const { return m_clock; }
 	u32 unscaled_clock() const { return m_unscaled_clock; }
 	void set_unscaled_clock(u32 clock);
+	void set_unscaled_clock(const XTAL &xtal) { set_unscaled_clock(xtal.value()); }
 	double clock_scale() const { return m_clock_scale; }
 	void set_clock_scale(double clockscale);
 	attotime clocks_to_attotime(u64 clocks) const;
@@ -532,7 +538,7 @@ public:
 
 	void set_default_bios(u8 bios) { m_default_bios = bios; }
 	void set_system_bios(u8 bios) { m_system_bios = bios; }
-	bool findit(bool isvalidation = false) const;
+	bool findit(bool pre_map, bool isvalidation) const;
 
 	// misc
 	template <typename Format, typename... Params> void popmessage(Format &&fmt, Params &&... args) const;
@@ -541,7 +547,8 @@ public:
 protected:
 	// miscellaneous helpers
 	void set_machine(running_machine &machine);
-	void resolve_objects();
+	void resolve_pre_map();
+	void resolve_post_map();
 	void start();
 	void stop();
 	void debug_setup();
@@ -610,6 +617,8 @@ private:
 	bool                    m_started;              // true if the start function has succeeded
 	finder_base *           m_auto_finder_list;     // list of objects to auto-find
 	mutable std::vector<rom_entry>  m_rom_entries;
+	std::list<devcb_read_base *> m_input_callbacks;
+	std::list<devcb_write_base *> m_output_callbacks;
 
 	// string formatting buffer for logerror
 	mutable util::ovectorstream m_string_buffer;

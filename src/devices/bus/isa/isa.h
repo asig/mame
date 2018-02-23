@@ -81,7 +81,7 @@
 #define MCFG_ISA8_SLOT_ADD(_isatag, _tag, _slot_intf, _def_slot, _fixed) \
 	MCFG_DEVICE_ADD(_tag, ISA8_SLOT, 0) \
 	MCFG_DEVICE_SLOT_INTERFACE(_slot_intf, _def_slot, _fixed) \
-	isa8_slot_device::static_set_isa8_slot(*device, owner, _isatag);
+	isa8_slot_device::static_set_isa8_slot(*device, this, _isatag);
 #define MCFG_ISA16_CPU(_cputag) \
 	isa8_device::static_set_cputag(*device, _cputag);
 #define MCFG_ISA16_BUS_CUSTOM_SPACES() \
@@ -89,7 +89,7 @@
 #define MCFG_ISA16_SLOT_ADD(_isatag, _tag, _slot_intf, _def_slot, _fixed) \
 	MCFG_DEVICE_ADD(_tag, ISA16_SLOT, 0) \
 	MCFG_DEVICE_SLOT_INTERFACE(_slot_intf, _def_slot, _fixed) \
-	isa16_slot_device::static_set_isa16_slot(*device, owner, _isatag);
+	isa16_slot_device::static_set_isa16_slot(*device, this, _isatag);
 
 #define MCFG_ISA_BUS_IOCHCK(_iochck) \
 	devcb = &downcast<isa8_device *>(device)->set_iochck_callback(DEVCB_##_iochck);
@@ -214,13 +214,9 @@ public:
 	virtual space_config_vector memory_space_config() const override;
 
 	void install_device(offs_t start, offs_t end, read8_delegate rhandler, write8_delegate whandler);
-	template<typename T> void install_device(offs_t addrstart, offs_t addrend, T &device, void (T::*map)(class address_map &map), int bits = 8)
+	template<typename T> void install_device(offs_t addrstart, offs_t addrend, T &device, void (T::*map)(class address_map &map), uint64_t unitmask = ~u64(0))
 	{
-		m_iospace->install_device(addrstart, addrend, device, map, bits, 0xffffffffffffffffU >> (64 - m_iospace->data_width()));
-	}
-	template<typename T> void install_device(offs_t addrstart, offs_t addrend, T &device, void (T::*map)(class address_map &map), int bits, uint64_t unitmask)
-	{
-		m_iospace->install_device(addrstart, addrend, device, map, bits, unitmask);
+		m_iospace->install_device(addrstart, addrend, device, map, unitmask);
 	}
 	void install_bank(offs_t start, offs_t end, const char *tag, uint8_t *data);
 	void install_rom(device_t *dev, offs_t start, offs_t end, const char *tag, const char *region);
@@ -230,6 +226,9 @@ public:
 	void unmap_bank(offs_t start, offs_t end);
 	void unmap_rom(offs_t start, offs_t end);
 	bool is_option_rom_space_available(offs_t start, int size);
+
+	// FIXME: shouldn't need to expose this
+	address_space &memspace() const { return m_maincpu->space(AS_PROGRAM); }
 
 	DECLARE_WRITE_LINE_MEMBER( irq2_w );
 	DECLARE_WRITE_LINE_MEMBER( irq3_w );

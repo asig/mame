@@ -15,7 +15,6 @@ class mcr3_state : public mcr_state
 public:
 	mcr3_state(const machine_config &mconfig, device_type type, const char *tag)
 		: mcr_state(mconfig, type, tag),
-		m_cheap_squeak_deluxe(*this, "csd"),
 		m_spyhunt_alpharam(*this, "spyhunt_alpha"),
 		m_maxrpm_adc(*this, "adc"),
 		m_lamplatch(*this, "lamplatch"),
@@ -64,11 +63,20 @@ public:
 	uint32_t screen_update_mcr3(screen_device &screen, bitmap_ind16 &bitmap, const rectangle &cliprect);
 	uint32_t screen_update_spyhunt(screen_device &screen, bitmap_ind16 &bitmap, const rectangle &cliprect);
 
+	void mcrmono(machine_config &config);
+	void maxrpm(machine_config &config);
+	void mcrsc_csd(machine_config &config);
+	void mono_tcs(machine_config &config);
+	void mcrscroll(machine_config &config);
+	void mono_sg(machine_config &config);
+	void mcrmono_map(address_map &map);
+	void mcrmono_portmap(address_map &map);
+	void spyhunt_map(address_map &map);
+	void spyhunt_portmap(address_map &map);
 protected:
 	virtual void video_start() override;
 
 private:
-	optional_device<midway_cheap_squeak_deluxe_device> m_cheap_squeak_deluxe;
 	optional_shared_ptr<uint8_t> m_spyhunt_alpharam;
 	optional_device<adc0844_device> m_maxrpm_adc;
 	optional_device<cd4099_device> m_lamplatch;

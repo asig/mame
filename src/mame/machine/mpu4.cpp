@@ -2606,7 +2606,7 @@ TIMER_DEVICE_CALLBACK_MEMBER(mpu4_state::gen_50hz)
 	update_meters();//run at 100Hz to sync with PIAs
 }
 
-static ADDRESS_MAP_START( mpu4_memmap, AS_PROGRAM, 8, mpu4_state )
+ADDRESS_MAP_START(mpu4_state::mpu4_memmap)
 	AM_RANGE(0x0000, 0x07ff) AM_RAM AM_SHARE("nvram")
 	AM_RANGE(0x0800, 0x0810) AM_READWRITE(characteriser_r,characteriser_w)
 	AM_RANGE(0x0850, 0x0850) AM_READWRITE(bankswitch_r,bankswitch_w)    /* write bank (rom page select) */
@@ -2661,7 +2661,7 @@ ADDRESS_MAP_END
 	MCFG_STEPPER_INDEX_PATTERN(0x00)\
 	MCFG_STEPPER_INIT_PHASE(2)
 
-MACHINE_CONFIG_START( mpu4_std_3reel )
+MACHINE_CONFIG_START(mpu4_state::mpu4_std_3reel)
 	MCFG_MPU4_STD_REEL_ADD("reel0")
 	MCFG_STEPPER_OPTIC_CALLBACK(WRITELINE(mpu4_state, reel0_optic_cb))
 	MCFG_MPU4_STD_REEL_ADD("reel1")
@@ -2670,7 +2670,7 @@ MACHINE_CONFIG_START( mpu4_std_3reel )
 	MCFG_STEPPER_OPTIC_CALLBACK(WRITELINE(mpu4_state, reel2_optic_cb))
 MACHINE_CONFIG_END
 
-MACHINE_CONFIG_START( mpu4_type2_3reel )
+MACHINE_CONFIG_START(mpu4_state::mpu4_type2_3reel)
 	MCFG_MPU4_TYPE2_REEL_ADD("reel0")
 	MCFG_STEPPER_OPTIC_CALLBACK(WRITELINE(mpu4_state, reel0_optic_cb))
 	MCFG_MPU4_TYPE2_REEL_ADD("reel1")
@@ -2679,7 +2679,7 @@ MACHINE_CONFIG_START( mpu4_type2_3reel )
 	MCFG_STEPPER_OPTIC_CALLBACK(WRITELINE(mpu4_state, reel2_optic_cb))
 MACHINE_CONFIG_END
 
-MACHINE_CONFIG_START( mpu4_type3_3reel )
+MACHINE_CONFIG_START(mpu4_state::mpu4_type3_3reel)
 	MCFG_MPU4_TYPE3_REEL_ADD("reel0")
 	MCFG_STEPPER_OPTIC_CALLBACK(WRITELINE(mpu4_state, reel0_optic_cb))
 	MCFG_MPU4_TYPE3_REEL_ADD("reel1")
@@ -2688,7 +2688,7 @@ MACHINE_CONFIG_START( mpu4_type3_3reel )
 	MCFG_STEPPER_OPTIC_CALLBACK(WRITELINE(mpu4_state, reel2_optic_cb))
 MACHINE_CONFIG_END
 
-MACHINE_CONFIG_START( mpu4_type4_3reel )
+MACHINE_CONFIG_START(mpu4_state::mpu4_type4_3reel)
 	MCFG_MPU4_TYPE4_REEL_ADD("reel0")
 	MCFG_STEPPER_OPTIC_CALLBACK(WRITELINE(mpu4_state, reel0_optic_cb))
 	MCFG_MPU4_TYPE4_REEL_ADD("reel1")
@@ -2697,7 +2697,7 @@ MACHINE_CONFIG_START( mpu4_type4_3reel )
 	MCFG_STEPPER_OPTIC_CALLBACK(WRITELINE(mpu4_state, reel2_optic_cb))
 MACHINE_CONFIG_END
 
-MACHINE_CONFIG_START( mpu4_bwb_3reel )
+MACHINE_CONFIG_START(mpu4_state::mpu4_bwb_3reel)
 	MCFG_MPU4_BWB_REEL_ADD("reel0")
 	MCFG_STEPPER_OPTIC_CALLBACK(WRITELINE(mpu4_state, reel0_optic_cb))
 	MCFG_MPU4_BWB_REEL_ADD("reel1")
@@ -2706,7 +2706,7 @@ MACHINE_CONFIG_START( mpu4_bwb_3reel )
 	MCFG_STEPPER_OPTIC_CALLBACK(WRITELINE(mpu4_state, reel2_optic_cb))
 MACHINE_CONFIG_END
 
-MACHINE_CONFIG_START( mpu4_std_4reel )
+MACHINE_CONFIG_START(mpu4_state::mpu4_std_4reel)
 	MCFG_MPU4_STD_REEL_ADD("reel0")
 	MCFG_STEPPER_OPTIC_CALLBACK(WRITELINE(mpu4_state, reel0_optic_cb))
 	MCFG_MPU4_STD_REEL_ADD("reel1")
@@ -2717,7 +2717,7 @@ MACHINE_CONFIG_START( mpu4_std_4reel )
 	MCFG_STEPPER_OPTIC_CALLBACK(WRITELINE(mpu4_state, reel3_optic_cb))
 MACHINE_CONFIG_END
 
-MACHINE_CONFIG_START( mpu4_type2_4reel )
+MACHINE_CONFIG_START(mpu4_state::mpu4_type2_4reel)
 	MCFG_MPU4_TYPE2_REEL_ADD("reel0")
 	MCFG_STEPPER_OPTIC_CALLBACK(WRITELINE(mpu4_state, reel0_optic_cb))
 	MCFG_MPU4_TYPE2_REEL_ADD("reel1")
@@ -2728,7 +2728,7 @@ MACHINE_CONFIG_START( mpu4_type2_4reel )
 	MCFG_STEPPER_OPTIC_CALLBACK(WRITELINE(mpu4_state, reel3_optic_cb))
 MACHINE_CONFIG_END
 
-MACHINE_CONFIG_START( mpu4_type3_4reel )
+MACHINE_CONFIG_START(mpu4_state::mpu4_type3_4reel)
 	MCFG_MPU4_TYPE3_REEL_ADD("reel0")
 	MCFG_STEPPER_OPTIC_CALLBACK(WRITELINE(mpu4_state, reel0_optic_cb))
 	MCFG_MPU4_TYPE3_REEL_ADD("reel1")
@@ -2739,7 +2739,7 @@ MACHINE_CONFIG_START( mpu4_type3_4reel )
 	MCFG_STEPPER_OPTIC_CALLBACK(WRITELINE(mpu4_state, reel3_optic_cb))
 MACHINE_CONFIG_END
 
-MACHINE_CONFIG_START( mpu4_type4_4reel )
+MACHINE_CONFIG_START(mpu4_state::mpu4_type4_4reel)
 	MCFG_MPU4_TYPE4_REEL_ADD("reel0")
 	MCFG_STEPPER_OPTIC_CALLBACK(WRITELINE(mpu4_state, reel0_optic_cb))
 	MCFG_MPU4_TYPE4_REEL_ADD("reel1")
@@ -2750,7 +2750,7 @@ MACHINE_CONFIG_START( mpu4_type4_4reel )
 	MCFG_STEPPER_OPTIC_CALLBACK(WRITELINE(mpu4_state, reel3_optic_cb))
 MACHINE_CONFIG_END
 
-MACHINE_CONFIG_START( mpu4_bwb_4reel )
+MACHINE_CONFIG_START(mpu4_state::mpu4_bwb_4reel)
 	MCFG_MPU4_BWB_REEL_ADD("reel0")
 	MCFG_STEPPER_OPTIC_CALLBACK(WRITELINE(mpu4_state, reel0_optic_cb))
 	MCFG_MPU4_BWB_REEL_ADD("reel1")
@@ -2761,7 +2761,7 @@ MACHINE_CONFIG_START( mpu4_bwb_4reel )
 	MCFG_STEPPER_OPTIC_CALLBACK(WRITELINE(mpu4_state, reel3_optic_cb))
 MACHINE_CONFIG_END
 
-MACHINE_CONFIG_START( mpu4_std_5reel )
+MACHINE_CONFIG_START(mpu4_state::mpu4_std_5reel)
 	MCFG_MPU4_STD_REEL_ADD("reel0")
 	MCFG_STEPPER_OPTIC_CALLBACK(WRITELINE(mpu4_state, reel0_optic_cb))
 	MCFG_MPU4_STD_REEL_ADD("reel1")
@@ -2774,7 +2774,7 @@ MACHINE_CONFIG_START( mpu4_std_5reel )
 	MCFG_STEPPER_OPTIC_CALLBACK(WRITELINE(mpu4_state, reel4_optic_cb))
 MACHINE_CONFIG_END
 
-MACHINE_CONFIG_START( mpu4_type2_5reel )
+MACHINE_CONFIG_START(mpu4_state::mpu4_type2_5reel)
 	MCFG_MPU4_TYPE2_REEL_ADD("reel0")
 	MCFG_STEPPER_OPTIC_CALLBACK(WRITELINE(mpu4_state, reel0_optic_cb))
 	MCFG_MPU4_TYPE2_REEL_ADD("reel1")
@@ -2787,7 +2787,7 @@ MACHINE_CONFIG_START( mpu4_type2_5reel )
 	MCFG_STEPPER_OPTIC_CALLBACK(WRITELINE(mpu4_state, reel4_optic_cb))
 MACHINE_CONFIG_END
 
-MACHINE_CONFIG_START( mpu4_type3_5reel )
+MACHINE_CONFIG_START(mpu4_state::mpu4_type3_5reel)
 	MCFG_MPU4_TYPE3_REEL_ADD("reel0")
 	MCFG_STEPPER_OPTIC_CALLBACK(WRITELINE(mpu4_state, reel0_optic_cb))
 	MCFG_MPU4_TYPE3_REEL_ADD("reel1")
@@ -2800,7 +2800,7 @@ MACHINE_CONFIG_START( mpu4_type3_5reel )
 	MCFG_STEPPER_OPTIC_CALLBACK(WRITELINE(mpu4_state, reel4_optic_cb))
 MACHINE_CONFIG_END
 
-MACHINE_CONFIG_START( mpu4_type4_5reel )
+MACHINE_CONFIG_START(mpu4_state::mpu4_type4_5reel)
 	MCFG_MPU4_TYPE4_REEL_ADD("reel0")
 	MCFG_STEPPER_OPTIC_CALLBACK(WRITELINE(mpu4_state, reel0_optic_cb))
 	MCFG_MPU4_TYPE4_REEL_ADD("reel1")
@@ -2813,7 +2813,7 @@ MACHINE_CONFIG_START( mpu4_type4_5reel )
 	MCFG_STEPPER_OPTIC_CALLBACK(WRITELINE(mpu4_state, reel4_optic_cb))
 MACHINE_CONFIG_END
 
-MACHINE_CONFIG_START( mpu4_bwb_5reel )
+MACHINE_CONFIG_START(mpu4_state::mpu4_bwb_5reel)
 	MCFG_MPU4_BWB_REEL_ADD("reel0")
 	MCFG_STEPPER_OPTIC_CALLBACK(WRITELINE(mpu4_state, reel0_optic_cb))
 	MCFG_MPU4_BWB_REEL_ADD("reel1")
@@ -2826,7 +2826,7 @@ MACHINE_CONFIG_START( mpu4_bwb_5reel )
 	MCFG_STEPPER_OPTIC_CALLBACK(WRITELINE(mpu4_state, reel4_optic_cb))
 MACHINE_CONFIG_END
 
-MACHINE_CONFIG_START( mpu4_std_6reel )
+MACHINE_CONFIG_START(mpu4_state::mpu4_std_6reel)
 	MCFG_MPU4_STD_REEL_ADD("reel0")
 	MCFG_STEPPER_OPTIC_CALLBACK(WRITELINE(mpu4_state, reel0_optic_cb))
 	MCFG_MPU4_STD_REEL_ADD("reel1")
@@ -2841,7 +2841,7 @@ MACHINE_CONFIG_START( mpu4_std_6reel )
 	MCFG_STEPPER_OPTIC_CALLBACK(WRITELINE(mpu4_state, reel4_optic_cb))
 MACHINE_CONFIG_END
 
-MACHINE_CONFIG_START( mpu4_type2_6reel )
+MACHINE_CONFIG_START(mpu4_state::mpu4_type2_6reel)
 	MCFG_MPU4_TYPE2_REEL_ADD("reel0")
 	MCFG_STEPPER_OPTIC_CALLBACK(WRITELINE(mpu4_state, reel0_optic_cb))
 	MCFG_MPU4_TYPE2_REEL_ADD("reel1")
@@ -2856,7 +2856,7 @@ MACHINE_CONFIG_START( mpu4_type2_6reel )
 	MCFG_STEPPER_OPTIC_CALLBACK(WRITELINE(mpu4_state, reel5_optic_cb))
 MACHINE_CONFIG_END
 
-MACHINE_CONFIG_START( mpu4_type3_6reel )
+MACHINE_CONFIG_START(mpu4_state::mpu4_type3_6reel)
 	MCFG_MPU4_TYPE3_REEL_ADD("reel0")
 	MCFG_STEPPER_OPTIC_CALLBACK(WRITELINE(mpu4_state, reel0_optic_cb))
 	MCFG_MPU4_TYPE3_REEL_ADD("reel1")
@@ -2871,7 +2871,7 @@ MACHINE_CONFIG_START( mpu4_type3_6reel )
 	MCFG_STEPPER_OPTIC_CALLBACK(WRITELINE(mpu4_state, reel5_optic_cb))
 MACHINE_CONFIG_END
 
-MACHINE_CONFIG_START( mpu4_type4_6reel )
+MACHINE_CONFIG_START(mpu4_state::mpu4_type4_6reel)
 	MCFG_MPU4_TYPE4_REEL_ADD("reel0")
 	MCFG_STEPPER_OPTIC_CALLBACK(WRITELINE(mpu4_state, reel0_optic_cb))
 	MCFG_MPU4_TYPE4_REEL_ADD("reel1")
@@ -2886,7 +2886,7 @@ MACHINE_CONFIG_START( mpu4_type4_6reel )
 	MCFG_STEPPER_OPTIC_CALLBACK(WRITELINE(mpu4_state, reel5_optic_cb))
 MACHINE_CONFIG_END
 
-MACHINE_CONFIG_START( mpu4_bwb_6reel )
+MACHINE_CONFIG_START(mpu4_state::mpu4_bwb_6reel)
 	MCFG_MPU4_BWB_REEL_ADD("reel0")
 	MCFG_STEPPER_OPTIC_CALLBACK(WRITELINE(mpu4_state, reel0_optic_cb))
 	MCFG_MPU4_BWB_REEL_ADD("reel1")
@@ -2902,7 +2902,7 @@ MACHINE_CONFIG_START( mpu4_bwb_6reel )
 MACHINE_CONFIG_END
 
 
-MACHINE_CONFIG_START( mpu4_std_7reel )
+MACHINE_CONFIG_START(mpu4_state::mpu4_std_7reel)
 	MCFG_MPU4_STD_REEL_ADD("reel0")
 	MCFG_STEPPER_OPTIC_CALLBACK(WRITELINE(mpu4_state, reel0_optic_cb))
 	MCFG_MPU4_STD_REEL_ADD("reel1")
@@ -2921,7 +2921,7 @@ MACHINE_CONFIG_START( mpu4_std_7reel )
 	MCFG_STEPPER_OPTIC_CALLBACK(WRITELINE(mpu4_state, reel7_optic_cb))
 MACHINE_CONFIG_END
 
-MACHINE_CONFIG_START( mpu4_type2_7reel )
+MACHINE_CONFIG_START(mpu4_state::mpu4_type2_7reel)
 	MCFG_MPU4_TYPE2_REEL_ADD("reel0")
 	MCFG_STEPPER_OPTIC_CALLBACK(WRITELINE(mpu4_state, reel0_optic_cb))
 	MCFG_MPU4_TYPE2_REEL_ADD("reel1")
@@ -2940,7 +2940,7 @@ MACHINE_CONFIG_START( mpu4_type2_7reel )
 	MCFG_STEPPER_OPTIC_CALLBACK(WRITELINE(mpu4_state, reel7_optic_cb))
 MACHINE_CONFIG_END
 
-MACHINE_CONFIG_START( mpu4_type3_7reel )
+MACHINE_CONFIG_START(mpu4_state::mpu4_type3_7reel)
 	MCFG_MPU4_TYPE3_REEL_ADD("reel0")
 	MCFG_STEPPER_OPTIC_CALLBACK(WRITELINE(mpu4_state, reel0_optic_cb))
 	MCFG_MPU4_TYPE3_REEL_ADD("reel1")
@@ -2959,7 +2959,7 @@ MACHINE_CONFIG_START( mpu4_type3_7reel )
 	MCFG_STEPPER_OPTIC_CALLBACK(WRITELINE(mpu4_state, reel7_optic_cb))
 MACHINE_CONFIG_END
 
-MACHINE_CONFIG_START( mpu4_type4_7reel )
+MACHINE_CONFIG_START(mpu4_state::mpu4_type4_7reel)
 	MCFG_MPU4_TYPE4_REEL_ADD("reel0")
 	MCFG_STEPPER_OPTIC_CALLBACK(WRITELINE(mpu4_state, reel0_optic_cb))
 	MCFG_MPU4_TYPE4_REEL_ADD("reel1")
@@ -2978,7 +2978,7 @@ MACHINE_CONFIG_START( mpu4_type4_7reel )
 	MCFG_STEPPER_OPTIC_CALLBACK(WRITELINE(mpu4_state, reel7_optic_cb))
 MACHINE_CONFIG_END
 
-MACHINE_CONFIG_START( mpu4_bwb_7reel )
+MACHINE_CONFIG_START(mpu4_state::mpu4_bwb_7reel)
 	MCFG_MPU4_BWB_REEL_ADD("reel0")
 	MCFG_STEPPER_OPTIC_CALLBACK(WRITELINE(mpu4_state, reel0_optic_cb))
 	MCFG_MPU4_BWB_REEL_ADD("reel1")
@@ -2997,16 +2997,16 @@ MACHINE_CONFIG_START( mpu4_bwb_7reel )
 	MCFG_STEPPER_OPTIC_CALLBACK(WRITELINE(mpu4_state, reel7_optic_cb))
 MACHINE_CONFIG_END
 
-MACHINE_CONFIG_START( mpu4_common )
+MACHINE_CONFIG_START(mpu4_state::mpu4_common)
 	MCFG_TIMER_DRIVER_ADD_PERIODIC("50hz", mpu4_state, gen_50hz, attotime::from_hz(100))
 
 	MCFG_MSC1937_ADD("vfd",0)
 	/* 6840 PTM */
 	MCFG_DEVICE_ADD("ptm_ic2", PTM6840, MPU4_MASTER_CLOCK / 4)
 	MCFG_PTM6840_EXTERNAL_CLOCKS(0, 0, 0)
-	MCFG_PTM6840_OUT0_CB(WRITELINE(mpu4_state, ic2_o1_callback))
-	MCFG_PTM6840_OUT1_CB(WRITELINE(mpu4_state, ic2_o2_callback))
-	MCFG_PTM6840_OUT2_CB(WRITELINE(mpu4_state, ic2_o3_callback))
+	MCFG_PTM6840_O1_CB(WRITELINE(mpu4_state, ic2_o1_callback))
+	MCFG_PTM6840_O2_CB(WRITELINE(mpu4_state, ic2_o2_callback))
+	MCFG_PTM6840_O3_CB(WRITELINE(mpu4_state, ic2_o3_callback))
 	MCFG_PTM6840_IRQ_CB(WRITELINE(mpu4_state, cpu0_irq))
 
 	MCFG_DEVICE_ADD("pia_ic3", PIA6821, 0)
@@ -3066,12 +3066,12 @@ MACHINE_CONFIG_START( mpu4_common )
 
 MACHINE_CONFIG_END
 
-MACHINE_CONFIG_START( mpu4_common2 )
+MACHINE_CONFIG_START(mpu4_state::mpu4_common2)
 	MCFG_DEVICE_ADD("ptm_ic3ss", PTM6840, MPU4_MASTER_CLOCK / 4)
 	MCFG_PTM6840_EXTERNAL_CLOCKS(0, 0, 0)
-	MCFG_PTM6840_OUT0_CB(DEVWRITELINE("ptm_ic3ss", ptm6840_device, set_c2))
-	MCFG_PTM6840_OUT1_CB(DEVWRITELINE("ptm_ic3ss", ptm6840_device, set_c1))
-	//MCFG_PTM6840_OUT2_CB(DEVWRITELINE("ptm_ic3ss", ptm6840_device, set_g1))
+	MCFG_PTM6840_O1_CB(DEVWRITELINE("ptm_ic3ss", ptm6840_device, set_c2))
+	MCFG_PTM6840_O2_CB(DEVWRITELINE("ptm_ic3ss", ptm6840_device, set_c1))
+	//MCFG_PTM6840_O3_CB(DEVWRITELINE("ptm_ic3ss", ptm6840_device, set_g1))
 	//MCFG_PTM6840_IRQ_CB(WRITELINE(mpu4_state, cpu1_ptm_irq))
 
 	MCFG_DEVICE_ADD("pia_ic4ss", PIA6821, 0)
@@ -3083,14 +3083,14 @@ MACHINE_CONFIG_START( mpu4_common2 )
 MACHINE_CONFIG_END
 
 /* machine driver for MOD 2 board */
-MACHINE_CONFIG_START( mpu4base )
+MACHINE_CONFIG_START(mpu4_state::mpu4base)
 
 	MCFG_MACHINE_START_OVERRIDE(mpu4_state,mod2    )
 	MCFG_MACHINE_RESET_OVERRIDE(mpu4_state,mpu4)
 	MCFG_CPU_ADD("maincpu", MC6809, MPU4_MASTER_CLOCK) // MC68B09P
 	MCFG_CPU_PROGRAM_MAP(mpu4_memmap)
 
-	MCFG_FRAGMENT_ADD(mpu4_common)
+	mpu4_common(config);
 
 	MCFG_SPEAKER_STANDARD_STEREO("lspeaker", "rspeaker")
 
@@ -3100,80 +3100,88 @@ MACHINE_CONFIG_START( mpu4base )
 MACHINE_CONFIG_END
 
 
-MACHINE_CONFIG_DERIVED( mod2    , mpu4base )
+MACHINE_CONFIG_START(mpu4_state::mod2)
+	mpu4base(config);
 	MCFG_SOUND_ADD("ay8913", AY8913, MPU4_MASTER_CLOCK/4)
 	MCFG_AY8910_OUTPUT_TYPE(AY8910_SINGLE_OUTPUT)
 	MCFG_AY8910_RES_LOADS(820, 0, 0)
 	MCFG_SOUND_ROUTE(ALL_OUTPUTS, "lspeaker", 1.0)
 	MCFG_SOUND_ROUTE(ALL_OUTPUTS, "rspeaker", 1.0)
-	MCFG_FRAGMENT_ADD(mpu4_std_6reel)
+	mpu4_std_6reel(config);
 MACHINE_CONFIG_END
 
-MACHINE_CONFIG_DERIVED( mod2_alt    , mpu4base )
+MACHINE_CONFIG_START(mpu4_state::mod2_alt)
+	mpu4base(config);
 	MCFG_SOUND_ADD("ay8913", AY8913, MPU4_MASTER_CLOCK/4)
 	MCFG_AY8910_OUTPUT_TYPE(AY8910_SINGLE_OUTPUT)
 	MCFG_AY8910_RES_LOADS(820, 0, 0)
 	MCFG_SOUND_ROUTE(ALL_OUTPUTS, "lspeaker", 1.0)
 	MCFG_SOUND_ROUTE(ALL_OUTPUTS, "rspeaker", 1.0)
-	MCFG_FRAGMENT_ADD(mpu4_type2_6reel)
+	mpu4_type2_6reel(config);
 MACHINE_CONFIG_END
 
 
 
-MACHINE_CONFIG_DERIVED( mod4yam, mpu4base )
+MACHINE_CONFIG_START(mpu4_state::mod4yam)
+	mpu4base(config);
 	MCFG_MACHINE_START_OVERRIDE(mpu4_state,mpu4yam)
 
-	MCFG_FRAGMENT_ADD(mpu4_std_6reel)
+	mpu4_std_6reel(config);
 
 	MCFG_SOUND_ADD("ym2413", YM2413, MPU4_MASTER_CLOCK/4)
 	MCFG_SOUND_ROUTE(ALL_OUTPUTS, "lspeaker", 1.0)
 	MCFG_SOUND_ROUTE(ALL_OUTPUTS, "rspeaker", 1.0)
 MACHINE_CONFIG_END
 
-MACHINE_CONFIG_DERIVED( mod4oki, mpu4base )
+MACHINE_CONFIG_START(mpu4_state::mod4oki)
+	mpu4base(config);
 	MCFG_MACHINE_START_OVERRIDE(mpu4_state,mpu4oki)
 
-	MCFG_FRAGMENT_ADD(mpu4_common2)
-	MCFG_FRAGMENT_ADD(mpu4_std_6reel)
+	mpu4_common2(config);
+	mpu4_std_6reel(config);
 
 	MCFG_SOUND_ADD("msm6376", OKIM6376, 128000)     //16KHz sample Can also be 85430 at 10.5KHz and 64000 at 8KHz
 	MCFG_SOUND_ROUTE(ALL_OUTPUTS, "lspeaker", 1.0)
 	MCFG_SOUND_ROUTE(ALL_OUTPUTS, "rspeaker", 1.0)
 MACHINE_CONFIG_END
 
-MACHINE_CONFIG_DERIVED( mod4oki_alt, mpu4base )
+MACHINE_CONFIG_START(mpu4_state::mod4oki_alt)
+	mpu4base(config);
 	MCFG_MACHINE_START_OVERRIDE(mpu4_state,mpu4oki)
 
-	MCFG_FRAGMENT_ADD(mpu4_common2)
-	MCFG_FRAGMENT_ADD(mpu4_type2_6reel)
+	mpu4_common2(config);
+	mpu4_type2_6reel(config);
 
 	MCFG_SOUND_ADD("msm6376", OKIM6376, 128000)     //16KHz sample Can also be 85430 at 10.5KHz and 64000 at 8KHz
 	MCFG_SOUND_ROUTE(ALL_OUTPUTS, "lspeaker", 1.0)
 	MCFG_SOUND_ROUTE(ALL_OUTPUTS, "rspeaker", 1.0)
 MACHINE_CONFIG_END
 
-MACHINE_CONFIG_DERIVED( mod4oki_5r, mpu4base )
+MACHINE_CONFIG_START(mpu4_state::mod4oki_5r)
+	mpu4base(config);
 	MCFG_MACHINE_START_OVERRIDE(mpu4_state,mpu4oki)
 
-	MCFG_FRAGMENT_ADD(mpu4_common2)
-	MCFG_FRAGMENT_ADD(mpu4_std_5reel)
+	mpu4_common2(config);
+	mpu4_std_5reel(config);
 
 	MCFG_SOUND_ADD("msm6376", OKIM6376, 128000)     //16KHz sample Can also be 85430 at 10.5KHz and 64000 at 8KHz
 	MCFG_SOUND_ROUTE(ALL_OUTPUTS, "lspeaker", 1.0)
 	MCFG_SOUND_ROUTE(ALL_OUTPUTS, "rspeaker", 1.0)
 MACHINE_CONFIG_END
 
-MACHINE_CONFIG_DERIVED( bwboki, mpu4base )
+MACHINE_CONFIG_START(mpu4_state::bwboki)
+	mpu4base(config);
 	MCFG_MACHINE_START_OVERRIDE(mpu4_state,mpu4bwb)
-	MCFG_FRAGMENT_ADD(mpu4_common2)
-	MCFG_FRAGMENT_ADD(mpu4_bwb_5reel)
+	mpu4_common2(config);
+	mpu4_bwb_5reel(config);
 
 	MCFG_SOUND_ADD("msm6376", OKIM6376, 128000)     //16KHz sample Can also be 85430 at 10.5KHz and 64000 at 8KHz
 	MCFG_SOUND_ROUTE(ALL_OUTPUTS, "lspeaker", 1.0)
 	MCFG_SOUND_ROUTE(ALL_OUTPUTS, "rspeaker", 1.0)
 MACHINE_CONFIG_END
 
-MACHINE_CONFIG_DERIVED(mpu4crys, mod2     )
+MACHINE_CONFIG_START(mpu4_state::mpu4crys)
+	mod2(config);
 	MCFG_MACHINE_START_OVERRIDE(mpu4_state,mpu4cry)
 
 	MCFG_SOUND_ADD("upd", UPD7759, UPD7759_STANDARD_CLOCK)

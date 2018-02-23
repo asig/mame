@@ -45,10 +45,10 @@
 
 
 #define MCFG_UPD7220_DISPLAY_PIXELS_CALLBACK_OWNER(_class, _method) \
-	upd7220_device::static_set_display_pixels_callback(*device, upd7220_device::display_pixels_delegate(&_class::_method, #_class "::" #_method, downcast<_class *>(owner)));
+	upd7220_device::static_set_display_pixels_callback(*device, upd7220_device::display_pixels_delegate(&_class::_method, #_class "::" #_method, this));
 
 #define MCFG_UPD7220_DRAW_TEXT_CALLBACK_OWNER(_class, _method) \
-	upd7220_device::static_set_draw_text_callback(*device, upd7220_device::draw_text_delegate(&_class::_method, #_class "::" #_method, downcast<_class *>(owner)));
+	upd7220_device::static_set_draw_text_callback(*device, upd7220_device::draw_text_delegate(&_class::_method, #_class "::" #_method, this));
 
 #define MCFG_UPD7220_DRQ_CALLBACK(_write) \
 	devcb = &upd7220_device::set_drq_wr_callback(*device, DEVCB_##_write);
@@ -100,14 +100,15 @@ public:
 	DECLARE_WRITE_LINE_MEMBER( lpen_w );
 
 	uint32_t screen_update(screen_device &screen, bitmap_rgb32 &bitmap, const rectangle &cliprect);
-	virtual const tiny_rom_entry *device_rom_region() const override;
-	virtual space_config_vector memory_space_config() const override;
 
 protected:
 	// device-level overrides
 	virtual void device_start() override;
 	virtual void device_reset() override;
 	virtual void device_timer(emu_timer &timer, device_timer_id id, int param, void *ptr) override;
+
+	virtual const tiny_rom_entry *device_rom_region() const override;
+	virtual space_config_vector memory_space_config() const override;
 
 private:
 	enum
@@ -147,6 +148,8 @@ private:
 	void update_text(bitmap_rgb32 &bitmap, const rectangle &cliprect);
 	void draw_graphics_line(bitmap_rgb32 &bitmap, uint32_t addr, int y, int wd, int pitch);
 	void update_graphics(bitmap_rgb32 &bitmap, const rectangle &cliprect, int force_bitmap);
+
+	void upd7220_vram(address_map &map);
 
 	display_pixels_delegate     m_display_cb;
 	draw_text_delegate          m_draw_text_cb;

@@ -1628,7 +1628,7 @@ void gp32_state::s3c240x_machine_reset()
 	m_s3c240x_iic.data_index = 0;
 }
 
-static ADDRESS_MAP_START( gp32_map, AS_PROGRAM, 32, gp32_state )
+ADDRESS_MAP_START(gp32_state::gp32_map)
 	AM_RANGE(0x00000000, 0x0007ffff) AM_ROM
 	AM_RANGE(0x0c000000, 0x0c7fffff) AM_RAM AM_SHARE("s3c240x_ram")
 	AM_RANGE(0x14000000, 0x1400003b) AM_READWRITE(s3c240x_memcon_r, s3c240x_memcon_w)
@@ -1677,7 +1677,7 @@ void gp32_state::machine_reset()
 	s3c240x_machine_reset();
 }
 
-static MACHINE_CONFIG_START( gp32 )
+MACHINE_CONFIG_START(gp32_state::gp32)
 	MCFG_CPU_ADD("maincpu", ARM9, 40000000)
 	MCFG_CPU_PROGRAM_MAP(gp32_map)
 

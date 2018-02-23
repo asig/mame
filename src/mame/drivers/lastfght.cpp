@@ -102,6 +102,9 @@ public:
 	DECLARE_DRIVER_INIT(lastfght);
 	uint32_t screen_update(screen_device &screen, bitmap_ind16 &bitmap, const rectangle &cliprect);
 
+	void lastfght(machine_config &config);
+	void lastfght_map(address_map &map);
+	void ramdac_map(address_map &map);
 protected:
 	virtual void machine_start() override;
 	virtual void machine_reset() override;
@@ -203,7 +206,7 @@ WRITE16_MEMBER(lastfght_state::hi_w)
 	if (ACCESSING_BITS_0_7)
 	{
 		m_hi = data << 8;
-		//logerror("%06x: hi  = %02x\n", space.device().safe_pc(), data);
+		//logerror("%06x: hi  = %02x\n", m_maincpu->pc(), data);
 	}
 }
 
@@ -215,7 +218,7 @@ WRITE16_MEMBER(lastfght_state::x_w)
 	if (ACCESSING_BITS_0_7)
 	{
 		m_x = m_hi | data;
-		//logerror("%06x: x   = %02x\n", space.device().safe_pc(),data);
+		//logerror("%06x: x   = %02x\n", m_maincpu->pc(),data);
 	}
 }
 
@@ -225,12 +228,12 @@ WRITE16_MEMBER(lastfght_state::yw_w)
 	if (ACCESSING_BITS_8_15)
 	{
 		m_y = m_hi | (data >> 8);
-		//logerror("%06x: y   = %02x\n", space.device().safe_pc(), data >> 8);
+		//logerror("%06x: y   = %02x\n", m_maincpu->pc(), data >> 8);
 	}
 	if (ACCESSING_BITS_0_7)
 	{
 		m_w = m_hi | data;
-		//logerror("%06x: w   = %02x\n", space.device().safe_pc(), data);
+		//logerror("%06x: w   = %02x\n", m_maincpu->pc(), data);
 	}
 }
 
@@ -240,7 +243,7 @@ WRITE16_MEMBER(lastfght_state::h_w)
 	if (ACCESSING_BITS_8_15)
 	{
 		m_h = m_hi | (data >> 8);
-		//logerror("%06x: h   = %02x\n", space.device().safe_pc(), data >> 8);
+		//logerror("%06x: h   = %02x\n", m_maincpu->pc(), data >> 8);
 	}
 	if (ACCESSING_BITS_0_7)
 		logerror("%06x: 80000d.b = %02x\n", m_maincpu->pc(), data);
@@ -252,12 +255,12 @@ WRITE16_MEMBER(lastfght_state::sx_w)
 	if (ACCESSING_BITS_8_15)
 	{
 		m_dsx = m_hi | (data >> 8);
-		//logerror("%06x: dsx = %02x\n", space.device().safe_pc(), data >> 8);
+		//logerror("%06x: dsx = %02x\n", m_maincpu->pc(), data >> 8);
 	}
 	if (ACCESSING_BITS_0_7)
 	{
 		m_sx = m_hi | data;
-		//logerror("%06x: sx  = %02x\n", space.device().safe_pc(), data);
+		//logerror("%06x: sx  = %02x\n", m_maincpu->pc(), data);
 	}
 }
 
@@ -267,12 +270,12 @@ WRITE16_MEMBER(lastfght_state::sy_w)
 	if (ACCESSING_BITS_8_15)
 	{
 		m_sy = m_hi | (data >> 8);
-		//logerror("%06x: sy  = %02x\n", space.device().safe_pc(), data >> 8);
+		//logerror("%06x: sy  = %02x\n", m_maincpu->pc(), data >> 8);
 	}
 	if (ACCESSING_BITS_0_7)
 	{
 		m_sy1 = m_hi | data;
-		//logerror("%06x: sy1 = %02x\n", space.device().safe_pc(), data);
+		//logerror("%06x: sy1 = %02x\n", m_maincpu->pc(), data);
 	}
 }
 
@@ -282,12 +285,12 @@ WRITE16_MEMBER(lastfght_state::sr_w)
 	if (ACCESSING_BITS_8_15)
 	{
 		m_sp = (m_hi >> 8) >> 4;
-		//logerror("%06x: sp  = %02x\n", space.device().safe_pc(), data >> 8);
+		//logerror("%06x: sp  = %02x\n", m_maincpu->pc(), data >> 8);
 	}
 	if (ACCESSING_BITS_0_7)
 	{
 		m_sr = data;
-		//logerror("%06x: sr  = %02x\n", space.device().safe_pc(), data);
+		//logerror("%06x: sr  = %02x\n", m_maincpu->pc(), data);
 	}
 }
 
@@ -297,12 +300,12 @@ WRITE16_MEMBER(lastfght_state::sd_w)
 	if (ACCESSING_BITS_8_15)
 	{
 		m_sx1 = m_hi | (data >> 8);
-		//logerror("%06x: sx1 = %02x\n", space.device().safe_pc(), data >> 8);
+		//logerror("%06x: sx1 = %02x\n", m_maincpu->pc(), data >> 8);
 	}
 	if (ACCESSING_BITS_0_7)
 	{
 		m_dsy = m_hi | data;
-		//logerror("%06x: dsy = %02x\n", space.device().safe_pc(), data);
+		//logerror("%06x: dsy = %02x\n", m_maincpu->pc(), data);
 	}
 }
 
@@ -404,7 +407,7 @@ WRITE16_MEMBER(lastfght_state::sound_w)
                                 Memory Maps
 ***************************************************************************/
 
-static ADDRESS_MAP_START( lastfght_map, AS_PROGRAM, 16, lastfght_state )
+ADDRESS_MAP_START(lastfght_state::lastfght_map)
 	ADDRESS_MAP_GLOBAL_MASK(0xffffff)
 
 	AM_RANGE( 0x000000, 0x07ffff ) AM_ROM AM_REGION("maincpu", 0)
@@ -435,7 +438,7 @@ static ADDRESS_MAP_START( lastfght_map, AS_PROGRAM, 16, lastfght_state )
 	AM_RANGE( 0xc00006, 0xc00007 ) AM_READWRITE(c00006_r, c00006_w )
 ADDRESS_MAP_END
 
-static ADDRESS_MAP_START( ramdac_map, 0, 8, lastfght_state )
+ADDRESS_MAP_START(lastfght_state::ramdac_map)
 	AM_RANGE(0x000, 0x3ff) AM_DEVREADWRITE("ramdac", ramdac_device, ramdac_pal_r, ramdac_rgb666_w)
 ADDRESS_MAP_END
 
@@ -545,7 +548,7 @@ void lastfght_state::machine_reset()
 	m_c00006 = 0;
 }
 
-static MACHINE_CONFIG_START( lastfght )
+MACHINE_CONFIG_START(lastfght_state::lastfght)
 
 	/* basic machine hardware */
 	MCFG_CPU_ADD("maincpu", H83044, 32000000/2)

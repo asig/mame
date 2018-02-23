@@ -1213,7 +1213,7 @@ void k001005_device::device_start()
 
 	m_fifo = std::make_unique<uint32_t[]>(0x800);
 
-	m_renderer = auto_alloc(machine(), k001005_renderer(*this, *m_screen, m_k001006));
+	m_renderer = auto_alloc(machine(), k001005_renderer(*this, screen(), m_k001006));
 
 	save_pointer(NAME(m_ram[0].get()), 0x140000);
 	save_pointer(NAME(m_ram[1].get()), 0x140000);
@@ -1460,9 +1460,4 @@ WRITE32_MEMBER( k001005_device::write )
 void k001005_device::draw( bitmap_rgb32 &bitmap, const rectangle &cliprect )
 {
 	m_renderer->draw(bitmap, cliprect);
-}
-
-void k001005_device::set_texel_chip(device_t &device, const char *tag)
-{
-	downcast<k001005_device &>(device).m_k001006_tag = tag;
 }

@@ -577,7 +577,7 @@ READ_LINE_MEMBER( newbrain_state::tdi_r )
 //  ADDRESS_MAP( newbrain_mreq )
 //-------------------------------------------------
 
-static ADDRESS_MAP_START( newbrain_mreq, AS_PROGRAM, 8, newbrain_state )
+ADDRESS_MAP_START(newbrain_state::newbrain_mreq)
 	ADDRESS_MAP_UNMAP_HIGH
 	AM_RANGE(0x0000, 0xffff) AM_READWRITE(mreq_r, mreq_w)
 ADDRESS_MAP_END
@@ -587,7 +587,7 @@ ADDRESS_MAP_END
 //  ADDRESS_MAP( newbrain_iorq )
 //-------------------------------------------------
 
-static ADDRESS_MAP_START( newbrain_iorq, AS_IO, 8, newbrain_state )
+ADDRESS_MAP_START(newbrain_state::newbrain_iorq)
 	ADDRESS_MAP_UNMAP_HIGH
 	AM_RANGE(0x0000, 0xffff) AM_READWRITE(iorq_r, iorq_w)
 ADDRESS_MAP_END
@@ -805,13 +805,13 @@ void newbrain_state::device_timer(emu_timer &timer, device_timer_id id, int para
 //  MACHINE_CONFIG( newbrain )
 //-------------------------------------------------
 
-static MACHINE_CONFIG_START( newbrain )
+MACHINE_CONFIG_START(newbrain_state::newbrain)
 	// basic system hardware
-	MCFG_CPU_ADD(Z80_TAG, Z80, XTAL_16MHz/4)
+	MCFG_CPU_ADD(Z80_TAG, Z80, XTAL(16'000'000)/4)
 	MCFG_CPU_PROGRAM_MAP(newbrain_mreq)
 	MCFG_CPU_IO_MAP(newbrain_iorq)
 
-	MCFG_CPU_ADD(COP420_TAG, COP420, XTAL_16MHz/4)
+	MCFG_CPU_ADD(COP420_TAG, COP420, XTAL(16'000'000)/4)
 	MCFG_COP400_CONFIG(COP400_CKI_DIVISOR_16, COP400_CKO_OSCILLATOR_OUTPUT, true)
 	MCFG_COP400_READ_G_CB(READ8(newbrain_state, cop_g_r))
 	MCFG_COP400_WRITE_G_CB(WRITE8(newbrain_state, cop_g_w))
@@ -822,10 +822,10 @@ static MACHINE_CONFIG_START( newbrain )
 	MCFG_COP400_READ_SI_CB(READLINE(newbrain_state, tdi_r))
 
 	// video hardware
-	MCFG_FRAGMENT_ADD(newbrain_video)
+	newbrain_video(config);
 
 	// devices
-	MCFG_NEWBRAIN_EXPANSION_SLOT_ADD(NEWBRAIN_EXPANSION_SLOT_TAG, XTAL_16MHz/4, newbrain_expansion_cards, "eim")
+	MCFG_NEWBRAIN_EXPANSION_SLOT_ADD(NEWBRAIN_EXPANSION_SLOT_TAG, XTAL(16'000'000)/4, newbrain_expansion_cards, "eim")
 
 	MCFG_CASSETTE_ADD(CASSETTE_TAG)
 	MCFG_CASSETTE_DEFAULT_STATE(CASSETTE_STOPPED | CASSETTE_MOTOR_DISABLED | CASSETTE_SPEAKER_MUTED)
@@ -846,7 +846,8 @@ MACHINE_CONFIG_END
 //  MACHINE_CONFIG( newbrain_ad )
 //-------------------------------------------------
 
-static MACHINE_CONFIG_DERIVED( newbrain_ad, newbrain )
+MACHINE_CONFIG_START(newbrain_state::newbrain_ad)
+	newbrain(config);
 	MCFG_DEFAULT_LAYOUT(layout_newbrain)
 MACHINE_CONFIG_END
 
@@ -855,7 +856,8 @@ MACHINE_CONFIG_END
 //  MACHINE_CONFIG( newbrain_a )
 //-------------------------------------------------
 
-static MACHINE_CONFIG_DERIVED( newbrain_a, newbrain )
+MACHINE_CONFIG_START(newbrain_state::newbrain_a)
+	newbrain(config);
 	MCFG_DEFAULT_LAYOUT(layout_newbraina)
 MACHINE_CONFIG_END
 
@@ -864,7 +866,8 @@ MACHINE_CONFIG_END
 //  MACHINE_CONFIG( newbrain_md )
 //-------------------------------------------------
 
-static MACHINE_CONFIG_DERIVED( newbrain_md, newbrain )
+MACHINE_CONFIG_START(newbrain_state::newbrain_md)
+	newbrain(config);
 	MCFG_DEFAULT_LAYOUT(layout_newbrain)
 MACHINE_CONFIG_END
 

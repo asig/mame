@@ -46,7 +46,7 @@ WRITE8_MEMBER(labyrunr_state::labyrunr_bankswitch_w)
 	machine().bookkeeping().coin_counter_w(1, data & 0x10);
 }
 
-static ADDRESS_MAP_START( labyrunr_map, AS_PROGRAM, 8, labyrunr_state )
+ADDRESS_MAP_START(labyrunr_state::labyrunr_map)
 	AM_RANGE(0x0000, 0x0007) AM_DEVWRITE("k007121", k007121_device, ctrl_w)
 	AM_RANGE(0x0020, 0x005f) AM_RAM AM_SHARE("scrollram")
 	AM_RANGE(0x0800, 0x0800) AM_DEVREADWRITE("ym1", ym2203_device, read_port_r, write_port_w)
@@ -163,7 +163,7 @@ void labyrunr_state::machine_start()
 	membank("bank1")->configure_entries(0, 6, &ROM[0x10000], 0x4000);
 }
 
-static MACHINE_CONFIG_START( labyrunr )
+MACHINE_CONFIG_START(labyrunr_state::labyrunr)
 
 	/* basic machine hardware */
 	MCFG_CPU_ADD("maincpu", HD6309, 3000000*4)      /* 24MHz/8? */

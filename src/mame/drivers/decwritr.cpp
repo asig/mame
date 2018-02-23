@@ -54,6 +54,9 @@ public:
 	DECLARE_WRITE8_MEMBER(la120_NVR_w);
 	DECLARE_READ8_MEMBER(la120_DC305_r);
 	DECLARE_WRITE8_MEMBER(la120_DC305_w);
+	void la120(machine_config &config);
+	void la120_io(address_map &map);
+	void la120_mem(address_map &map);
 private:
 	virtual void machine_start() override;
 	//virtual void machine_reset();
@@ -212,7 +215,7 @@ WRITE8_MEMBER( decwriter_state::la120_DC305_w )
    0   1   1   1   x   x   x   x   x   x   x   x   x   x   *   *     RW     PTR (DC305 ASIC,e25)
    1   *   *   *   *   *   *   *   *   *   *   *   *   *   *   *            Expansion space (open bus)
  */
-static ADDRESS_MAP_START(la120_mem, AS_PROGRAM, 8, decwriter_state)
+ADDRESS_MAP_START(decwriter_state::la120_mem)
 	ADDRESS_MAP_UNMAP_HIGH
 	AM_RANGE( 0x0000, 0x27ff ) AM_ROM
 	AM_RANGE( 0x3000, 0x301f ) AM_READWRITE(la120_KBD_r, la120_LED_w) AM_MIRROR(0xFE0) // keyboard read, write to status and 7seg LEDS
@@ -232,7 +235,7 @@ ADDRESS_MAP_END
    0   x   x   x   x   x   1   x     RW     Flags Read/Write
    1   x   x   x   x   x   x   x     RW     Expansion (Open bus)
  */
-static ADDRESS_MAP_START(la120_io, AS_IO, 8, decwriter_state)
+ADDRESS_MAP_START(decwriter_state::la120_io)
 	ADDRESS_MAP_UNMAP_HIGH
 	AM_RANGE(0x00, 0x00) AM_MIRROR(0x7C) AM_DEVREADWRITE("i8251", i8251_device, data_r, data_w) // 8251 Data
 	AM_RANGE(0x01, 0x01) AM_MIRROR(0x7C) AM_DEVREADWRITE("i8251", i8251_device, status_r, control_w) // 8251 Status/Control
@@ -398,9 +401,9 @@ void decwriter_state::machine_reset()
 //  MACHINE DRIVERS
 //**************************************************************************
 
-static MACHINE_CONFIG_START( la120 )
+MACHINE_CONFIG_START(decwriter_state::la120)
 
-	MCFG_CPU_ADD("maincpu",I8080, XTAL_18MHz / 9) // 18Mhz xtal on schematics, using an i8224 clock divider/reset sanitizer IC
+	MCFG_CPU_ADD("maincpu",I8080, XTAL(18'000'000) / 9) // 18Mhz xtal on schematics, using an i8224 clock divider/reset sanitizer IC
 	MCFG_CPU_PROGRAM_MAP(la120_mem)
 	MCFG_CPU_IO_MAP(la120_io)
 
@@ -430,7 +433,7 @@ static MACHINE_CONFIG_START( la120 )
 	MCFG_RS232_RXD_HANDLER(DEVWRITELINE("i8251", i8251_device, write_rxd))
 	MCFG_RS232_DSR_HANDLER(DEVWRITELINE("i8251", i8251_device, write_dsr))
 
-	MCFG_DEVICE_ADD(COM5016T_TAG, COM8116, XTAL_5_0688MHz)
+	MCFG_DEVICE_ADD(COM5016T_TAG, COM8116, XTAL(5'068'800))
 	MCFG_COM8116_FR_HANDLER(DEVWRITELINE("i8251", i8251_device, write_rxc))
 	MCFG_COM8116_FT_HANDLER(DEVWRITELINE("i8251", i8251_device, write_txc))
 	*/

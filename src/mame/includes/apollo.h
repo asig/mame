@@ -254,6 +254,29 @@ public:
 	DECLARE_WRITE_LINE_MEMBER(apollo_reset_instr_callback);
 	DECLARE_READ32_MEMBER(apollo_instruction_hook);
 
+	void common(machine_config &config);
+	void apollo(machine_config &config);
+	void apollo_terminal(machine_config &config);
+	void apollo_graphics(machine_config &config);
+	void apollo_mono19i(machine_config &config);
+	void dn3500(machine_config &config);
+	void dn5500_19i(machine_config &config);
+	void dn3000(machine_config &config);
+	void dn3000_15i(machine_config &config);
+	void dn3000_19i(machine_config &config);
+	void dn3500_15i(machine_config &config);
+	void dsp3000(machine_config &config);
+	void dsp3500(machine_config &config);
+	void dsp5500(machine_config &config);
+	void dn5500(machine_config &config);
+	void dn5500_15i(machine_config &config);
+	void dn3500_19i(machine_config &config);
+	void dn3000_map(address_map &map);
+	void dn3500_map(address_map &map);
+	void dn5500_map(address_map &map);
+	void dsp3000_map(address_map &map);
+	void dsp3500_map(address_map &map);
+	void dsp5500_map(address_map &map);
 private:
 	uint32_t ptm_counter;
 	uint8_t sio_output_data;
@@ -261,9 +284,6 @@ private:
 	bool m_cur_eop;
 	emu_timer *m_dn3000_timer;
 };
-
-MACHINE_CONFIG_EXTERN( apollo );
-MACHINE_CONFIG_EXTERN( apollo_terminal );
 
 /*----------- machine/apollo_config.c -----------*/
 
@@ -634,10 +654,8 @@ private:
 DECLARE_DEVICE_TYPE(APOLLO_GRAPHICS, apollo_graphics_15i)
 
 #define MCFG_APOLLO_GRAPHICS_ADD( _tag) \
-	MCFG_FRAGMENT_ADD(apollo_graphics) \
+	apollo_graphics(config); \
 	MCFG_DEVICE_ADD(_tag, APOLLO_GRAPHICS, 0)
-
-MACHINE_CONFIG_EXTERN( apollo_graphics );
 
 class apollo_graphics_19i : public apollo_graphics_15i
 {
@@ -655,10 +673,8 @@ private:
 DECLARE_DEVICE_TYPE(APOLLO_MONO19I, apollo_graphics_19i)
 
 #define MCFG_APOLLO_MONO19I_ADD(_tag) \
-	MCFG_FRAGMENT_ADD(apollo_mono19i) \
+	apollo_mono19i(config); \
 	MCFG_DEVICE_ADD(_tag, APOLLO_MONO19I, 0)
-
-MACHINE_CONFIG_EXTERN( apollo_mono19i );
 
 #ifdef APOLLO_XXL
 
@@ -669,7 +685,7 @@ MACHINE_CONFIG_EXTERN( apollo_mono19i );
 //**************************************************************************
 
 #define MCFG_APOLLO_STDIO_TX_CALLBACK(_cb) \
-	devcb = &apollo_stdio_device::set_tx_cb(*device, DEVCB_##_cb);
+	devcb = &downcast<apollo_stdio_device &>(*device).set_tx_cb(DEVCB_##_cb);
 
 //**************************************************************************
 //  TYPE DEFINITIONS
@@ -684,9 +700,9 @@ public:
 	apollo_stdio_device(const machine_config &mconfig, const char *tag,
 			device_t *owner, uint32_t clock);
 
-	template<class _Object> static devcb_base &set_tx_cb(device_t &device, _Object object)
+	template<class Object> devcb_base &set_tx_cb(Object &&object)
 	{
-		return downcast<apollo_stdio_device &> (device).m_tx_w.set_callback(object);
+		return m_tx_w.set_callback(std::forward<Object>(object));
 	}
 
 	devcb_write_line m_tx_w;

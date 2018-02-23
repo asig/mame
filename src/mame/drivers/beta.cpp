@@ -96,12 +96,14 @@ public:
 
 	emu_timer *m_led_refresh_timer;
 	TIMER_CALLBACK_MEMBER(led_refresh);
+	void beta(machine_config &config);
+	void beta_mem(address_map &map);
 };
 
 
 /* Memory Maps */
 
-static ADDRESS_MAP_START( beta_mem, AS_PROGRAM, 8, beta_state )
+ADDRESS_MAP_START(beta_state::beta_mem)
 	AM_RANGE(0x0000, 0x007f) AM_MIRROR(0x7f00) AM_DEVICE(M6532_TAG, mos6532_new_device, ram_map)
 	AM_RANGE(0x0080, 0x00ff) AM_MIRROR(0x7f00) AM_DEVICE(M6532_TAG, mos6532_new_device, io_map)
 	AM_RANGE(0x8000, 0x87ff) AM_MIRROR(0x7800) AM_ROM
@@ -335,9 +337,9 @@ void beta_state::machine_start()
 
 /* Machine Driver */
 
-static MACHINE_CONFIG_START( beta )
+MACHINE_CONFIG_START(beta_state::beta)
 	/* basic machine hardware */
-	MCFG_CPU_ADD(M6502_TAG, M6502, XTAL_4MHz/4)
+	MCFG_CPU_ADD(M6502_TAG, M6502, XTAL(4'000'000)/4)
 	MCFG_CPU_PROGRAM_MAP(beta_mem)
 
 	/* video hardware */
@@ -349,7 +351,7 @@ static MACHINE_CONFIG_START( beta )
 	MCFG_SOUND_ROUTE(ALL_OUTPUTS, "mono", 0.25)
 
 	/* devices */
-	MCFG_DEVICE_ADD(M6532_TAG, MOS6532_NEW, XTAL_4MHz/4)
+	MCFG_DEVICE_ADD(M6532_TAG, MOS6532_NEW, XTAL(4'000'000)/4)
 	MCFG_MOS6530n_IN_PA_CB(READ8(beta_state, riot_pa_r))
 	MCFG_MOS6530n_OUT_PA_CB(WRITE8(beta_state, riot_pa_w))
 	MCFG_MOS6530n_IN_PB_CB(READ8(beta_state, riot_pb_r))

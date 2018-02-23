@@ -41,7 +41,7 @@
 #include "audio/nichisnd.h"
 
 #define USE_H8 0
-#define DVD_CLOCK XTAL_27MHz
+#define DVD_CLOCK XTAL(27'000'000)
 
 class csplayh5_state : public driver_device
 {
@@ -102,6 +102,10 @@ public:
 	DECLARE_WRITE_LINE_MEMBER(csplayh5_vdp0_interrupt);
 
 	void general_init(int patchaddress, int patchvalue);
+	void csplayh5(machine_config &config);
+	void csplayh5_map(address_map &map);
+	void csplayh5_sub_io_map(address_map &map);
+	void csplayh5_sub_map(address_map &map);
 };
 
 
@@ -126,7 +130,7 @@ WRITE16_MEMBER(csplayh5_state::csplayh5_mux_w)
 	m_mux_data = (~data & 0x1f);
 }
 
-static ADDRESS_MAP_START( csplayh5_map, AS_PROGRAM, 16, csplayh5_state )
+ADDRESS_MAP_START(csplayh5_state::csplayh5_map)
 	AM_RANGE(0x000000, 0x03ffff) AM_ROM
 
 	AM_RANGE(0x200000, 0x200001) AM_READ_PORT("DSW") AM_DEVWRITE8("nichisnd", nichisnd_device,sound_host_command_w,0xff00)
@@ -137,9 +141,9 @@ static ADDRESS_MAP_START( csplayh5_map, AS_PROGRAM, 16, csplayh5_state )
 
 	AM_RANGE(0x800000, 0xbfffff) AM_ROM AM_REGION("blit_gfx",0) // GFX ROM routes here
 
-	AM_RANGE(0xfffc00, 0xffffff) AM_DEVREADWRITE("tmp68301", tmp68301_device, regs_r, regs_w)  // TMP68301 Registers
-
 	AM_RANGE(0xc00000, 0xc7ffff) AM_RAM AM_SHARE("nvram") AM_MIRROR(0x380000) // work RAM
+
+	AM_RANGE(0xfffc00, 0xffffff) AM_DEVREADWRITE("tmp68301", tmp68301_device, regs_r, regs_w)  // TMP68301 Registers
 ADDRESS_MAP_END
 
 #if USE_H8
@@ -148,7 +152,7 @@ READ16_MEMBER(csplayh5_state::test_r)
 	return machine().rand();
 }
 
-static ADDRESS_MAP_START( csplayh5_sub_map, AS_PROGRAM, 16, csplayh5_state )
+ADDRESS_MAP_START(csplayh5_state::csplayh5_sub_map)
 	AM_RANGE(0x000000, 0x01ffff) AM_ROM
 
 	AM_RANGE(0x02000a, 0x02000b) AM_READ(test_r)
@@ -162,7 +166,7 @@ static ADDRESS_MAP_START( csplayh5_sub_map, AS_PROGRAM, 16, csplayh5_state )
 ADDRESS_MAP_END
 
 
-static ADDRESS_MAP_START( csplayh5_sub_io_map, AS_IO, 16, csplayh5_state )
+ADDRESS_MAP_START(csplayh5_state::csplayh5_sub_io_map)
 	AM_RANGE(0x0a, 0x0b) AM_READ(test_r)
 ADDRESS_MAP_END
 #endif
@@ -352,7 +356,7 @@ WRITE16_MEMBER(csplayh5_state::tmp68301_parallel_port_w)
 }
 
 
-static MACHINE_CONFIG_START( csplayh5 )
+MACHINE_CONFIG_START(csplayh5_state::csplayh5)
 
 	/* basic machine hardware */
 	MCFG_CPU_ADD("maincpu",M68000,16000000) /* TMP68301-16 */
@@ -377,9 +381,9 @@ static MACHINE_CONFIG_START( csplayh5 )
 	MCFG_NVRAM_ADD_0FILL("nvram")
 
 	/* video hardware */
-	MCFG_V9958_ADD("v9958", "screen", 0x20000, XTAL_21_4772MHz) // typical 9958 clock, not verified
+	MCFG_V9958_ADD("v9958", "screen", 0x20000, XTAL(21'477'272)) // typical 9958 clock, not verified
 	MCFG_V99X8_INTERRUPT_CALLBACK(WRITELINE(csplayh5_state, csplayh5_vdp0_interrupt))
-	MCFG_V99X8_SCREEN_ADD_NTSC("screen", "v9958", XTAL_21_4772MHz)
+	MCFG_V99X8_SCREEN_ADD_NTSC("screen", "v9958", XTAL(21'477'272))
 
 	/* sound hardware */
 	MCFG_NICHISND_ADD("nichisnd")

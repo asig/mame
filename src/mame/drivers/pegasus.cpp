@@ -90,6 +90,10 @@ public:
 	DECLARE_DEVICE_IMAGE_LOAD_MEMBER(exp0c_load) { return load_cart(image, m_exp_0c, "c000"); }
 	DECLARE_DEVICE_IMAGE_LOAD_MEMBER(exp0d_load) { return load_cart(image, m_exp_0d, "d000"); }
 
+	void pegasusm(machine_config &config);
+	void pegasus(machine_config &config);
+	void pegasus_mem(address_map &map);
+	void pegasusm_mem(address_map &map);
 private:
 	uint8_t m_kbd_row;
 	bool m_kbd_irq;
@@ -189,7 +193,7 @@ READ8_MEMBER( pegasus_state::pegasus_protection_r )
 	return data;
 }
 
-static ADDRESS_MAP_START(pegasus_mem, AS_PROGRAM, 8, pegasus_state)
+ADDRESS_MAP_START(pegasus_state::pegasus_mem)
 	ADDRESS_MAP_UNMAP_HIGH
 	//AM_RANGE(0x0000, 0x2fff)      // mapped by the cartslots 1-3
 	AM_RANGE(0xb000, 0xbdff) AM_RAM
@@ -202,7 +206,7 @@ static ADDRESS_MAP_START(pegasus_mem, AS_PROGRAM, 8, pegasus_state)
 	AM_RANGE(0xf000, 0xffff) AM_ROM
 ADDRESS_MAP_END
 
-static ADDRESS_MAP_START(pegasusm_mem, AS_PROGRAM, 8, pegasus_state)
+ADDRESS_MAP_START(pegasus_state::pegasusm_mem)
 	ADDRESS_MAP_UNMAP_HIGH
 	AM_IMPORT_FROM(pegasus_mem)
 	AM_RANGE(0x5000, 0xafff) AM_RAM
@@ -478,9 +482,9 @@ DRIVER_INIT_MEMBER(pegasus_state, pegasus)
 	pegasus_decrypt_rom(base);
 }
 
-static MACHINE_CONFIG_START( pegasus )
+MACHINE_CONFIG_START(pegasus_state::pegasus)
 	/* basic machine hardware */
-	MCFG_CPU_ADD("maincpu", MC6809, XTAL_4MHz)  // actually a 6809C - 4MHZ clock coming in, 1MHZ internally
+	MCFG_CPU_ADD("maincpu", MC6809, XTAL(4'000'000))  // actually a 6809C - 4MHZ clock coming in, 1MHZ internally
 	MCFG_CPU_PROGRAM_MAP(pegasus_mem)
 
 	MCFG_TIMER_DRIVER_ADD_PERIODIC("pegasus_firq", pegasus_state, pegasus_firq, attotime::from_hz(400))
@@ -539,7 +543,8 @@ static MACHINE_CONFIG_START( pegasus )
 	MCFG_SOFTWARE_LIST_ADD("cart_list", "pegasus_cart")
 MACHINE_CONFIG_END
 
-static MACHINE_CONFIG_DERIVED( pegasusm, pegasus )
+MACHINE_CONFIG_START(pegasus_state::pegasusm)
+	pegasus(config);
 	MCFG_CPU_MODIFY( "maincpu" )
 	MCFG_CPU_PROGRAM_MAP(pegasusm_mem)
 MACHINE_CONFIG_END

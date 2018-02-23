@@ -39,6 +39,9 @@ public:
 	required_device<cpu_device> m_maincpu;
 	required_device<speaker_sound_device> m_speaker;
 	char port0, port1, port2, port3;
+	void daruma(machine_config &config);
+	void mem_io(address_map &map);
+	void mem_prg(address_map &map);
 };
 
 WRITE8_MEMBER(daruma_state::port_w)
@@ -108,11 +111,11 @@ WRITE8_MEMBER(daruma_state::dev2_w)
 	//m_speaker->level_w(data & 0x01);
 }
 
-static ADDRESS_MAP_START( mem_prg, AS_PROGRAM, 8, daruma_state )
+ADDRESS_MAP_START(daruma_state::mem_prg)
 	AM_RANGE(0x0000, 0xffff) AM_ROM
 ADDRESS_MAP_END
 
-static ADDRESS_MAP_START( mem_io, AS_IO, 8, daruma_state )
+ADDRESS_MAP_START(daruma_state::mem_io)
 	AM_RANGE(0x0000, 0x0000) AM_READ(dev0_r)
 	AM_RANGE(0x1000, 0x1000) AM_WRITE(dev1_w)
 //    AM_RANGE(0x2000, 0x2000) AM_WRITE(dev2_w)
@@ -140,7 +143,7 @@ static INPUT_PORTS_START( daruma )
 
 INPUT_PORTS_END
 
-static MACHINE_CONFIG_START( daruma )
+MACHINE_CONFIG_START(daruma_state::daruma)
 	/* basic machine hardware */
 	MCFG_CPU_ADD("maincpu", I80C32,11059200) //verified on pcb
 	MCFG_CPU_PROGRAM_MAP(mem_prg)

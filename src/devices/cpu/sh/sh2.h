@@ -49,13 +49,13 @@
 	sh2_device::set_is_slave(*device, _slave);
 
 #define MCFG_SH2_DMA_KLUDGE_CB(_class, _method) \
-	sh2_device::set_dma_kludge_callback(*device, sh2_device::dma_kludge_delegate(&_class::_method, #_class "::" #_method, downcast<_class *>(owner)));
+	sh2_device::set_dma_kludge_callback(*device, sh2_device::dma_kludge_delegate(&_class::_method, #_class "::" #_method, this));
 
 #define MCFG_SH2_FIFO_DATA_AVAIL_CB(_class, _method) \
-	sh2_device::set_dma_fifo_data_available_callback(*device, sh2_device::dma_fifo_data_available_delegate(&_class::_method, #_class "::" #_method, downcast<_class *>(owner)));
+	sh2_device::set_dma_fifo_data_available_callback(*device, sh2_device::dma_fifo_data_available_delegate(&_class::_method, #_class "::" #_method, this));
 
 #define MCFG_SH2_FTCSR_READ_CB(_class, _method) \
-	sh2_device::set_ftcsr_read_callback(*device, sh2_device::ftcsr_read_delegate(&_class::_method, #_class "::" #_method, downcast<_class *>(owner)));
+	sh2_device::set_ftcsr_read_callback(*device, sh2_device::ftcsr_read_delegate(&_class::_method, #_class "::" #_method, this));
 
 
 class sh2_frontend;
@@ -85,6 +85,7 @@ public:
 	void sh2_notify_dma_data_available();
 	void func_fastirq();
 
+	void sh7604_map(address_map &map);
 protected:
 	sh2_device(const machine_config &mconfig, device_type type, const char *tag, device_t *owner, uint32_t clock, int cpu_type,address_map_constructor internal_map, int addrlines);
 
@@ -209,6 +210,7 @@ public:
 	DECLARE_WRITE16_MEMBER(sh7021_w);
 	void sh7032_dma_exec(int ch);
 
+	void sh7021_map(address_map &map);
 private:
 	uint16_t m_sh7021_regs[0x200];
 	struct
@@ -230,6 +232,7 @@ public:
 
 	DECLARE_READ16_MEMBER(sh7032_r);
 	DECLARE_WRITE16_MEMBER(sh7032_w);
+	void sh7032_map(address_map &map);
 private:
 	uint16_t m_sh7032_regs[0x200];
 };

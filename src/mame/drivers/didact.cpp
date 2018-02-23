@@ -8,7 +8,7 @@
  * Lars Bjorklund. They constructed a series of microcomputers for educational purposes such as "Mikrodator 6802",
  * Esselte 100 and the Candela computer for the swedish schools to educate the students in assembly programming
  * and BASIC for electro mechanical applications such as stepper motors, simple process control, buttons
- * and LED:s. Didact designs were marketed by Esselte Studium to the swedish schools. 
+ * and LED:s. Didact designs were marketed by Esselte Studium to the swedish schools.
  *
  * The Esselte 1000 was an educational package based on Apple II plus software and litterature
  * but the relation to Didact is at this point unknown so it is probably a pure Esselte software production.
@@ -57,7 +57,6 @@
 //  MACROS / CONSTANTS
 //**************************************************************************
 
-//#define LOG_GENERAL (1U <<  0)
 #define LOG_SETUP   (1U <<  1)
 #define LOG_SCAN    (1U <<  2)
 #define LOG_BANK    (1U <<  3)
@@ -187,6 +186,8 @@ class md6802_state : public didact_state
 
 	virtual void machine_reset() override;
 	virtual void machine_start() override;
+	void md6802(machine_config &config);
+	void md6802_map(address_map &map);
 protected:
 	required_device<pia6821_device> m_pia1;
 	required_device<pia6821_device> m_pia2;
@@ -284,7 +285,7 @@ void md6802_state::machine_reset()
 }
 
 // This address map is traced from schema
-static ADDRESS_MAP_START( md6802_map, AS_PROGRAM, 8, md6802_state )
+ADDRESS_MAP_START(md6802_state::md6802_map)
 	AM_RANGE(0x0000, 0x07ff) AM_RAM AM_MIRROR(0x1800)
 	AM_RANGE(0xa000, 0xa003) AM_DEVREADWRITE(PIA1_TAG, pia6821_device, read, write) AM_MIRROR(0x1ffc)
 	AM_RANGE(0xc000, 0xc003) AM_DEVREADWRITE(PIA2_TAG, pia6821_device, read, write) AM_MIRROR(0x1ffc)
@@ -368,6 +369,8 @@ class mp68a_state : public didact_state
 
 	virtual void machine_reset() override;
 	virtual void machine_start() override;
+	void mp68a(machine_config &config);
+	void mp68a_map(address_map &map);
 protected:
 	required_device<pia6820_device> m_pia1;
 	required_device<pia6820_device> m_pia2;
@@ -474,7 +477,7 @@ void mp68a_state::machine_start()
 }
 
 // This address map is traced from pcb
-static ADDRESS_MAP_START( mp68a_map, AS_PROGRAM, 8, mp68a_state )
+ADDRESS_MAP_START(mp68a_state::mp68a_map)
 	AM_RANGE(0x0000, 0x00ff) AM_RAM AM_MIRROR(0xf000)
 	AM_RANGE(0x0500, 0x0503) AM_DEVREADWRITE(PIA1_TAG, pia6820_device, read, write) AM_MIRROR(0xf0fc)
 	AM_RANGE(0x0600, 0x0603) AM_DEVREADWRITE(PIA2_TAG, pia6820_device, read, write) AM_MIRROR(0xf0fc)
@@ -586,8 +589,8 @@ TIMER_DEVICE_CALLBACK_MEMBER(didact_state::scan_artwork)
 	}
 }
 
-static MACHINE_CONFIG_START( md6802 )
-	MCFG_CPU_ADD("maincpu", M6802, XTAL_4MHz)
+MACHINE_CONFIG_START(md6802_state::md6802)
+	MCFG_CPU_ADD("maincpu", M6802, XTAL(4'000'000))
 	MCFG_CPU_PROGRAM_MAP(md6802_map)
 	MCFG_DEFAULT_LAYOUT(layout_md6802)
 
@@ -619,7 +622,7 @@ static MACHINE_CONFIG_START( md6802 )
 	MCFG_RS232_PORT_ADD("rs232", default_rs232_devices, nullptr)
 MACHINE_CONFIG_END
 
-static MACHINE_CONFIG_START( mp68a )
+MACHINE_CONFIG_START(mp68a_state::mp68a)
 	// Clock source is based on a N9602N Dual Retriggerable Resettable Monostable Multivibrator oscillator at aprox 505KHz.
 	// Trimpot seems broken/stuck at 5K Ohm thu. ROM code 1Ms delay loops suggest 1MHz+
 	MCFG_CPU_ADD("maincpu", M6800, 505000)

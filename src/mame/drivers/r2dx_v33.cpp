@@ -123,6 +123,14 @@ public:
 	DECLARE_MACHINE_RESET(r2dx_v33);
 	DECLARE_MACHINE_RESET(nzeroteam);
 
+	void nzerotea(machine_config &config);
+	void rdx_v33(machine_config &config);
+	void zerotm2k(machine_config &config);
+	void nzerotea_map(address_map &map);
+	void nzeroteam_base_map(address_map &map);
+	void r2dx_oki_map(address_map &map);
+	void rdx_v33_map(address_map &map);
+	void zerotm2k_map(address_map &map);
 protected:
 	virtual void machine_start() override;
 
@@ -375,7 +383,7 @@ READ16_MEMBER(r2dx_v33_state::r2dx_debug_r)
 	return 0xffff;
 }
 
-static ADDRESS_MAP_START( rdx_v33_map, AS_PROGRAM, 16, r2dx_v33_state )
+ADDRESS_MAP_START(r2dx_v33_state::rdx_v33_map)
 	AM_RANGE(0x00000, 0x003ff) AM_RAM // vectors copied here
 
 	AM_RANGE(0x00400, 0x00401) AM_WRITE(r2dx_tilemapdma_w) // tilemaps to private buffer
@@ -443,7 +451,7 @@ static ADDRESS_MAP_START( rdx_v33_map, AS_PROGRAM, 16, r2dx_v33_state )
 ADDRESS_MAP_END
 
 
-static ADDRESS_MAP_START( nzeroteam_base_map, AS_PROGRAM, 16, r2dx_v33_state )
+ADDRESS_MAP_START(r2dx_v33_state::nzeroteam_base_map)
 	AM_RANGE(0x00000, 0x003ff) AM_RAM //stack area
 
 	AM_RANGE(0x00400, 0x00401) AM_WRITE(r2dx_tilemapdma_w) // tilemaps to private buffer
@@ -479,7 +487,7 @@ static ADDRESS_MAP_START( nzeroteam_base_map, AS_PROGRAM, 16, r2dx_v33_state )
 
 //  AM_RANGE(0x00762, 0x00763) AM_READ(nzerotea_unknown_r)
 
-	AM_RANGE(0x00780, 0x0079f) AM_DEVREADWRITE8_MOD("seibu_sound", seibu_sound_device, main_r, main_w, rshift<1>, 0x00ff)
+	;map(0x00780, 0x0079f).lrw8("seibu_sound_rw", [this](address_space &space, offs_t offset, u8 mem_mask){ return m_seibu_sound->main_r(space, offset >> 1, mem_mask); }, [this](address_space &space, offs_t offset, u8 data, u8 mem_mask){ m_seibu_sound->main_w(space, offset >> 1, data, mem_mask); }).umask16(0x00ff);
 
 	AM_RANGE(0x00800, 0x00fff) AM_RAM
 	AM_RANGE(0x01000, 0x0bfff) AM_RAM
@@ -497,7 +505,7 @@ static ADDRESS_MAP_START( nzeroteam_base_map, AS_PROGRAM, 16, r2dx_v33_state )
 	AM_RANGE(0x20000, 0xfffff) AM_ROM AM_REGION("maincpu", 0x20000 )
 ADDRESS_MAP_END
 
-static ADDRESS_MAP_START( nzerotea_map, AS_PROGRAM, 16, r2dx_v33_state )
+ADDRESS_MAP_START(r2dx_v33_state::nzerotea_map)
 	AM_IMPORT_FROM( nzeroteam_base_map )
 	AM_RANGE(0x00740, 0x00741) AM_READ_PORT("DSW")
 	AM_RANGE(0x00744, 0x00745) AM_READ_PORT("INPUT")
@@ -513,7 +521,7 @@ WRITE16_MEMBER(r2dx_v33_state::zerotm2k_eeprom_w)
 	m_eeprom->cs_write((data & 0x01) ? ASSERT_LINE : CLEAR_LINE);
 }
 
-static ADDRESS_MAP_START( zerotm2k_map, AS_PROGRAM, 16, r2dx_v33_state )
+ADDRESS_MAP_START(r2dx_v33_state::zerotm2k_map)
 	AM_IMPORT_FROM( nzeroteam_base_map )
 	AM_RANGE(0x00740, 0x00741) AM_READ_PORT("P3_P4")
 	AM_RANGE(0x00744, 0x00745) AM_READ_PORT("INPUT")
@@ -761,11 +769,11 @@ MACHINE_RESET_MEMBER(r2dx_v33_state,nzeroteam)
 	mid_bank = 1;
 }
 
-static ADDRESS_MAP_START( r2dx_oki_map, 0, 8, r2dx_v33_state )
+ADDRESS_MAP_START(r2dx_v33_state::r2dx_oki_map)
 	AM_RANGE(0x00000, 0x3ffff) AM_ROMBANK("okibank")
 ADDRESS_MAP_END
 
-static MACHINE_CONFIG_START( rdx_v33 )
+MACHINE_CONFIG_START(r2dx_v33_state::rdx_v33)
 
 	/* basic machine hardware */
 	MCFG_CPU_ADD("maincpu", V33, 32000000/2 ) // ?
@@ -797,15 +805,15 @@ static MACHINE_CONFIG_START( rdx_v33 )
 	/* sound hardware */
 	MCFG_SPEAKER_STANDARD_MONO("mono")
 
-	MCFG_OKIM6295_ADD("oki", XTAL_28_63636MHz/28, PIN7_HIGH) // clock frequency & pin 7 not verified
+	MCFG_OKIM6295_ADD("oki", XTAL(28'636'363)/28, PIN7_HIGH) // clock frequency & pin 7 not verified
 	MCFG_SOUND_ROUTE(ALL_OUTPUTS, "mono", 0.5)
 	MCFG_DEVICE_ADDRESS_MAP(0, r2dx_oki_map)
 MACHINE_CONFIG_END
 
-static MACHINE_CONFIG_START( nzerotea )
+MACHINE_CONFIG_START(r2dx_v33_state::nzerotea)
 
 	/* basic machine hardware */
-	MCFG_CPU_ADD("maincpu", V33,XTAL_32MHz/2) /* verified on pcb */
+	MCFG_CPU_ADD("maincpu", V33,XTAL(32'000'000)/2) /* verified on pcb */
 	MCFG_CPU_PROGRAM_MAP(nzerotea_map)
 	MCFG_CPU_VBLANK_INT_DRIVER("screen", r2dx_v33_state,  rdx_v33_interrupt)
 
@@ -849,7 +857,8 @@ static MACHINE_CONFIG_START( nzerotea )
 	MCFG_SEIBU_SOUND_YM_WRITE_CB(DEVWRITE8("ymsnd", ym3812_device, write))
 MACHINE_CONFIG_END
 
-static MACHINE_CONFIG_DERIVED( zerotm2k, nzerotea )
+MACHINE_CONFIG_START(r2dx_v33_state::zerotm2k)
+	nzerotea(config);
 	MCFG_CPU_MODIFY("maincpu")
 	MCFG_CPU_PROGRAM_MAP(zerotm2k_map)
 

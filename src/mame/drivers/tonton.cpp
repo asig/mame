@@ -50,9 +50,12 @@ public:
 	virtual void machine_reset() override;
 	required_device<cpu_device> m_maincpu;
 	required_device<ticket_dispenser_device> m_hopper;
+	void tonton(machine_config &config);
+	void tonton_io(address_map &map);
+	void tonton_map(address_map &map);
 };
 
-#define MAIN_CLOCK      XTAL_21_4772MHz
+#define MAIN_CLOCK      XTAL(21'477'272)
 #define CPU_CLOCK       MAIN_CLOCK/6
 #define YM2149_CLOCK    MAIN_CLOCK/6/2  // '/SEL' pin tied to GND, so internal divisor x2 is active
 
@@ -85,13 +88,13 @@ WRITE8_MEMBER(tonton_state::hopper_w)
 *                  Memory Map                    *
 *************************************************/
 
-static ADDRESS_MAP_START( tonton_map, AS_PROGRAM, 8, tonton_state )
+ADDRESS_MAP_START(tonton_state::tonton_map)
 	AM_RANGE(0x0000, 0xdfff) AM_ROM
 	AM_RANGE(0xe000, 0xe3ff) AM_RAM AM_SHARE("nvram")
 	AM_RANGE(0xf000, 0xffff) AM_RAM
 ADDRESS_MAP_END
 
-static ADDRESS_MAP_START( tonton_io, AS_IO, 8, tonton_state )
+ADDRESS_MAP_START(tonton_state::tonton_io)
 	ADDRESS_MAP_GLOBAL_MASK(0xff)
 	AM_RANGE(0x00, 0x00) AM_READ_PORT("IN0")
 	AM_RANGE(0x00, 0x00) AM_WRITE(tonton_outport_w)
@@ -215,7 +218,7 @@ WRITE8_MEMBER(tonton_state::ay_bout_w)
 *                 Machine Driver                 *
 *************************************************/
 
-static MACHINE_CONFIG_START( tonton )
+MACHINE_CONFIG_START(tonton_state::tonton)
 
 	/* basic machine hardware */
 	MCFG_CPU_ADD("maincpu",Z80, CPU_CLOCK)  /* Guess. According to other MSX2 based gambling games */

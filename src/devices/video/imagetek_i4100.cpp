@@ -77,13 +77,13 @@ DEFINE_DEVICE_TYPE(I4100, imagetek_i4100_device, "i4100", "Imagetek I4100 052 VD
 DEFINE_DEVICE_TYPE(I4220, imagetek_i4220_device, "i4220", "Imagetek I4220 071 VDP")
 DEFINE_DEVICE_TYPE(I4300, imagetek_i4300_device, "i4300", "Imagetek I4300 095 VDP")
 
-DEVICE_ADDRESS_MAP_START( map, 16, imagetek_i4100_device)
+ADDRESS_MAP_START(imagetek_i4100_device::map)
 	AM_RANGE(0x00000, 0x1ffff) AM_READWRITE(vram_0_r, vram_0_w) AM_SHARE("vram_0")
 	AM_RANGE(0x20000, 0x3ffff) AM_READWRITE(vram_1_r, vram_1_w) AM_SHARE("vram_1")
 	AM_RANGE(0x40000, 0x5ffff) AM_READWRITE(vram_2_r, vram_2_w) AM_SHARE("vram_2")
 	AM_RANGE(0x60000, 0x6ffff) AM_READ(gfxrom_r)
 	AM_RANGE(0x70000, 0x71fff) AM_READWRITE(scratchram_r, scratchram_w) AM_SHARE("scratchram") // unknown, maybe palette
-	AM_RANGE(0x72000, 0x73fff) AM_DEVREADWRITE("palette", palette_device, read, write) AM_SHARE("palette")
+	AM_RANGE(0x72000, 0x73fff) AM_DEVREADWRITE("palette", palette_device, read16, write16) AM_SHARE("palette")
 	AM_RANGE(0x74000, 0x74fff) AM_READWRITE(spriteram_r, spriteram_w) AM_SHARE("spriteram")
 	AM_RANGE(0x75000, 0x75fff) AM_READWRITE(rmw_vram_0_r, rmw_vram_0_w)
 	AM_RANGE(0x76000, 0x76fff) AM_READWRITE(rmw_vram_1_r, rmw_vram_1_w)
@@ -112,13 +112,13 @@ DEVICE_ADDRESS_MAP_START( map, 16, imagetek_i4100_device)
 ADDRESS_MAP_END
 
 // same as above but with moved video registers (now at 0x797**)
-DEVICE_ADDRESS_MAP_START( v2_map, 16, imagetek_i4220_device)
+ADDRESS_MAP_START(imagetek_i4220_device::v2_map)
 	AM_RANGE(0x00000, 0x1ffff) AM_READWRITE(vram_0_r, vram_0_w) AM_SHARE("vram_0")
 	AM_RANGE(0x20000, 0x3ffff) AM_READWRITE(vram_1_r, vram_1_w) AM_SHARE("vram_1")
 	AM_RANGE(0x40000, 0x5ffff) AM_READWRITE(vram_2_r, vram_2_w) AM_SHARE("vram_2")
 	AM_RANGE(0x60000, 0x6ffff) AM_READ(gfxrom_r)
 	AM_RANGE(0x70000, 0x71fff) AM_READWRITE(scratchram_r, scratchram_w) AM_SHARE("scratchram") // unknown, maybe palette
-	AM_RANGE(0x72000, 0x73fff) AM_DEVREADWRITE("palette", palette_device, read, write) AM_SHARE("palette")
+	AM_RANGE(0x72000, 0x73fff) AM_DEVREADWRITE("palette", palette_device, read16, write16) AM_SHARE("palette")
 	AM_RANGE(0x74000, 0x74fff) AM_READWRITE(spriteram_r, spriteram_w) AM_SHARE("spriteram")
 	AM_RANGE(0x75000, 0x75fff) AM_READWRITE(rmw_vram_0_r, rmw_vram_0_w)
 	AM_RANGE(0x76000, 0x76fff) AM_READWRITE(rmw_vram_1_r, rmw_vram_1_w)
@@ -157,13 +157,13 @@ DEVICE_ADDRESS_MAP_START( v2_map, 16, imagetek_i4220_device)
 ADDRESS_MAP_END
 
 // more changes around, namely the screen offsets being reversed here
-DEVICE_ADDRESS_MAP_START( v3_map, 16, imagetek_i4300_device)
+ADDRESS_MAP_START(imagetek_i4300_device::v3_map)
 	AM_RANGE(0x00000, 0x1ffff) AM_READWRITE(vram_0_r, vram_0_w) AM_SHARE("vram_0")
 	AM_RANGE(0x20000, 0x3ffff) AM_READWRITE(vram_1_r, vram_1_w) AM_SHARE("vram_1")
 	AM_RANGE(0x40000, 0x5ffff) AM_READWRITE(vram_2_r, vram_2_w) AM_SHARE("vram_2")
 	AM_RANGE(0x60000, 0x6ffff) AM_READ(gfxrom_r)
 	AM_RANGE(0x70000, 0x71fff) AM_READWRITE(scratchram_r, scratchram_w) AM_SHARE("scratchram") // unknown, maybe palette
-	AM_RANGE(0x72000, 0x73fff) AM_DEVREADWRITE("palette", palette_device, read, write) AM_SHARE("palette")
+	AM_RANGE(0x72000, 0x73fff) AM_DEVREADWRITE("palette", palette_device, read16, write16) AM_SHARE("palette")
 	AM_RANGE(0x74000, 0x74fff) AM_READWRITE(spriteram_r, spriteram_w) AM_SHARE("spriteram")
 	AM_RANGE(0x75000, 0x75fff) AM_READWRITE(rmw_vram_0_r, rmw_vram_0_w)
 	AM_RANGE(0x76000, 0x76fff) AM_READWRITE(rmw_vram_1_r, rmw_vram_1_w)
@@ -246,7 +246,7 @@ imagetek_i4300_device::imagetek_i4300_device(const machine_config &mconfig, cons
 //  configuration addiitons
 //-------------------------------------------------
 
-MACHINE_CONFIG_MEMBER(imagetek_i4100_device::device_add_mconfig)
+MACHINE_CONFIG_START(imagetek_i4100_device::device_add_mconfig)
 	MCFG_PALETTE_ADD("palette", 0x1000)
 	MCFG_PALETTE_FORMAT(GGGGGRRRRRBBBBBx)
 MACHINE_CONFIG_END
@@ -1069,7 +1069,7 @@ void imagetek_i4100_device::draw_tilemap( screen_device &screen, bitmap_ind16 &b
 {
 	int y;
 
-	bitmap_ind8 &priority_bitmap = m_screen->priority();
+	bitmap_ind8 &priority_bitmap = screen.priority();
 
 	int width  = big ? 4096 : 2048;
 	int height = big ? 4096 : 2048;

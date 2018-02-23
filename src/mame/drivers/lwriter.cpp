@@ -127,6 +127,8 @@ public:
 	//DECLARE_WRITE_LINE_MEMBER(scc_int);
 	virtual void machine_start () override;
 	virtual void machine_reset () override;
+	void lwriter(machine_config &config);
+	void maincpu_map(address_map &map);
 private:
 	required_device<cpu_device> m_maincpu;
 	required_device<scc8530_device> m_scc;
@@ -199,7 +201,7 @@ The ADB bit-bang transceiver MCU connects to the VIA CB1 (adbclk) and CB2 (adbda
 as well as PA0 (ST1), PA2 (ST2) and PA3 (ADB /INT)
 */
 
-static ADDRESS_MAP_START (maincpu_map, AS_PROGRAM, 16, lwriter_state)
+ADDRESS_MAP_START(lwriter_state::maincpu_map)
 	ADDRESS_MAP_UNMAP_HIGH
 	AM_RANGE(0x000000, 0x1fffff) AM_READWRITE(bankedarea_r, bankedarea_w)
 	AM_RANGE(0x200000, 0x2fffff) AM_ROM AM_REGION("rom", 0) // 1MB ROM
@@ -346,10 +348,10 @@ WRITE_LINE_MEMBER(lwriter_state::scc_int)
     m_via->write_ca1(state);
 }*/
 
-#define CPU_CLK (XTAL_22_3210MHz / 2) // Based on pictures form here: http://picclick.co.uk/Apple-Postscript-LaserWriter-IINT-Printer-640-4105-M6009-Mainboard-282160713108.html#&gid=1&pid=7
-#define RXC_CLK ((CPU_CLK - (87 * 16 * 70)) / 3) // Tuned to get 9600 baud according to manual, needs rework based on real hardware
+#define CPU_CLK (XTAL(22'321'000) / 2) // Based on pictures form here: http://picclick.co.uk/Apple-Postscript-LaserWriter-IINT-Printer-640-4105-M6009-Mainboard-282160713108.html#&gid=1&pid=7
+#define RXC_CLK ((CPU_CLK.value() - (87 * 16 * 70)) / 3) // Tuned to get 9600 baud according to manual, needs rework based on real hardware
 
-static MACHINE_CONFIG_START( lwriter )
+MACHINE_CONFIG_START(lwriter_state::lwriter)
 	MCFG_CPU_ADD("maincpu", M68000, CPU_CLK)
 	MCFG_CPU_PROGRAM_MAP(maincpu_map)
 	MCFG_SCC8530_ADD("scc", CPU_CLK, RXC_CLK, 0, RXC_CLK, 0)

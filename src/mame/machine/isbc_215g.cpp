@@ -316,11 +316,11 @@ WRITE16_MEMBER(isbc_215g_device::mem_w)
 	m_maincpu_mem->write_word_unaligned(offset*2, data, mem_mask);
 }
 
-static ADDRESS_MAP_START(isbc_215g_mem, AS_PROGRAM, 16, isbc_215g_device)
+ADDRESS_MAP_START(isbc_215g_device::isbc_215g_mem)
 	AM_RANGE(0x00000, 0xfffff) AM_READWRITE(mem_r, mem_w)
 ADDRESS_MAP_END
 
-static ADDRESS_MAP_START(isbc_215g_io, AS_IO, 16, isbc_215g_device)
+ADDRESS_MAP_START(isbc_215g_device::isbc_215g_io)
 	AM_RANGE(0x0000, 0x3fff) AM_ROM AM_REGION("i8089", 0)
 	AM_RANGE(0x4000, 0x47ff) AM_MIRROR(0x3800) AM_RAM
 	AM_RANGE(0x8000, 0x8039) AM_MIRROR(0x3fc0) AM_READWRITE(io_r, io_w)
@@ -350,8 +350,8 @@ WRITE_LINE_MEMBER(isbc_215g_device::isbx_irq_11_w)
 	m_isbx_irq[3] = state ? true : false;
 }
 
-MACHINE_CONFIG_MEMBER( isbc_215g_device::device_add_mconfig )
-	MCFG_CPU_ADD("u84", I8089, XTAL_15MHz / 3)
+MACHINE_CONFIG_START(isbc_215g_device::device_add_mconfig)
+	MCFG_CPU_ADD("u84", I8089, XTAL(15'000'000) / 3)
 	MCFG_CPU_PROGRAM_MAP(isbc_215g_mem)
 	MCFG_CPU_IO_MAP(isbc_215g_io)
 	MCFG_I8089_DATA_WIDTH(16)

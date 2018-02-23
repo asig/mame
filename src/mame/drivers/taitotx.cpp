@@ -134,6 +134,8 @@ public:
 	virtual void machine_reset() override;
 	virtual void video_start() override;
 	uint32_t screen_update_taito_type_x(screen_device &screen, bitmap_rgb32 &bitmap, const rectangle &cliprect);
+	void taito_type_x(machine_config &config);
+	void taito_type_x_map(address_map &map);
 };
 
 
@@ -149,7 +151,7 @@ uint32_t taito_type_x_state::screen_update_taito_type_x(screen_device &screen, b
 	return 0;
 }
 
-static ADDRESS_MAP_START( taito_type_x_map, AS_PROGRAM, 32, taito_type_x_state )
+ADDRESS_MAP_START(taito_type_x_state::taito_type_x_map)
 	AM_RANGE(0x00, 0x0f) AM_ROM
 ADDRESS_MAP_END
 
@@ -166,7 +168,7 @@ void taito_type_x_state::machine_reset()
 }
 
 // todo: different configs for the different machine types.
-static MACHINE_CONFIG_START( taito_type_x )
+MACHINE_CONFIG_START(taito_type_x_state::taito_type_x)
 
 	/* basic machine hardware */
 	MCFG_CPU_ADD("maincpu", PENTIUM3, 733333333) /* Wrong, much newer processors, much faster. */

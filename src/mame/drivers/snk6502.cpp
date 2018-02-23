@@ -291,7 +291,7 @@ Stephh's notes (based on the games M6502 code and some tests) :
 #include "speaker.h"
 
 
-#define MASTER_CLOCK    XTAL_11_289MHz
+#define MASTER_CLOCK    XTAL(11'289'000)
 
 /* Change to 1 to allow fake debug buttons */
 #define NIBBLER_HACK    0
@@ -347,7 +347,7 @@ CUSTOM_INPUT_MEMBER(snk6502_state::sasuke_count_r)
  *
  *************************************/
 
-static ADDRESS_MAP_START( sasuke_map, AS_PROGRAM, 8, snk6502_state )
+ADDRESS_MAP_START(snk6502_state::sasuke_map)
 	AM_RANGE(0x0000, 0x03ff) AM_RAM
 	AM_RANGE(0x0400, 0x07ff) AM_RAM_WRITE(videoram2_w) AM_SHARE("videoram2")
 	AM_RANGE(0x0800, 0x0bff) AM_RAM_WRITE(videoram_w) AM_SHARE("videoram")
@@ -366,7 +366,7 @@ static ADDRESS_MAP_START( sasuke_map, AS_PROGRAM, 8, snk6502_state )
 	AM_RANGE(0xf800, 0xffff) AM_ROM
 ADDRESS_MAP_END
 
-static ADDRESS_MAP_START( satansat_map, AS_PROGRAM, 8, snk6502_state )
+ADDRESS_MAP_START(snk6502_state::satansat_map)
 	AM_RANGE(0x0000, 0x03ff) AM_RAM
 	AM_RANGE(0x0400, 0x07ff) AM_RAM_WRITE(videoram2_w) AM_SHARE("videoram2")
 	AM_RANGE(0x0800, 0x0bff) AM_RAM_WRITE(videoram_w) AM_SHARE("videoram")
@@ -385,7 +385,7 @@ static ADDRESS_MAP_START( satansat_map, AS_PROGRAM, 8, snk6502_state )
 	AM_RANGE(0xf800, 0xffff) AM_ROM
 ADDRESS_MAP_END
 
-static ADDRESS_MAP_START( vanguard_map, AS_PROGRAM, 8, snk6502_state )
+ADDRESS_MAP_START(snk6502_state::vanguard_map)
 	AM_RANGE(0x0000, 0x03ff) AM_RAM
 	AM_RANGE(0x0400, 0x07ff) AM_RAM_WRITE(videoram2_w) AM_SHARE("videoram2")
 	AM_RANGE(0x0800, 0x0bff) AM_RAM_WRITE(videoram_w) AM_SHARE("videoram")
@@ -406,7 +406,7 @@ static ADDRESS_MAP_START( vanguard_map, AS_PROGRAM, 8, snk6502_state )
 	AM_RANGE(0xf000, 0xffff) AM_ROM /* for the reset / interrupt vectors */
 ADDRESS_MAP_END
 
-static ADDRESS_MAP_START( fantasy_map, AS_PROGRAM, 8, snk6502_state )
+ADDRESS_MAP_START(snk6502_state::fantasy_map)
 	AM_RANGE(0x0000, 0x03ff) AM_RAM
 	AM_RANGE(0x0400, 0x07ff) AM_RAM_WRITE(videoram2_w) AM_SHARE("videoram2")
 	AM_RANGE(0x0800, 0x0bff) AM_RAM_WRITE(videoram_w) AM_SHARE("videoram")
@@ -427,7 +427,7 @@ static ADDRESS_MAP_START( fantasy_map, AS_PROGRAM, 8, snk6502_state )
 	AM_RANGE(0xf000, 0xffff) AM_ROM
 ADDRESS_MAP_END
 
-static ADDRESS_MAP_START( pballoon_map, AS_PROGRAM, 8, snk6502_state )
+ADDRESS_MAP_START(snk6502_state::pballoon_map)
 	AM_RANGE(0x0000, 0x03ff) AM_RAM
 	AM_RANGE(0x0400, 0x07ff) AM_RAM_WRITE(videoram2_w) AM_SHARE("videoram2")
 	AM_RANGE(0x0800, 0x0bff) AM_RAM_WRITE(videoram_w) AM_SHARE("videoram")
@@ -828,7 +828,7 @@ MACHINE_RESET_MEMBER(snk6502_state,pballoon)
  *
  *************************************/
 
-static MACHINE_CONFIG_START( sasuke )
+MACHINE_CONFIG_START(snk6502_state::sasuke)
 
 	// basic machine hardware
 	MCFG_CPU_ADD("maincpu", M6502, MASTER_CLOCK / 16) // 700 kHz
@@ -923,7 +923,8 @@ static MACHINE_CONFIG_START( sasuke )
 	MCFG_SOUND_ROUTE(ALL_OUTPUTS, "mono", 0.50)
 MACHINE_CONFIG_END
 
-static MACHINE_CONFIG_DERIVED( satansat, sasuke )
+MACHINE_CONFIG_START(snk6502_state::satansat)
+	sasuke(config);
 	// basic machine hardware
 	MCFG_CPU_MODIFY("maincpu")
 	MCFG_CPU_PROGRAM_MAP(satansat_map)
@@ -960,7 +961,7 @@ static MACHINE_CONFIG_DERIVED( satansat, sasuke )
 	MCFG_DEVICE_REMOVE("sn76477.3")
 MACHINE_CONFIG_END
 
-static MACHINE_CONFIG_START( vanguard )
+MACHINE_CONFIG_START(snk6502_state::vanguard)
 
 	// basic machine hardware
 	MCFG_CPU_ADD("maincpu", M6502, MASTER_CLOCK / 16) // adjusted using common divisor
@@ -1036,7 +1037,8 @@ static MACHINE_CONFIG_START( vanguard )
 	MCFG_SOUND_ROUTE(ALL_OUTPUTS, "mono", 0.25)
 MACHINE_CONFIG_END
 
-static MACHINE_CONFIG_DERIVED( fantasy, vanguard )
+MACHINE_CONFIG_START(snk6502_state::fantasy)
+	vanguard(config);
 	// basic machine hardware
 	MCFG_CPU_MODIFY("maincpu")
 	MCFG_CPU_PROGRAM_MAP(fantasy_map)
@@ -1073,13 +1075,15 @@ static MACHINE_CONFIG_DERIVED( fantasy, vanguard )
 	MCFG_DEVICE_REMOVE("sn76477.2")
 MACHINE_CONFIG_END
 
-static MACHINE_CONFIG_DERIVED( nibbler, fantasy )
+MACHINE_CONFIG_START(snk6502_state::nibbler)
+	fantasy(config);
 
 	// sound hardware
 	MCFG_DEVICE_REMOVE("samples")
 MACHINE_CONFIG_END
 
-static MACHINE_CONFIG_DERIVED( pballoon, nibbler )
+MACHINE_CONFIG_START(snk6502_state::pballoon)
+	nibbler(config);
 	// basic machine hardware
 	MCFG_CPU_MODIFY("maincpu")
 	MCFG_CPU_PROGRAM_MAP(pballoon_map)

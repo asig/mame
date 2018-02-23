@@ -87,17 +87,6 @@ seibu_sound_device::seibu_sound_device(const machine_config &mconfig, const char
 {
 }
 
-void seibu_sound_device::static_set_cpu_tag(device_t &device, const char *tag)
-{
-	downcast<seibu_sound_device &>(device).m_sound_cpu.set_tag(tag);
-	downcast<seibu_sound_device &>(device).m_sound_rom.set_tag(tag);
-}
-
-void seibu_sound_device::static_set_rombank_tag(device_t &device, const char *tag)
-{
-	downcast<seibu_sound_device &>(device).m_rom_bank.set_tag(tag);
-}
-
 //-------------------------------------------------
 //  device_start - device-specific startup
 //-------------------------------------------------
@@ -245,7 +234,7 @@ WRITE8_MEMBER( seibu_sound_device::pending_w )
 
 READ8_MEMBER( seibu_sound_device::main_r )
 {
-	//logerror("%06x: seibu_main_r(%x)\n",space.device().safe_pc(),offset);
+	//logerror("%s: seibu_main_r(%x)\n",machine().describe_context(),offset);
 	switch (offset)
 	{
 		case 2:
@@ -254,14 +243,13 @@ READ8_MEMBER( seibu_sound_device::main_r )
 		case 5:
 			return m_main2sub_pending ? 1 : 0;
 		default:
-			//logerror("%06x: seibu_main_r(%x)\n",space.device().safe_pc(),offset);
+			//logerror("%s: seibu_main_r(%x)\n",machine().describe_context(),offset);
 			return 0xff;
 	}
 }
 
 WRITE8_MEMBER( seibu_sound_device::main_w )
 {
-	//printf("%06x: seibu_main_w(%x,%02x)\n",space.device().safe_pc(),offset,data);
 	switch (offset)
 	{
 		case 0:
@@ -278,7 +266,7 @@ WRITE8_MEMBER( seibu_sound_device::main_w )
 			m_main2sub_pending = 1;
 			break;
 		default:
-			//logerror("%06x: seibu_main_w(%x,%02x)\n",space.device().safe_pc(),offset,data);
+			//logerror("%s: seibu_main_w(%x,%02x)\n",machine().describe_context(),offset,data);
 			break;
 	}
 }
@@ -298,7 +286,7 @@ WRITE16_MEMBER( seibu_sound_device::main_mustb_w )
 
 /***************************************************************************/
 
-ADDRESS_MAP_START( seibu_sound_map, AS_PROGRAM, 8, seibu_sound_device )
+ADDRESS_MAP_START(seibu_sound_common::seibu_sound_map)
 	AM_RANGE(0x0000, 0x1fff) AM_ROM
 	AM_RANGE(0x2000, 0x27ff) AM_RAM
 	AM_RANGE(0x4000, 0x4000) AM_DEVWRITE("seibu_sound", seibu_sound_device, pending_w)

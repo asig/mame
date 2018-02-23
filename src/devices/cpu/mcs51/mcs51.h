@@ -41,7 +41,8 @@
 
 enum
 {
-	MCS51_PC=1, MCS51_SP, MCS51_PSW, MCS51_ACC, MCS51_B, MCS51_DPH, MCS51_DPL, MCS51_IE,
+	MCS51_PC=1, MCS51_SP, MCS51_PSW, MCS51_ACC, MCS51_B, MCS51_DPTR, MCS51_DPH, MCS51_DPL, MCS51_IE,
+	MCS51_P0, MCS51_P1, MCS51_P2, MCS51_P3,
 	MCS51_R0, MCS51_R1, MCS51_R2, MCS51_R3, MCS51_R4, MCS51_R5, MCS51_R6, MCS51_R7, MCS51_RB
 };
 
@@ -88,6 +89,10 @@ public:
 	template<class _Object> static devcb_base & set_serial_rx_cb(device_t &device, _Object object) { return downcast<mcs51_cpu_device &>(device).m_serial_rx_cb.set_callback(object); }
 	template<class _Object> static devcb_base & set_serial_tx_cb(device_t &device, _Object object) { return downcast<mcs51_cpu_device &>(device).m_serial_tx_cb.set_callback(object); }
 
+	void data_7bit(address_map &map);
+	void data_8bit(address_map &map);
+	void program_12bit(address_map &map);
+	void program_13bit(address_map &map);
 protected:
 	// construction/destruction
 	mcs51_cpu_device(const machine_config &mconfig, device_type type, const char *tag, device_t *owner, uint32_t clock, int program_width, int data_width, uint8_t features = 0);

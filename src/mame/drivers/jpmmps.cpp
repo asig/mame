@@ -150,6 +150,9 @@ public:
 	uint8_t m_psg_latch;
 	virtual void machine_reset() override;
 
+	void jpmmps(machine_config &config);
+	void jpmmps_io_map(address_map &map);
+	void jpmmps_map(address_map &map);
 protected:
 
 	// devices
@@ -162,7 +165,7 @@ public:
 	DECLARE_WRITE8_MEMBER(jpmmps_ic22_portc_w);
 };
 
-static ADDRESS_MAP_START( jpmmps_map, AS_PROGRAM, 8, jpmmps_state )
+ADDRESS_MAP_START(jpmmps_state::jpmmps_map)
 	AM_RANGE(0x0000, 0xbfff) AM_ROM
 
 	AM_RANGE(0xc000, 0xc003) AM_DEVREADWRITE("ppi8255_ic26", i8255_device, read, write)
@@ -173,7 +176,7 @@ static ADDRESS_MAP_START( jpmmps_map, AS_PROGRAM, 8, jpmmps_state )
 	AM_RANGE(0xe800, 0xefff) AM_RAM
 ADDRESS_MAP_END
 
-static ADDRESS_MAP_START( jpmmps_io_map, AS_IO, 8, jpmmps_state )
+ADDRESS_MAP_START(jpmmps_state::jpmmps_io_map)
 	ADDRESS_MAP_GLOBAL_MASK(0xff)
 	AM_RANGE(0x0000, 0x001f) AM_DEVREADWRITE("tms9902_ic5", tms9902_device, cruread, cruwrite)
 
@@ -226,7 +229,7 @@ WRITE8_MEMBER(jpmmps_state::jpmmps_ic22_portc_w)
 
 
 // BCLKOUT (used by peripherals) is normally TMS9995 CLKOUT; however, MPS1 allows an external CLK DMA to be selected instead
-#define MAIN_CLOCK XTAL_6MHz
+#define MAIN_CLOCK XTAL(6'000'000)
 #define SOUND_CLOCK (MAIN_CLOCK / 4)
 #define DUART_CLOCK (MAIN_CLOCK / 4)
 
@@ -239,7 +242,7 @@ void jpmmps_state::machine_reset()
 	cpu->reset_line(ASSERT_LINE);
 }
 
-static MACHINE_CONFIG_START( jpmmps )
+MACHINE_CONFIG_START(jpmmps_state::jpmmps)
 
 	// CPU TMS9995, standard variant; no line connections
 	MCFG_TMS99xx_ADD("maincpu", TMS9995, MAIN_CLOCK, jpmmps_map, jpmmps_io_map)
@@ -254,7 +257,7 @@ static MACHINE_CONFIG_START( jpmmps )
 	MCFG_ADDRESSABLE_LATCH_Q6_OUT_CB(NOOP) // bb
 	MCFG_ADDRESSABLE_LATCH_Q7_OUT_CB(NOOP) // diagnostic led
 
-	//MCFG_CPU_ADD("reelmcu", TMS7041, XTAL_5MHz)
+	//MCFG_CPU_ADD("reelmcu", TMS7041, XTAL(5'000'000))
 
 	MCFG_DEVICE_ADD("ppi8255_ic26", I8255, 0)
 	// Port B 0 is coin lockout

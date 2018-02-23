@@ -486,7 +486,7 @@
 #define DMA_CTRL        (0)
 #define DMA_ADDR        (1)
 #define DMA_BYTE_COUNT  (2)
-#define DMA_XTAL        (XTAL_25MHz)
+#define DMA_XTAL        (XTAL(25'000'000))
 
 namespace
 {
@@ -591,6 +591,14 @@ public:
 
 	uint32_t bw2_update(screen_device &screen, bitmap_rgb32 &bitmap, const rectangle &cliprect);
 
+	static void ncr5390(device_t *device);
+	void sun4c(machine_config &config);
+	void sun4(machine_config &config);
+	void sun4_mem(address_map &map);
+	void sun4c_mem(address_map &map);
+	void type0space_map(address_map &map);
+	void type1space_map(address_map &map);
+	void type1space_s4_map(address_map &map);
 protected:
 	required_device<mb86901_device> m_maincpu;
 
@@ -1323,11 +1331,11 @@ void sun4_state::fcodes_command(int ref, const std::vector<std::string> &params)
 #endif
 }
 
-static ADDRESS_MAP_START(sun4_mem, AS_PROGRAM, 32, sun4_state)
+ADDRESS_MAP_START(sun4_state::sun4_mem)
 	AM_RANGE(0x00000000, 0xffffffff) AM_READWRITE( sun4_mmu_r, sun4_mmu_w )
 ADDRESS_MAP_END
 
-static ADDRESS_MAP_START(sun4c_mem, AS_PROGRAM, 32, sun4_state)
+ADDRESS_MAP_START(sun4_state::sun4c_mem)
 	AM_RANGE(0x00000000, 0xffffffff) AM_READWRITE( sun4c_mmu_r, sun4c_mmu_w )
 ADDRESS_MAP_END
 
@@ -1452,11 +1460,11 @@ WRITE32_MEMBER( sun4_state::ram_w )
 	}
 }
 
-static ADDRESS_MAP_START(type0space_map, AS_PROGRAM, 32, sun4_state)
+ADDRESS_MAP_START(sun4_state::type0space_map)
 	AM_RANGE(0x00000000, 0x03ffffff) AM_READWRITE(ram_r, ram_w)
 ADDRESS_MAP_END
 
-static ADDRESS_MAP_START(type1space_map, AS_PROGRAM, 32, sun4_state)
+ADDRESS_MAP_START(sun4_state::type1space_map)
 	AM_RANGE(0x00000000, 0x0000000f) AM_DEVREADWRITE8(SCC1_TAG, z80scc_device, ba_cd_inv_r, ba_cd_inv_w, 0xff00ff00)
 	AM_RANGE(0x01000000, 0x0100000f) AM_DEVREADWRITE8(SCC2_TAG, z80scc_device, ba_cd_inv_r, ba_cd_inv_w, 0xff00ff00)
 	AM_RANGE(0x02000000, 0x020007ff) AM_DEVREADWRITE8(TIMEKEEPER_TAG, timekeeper_device, read, write, 0xffffffff)
@@ -1471,7 +1479,7 @@ static ADDRESS_MAP_START(type1space_map, AS_PROGRAM, 32, sun4_state)
 	AM_RANGE(0x0e800000, 0x0e8fffff) AM_RAM AM_SHARE("bw2_vram")
 ADDRESS_MAP_END
 
-static ADDRESS_MAP_START(type1space_s4_map, AS_PROGRAM, 32, sun4_state)
+ADDRESS_MAP_START(sun4_state::type1space_s4_map)
 	AM_RANGE(0x00000000, 0x0000000f) AM_DEVREADWRITE8(SCC1_TAG, z80scc_device, ba_cd_inv_r, ba_cd_inv_w, 0xff00ff00)
 	AM_RANGE(0x01000000, 0x0100000f) AM_DEVREADWRITE8(SCC2_TAG, z80scc_device, ba_cd_inv_r, ba_cd_inv_w, 0xff00ff00)
 ADDRESS_MAP_END
@@ -1884,13 +1892,16 @@ static SLOT_INTERFACE_START( sun_scsi_devices )
 	SLOT_INTERFACE_INTERNAL("ncr5390", NCR5390)
 SLOT_INTERFACE_END
 
-static MACHINE_CONFIG_START( ncr5390 )
+void sun4_state::ncr5390(device_t *device)
+{
+	devcb_base *devcb;
+	(void)devcb;
 	MCFG_DEVICE_CLOCK(10000000)
 	MCFG_NCR5390_IRQ_HANDLER(DEVWRITELINE(":", sun4_state, scsi_irq))
 	MCFG_NCR5390_DRQ_HANDLER(DEVWRITELINE(":", sun4_state, scsi_drq))
-MACHINE_CONFIG_END
+}
 
-static MACHINE_CONFIG_START( sun4 )
+MACHINE_CONFIG_START(sun4_state::sun4)
 	/* basic machine hardware */
 	MCFG_CPU_ADD("maincpu", MB86901, 16670000)
 	MCFG_DEVICE_ADDRESS_MAP(AS_PROGRAM, sun4_mem)
@@ -1920,7 +1931,7 @@ static MACHINE_CONFIG_START( sun4 )
 	MCFG_ADDRESS_MAP_BANK_STRIDE(0x80000000)
 
 	// Keyboard/mouse
-	MCFG_SCC8530_ADD(SCC1_TAG, XTAL_4_9152MHz, 0, 0, 0, 0)
+	MCFG_SCC8530_ADD(SCC1_TAG, XTAL(4'915'200), 0, 0, 0, 0)
 	MCFG_Z80SCC_OUT_INT_CB(WRITELINE(sun4_state, scc1_int))
 	MCFG_Z80SCC_OUT_TXDA_CB(DEVWRITELINE(KEYBOARD_TAG, sun_keyboard_port_device, write_txd))
 
@@ -1928,7 +1939,7 @@ static MACHINE_CONFIG_START( sun4 )
 	MCFG_SUNKBD_RXD_HANDLER(DEVWRITELINE(SCC1_TAG, z80scc_device, rxa_w))
 
 	// RS232 serial ports
-	MCFG_SCC8530_ADD(SCC2_TAG, XTAL_4_9152MHz, 0, 0, 0, 0)
+	MCFG_SCC8530_ADD(SCC2_TAG, XTAL(4'915'200), 0, 0, 0, 0)
 	MCFG_Z80SCC_OUT_INT_CB(WRITELINE(sun4_state, scc2_int))
 	MCFG_Z80SCC_OUT_TXDA_CB(DEVWRITELINE(RS232A_TAG, rs232_port_device, write_txd))
 	MCFG_Z80SCC_OUT_TXDB_CB(DEVWRITELINE(RS232B_TAG, rs232_port_device, write_txd))
@@ -1955,7 +1966,7 @@ static MACHINE_CONFIG_START( sun4 )
 	MCFG_DEVICE_CARD_MACHINE_CONFIG("ncr5390", ncr5390)
 MACHINE_CONFIG_END
 
-static MACHINE_CONFIG_START( sun4c )
+MACHINE_CONFIG_START(sun4_state::sun4c)
 	/* basic machine hardware */
 	MCFG_CPU_ADD("maincpu", MB86901, 16670000)
 	MCFG_DEVICE_ADDRESS_MAP(AS_PROGRAM, sun4c_mem)
@@ -1985,7 +1996,7 @@ static MACHINE_CONFIG_START( sun4c )
 	MCFG_ADDRESS_MAP_BANK_STRIDE(0x80000000)
 
 	// Keyboard/mouse
-	MCFG_SCC8530_ADD(SCC1_TAG, XTAL_4_9152MHz, 0, 0, 0, 0)
+	MCFG_SCC8530_ADD(SCC1_TAG, XTAL(4'915'200), 0, 0, 0, 0)
 	MCFG_Z80SCC_OUT_INT_CB(WRITELINE(sun4_state, scc1_int))
 	MCFG_Z80SCC_OUT_TXDA_CB(DEVWRITELINE(KEYBOARD_TAG, sun_keyboard_port_device, write_txd))
 
@@ -1993,7 +2004,7 @@ static MACHINE_CONFIG_START( sun4c )
 	MCFG_SUNKBD_RXD_HANDLER(DEVWRITELINE(SCC1_TAG, z80scc_device, rxa_w))
 
 	// RS232 serial ports
-	MCFG_SCC8530_ADD(SCC2_TAG, XTAL_4_9152MHz, 0, 0, 0, 0)
+	MCFG_SCC8530_ADD(SCC2_TAG, XTAL(4'915'200), 0, 0, 0, 0)
 	MCFG_Z80SCC_OUT_INT_CB(WRITELINE(sun4_state, scc2_int))
 	MCFG_Z80SCC_OUT_TXDA_CB(DEVWRITELINE(RS232A_TAG, rs232_port_device, write_txd))
 	MCFG_Z80SCC_OUT_TXDB_CB(DEVWRITELINE(RS232B_TAG, rs232_port_device, write_txd))

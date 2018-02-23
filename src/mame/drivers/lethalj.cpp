@@ -146,11 +146,11 @@ Pin #11(+) | | R               |
 #include "speaker.h"
 
 
-#define MASTER_CLOCK            XTAL_40MHz
-#define SOUND_CLOCK             XTAL_2MHz
+#define MASTER_CLOCK            XTAL(40'000'000)
+#define SOUND_CLOCK             XTAL(2'000'000)
 
-#define VIDEO_CLOCK             XTAL_11_289MHz
-#define VIDEO_CLOCK_LETHALJ     XTAL_11_0592MHz
+#define VIDEO_CLOCK             XTAL(11'289'000)
+#define VIDEO_CLOCK_LETHALJ     XTAL(11'059'200)
 
 
 
@@ -209,7 +209,7 @@ WRITE16_MEMBER(lethalj_state::cclownz_control_w)
  *
  *************************************/
 
-static ADDRESS_MAP_START( lethalj_map, AS_PROGRAM, 16, lethalj_state )
+ADDRESS_MAP_START(lethalj_state::lethalj_map)
 	AM_RANGE(0x00000000, 0x003fffff) AM_RAM
 	AM_RANGE(0x04000000, 0x0400000f) AM_DEVREADWRITE8("oki1", okim6295_device, read, write, 0x00ff)
 	AM_RANGE(0x04000010, 0x0400001f) AM_DEVREADWRITE8("oki2", okim6295_device, read, write, 0x00ff)
@@ -629,7 +629,7 @@ INPUT_PORTS_END
  *
  *************************************/
 
-static MACHINE_CONFIG_START( gameroom )
+MACHINE_CONFIG_START(lethalj_state::gameroom)
 
 	/* basic machine hardware */
 	MCFG_CPU_ADD("maincpu", TMS34010, MASTER_CLOCK)
@@ -663,7 +663,8 @@ static MACHINE_CONFIG_START( gameroom )
 MACHINE_CONFIG_END
 
 
-static MACHINE_CONFIG_DERIVED( lethalj, gameroom )
+MACHINE_CONFIG_START(lethalj_state::lethalj)
+	gameroom(config);
 
 	MCFG_CPU_MODIFY("maincpu")
 	MCFG_TMS340X0_PIXEL_CLOCK(VIDEO_CLOCK_LETHALJ) /* pixel clock */

@@ -62,6 +62,10 @@ public:
 
 	HD44780_PIXEL_UPDATE(icatel_pixel_update);
 
+	void icatel(machine_config &config);
+	void i80c31_data(address_map &map);
+	void i80c31_io(address_map &map);
+	void i80c31_prg(address_map &map);
 private:
 	virtual void machine_start() override;
 	virtual void machine_reset() override;
@@ -69,11 +73,11 @@ private:
 	required_device<hd44780_device> m_lcdc;
 };
 
-static ADDRESS_MAP_START(i80c31_prg, AS_PROGRAM, 8, icatel_state)
+ADDRESS_MAP_START(icatel_state::i80c31_prg)
 	AM_RANGE(0x0000, 0x7FFF) AM_MIRROR(0x8000) AM_ROM
 ADDRESS_MAP_END
 
-static ADDRESS_MAP_START(i80c31_io, AS_IO, 8, icatel_state)
+ADDRESS_MAP_START(icatel_state::i80c31_io)
 	AM_RANGE(0x0000,0x3FFF) AM_RAM
 	AM_RANGE(0x8000,0x8002) AM_RAM /* HACK! */
 	AM_RANGE(0x8040,0x8040) AM_MIRROR(0x3F1E) AM_DEVWRITE("hd44780", hd44780_device, control_write) // not sure yet. CI12 (73LS273)
@@ -86,7 +90,7 @@ static ADDRESS_MAP_START(i80c31_io, AS_IO, 8, icatel_state)
 	AM_RANGE(MCS51_PORT_P0, MCS51_PORT_P3) AM_READWRITE(ioport_r, ioport_w)
 ADDRESS_MAP_END
 
-static ADDRESS_MAP_START(i80c31_data, AS_DATA, 8, icatel_state)
+ADDRESS_MAP_START(icatel_state::i80c31_data)
 //  AM_RANGE(0x0056,0x005A) AM_READ(magic_string) /* This is a hack! */
 ADDRESS_MAP_END
 
@@ -239,9 +243,9 @@ HD44780_PIXEL_UPDATE(icatel_state::icatel_pixel_update)
 	}
 }
 
-static MACHINE_CONFIG_START( icatel )
+MACHINE_CONFIG_START(icatel_state::icatel)
 	/* basic machine hardware */
-	MCFG_CPU_ADD("maincpu", I80C31, XTAL_2_097152MHz)
+	MCFG_CPU_ADD("maincpu", I80C31, XTAL(2'097'152))
 	MCFG_CPU_PROGRAM_MAP(i80c31_prg)
 	MCFG_CPU_DATA_MAP(i80c31_data)
 	MCFG_CPU_IO_MAP(i80c31_io)

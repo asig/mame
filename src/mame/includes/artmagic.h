@@ -85,6 +85,18 @@ public:
 	void update_irq_state();
 	inline uint16_t *address_to_vram(offs_t *address);
 
+	void cheesech(machine_config &config);
+	void artmagic(machine_config &config);
+	void shtstar(machine_config &config);
+	void stonebal(machine_config &config);
+	void main_map(address_map &map);
+	void shtstar_guncpu_io_map(address_map &map);
+	void shtstar_guncpu_map(address_map &map);
+	void shtstar_map(address_map &map);
+	void shtstar_subcpu_map(address_map &map);
+	void stonebal_map(address_map &map);
+	void stonebal_tms_map(address_map &map);
+	void tms_map(address_map &map);
 protected:
 	virtual void device_timer(emu_timer &timer, device_timer_id id, int param, void *ptr) override;
 };

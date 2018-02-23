@@ -67,18 +67,22 @@ public:
 	DECLARE_DRIVER_INIT(asr);
 	DECLARE_WRITE_LINE_MEMBER(esq5506_otto_irq);
 	DECLARE_READ16_MEMBER(esq5506_read_adc);
+	void asrx(machine_config &config);
+	void asr(machine_config &config);
+	void asr_map(address_map &map);
+	void asrx_map(address_map &map);
 };
 
 void esqasr_state::machine_reset()
 {
 }
 
-static ADDRESS_MAP_START( asr_map, AS_PROGRAM, 16, esqasr_state )
+ADDRESS_MAP_START(esqasr_state::asr_map)
 	AM_RANGE(0x000000, 0x0fffff) AM_ROM AM_REGION("maincpu", 0)
 	AM_RANGE(0xf00000, 0xffffff) AM_RAM
 ADDRESS_MAP_END
 
-static ADDRESS_MAP_START( asrx_map, AS_PROGRAM, 32, esqasr_state )
+ADDRESS_MAP_START(esqasr_state::asrx_map)
 	AM_RANGE(0x00000000, 0x000fffff) AM_ROM AM_REGION("maincpu", 0)
 	AM_RANGE(0x08000000, 0x081fffff) AM_RAM
 	AM_RANGE(0x0be00000, 0x0befffff) AM_RAM
@@ -93,17 +97,17 @@ READ16_MEMBER(esqasr_state::esq5506_read_adc)
 	return 0;
 }
 
-static MACHINE_CONFIG_START( asr )
-	MCFG_CPU_ADD("maincpu", M68000, XTAL_16MHz) // actually MC68302
+MACHINE_CONFIG_START(esqasr_state::asr)
+	MCFG_CPU_ADD("maincpu", M68000, XTAL(16'000'000)) // actually MC68302
 	MCFG_CPU_PROGRAM_MAP(asr_map)
 
-	MCFG_CPU_ADD("esp", ES5510, XTAL_10MHz)
+	MCFG_CPU_ADD("esp", ES5510, XTAL(10'000'000))
 	MCFG_DEVICE_DISABLE()
 
 	MCFG_ESQ2X40_SQ1_ADD("sq1vfd")
 
 	MCFG_SPEAKER_STANDARD_STEREO("lspeaker", "rspeaker")
-	MCFG_SOUND_ADD("ensoniq", ES5506, XTAL_16MHz)
+	MCFG_SOUND_ADD("ensoniq", ES5506, XTAL(16'000'000))
 	MCFG_ES5506_REGION0("waverom")  /* Bank 0 */
 	MCFG_ES5506_REGION1("waverom2") /* Bank 1 */
 	MCFG_ES5506_REGION2("waverom3") /* Bank 0 */
@@ -115,17 +119,17 @@ static MACHINE_CONFIG_START( asr )
 	MCFG_SOUND_ROUTE(1, "rspeaker", 2.0)
 MACHINE_CONFIG_END
 
-static MACHINE_CONFIG_START( asrx )
-	MCFG_CPU_ADD("maincpu", M68020, XTAL_16MHz) // unknown, possibly 68340?
+MACHINE_CONFIG_START(esqasr_state::asrx)
+	MCFG_CPU_ADD("maincpu", M68020, XTAL(16'000'000)) // unknown, possibly 68340?
 	MCFG_CPU_PROGRAM_MAP(asrx_map)
 
-	MCFG_CPU_ADD("esp", ES5510, XTAL_10MHz)
+	MCFG_CPU_ADD("esp", ES5510, XTAL(10'000'000))
 	MCFG_DEVICE_DISABLE()
 
 	MCFG_ESQ2X40_SQ1_ADD("sq1vfd")
 
 	MCFG_SPEAKER_STANDARD_STEREO("lspeaker", "rspeaker")
-	MCFG_SOUND_ADD("ensoniq", ES5506, XTAL_16MHz)
+	MCFG_SOUND_ADD("ensoniq", ES5506, XTAL(16'000'000))
 	MCFG_ES5506_REGION0("waverom")  /* Bank 0 */
 	MCFG_ES5506_REGION1("waverom2") /* Bank 1 */
 	MCFG_ES5506_REGION2("waverom3") /* Bank 0 */

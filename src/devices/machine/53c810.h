@@ -99,17 +99,16 @@ private:
 };
 
 // device type definition
-extern const device_type LSI53C810;
 DECLARE_DEVICE_TYPE(LSI53C810, lsi53c810_device)
 
 
 #define MCFG_LSI53C810_IRQ_CB(_class, _method) \
-	lsi53c810_device::set_irq_callback(*device, lsi53c810_device::irq_delegate(&_class::_method, #_class "::" #_method, downcast<_class *>(owner)));
+	lsi53c810_device::set_irq_callback(*device, lsi53c810_device::irq_delegate(&_class::_method, #_class "::" #_method, this));
 
 #define MCFG_LSI53C810_DMA_CB(_class, _method) \
-	lsi53c810_device::set_dma_callback(*device, lsi53c810_device::dma_delegate(&_class::_method, #_class "::" #_method, downcast<_class *>(owner)));
+	lsi53c810_device::set_dma_callback(*device, lsi53c810_device::dma_delegate(&_class::_method, #_class "::" #_method, this));
 
 #define MCFG_LSI53C810_FETCH_CB(_class, _method) \
-	lsi53c810_device::set_fetch_callback(*device, lsi53c810_device::fetch_delegate(&_class::_method, #_class "::" #_method, downcast<_class *>(owner)));
+	lsi53c810_device::set_fetch_callback(*device, lsi53c810_device::fetch_delegate(&_class::_method, #_class "::" #_method, this));
 
 #endif // MAME_MACHINE_53C810_H

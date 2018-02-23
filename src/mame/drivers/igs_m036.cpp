@@ -82,6 +82,9 @@ public:
 
 	void pgm_create_dummy_internal_arm_region(void);
 
+	void igs_m036_tt(machine_config &config);
+	void igs_m036(machine_config &config);
+	void igs_m036_map(address_map &map);
 };
 
 
@@ -92,7 +95,7 @@ uint32_t igs_m036_state::screen_update_igs_m036(screen_device &screen, bitmap_in
 	return 0;
 }
 
-static ADDRESS_MAP_START( igs_m036_map, AS_PROGRAM, 32, igs_m036_state )
+ADDRESS_MAP_START(igs_m036_state::igs_m036_map)
 	AM_RANGE(0x00000000, 0x00003fff) AM_ROM /* Internal ROM */
 	AM_RANGE(0x08000000, 0x081fffff) AM_ROM AM_REGION("user1", 0) // not 100% sure it maps here.
 
@@ -245,7 +248,7 @@ void igs_m036_state::pgm_create_dummy_internal_arm_region(void)
 
 #define IGS036_CPU ARM7
 
-static MACHINE_CONFIG_START( igs_m036 )
+MACHINE_CONFIG_START(igs_m036_state::igs_m036)
 	MCFG_CPU_ADD("maincpu",IGS036_CPU, 20000000)
 
 	MCFG_CPU_PROGRAM_MAP(igs_m036_map)
@@ -264,7 +267,7 @@ static MACHINE_CONFIG_START( igs_m036 )
 MACHINE_CONFIG_END
 
 
-static MACHINE_CONFIG_START( igs_m036_tt )
+MACHINE_CONFIG_START(igs_m036_state::igs_m036_tt)
 	MCFG_CPU_ADD("maincpu",IGS036_CPU, 20000000)
 
 	MCFG_CPU_PROGRAM_MAP(igs_m036_map)

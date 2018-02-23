@@ -168,6 +168,9 @@ public:
 	DECLARE_PALETTE_INIT(vega);
 	void draw_tilemap(screen_device& screen, bitmap_ind16& bitmap, const rectangle& cliprect);
 	uint32_t screen_update_vega(screen_device &screen, bitmap_ind16 &bitmap, const rectangle &cliprect);
+	void vega(machine_config &config);
+	void vega_io_map(address_map &map);
+	void vega_map(address_map &map);
 };
 
 WRITE8_MEMBER(vega_state::extern_w)
@@ -385,12 +388,12 @@ WRITE8_MEMBER(vega_state::rombank_w)
 	membank("bank1")->set_entry(data >>7);
 }
 
-static ADDRESS_MAP_START( vega_map, AS_PROGRAM, 8, vega_state )
+ADDRESS_MAP_START(vega_state::vega_map)
 	AM_RANGE(0x000, 0x7ff) AM_ROMBANK("bank1")
 	AM_RANGE(0x800, 0xfff) AM_ROM
 ADDRESS_MAP_END
 
-static ADDRESS_MAP_START( vega_io_map, AS_IO, 8, vega_state )
+ADDRESS_MAP_START(vega_state::vega_io_map)
 	AM_RANGE(0x00, 0xff) AM_READWRITE(extern_r, extern_w)
 ADDRESS_MAP_END
 
@@ -789,7 +792,7 @@ void vega_state::machine_start()
 }
 
 
-static MACHINE_CONFIG_START( vega )
+MACHINE_CONFIG_START(vega_state::vega)
 	MCFG_CPU_ADD("maincpu", I8035, 4000000)
 	MCFG_CPU_PROGRAM_MAP(vega_map)
 	MCFG_CPU_IO_MAP(vega_io_map)

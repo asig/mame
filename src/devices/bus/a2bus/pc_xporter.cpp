@@ -91,11 +91,11 @@
 
 DEFINE_DEVICE_TYPE(A2BUS_PCXPORTER, a2bus_pcxporter_device, "a2pcxport", "Applied Engineering PC Transporter")
 
-static ADDRESS_MAP_START( pc_map, AS_PROGRAM, 16, a2bus_pcxporter_device )
+ADDRESS_MAP_START(a2bus_pcxporter_device::pc_map)
 	ADDRESS_MAP_UNMAP_HIGH
 ADDRESS_MAP_END
 
-static ADDRESS_MAP_START(pc_io, AS_IO, 16, a2bus_pcxporter_device )
+ADDRESS_MAP_START(a2bus_pcxporter_device::pc_io)
 	ADDRESS_MAP_UNMAP_HIGH
 	AM_RANGE(0x0000, 0x000f) AM_DEVREADWRITE8("dma8237", am9517a_device, read, write, 0xffff)
 	AM_RANGE(0x0020, 0x002f) AM_DEVREADWRITE8("pic8259", pic8259_device, read, write, 0xffff)
@@ -113,7 +113,7 @@ ADDRESS_MAP_END
 //  device_add_mconfig - add device configuration
 //-------------------------------------------------
 
-MACHINE_CONFIG_MEMBER( a2bus_pcxporter_device::device_add_mconfig )
+MACHINE_CONFIG_START(a2bus_pcxporter_device::device_add_mconfig)
 	MCFG_CPU_ADD("v30", V30, A2BUS_7M_CLOCK)    // 7.16 MHz as per manual
 	MCFG_CPU_PROGRAM_MAP(pc_map)
 	MCFG_CPU_IO_MAP(pc_io)
@@ -202,9 +202,6 @@ a2bus_pcxporter_device::a2bus_pcxporter_device(const machine_config &mconfig, co
 
 void a2bus_pcxporter_device::device_start()
 {
-	// set_a2bus_device makes m_slot valid
-	set_a2bus_device();
-
 	memset(m_ram, 0, 768*1024);
 	memset(m_regs, 0, 0x400);
 	m_offset = 0;
@@ -319,7 +316,7 @@ uint8_t a2bus_pcxporter_device::read_c800(uint16_t offset)
 				break;
 		}
 
-		return m_regs[offset];
+		return m_regs[offset & 0x3ff];
 	}
 }
 
@@ -436,7 +433,7 @@ void a2bus_pcxporter_device::write_c800(uint16_t offset, uint8_t data)
 
 			default:
 //              logerror("%02x to C800 at %x\n", data, offset + 0xc800);
-				m_regs[offset] = data;
+				m_regs[offset & 0x3ff] = data;
 				break;
 		}
 	}

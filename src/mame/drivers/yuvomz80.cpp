@@ -48,16 +48,23 @@ public:
 		m_maincpu(*this, "maincpu")
 	{ }
 
+	void goldhexa(machine_config &config);
+	void hexapres(machine_config &config);
+	void audio_io_map(address_map &map);
+	void audio_mem_map(address_map &map);
+	void hexapres_audio_io_map(address_map &map);
+	void io_map(address_map &map);
+	void mem_map(address_map &map);
 private:
 	required_device<cpu_device> m_maincpu;
 };
 
-static ADDRESS_MAP_START( mem_map, AS_PROGRAM, 8, yuvomz80_state )
+ADDRESS_MAP_START(yuvomz80_state::mem_map)
 	AM_RANGE(0x0000, 0x1fff) AM_ROM AM_REGION("maincpu", 0)
 	AM_RANGE(0x8000, 0x87ff) AM_RAM
 ADDRESS_MAP_END
 
-static ADDRESS_MAP_START( io_map, AS_PROGRAM, 8, yuvomz80_state )
+ADDRESS_MAP_START(yuvomz80_state::io_map)
 	ADDRESS_MAP_GLOBAL_MASK(0xff)
 	AM_RANGE(0x00, 0x03) AM_DEVREADWRITE("ppi0", i8255_device, read, write)
 	AM_RANGE(0x04, 0x07) AM_DEVREADWRITE("ppi1", i8255_device, read, write)
@@ -65,17 +72,17 @@ static ADDRESS_MAP_START( io_map, AS_PROGRAM, 8, yuvomz80_state )
 	AM_RANGE(0x0c, 0x0f) AM_DEVREADWRITE("ppi3", i8255_device, read, write)
 ADDRESS_MAP_END
 
-static ADDRESS_MAP_START( audio_mem_map, AS_PROGRAM, 8, yuvomz80_state )
+ADDRESS_MAP_START(yuvomz80_state::audio_mem_map)
 	AM_RANGE(0x0000, 0x7fff) AM_ROM AM_REGION("audiocpu", 0)
 	AM_RANGE(0x8000, 0x87ff) AM_RAM
 ADDRESS_MAP_END
 
-static ADDRESS_MAP_START( audio_io_map, AS_PROGRAM, 8, yuvomz80_state )
+ADDRESS_MAP_START(yuvomz80_state::audio_io_map)
 	ADDRESS_MAP_GLOBAL_MASK(0xff)
 	AM_RANGE(0x00, 0x01) AM_DEVREADWRITE("ymz", ymz280b_device, read, write)
 ADDRESS_MAP_END
 
-static ADDRESS_MAP_START( hexapres_audio_io_map, AS_PROGRAM, 8, yuvomz80_state )
+ADDRESS_MAP_START(yuvomz80_state::hexapres_audio_io_map)
 	ADDRESS_MAP_GLOBAL_MASK(0xff)
 	AM_RANGE(0x00, 0x03) AM_DEVREADWRITE("ymsnd", ym2610_device, read, write)
 ADDRESS_MAP_END
@@ -83,12 +90,12 @@ ADDRESS_MAP_END
 static INPUT_PORTS_START( goldhexa )
 INPUT_PORTS_END
 
-static MACHINE_CONFIG_START( goldhexa )
-	MCFG_CPU_ADD("maincpu", Z80, XTAL_8MHz)
+MACHINE_CONFIG_START(yuvomz80_state::goldhexa)
+	MCFG_CPU_ADD("maincpu", Z80, XTAL(8'000'000))
 	MCFG_CPU_PROGRAM_MAP(mem_map)
 	MCFG_CPU_IO_MAP(io_map)
 
-	MCFG_CPU_ADD("audiocpu", Z80, XTAL_8MHz)
+	MCFG_CPU_ADD("audiocpu", Z80, XTAL(8'000'000))
 	MCFG_CPU_PROGRAM_MAP(audio_mem_map)
 	MCFG_CPU_IO_MAP(audio_io_map)
 
@@ -98,16 +105,16 @@ static MACHINE_CONFIG_START( goldhexa )
 	MCFG_DEVICE_ADD("ppi3", I8255A, 0)
 
 	MCFG_SPEAKER_STANDARD_STEREO("lspeaker", "rspeaker")
-	MCFG_SOUND_ADD("ymz", YMZ280B, XTAL_16_9344MHz)
+	MCFG_SOUND_ADD("ymz", YMZ280B, XTAL(16'934'400))
 	MCFG_SOUND_ROUTE(0, "lspeaker", 1.00)
 	MCFG_SOUND_ROUTE(1, "rspeaker", 1.00)
 MACHINE_CONFIG_END
 
-static MACHINE_CONFIG_START( hexapres )
-	MCFG_CPU_ADD("maincpu", Z80, XTAL_8MHz)
+MACHINE_CONFIG_START(yuvomz80_state::hexapres)
+	MCFG_CPU_ADD("maincpu", Z80, XTAL(8'000'000))
 	MCFG_DEVICE_DISABLE()
 
-	MCFG_CPU_ADD("audiocpu", Z80, XTAL_8MHz)
+	MCFG_CPU_ADD("audiocpu", Z80, XTAL(8'000'000))
 	MCFG_CPU_PROGRAM_MAP(audio_mem_map)
 	MCFG_CPU_IO_MAP(hexapres_audio_io_map)
 

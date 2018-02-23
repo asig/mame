@@ -73,6 +73,9 @@ public:
 	uint32_t screen_update(screen_device &screen, bitmap_ind16 &bitmap, const rectangle &cliprect);
 
 	INTERRUPT_GEN_MEMBER(nmi_source);
+	void skyarmy(machine_config &config);
+	void skyarmy_io_map(address_map &map);
+	void skyarmy_map(address_map &map);
 };
 
 void skyarmy_state::machine_start()
@@ -207,7 +210,7 @@ WRITE_LINE_MEMBER(skyarmy_state::nmi_enable_w)
 }
 
 
-static ADDRESS_MAP_START( skyarmy_map, AS_PROGRAM, 8, skyarmy_state )
+ADDRESS_MAP_START(skyarmy_state::skyarmy_map)
 	AM_RANGE(0x0000, 0x7fff) AM_ROM
 	AM_RANGE(0x8000, 0x87ff) AM_RAM
 	AM_RANGE(0x8800, 0x8fff) AM_RAM_WRITE(videoram_w) AM_SHARE("videoram") /* Video RAM */
@@ -221,7 +224,7 @@ static ADDRESS_MAP_START( skyarmy_map, AS_PROGRAM, 8, skyarmy_state )
 	AM_RANGE(0xa000, 0xa007) AM_DEVWRITE("latch", ls259_device, write_d0)
 ADDRESS_MAP_END
 
-static ADDRESS_MAP_START( skyarmy_io_map, AS_IO, 8, skyarmy_state )
+ADDRESS_MAP_START(skyarmy_state::skyarmy_io_map)
 	ADDRESS_MAP_GLOBAL_MASK(0xff)
 	AM_RANGE(0x00, 0x01) AM_DEVWRITE("ay0", ay8910_device, address_data_w)
 	AM_RANGE(0x02, 0x02) AM_DEVREAD("ay0", ay8910_device, data_r)
@@ -315,7 +318,7 @@ static GFXDECODE_START( skyarmy )
 	GFXDECODE_ENTRY( "gfx2", 0, spritelayout, 0, 8 )
 GFXDECODE_END
 
-static MACHINE_CONFIG_START( skyarmy )
+MACHINE_CONFIG_START(skyarmy_state::skyarmy)
 
 	MCFG_CPU_ADD("maincpu", Z80,4000000)
 	MCFG_CPU_PROGRAM_MAP(skyarmy_map)

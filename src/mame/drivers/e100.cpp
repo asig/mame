@@ -7,12 +7,12 @@
  * See didact.cpp
  *
  * The Esselte 100 was an original design with a CRT and a full Keyboard that also had a BASIC interpreter
- * extended with commands suitable for educational experiments using the exapansion bus and its built in 
+ * extended with commands suitable for educational experiments using the exapansion bus and its built in
  * io control capabilities.
  *
  * The Esselte 1000 was an educational package based on Apple II plus software and litterature but the relation
- * to Didact is at this point unknown so it is probably a pure Esselte software production. If this branded 
- * distribution is recovered it will be added as a clone of the Apple II driver or just as softlist item. 
+ * to Didact is at this point unknown so it is probably a pure Esselte software production. If this branded
+ * distribution is recovered it will be added as a clone of the Apple II driver or just as softlist item.
  *
  * Misc links about the boards supported by this driver.
  *-----------------------------------------------------
@@ -131,7 +131,7 @@ class e100_state : public driver_device // public didact_state
 {
 public:
 	e100_state(const machine_config &mconfig, device_type type, const char * tag)
-	//		: didact_state(mconfig, type, tag)
+	//      : didact_state(mconfig, type, tag)
 		: driver_device(mconfig, type, tag)
 		,m_maincpu(*this, "maincpu")
 		,m_kbd_74145(*this, "kbd_74145")
@@ -178,6 +178,8 @@ public:
 	DECLARE_WRITE_LINE_MEMBER( pia1_ca2_w);
 	DECLARE_WRITE_LINE_MEMBER( pia1_cb2_w);
 	TIMER_DEVICE_CALLBACK_MEMBER(rtc_w);
+	void e100(machine_config &config);
+	void e100_map(address_map &map);
 protected:
 	required_ioport m_io_line0;
 	required_ioport m_io_line1;
@@ -421,7 +423,7 @@ WRITE_LINE_MEMBER(e100_state::pia1_cb2_w)
 }
 
 // This map is derived from info in "TEMAL 100 - teknisk manual Esselte 100"
-static ADDRESS_MAP_START( e100_map, AS_PROGRAM, 8, e100_state )
+ADDRESS_MAP_START(e100_state::e100_map)
 	AM_RANGE(0x0000, 0x1fff) AM_RAM
 	AM_RANGE(0x8000, 0x87ff) AM_ROM AM_REGION("roms", 0)
 	AM_RANGE(0xc000, 0xc3ff) AM_RAM AM_SHARE("videoram")
@@ -539,8 +541,8 @@ static INPUT_PORTS_START( e100 )
 	PORT_BIT(0x80, IP_ACTIVE_LOW,   IPT_KEYBOARD)                               PORT_CODE(KEYCODE_9_PAD)        PORT_CHAR(UCHAR_MAMEKEY(9_PAD))
 INPUT_PORTS_END
 
-static MACHINE_CONFIG_START( e100 )
-	MCFG_CPU_ADD("maincpu", M6802, XTAL_4MHz)
+MACHINE_CONFIG_START(e100_state::e100)
+	MCFG_CPU_ADD("maincpu", M6802, XTAL(4'000'000))
 	MCFG_CPU_PROGRAM_MAP(e100_map)
 
 	/* Devices */
@@ -591,7 +593,7 @@ static MACHINE_CONFIG_START( e100 )
 
 	/* screen TODO: simplify the screen config, look at zx.cpp */
 	MCFG_SCREEN_ADD("screen", RASTER)
-	MCFG_SCREEN_RAW_PARAMS(XTAL_4MHz/2, 265, 0, 265, 265, 0, 265)
+	MCFG_SCREEN_RAW_PARAMS(XTAL(4'000'000)/2, 265, 0, 265, 265, 0, 265)
 	MCFG_SCREEN_UPDATE_DRIVER(e100_state, screen_update)
 	MCFG_SCREEN_PALETTE("palette")
 	MCFG_PALETTE_ADD_MONOCHROME("palette")

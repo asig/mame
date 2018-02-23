@@ -91,14 +91,22 @@ public:
 	TMS340X0_SCANLINE_RGB32_CB_MEMBER(scanline_update);
 	TMS340X0_SCANLINE_RGB32_CB_MEMBER(rapidfir_scanline_update);
 
+	void rapidfir(machine_config &config);
+	void ghoshunt(machine_config &config);
+	void tickee(machine_config &config);
+	void mouseatk(machine_config &config);
+	void ghoshunt_map(address_map &map);
+	void mouseatk_map(address_map &map);
+	void rapidfir_map(address_map &map);
+	void tickee_map(address_map &map);
 protected:
 	virtual void device_timer(emu_timer &timer, device_timer_id id, int param, void *ptr) override;
 };
 
 
-#define CPU_CLOCK           XTAL_40MHz
-#define VIDEO_CLOCK         XTAL_14_31818MHz
-#define OKI_CLOCK           XTAL_1MHz
+#define CPU_CLOCK           XTAL(40'000'000)
+#define VIDEO_CLOCK         XTAL(14'318'181)
+#define OKI_CLOCK           XTAL(1'000'000)
 
 
 /*************************************
@@ -432,7 +440,7 @@ WRITE16_MEMBER(tickee_state::sound_bank_w)
  *
  *************************************/
 
-static ADDRESS_MAP_START( tickee_map, AS_PROGRAM, 16, tickee_state )
+ADDRESS_MAP_START(tickee_state::tickee_map)
 	AM_RANGE(0x00000000, 0x003fffff) AM_RAM AM_SHARE("vram")
 	AM_RANGE(0x02000000, 0x02ffffff) AM_ROM AM_REGION("user1", 0)
 	AM_RANGE(0x04000000, 0x04003fff) AM_RAM AM_SHARE("nvram")
@@ -450,7 +458,7 @@ ADDRESS_MAP_END
 
 
 /* addreses in the 04x range shifted slightly...*/
-static ADDRESS_MAP_START( ghoshunt_map, AS_PROGRAM, 16, tickee_state )
+ADDRESS_MAP_START(tickee_state::ghoshunt_map)
 	AM_RANGE(0x00000000, 0x003fffff) AM_RAM AM_SHARE("vram")
 	AM_RANGE(0x02000000, 0x02ffffff) AM_ROM AM_REGION("user1", 0)
 	AM_RANGE(0x04100000, 0x04103fff) AM_RAM AM_SHARE("nvram")
@@ -466,7 +474,7 @@ static ADDRESS_MAP_START( ghoshunt_map, AS_PROGRAM, 16, tickee_state )
 ADDRESS_MAP_END
 
 
-static ADDRESS_MAP_START( mouseatk_map, AS_PROGRAM, 16, tickee_state )
+ADDRESS_MAP_START(tickee_state::mouseatk_map)
 	AM_RANGE(0x00000000, 0x003fffff) AM_RAM AM_SHARE("vram")
 	AM_RANGE(0x02000000, 0x02ffffff) AM_ROM AM_REGION("user1", 0)
 	AM_RANGE(0x04000000, 0x04003fff) AM_RAM AM_SHARE("nvram")
@@ -483,7 +491,7 @@ ADDRESS_MAP_END
 
 
 /* newer hardware */
-static ADDRESS_MAP_START( rapidfir_map, AS_PROGRAM, 16, tickee_state )
+ADDRESS_MAP_START(tickee_state::rapidfir_map)
 	AM_RANGE(0x00000000, 0x007fffff) AM_RAM AM_SHARE("vram")
 	AM_RANGE(0x02000000, 0x027fffff) AM_READWRITE(rapidfir_transparent_r, rapidfir_transparent_w)
 	AM_RANGE(0xc0000000, 0xc00001ff) AM_DEVREADWRITE("maincpu", tms34010_device, io_register_r, io_register_w)
@@ -744,10 +752,10 @@ INPUT_PORTS_END
  *
  *************************************/
 
-static MACHINE_CONFIG_START( tickee )
+MACHINE_CONFIG_START(tickee_state::tickee)
 
 	/* basic machine hardware */
-	MCFG_CPU_ADD("maincpu", TMS34010, XTAL_40MHz)
+	MCFG_CPU_ADD("maincpu", TMS34010, XTAL(40'000'000))
 	MCFG_CPU_PROGRAM_MAP(tickee_map)
 	MCFG_TMS340X0_HALT_ON_RESET(false) /* halt on reset */
 	MCFG_TMS340X0_PIXEL_CLOCK(VIDEO_CLOCK/2) /* pixel clock */
@@ -784,7 +792,8 @@ static MACHINE_CONFIG_START( tickee )
 MACHINE_CONFIG_END
 
 
-static MACHINE_CONFIG_DERIVED( ghoshunt, tickee )
+MACHINE_CONFIG_START(tickee_state::ghoshunt)
+	tickee(config);
 
 	/* basic machine hardware */
 	MCFG_CPU_MODIFY("maincpu")
@@ -792,10 +801,10 @@ static MACHINE_CONFIG_DERIVED( ghoshunt, tickee )
 MACHINE_CONFIG_END
 
 
-static MACHINE_CONFIG_START( rapidfir )
+MACHINE_CONFIG_START(tickee_state::rapidfir)
 
 	/* basic machine hardware */
-	MCFG_CPU_ADD("maincpu", TMS34010, XTAL_50MHz)
+	MCFG_CPU_ADD("maincpu", TMS34010, XTAL(50'000'000))
 	MCFG_CPU_PROGRAM_MAP(rapidfir_map)
 	MCFG_TMS340X0_HALT_ON_RESET(false) /* halt on reset */
 	MCFG_TMS340X0_PIXEL_CLOCK(VIDEO_CLOCK/2) /* pixel clock */
@@ -826,10 +835,10 @@ static MACHINE_CONFIG_START( rapidfir )
 MACHINE_CONFIG_END
 
 
-static MACHINE_CONFIG_START( mouseatk )
+MACHINE_CONFIG_START(tickee_state::mouseatk)
 
 	/* basic machine hardware */
-	MCFG_CPU_ADD("maincpu", TMS34010, XTAL_40MHz)
+	MCFG_CPU_ADD("maincpu", TMS34010, XTAL(40'000'000))
 	MCFG_CPU_PROGRAM_MAP(mouseatk_map)
 	MCFG_TMS340X0_HALT_ON_RESET(false) /* halt on reset */
 	MCFG_TMS340X0_PIXEL_CLOCK(VIDEO_CLOCK/2) /* pixel clock */

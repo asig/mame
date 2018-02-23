@@ -149,7 +149,7 @@ Video:
 
 
 /* Memory Maps */
-static ADDRESS_MAP_START( common_map, AS_PROGRAM, 16, bloodbro_state )
+ADDRESS_MAP_START(bloodbro_state::common_map)
 	AM_RANGE(0x000000, 0x07ffff) AM_ROM
 	AM_RANGE(0x080000, 0x08afff) AM_RAM
 	AM_RANGE(0x08b000, 0x08bfff) AM_RAM AM_SHARE("spriteram")
@@ -159,7 +159,7 @@ static ADDRESS_MAP_START( common_map, AS_PROGRAM, 16, bloodbro_state )
 	AM_RANGE(0x08d400, 0x08d7ff) AM_RAM
 	AM_RANGE(0x08d800, 0x08dfff) AM_RAM_WRITE(txvideoram_w) AM_SHARE("txvideoram")
 	AM_RANGE(0x08e000, 0x08e7ff) AM_RAM
-	AM_RANGE(0x08e800, 0x08f7ff) AM_RAM_DEVWRITE("palette", palette_device, write) AM_SHARE("palette")
+	AM_RANGE(0x08e800, 0x08f7ff) AM_RAM_DEVWRITE("palette", palette_device, write16) AM_SHARE("palette")
 	AM_RANGE(0x08f800, 0x08ffff) AM_RAM
 	AM_RANGE(0x0a0000, 0x0a000d) AM_DEVREADWRITE8("seibu_sound", seibu_sound_device, main_r, main_w, 0x00ff)
 //  AM_RANGE(0x0c0000, 0x0c007f) AM_RAM AM_SHARE("scroll")
@@ -171,12 +171,12 @@ static ADDRESS_MAP_START( common_map, AS_PROGRAM, 16, bloodbro_state )
 	AM_RANGE(0x0e0004, 0x0e0005) AM_READ_PORT("IN1")
 ADDRESS_MAP_END
 
-static ADDRESS_MAP_START( bloodbro_map, AS_PROGRAM, 16, bloodbro_state )
+ADDRESS_MAP_START(bloodbro_state::bloodbro_map)
 	AM_IMPORT_FROM(common_map)
 	AM_RANGE(0xc0000, 0xc004f) AM_DEVREADWRITE("crtc", seibu_crtc_device, read, write)
 ADDRESS_MAP_END
 
-static ADDRESS_MAP_START( skysmash_map, AS_PROGRAM, 16, bloodbro_state )
+ADDRESS_MAP_START(bloodbro_state::skysmash_map)
 	AM_IMPORT_FROM(common_map)
 	AM_RANGE(0xc0000, 0xc004f) AM_DEVREADWRITE("crtc", seibu_crtc_device, read_alt, write_alt)
 ADDRESS_MAP_END
@@ -189,7 +189,7 @@ WRITE8_MEMBER(bloodbro_state::weststry_soundlatch_w)
 		m_audiocpu->set_input_line(0, ASSERT_LINE);
 }
 
-static ADDRESS_MAP_START( weststry_map, AS_PROGRAM, 16, bloodbro_state )
+ADDRESS_MAP_START(bloodbro_state::weststry_map)
 	AM_RANGE(0x000000, 0x07ffff) AM_ROM
 	AM_RANGE(0x080000, 0x08ffff) AM_RAM // old VRAM areas still used, but bootleg code copies them to higher addresses
 	AM_RANGE(0x0c1000, 0x0c1001) AM_READ_PORT("DSW")
@@ -205,7 +205,7 @@ static ADDRESS_MAP_START( weststry_map, AS_PROGRAM, 16, bloodbro_state )
 	AM_RANGE(0x123800, 0x123fff) AM_RAM_WRITE(txvideoram_w) AM_SHARE("txvideoram")
 	AM_RANGE(0x124000, 0x124005) AM_RAM
 	AM_RANGE(0x124006, 0x1247fd) AM_RAM AM_SHARE("spriteram")
-	AM_RANGE(0x128000, 0x1287ff) AM_RAM_DEVWRITE("palette", palette_device, write) AM_SHARE("palette")
+	AM_RANGE(0x128000, 0x1287ff) AM_RAM_DEVWRITE("palette", palette_device, write16) AM_SHARE("palette")
 ADDRESS_MAP_END
 
 WRITE_LINE_MEMBER(bloodbro_state::weststry_opl_irq_w)
@@ -234,9 +234,9 @@ void bloodbro_state::weststry_soundnmi_update()
 		m_audiocpu->set_input_line(INPUT_LINE_NMI, ASSERT_LINE);
 }
 
-static ADDRESS_MAP_START( weststry_sound_map, AS_PROGRAM, 8, bloodbro_state )
-	AM_RANGE(0x4002, 0x4002) AM_WRITE(weststry_soundnmi_ack_w)
+ADDRESS_MAP_START(bloodbro_state::weststry_sound_map)
 	AM_IMPORT_FROM(seibu_sound_map)
+	AM_RANGE(0x4002, 0x4002) AM_WRITE(weststry_soundnmi_ack_w)
 ADDRESS_MAP_END
 
 /* Input Ports */
@@ -517,13 +517,13 @@ WRITE16_MEMBER( bloodbro_state::weststry_layer_scroll_w )
 
 /* Machine Drivers */
 
-static MACHINE_CONFIG_START( bloodbro )
+MACHINE_CONFIG_START(bloodbro_state::bloodbro)
 	// basic machine hardware
-	MCFG_CPU_ADD("maincpu", M68000, XTAL_20MHz/2) /* verified on pcb */
+	MCFG_CPU_ADD("maincpu", M68000, XTAL(20'000'000)/2) /* verified on pcb */
 	MCFG_CPU_PROGRAM_MAP(bloodbro_map)
 	MCFG_CPU_VBLANK_INT_DRIVER("screen", bloodbro_state,  irq4_line_hold)
 
-	MCFG_CPU_ADD("audiocpu", Z80, XTAL_7_15909MHz/2) /* verified on pcb */
+	MCFG_CPU_ADD("audiocpu", Z80, XTAL(7'159'090)/2) /* verified on pcb */
 	MCFG_CPU_PROGRAM_MAP(seibu_sound_map)
 
 	// video hardware
@@ -548,11 +548,11 @@ static MACHINE_CONFIG_START( bloodbro )
 	// sound hardware
 	MCFG_SPEAKER_STANDARD_MONO("mono")
 
-	MCFG_SOUND_ADD("ymsnd", YM3812, XTAL_7_15909MHz/2)
+	MCFG_SOUND_ADD("ymsnd", YM3812, XTAL(7'159'090)/2)
 	MCFG_YM3812_IRQ_HANDLER(DEVWRITELINE("seibu_sound", seibu_sound_device, fm_irqhandler))
 	MCFG_SOUND_ROUTE(ALL_OUTPUTS, "mono", 1.0)
 
-	MCFG_OKIM6295_ADD("oki", XTAL_12MHz/12, PIN7_HIGH)
+	MCFG_OKIM6295_ADD("oki", XTAL(12'000'000)/12, PIN7_HIGH)
 	MCFG_SOUND_ROUTE(ALL_OUTPUTS, "mono", 1.0)
 
 	MCFG_DEVICE_ADD("seibu_sound", SEIBU_SOUND, 0)
@@ -562,14 +562,15 @@ static MACHINE_CONFIG_START( bloodbro )
 	MCFG_SEIBU_SOUND_YM_WRITE_CB(DEVWRITE8("ymsnd", ym3812_device, write))
 MACHINE_CONFIG_END
 
-static MACHINE_CONFIG_DERIVED( weststry, bloodbro )
+MACHINE_CONFIG_START(bloodbro_state::weststry)
+	bloodbro(config);
 
 	MCFG_CPU_MODIFY("maincpu")
 	MCFG_CPU_PROGRAM_MAP(weststry_map)
 	MCFG_CPU_VBLANK_INT_DRIVER("screen", bloodbro_state,  irq6_line_hold)
 
 	MCFG_CPU_MODIFY("audiocpu")
-	MCFG_CPU_CLOCK(XTAL_20MHz/4) /* 5MHz - verified on PCB */
+	MCFG_CPU_CLOCK(XTAL(20'000'000)/4) /* 5MHz - verified on PCB */
 	MCFG_CPU_PROGRAM_MAP(weststry_sound_map)
 
 	MCFG_GFXDECODE_MODIFY("gfxdecode", weststry)
@@ -585,10 +586,10 @@ static MACHINE_CONFIG_DERIVED( weststry, bloodbro )
 
 	// Bootleg sound hardware is close copy of Seibu, but uses different interrupts
 
-	MCFG_OKIM6295_REPLACE("oki", XTAL_20MHz/16, PIN7_HIGH) /* 1.25MHz - verified on PCB */
+	MCFG_OKIM6295_REPLACE("oki", XTAL(20'000'000)/16, PIN7_HIGH) /* 1.25MHz - verified on PCB */
 	MCFG_SOUND_ROUTE(ALL_OUTPUTS, "mono", 1.0)
 
-	MCFG_SOUND_REPLACE("ymsnd", YM3812, XTAL_20MHz/4) /* ~4.9MHz - see notes at top */
+	MCFG_SOUND_REPLACE("ymsnd", YM3812, XTAL(20'000'000)/4) /* ~4.9MHz - see notes at top */
 	MCFG_YM3812_IRQ_HANDLER(WRITELINE(bloodbro_state, weststry_opl_irq_w))
 	MCFG_SOUND_ROUTE(ALL_OUTPUTS, "mono", 1.0)
 
@@ -596,7 +597,8 @@ static MACHINE_CONFIG_DERIVED( weststry, bloodbro )
 	MCFG_SEIBU_SOUND_YM_WRITE_CB(WRITE8(bloodbro_state, weststry_opl_w))
 MACHINE_CONFIG_END
 
-static MACHINE_CONFIG_DERIVED( skysmash, bloodbro )
+MACHINE_CONFIG_START(bloodbro_state::skysmash)
+	bloodbro(config);
 
 	MCFG_CPU_MODIFY("maincpu")
 	MCFG_CPU_PROGRAM_MAP(skysmash_map)

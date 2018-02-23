@@ -81,7 +81,7 @@ WRITE8_MEMBER(goindol_state::prot_fcb0_w)
 
 
 
-static ADDRESS_MAP_START( goindol_map, AS_PROGRAM, 8, goindol_state )
+ADDRESS_MAP_START(goindol_state::goindol_map)
 	AM_RANGE(0x0000, 0x7fff) AM_ROM
 	AM_RANGE(0x8000, 0xbfff) AM_ROMBANK("bank1")
 	AM_RANGE(0xc000, 0xc7ff) AM_RAM AM_SHARE("ram")
@@ -107,7 +107,7 @@ static ADDRESS_MAP_START( goindol_map, AS_PROGRAM, 8, goindol_state )
 	AM_RANGE(0xfd99, 0xfd99) AM_WRITE(prot_fd99_w)
 ADDRESS_MAP_END
 
-static ADDRESS_MAP_START( sound_map, AS_PROGRAM, 8, goindol_state )
+ADDRESS_MAP_START(goindol_state::sound_map)
 	AM_RANGE(0x0000, 0x7fff) AM_ROM
 	AM_RANGE(0xa000, 0xa001) AM_DEVWRITE("ymsnd", ym2203_device, write)
 	AM_RANGE(0xc000, 0xc7ff) AM_RAM
@@ -233,14 +233,14 @@ void goindol_state::machine_reset()
 	m_prot_toggle = 0;
 }
 
-static MACHINE_CONFIG_START( goindol )
+MACHINE_CONFIG_START(goindol_state::goindol)
 
 	/* basic machine hardware */
-	MCFG_CPU_ADD("maincpu", Z80, XTAL_12MHz/2)  /* XTAL confirmed, divisor is not */
+	MCFG_CPU_ADD("maincpu", Z80, XTAL(12'000'000)/2)  /* XTAL confirmed, divisor is not */
 	MCFG_CPU_PROGRAM_MAP(goindol_map)
 	MCFG_CPU_VBLANK_INT_DRIVER("screen", goindol_state,  irq0_line_hold)
 
-	MCFG_CPU_ADD("audiocpu", Z80, XTAL_12MHz/2) /* XTAL confirmed, divisor is not */
+	MCFG_CPU_ADD("audiocpu", Z80, XTAL(12'000'000)/2) /* XTAL confirmed, divisor is not */
 	MCFG_CPU_PROGRAM_MAP(sound_map)
 	MCFG_CPU_PERIODIC_INT_DRIVER(goindol_state, irq0_line_hold, 4*60)
 
@@ -262,7 +262,7 @@ static MACHINE_CONFIG_START( goindol )
 
 	MCFG_GENERIC_LATCH_8_ADD("soundlatch")
 
-	MCFG_SOUND_ADD("ymsnd", YM2203, XTAL_12MHz/8)   /* Confirmed pitch from recording */
+	MCFG_SOUND_ADD("ymsnd", YM2203, XTAL(12'000'000)/8)   /* Confirmed pitch from recording */
 	MCFG_SOUND_ROUTE(ALL_OUTPUTS, "mono", 0.25)
 MACHINE_CONFIG_END
 

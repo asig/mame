@@ -12,6 +12,8 @@
 #include "segasnd.h"
 
 #include "sound/sp0250.h"
+#include "includes/segag80r.h"
+#include "includes/segag80v.h"
 
 #include <cmath>
 
@@ -198,12 +200,12 @@ void speech_sound_device::sound_stream_update(sound_stream &stream, stream_sampl
  *
  *************************************/
 
-static ADDRESS_MAP_START( speech_map, AS_PROGRAM, 8, speech_sound_device )
+ADDRESS_MAP_START(segag80snd_common::speech_map)
 	AM_RANGE(0x0000, 0x07ff) AM_MIRROR(0x0800) AM_ROM
 ADDRESS_MAP_END
 
 
-static ADDRESS_MAP_START( speech_portmap, AS_IO, 8, speech_sound_device )
+ADDRESS_MAP_START(segag80snd_common::speech_portmap)
 	AM_RANGE(0x00, 0xff) AM_DEVREAD("segaspeech", speech_sound_device, rom_r)
 	AM_RANGE(0x00, 0xff) AM_DEVWRITE("speech", sp0250_device, write)
 ADDRESS_MAP_END
@@ -215,7 +217,7 @@ ADDRESS_MAP_END
  *
  *************************************/
 
-MACHINE_CONFIG_START( sega_speech_board )
+MACHINE_CONFIG_START(segag80snd_common::sega_speech_board)
 
 	/* CPU for the speech board */
 	MCFG_CPU_ADD("audiocpu", I8035, SPEECH_MASTER_CLOCK)        /* divide by 15 in CPU */
@@ -844,11 +846,11 @@ void usb_sound_device::sound_stream_update(sound_stream &stream, stream_sample_t
  *
  *************************************/
 
-static ADDRESS_MAP_START( usb_map, AS_PROGRAM, 8, usb_sound_device )
+ADDRESS_MAP_START(usb_sound_device::usb_map)
 	AM_RANGE(0x0000, 0x0fff) AM_RAM AM_SHARE("pgmram")
 ADDRESS_MAP_END
 
-static ADDRESS_MAP_START( usb_portmap, AS_IO, 8, usb_sound_device )
+ADDRESS_MAP_START(usb_sound_device::usb_portmap)
 	AM_RANGE(0x00, 0xff) AM_READWRITE(workram_r, workram_w) AM_SHARE("workram")
 ADDRESS_MAP_END
 
@@ -857,7 +859,7 @@ ADDRESS_MAP_END
 // device_add_mconfig - add device configuration
 //-------------------------------------------------
 
-MACHINE_CONFIG_MEMBER( usb_sound_device::device_add_mconfig )
+MACHINE_CONFIG_START(usb_sound_device::device_add_mconfig)
 
 	/* CPU for the usb board */
 	MCFG_CPU_ADD("ourcpu", I8035, USB_MASTER_CLOCK)     /* divide by 15 in CPU */
@@ -879,11 +881,11 @@ usb_rom_sound_device::usb_rom_sound_device(const machine_config &mconfig, const 
 {
 }
 
-static ADDRESS_MAP_START( usb_map_rom, AS_PROGRAM, 8, usb_sound_device )
+ADDRESS_MAP_START(usb_sound_device::usb_map_rom)
 	AM_RANGE(0x0000, 0x0fff) AM_ROM AM_REGION(":usbcpu", 0)
 ADDRESS_MAP_END
 
-MACHINE_CONFIG_MEMBER( usb_rom_sound_device::device_add_mconfig )
+MACHINE_CONFIG_START(usb_rom_sound_device::device_add_mconfig)
 	usb_sound_device::device_add_mconfig(config);
 
 	/* CPU for the usb board */

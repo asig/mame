@@ -93,6 +93,9 @@ public:
 	DECLARE_DRIVER_INIT(master);
 	DECLARE_READ8_MEMBER(master_trampoline_r);
 	DECLARE_WRITE8_MEMBER(master_trampoline_w);
+	void master_map(address_map &map);
+	void master_trampoline(address_map &map);
+	void master(machine_config &config);
 
 protected:
 	virtual void machine_start() override;
@@ -275,7 +278,7 @@ DRIVER_INIT_MEMBER(ckz80_state, master)
 
 // Master
 
-static ADDRESS_MAP_START( master_map, AS_PROGRAM, 8, ckz80_state )
+ADDRESS_MAP_START(ckz80_state::master_map)
 	AM_RANGE(0x0000, 0x1fff) AM_MIRROR(0x6000) AM_ROM AM_REGION("maincpu", 0) // _A15
 	AM_RANGE(0xa000, 0xa000) AM_MIRROR(0x1fff) AM_READWRITE(master_input_r, master_control_w) // A13
 	AM_RANGE(0xc000, 0xc7ff) AM_MIRROR(0x3800) AM_RAM // A14
@@ -303,7 +306,7 @@ READ8_MEMBER(ckz80_state::master_trampoline_r)
 	return data;
 }
 
-static ADDRESS_MAP_START( master_trampoline, AS_PROGRAM, 8, ckz80_state )
+ADDRESS_MAP_START(ckz80_state::master_trampoline)
 	AM_RANGE(0x0000, 0xffff) AM_READWRITE(master_trampoline_r, master_trampoline_w)
 ADDRESS_MAP_END
 
@@ -426,10 +429,10 @@ INPUT_PORTS_END
     Machine Drivers
 ******************************************************************************/
 
-static MACHINE_CONFIG_START( master )
+MACHINE_CONFIG_START(ckz80_state::master)
 
 	/* basic machine hardware */
-	MCFG_CPU_ADD("maincpu", Z80, XTAL_8MHz/2)
+	MCFG_CPU_ADD("maincpu", Z80, 8_MHz_XTAL/2)
 	MCFG_CPU_PROGRAM_MAP(master_trampoline)
 	MCFG_TIMER_DRIVER_ADD_PERIODIC("irq_on", ckz80_state, irq_on, attotime::from_hz(429)) // theoretical frequency from 555 timer (22nF, 150K, 1K5), measurement was 418Hz
 	MCFG_TIMER_START_DELAY(attotime::from_hz(429) - attotime::from_nsec(22870)) // active for 22.87us

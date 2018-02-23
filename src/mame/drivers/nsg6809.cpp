@@ -49,10 +49,12 @@ public:
 		m_maincpu(*this, "maincpu") {}
 
 	required_device<cpu_device> m_maincpu;
+	void pitchhit(machine_config &config);
+	void main_map(address_map &map);
 };
 
 
-static ADDRESS_MAP_START( main_map, AS_PROGRAM, 8, nsg6809_state )
+ADDRESS_MAP_START(nsg6809_state::main_map)
 	AM_RANGE(0x0000, 0x1fff) AM_RAM
 	AM_RANGE(0x2800, 0x280f) AM_DEVREADWRITE("via", via6522_device, read, write)
 	AM_RANGE(0x3000, 0x3003) AM_DEVREADWRITE("acia", mos6551_device, read, write)
@@ -63,15 +65,15 @@ ADDRESS_MAP_END
 static INPUT_PORTS_START( pitchhit )
 INPUT_PORTS_END
 
-static MACHINE_CONFIG_START( pitchhit )
-	MCFG_CPU_ADD("maincpu", MC6809, XTAL_4MHz) // clock buffered through 74HC4060
+MACHINE_CONFIG_START(nsg6809_state::pitchhit)
+	MCFG_CPU_ADD("maincpu", MC6809, XTAL(4'000'000)) // clock buffered through 74HC4060
 	MCFG_CPU_PROGRAM_MAP(main_map)
 
-	MCFG_DEVICE_ADD("via", VIA6522, XTAL_4MHz / 4)
+	MCFG_DEVICE_ADD("via", VIA6522, XTAL(4'000'000) / 4)
 	MCFG_VIA6522_IRQ_HANDLER(DEVWRITELINE("mainirq", input_merger_device, in_w<0>))
 
 	MCFG_DEVICE_ADD("acia", MOS6551, 0)
-	MCFG_MOS6551_XTAL(XTAL_1_8432MHz)
+	MCFG_MOS6551_XTAL(XTAL(1'843'200))
 	MCFG_MOS6551_IRQ_HANDLER(DEVWRITELINE("mainirq", input_merger_device, in_w<1>))
 
 	MCFG_WATCHDOG_ADD("deadman")

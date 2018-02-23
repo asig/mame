@@ -28,6 +28,9 @@ public:
 			m_maincpu(*this, "maincpu")
 	{ }
 
+	void ace_sp(machine_config &config);
+	void ace_sp_map(address_map &map);
+	void ace_sp_portmap(address_map &map);
 protected:
 
 	// devices
@@ -41,7 +44,7 @@ public:
 
 
 
-static ADDRESS_MAP_START( ace_sp_map, AS_PROGRAM, 8, ace_sp_state )
+ADDRESS_MAP_START(ace_sp_state::ace_sp_map)
 	/**** 6303Y internal area ****/
 	//----- 0x0000 - 0x0027 is internal registers -----
 	AM_RANGE(0x0000, 0x0027) AM_RAM
@@ -69,7 +72,7 @@ static ADDRESS_MAP_START( ace_sp_map, AS_PROGRAM, 8, ace_sp_state )
 ADDRESS_MAP_END
 
 
-static ADDRESS_MAP_START( ace_sp_portmap, AS_IO, 8, ace_sp_state )
+ADDRESS_MAP_START(ace_sp_state::ace_sp_portmap)
 	//AM_RANGE(0x02, 0x02) // misc
 	//AM_RANGE(0x05, 0x06) // AYs
 ADDRESS_MAP_END
@@ -79,7 +82,7 @@ static INPUT_PORTS_START( ace_sp )
 INPUT_PORTS_END
 
 
-static MACHINE_CONFIG_START( ace_sp )
+MACHINE_CONFIG_START(ace_sp_state::ace_sp)
 	MCFG_CPU_ADD("maincpu", HD6303Y, 1000000)
 	MCFG_CPU_PROGRAM_MAP(ace_sp_map)
 	MCFG_CPU_IO_MAP(ace_sp_portmap)

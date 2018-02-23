@@ -30,24 +30,28 @@ public:
 		: genpin_class(mconfig, type, tag)
 		, m_maincpu(*this, "maincpu") { }
 
+		void barni(machine_config &config);
+		void audiocpu_map(address_map &map);
+		void maincpu_map(address_map &map);
+		void subcpu_map(address_map &map);
 private:
 	required_device<cpu_device> m_maincpu;
 };
 
-static ADDRESS_MAP_START( maincpu_map, AS_PROGRAM, 8, barni_state )
+ADDRESS_MAP_START(barni_state::maincpu_map)
 	ADDRESS_MAP_UNMAP_HIGH
 	AM_RANGE(0x0000, 0x00ff) AM_RAM
 	AM_RANGE(0xa100, 0xa7ff) AM_RAM
 	AM_RANGE(0xc000, 0xffff) AM_ROM
 ADDRESS_MAP_END
 
-static ADDRESS_MAP_START( subcpu_map, AS_PROGRAM, 8, barni_state )
+ADDRESS_MAP_START(barni_state::subcpu_map)
 	ADDRESS_MAP_UNMAP_HIGH
 	AM_RANGE(0x0000, 0x03ff) AM_RAM
 	AM_RANGE(0xe000, 0xffff) AM_ROM
 ADDRESS_MAP_END
 
-static ADDRESS_MAP_START( audiocpu_map, AS_PROGRAM, 8, barni_state )
+ADDRESS_MAP_START(barni_state::audiocpu_map)
 	AM_RANGE(0x0000, 0x007f) AM_RAM
 	AM_RANGE(0xc000, 0xffff) AM_ROM
 ADDRESS_MAP_END
@@ -55,12 +59,12 @@ ADDRESS_MAP_END
 static INPUT_PORTS_START( barni )
 INPUT_PORTS_END
 
-static MACHINE_CONFIG_START( barni )
+MACHINE_CONFIG_START(barni_state::barni)
 	/* basic machine hardware */
-	MCFG_CPU_ADD("maincpu", MC6809E, XTAL_4MHz / 4)
+	MCFG_CPU_ADD("maincpu", MC6809E, XTAL(4'000'000) / 4)
 	MCFG_CPU_PROGRAM_MAP(maincpu_map)
 
-	MCFG_CPU_ADD("subcpu", MC6809E, XTAL_4MHz / 4)
+	MCFG_CPU_ADD("subcpu", MC6809E, XTAL(4'000'000) / 4)
 	MCFG_CPU_PROGRAM_MAP(subcpu_map)
 
 	MCFG_CPU_ADD("audiocpu", M6802, 4000000) // uses own XTAL, but what is the value?
@@ -75,7 +79,7 @@ static MACHINE_CONFIG_START( barni )
 	/* sound hardware */
 	//tmms5220
 	//dac
-	MCFG_FRAGMENT_ADD( genpin_audio )
+	genpin_audio(config);
 MACHINE_CONFIG_END
 
 

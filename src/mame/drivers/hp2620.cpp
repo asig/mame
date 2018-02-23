@@ -32,6 +32,9 @@ public:
 
 	u32 screen_update(screen_device &screen, bitmap_rgb32 &bitmap, const rectangle &cliprect);
 
+	void hp2622(machine_config &config);
+	void io_map(address_map &map);
+	void mem_map(address_map &map);
 private:
 	required_device<cpu_device> m_maincpu;
 	required_region_ptr<u8> m_p_chargen;
@@ -72,12 +75,12 @@ WRITE8_MEMBER(hp2620_state::modem_w)
 {
 }
 
-static ADDRESS_MAP_START( mem_map, AS_PROGRAM, 8, hp2620_state )
+ADDRESS_MAP_START(hp2620_state::mem_map)
 	AM_RANGE(0x0000, 0xbfff) AM_ROM AM_REGION("maincpu", 0)
 	AM_RANGE(0xc000, 0xffff) AM_RAM
 ADDRESS_MAP_END
 
-static ADDRESS_MAP_START( io_map, AS_PROGRAM, 8, hp2620_state )
+ADDRESS_MAP_START(hp2620_state::io_map)
 	ADDRESS_MAP_GLOBAL_MASK(0xff)
 	AM_RANGE(0x00, 0x7f) AM_READWRITE(nvram_r, nvram_w) AM_SHARE("nvram")
 	AM_RANGE(0x80, 0x80) AM_READ(keystat_r)
@@ -91,21 +94,21 @@ ADDRESS_MAP_END
 static INPUT_PORTS_START( hp2622 )
 INPUT_PORTS_END
 
-static MACHINE_CONFIG_START( hp2622 )
-	MCFG_CPU_ADD("maincpu", Z80, XTAL_25_7715MHz / 7) // 3.68 MHz
+MACHINE_CONFIG_START(hp2620_state::hp2622)
+	MCFG_CPU_ADD("maincpu", Z80, XTAL(25'771'500) / 7) // 3.68 MHz
 	MCFG_CPU_PROGRAM_MAP(mem_map)
 	MCFG_CPU_IO_MAP(io_map)
 
 	MCFG_NVRAM_ADD_0FILL("nvram") // 5101 (A7 tied to GND) + battery (+ wait states)
 
 	MCFG_SCREEN_ADD("screen", RASTER)
-	MCFG_SCREEN_RAW_PARAMS(XTAL_25_7715MHz, 1035, 0, 720, 415, 0, 390) // 498 total lines in 50 Hz mode
+	MCFG_SCREEN_RAW_PARAMS(XTAL(25'771'500), 1035, 0, 720, 415, 0, 390) // 498 total lines in 50 Hz mode
 	MCFG_SCREEN_UPDATE_DRIVER(hp2620_state, screen_update)
 
-	//MCFG_DEVICE_ADD("crtc", DP8367, XTAL_25_7715MHz)
+	//MCFG_DEVICE_ADD("crtc", DP8367, XTAL(25'771'500))
 
 	MCFG_DEVICE_ADD("acia", MOS6551, 0) // SY6551
-	MCFG_MOS6551_XTAL(XTAL_25_7715MHz / 14) // 1.84 MHz
+	MCFG_MOS6551_XTAL(XTAL(25'771'500) / 14) // 1.84 MHz
 	MCFG_MOS6551_IRQ_HANDLER(INPUTLINE("maincpu", 0))
 MACHINE_CONFIG_END
 

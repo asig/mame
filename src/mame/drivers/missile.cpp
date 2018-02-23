@@ -423,11 +423,16 @@ public:
 
 	TIMER_CALLBACK_MEMBER(clock_irq);
 	TIMER_CALLBACK_MEMBER(adjust_cpu_speed);
+	void missileb(machine_config &config);
+	void missile(machine_config &config);
+	void missilea(machine_config &config);
+	void bootleg_main_map(address_map &map);
+	void main_map(address_map &map);
 };
 
 
 
-#define MASTER_CLOCK    XTAL_10MHz
+#define MASTER_CLOCK    XTAL(10'000'000)
 
 #define PIXEL_CLOCK     (MASTER_CLOCK/2)
 #define HTOTAL          (320)
@@ -941,12 +946,12 @@ READ8_MEMBER(missile_state::bootleg_r)
  *************************************/
 
 /* complete memory map derived from schematics (implemented above) */
-static ADDRESS_MAP_START( main_map, AS_PROGRAM, 8, missile_state )
+ADDRESS_MAP_START(missile_state::main_map)
 	AM_RANGE(0x0000, 0xffff) AM_READWRITE(missile_r, missile_w) AM_SHARE("videoram")
 ADDRESS_MAP_END
 
 /* adjusted from the above to get the bootlegs to boot */
-static ADDRESS_MAP_START( bootleg_main_map, AS_PROGRAM, 8, missile_state )
+ADDRESS_MAP_START(missile_state::bootleg_main_map)
 	AM_RANGE(0x0000, 0xffff) AM_READWRITE(bootleg_r, bootleg_w) AM_SHARE("videoram")
 ADDRESS_MAP_END
 
@@ -1134,7 +1139,7 @@ INPUT_PORTS_END
  *
  *************************************/
 
-static MACHINE_CONFIG_START( missile )
+MACHINE_CONFIG_START(missile_state::missile)
 
 	/* basic machine hardware */
 	MCFG_CPU_ADD("maincpu", M6502, MASTER_CLOCK/8)
@@ -1161,12 +1166,14 @@ static MACHINE_CONFIG_START( missile )
 	MCFG_SOUND_ROUTE(ALL_OUTPUTS, "mono", 1.0)
 MACHINE_CONFIG_END
 
-static MACHINE_CONFIG_DERIVED( missilea, missile )
+MACHINE_CONFIG_START(missile_state::missilea)
+	missile(config);
 
 	MCFG_DEVICE_REMOVE("pokey")
 MACHINE_CONFIG_END
 
-static MACHINE_CONFIG_DERIVED( missileb, missilea )
+MACHINE_CONFIG_START(missile_state::missileb)
+	missilea(config);
 
 	MCFG_CPU_MODIFY("maincpu")
 	MCFG_CPU_PROGRAM_MAP(bootleg_main_map)

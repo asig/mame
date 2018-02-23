@@ -40,8 +40,8 @@
 /****************************
 *    Clock defines          *
 ****************************/
-#define CPU_CLK  XTAL_11_0592MHz
-#define AY_CLK  XTAL_11_0592MHz/8
+#define CPU_CLK  XTAL(11'059'200)
+#define AY_CLK  XTAL(11'059'200)/8
 
 
 class fireball_state : public driver_device
@@ -76,6 +76,9 @@ public:
 	DECLARE_WRITE8_MEMBER(p3_w);
 	TIMER_DEVICE_CALLBACK_MEMBER(int_0);
 
+	void fireball(machine_config &config);
+	void fireball_io_map(address_map &map);
+	void fireball_map(address_map &map);
 protected:
 
 	// devices
@@ -290,11 +293,11 @@ WRITE8_MEMBER(fireball_state::p3_w)
 * Memory Map Information *
 *************************/
 
-static ADDRESS_MAP_START( fireball_map, AS_PROGRAM, 8, fireball_state )
+ADDRESS_MAP_START(fireball_state::fireball_map)
 	AM_RANGE(0x0000, 0x1fff) AM_ROM
 ADDRESS_MAP_END
 
-static ADDRESS_MAP_START( fireball_io_map, AS_IO, 8, fireball_state )
+ADDRESS_MAP_START(fireball_state::fireball_io_map)
 
 	AM_RANGE(0x00, 0x01)AM_READWRITE(io_00_r,io_00_w)
 	AM_RANGE(0x02, 0x03)AM_READWRITE(io_02_r,io_02_w)
@@ -493,7 +496,7 @@ TIMER_DEVICE_CALLBACK_MEMBER( fireball_state::int_0 )
 *************************/
 
 
-static MACHINE_CONFIG_START( fireball )
+MACHINE_CONFIG_START(fireball_state::fireball)
 	/* basic machine hardware */
 	MCFG_CPU_ADD("maincpu", I8031, CPU_CLK) //
 	MCFG_CPU_PROGRAM_MAP(fireball_map)

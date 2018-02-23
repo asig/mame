@@ -115,10 +115,10 @@ enum
 //**************************************************************************
 
 #define MCFG_PSX_DMA_CHANNEL_READ( cputag, channel, handler ) \
-	psxcpu_device::getcpu( *owner, cputag )->subdevice<psxdma_device>("dma")->install_read_handler( channel, handler );
+	psxcpu_device::getcpu( *this, cputag )->subdevice<psxdma_device>("dma")->install_read_handler( channel, handler );
 
 #define MCFG_PSX_DMA_CHANNEL_WRITE( cputag, channel, handler ) \
-	psxcpu_device::getcpu( *owner, cputag )->subdevice<psxdma_device>("dma")->install_write_handler( channel, handler );
+	psxcpu_device::getcpu( *this, cputag )->subdevice<psxdma_device>("dma")->install_write_handler( channel, handler );
 
 #define MCFG_PSX_GPU_READ_HANDLER(_devcb) \
 	devcb = &psxcpu_device::set_gpu_read_handler(*device, DEVCB_##_devcb);
@@ -190,6 +190,7 @@ public:
 	static psxcpu_device *getcpu( device_t &device, const char *cputag );
 	void set_disable_rom_berr(bool mode);
 
+	void psxcpu_internal_map(address_map &map);
 protected:
 	static constexpr unsigned ICACHE_ENTRIES = 0x400;
 	static constexpr unsigned DCACHE_ENTRIES = 0x100;

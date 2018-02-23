@@ -144,18 +144,22 @@
 class manohman_state : public driver_device
 {
 public:
-	manohman_state(const machine_config &mconfig, device_type type, const char *tag)
-		: driver_device(mconfig, type, tag),
+	manohman_state(const machine_config &mconfig, device_type type, const char *tag) :
+		driver_device(mconfig, type, tag),
 		m_maincpu(*this, "maincpu"),
 		m_duart(*this, "duart"),
 		m_pit(*this, "pit")
 	{ }
 
+	void manohman(machine_config &config);
+
+protected:
+	virtual void machine_start() override;
+	void mem_map(address_map &map);
+
 	IRQ_CALLBACK_MEMBER(iack_handler);
 
 private:
-	virtual void machine_start() override;
-
 	required_device<cpu_device> m_maincpu;
 	required_device<mc68681_device> m_duart;
 	required_device<pit68230_device> m_pit;
@@ -178,7 +182,7 @@ IRQ_CALLBACK_MEMBER(manohman_state::iack_handler)
 *           Memory Map Definition            *
 *********************************************/
 
-static ADDRESS_MAP_START( mem_map, AS_PROGRAM, 16, manohman_state )
+ADDRESS_MAP_START(manohman_state::mem_map)
 	AM_RANGE(0x000000, 0x01ffff) AM_ROM
 	AM_RANGE(0x100000, 0x10003f) AM_DEVREADWRITE8("pit", pit68230_device, read, write, 0x00ff)
 	AM_RANGE(0x200000, 0x20001f) AM_DEVREADWRITE8("duart", mc68681_device, read, write, 0x00ff)
@@ -232,22 +236,22 @@ INPUT_PORTS_END
 *               Machine Config               *
 *********************************************/
 
-static MACHINE_CONFIG_START( manohman )
-	MCFG_CPU_ADD("maincpu", M68000, XTAL_8MHz) // MC68000P8
+MACHINE_CONFIG_START(manohman_state::manohman)
+	MCFG_CPU_ADD("maincpu", M68000, XTAL(8'000'000)) // MC68000P8
 	MCFG_CPU_PROGRAM_MAP(mem_map)
 	MCFG_CPU_IRQ_ACKNOWLEDGE_DRIVER(manohman_state, iack_handler)
 
-	MCFG_DEVICE_ADD("pit", PIT68230, XTAL_8MHz) // MC68230P8
+	MCFG_DEVICE_ADD("pit", PIT68230, XTAL(8'000'000)) // MC68230P8
 
-	MCFG_DEVICE_ADD("duart", MC68681, XTAL_3_6864MHz)
+	MCFG_DEVICE_ADD("duart", MC68681, XTAL(3'686'400))
 	MCFG_MC68681_IRQ_CALLBACK(INPUTLINE("maincpu", M68K_IRQ_4))
 
-	MCFG_DEVICE_ADD("rtc", MSM6242, XTAL_32_768kHz) // M62X42B
+	MCFG_DEVICE_ADD("rtc", MSM6242, XTAL(32'768)) // M62X42B
 
 	MCFG_NVRAM_ADD_NO_FILL("nvram") // KM6264BL-10 x2 + MAX696CFL + battery
 
 	MCFG_SPEAKER_STANDARD_MONO("mono")
-	MCFG_SOUND_ADD("saa", SAA1099, XTAL_8MHz / 2) // clock not verified
+	MCFG_SOUND_ADD("saa", SAA1099, XTAL(8'000'000) / 2) // clock not verified
 	MCFG_SOUND_ROUTE(ALL_OUTPUTS, "mono", 0.10)
 MACHINE_CONFIG_END
 

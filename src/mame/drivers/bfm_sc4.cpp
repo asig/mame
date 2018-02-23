@@ -286,10 +286,11 @@ READ16_MEMBER(sc4_state::sc4_cs1_r)
 
 			if (r_D1 == 0x7)
 			{
+				auto &mspace = m_maincpu->space(AS_PROGRAM);
 				bool valid = true;
 				for (int i=0;i<8;i++)
 				{
-					uint8_t code = space.read_byte(r_A0+i);
+					uint8_t code = mspace.read_byte(r_A0+i);
 					if (code != 0xff) // assume our mbus code just returns 0xff for now..
 						valid = false;
 				}
@@ -302,9 +303,9 @@ READ16_MEMBER(sc4_state::sc4_cs1_r)
 					printf("Ident code? ");
 					for (int i=0;i<8;i++)
 					{
-						uint8_t code = space.read_byte(r_A1+i);
+						uint8_t code = mspace.read_byte(r_A1+i);
 						printf("%02x",code);
-						space.write_byte(r_A0+i, code);
+						mspace.write_byte(r_A0+i, code);
 					}
 					printf("\n");
 				}
@@ -615,9 +616,9 @@ WRITE16_MEMBER(sc4_state::sc4_mem_w)
 	}
 }
 
-static ADDRESS_MAP_START( sc4_map, AS_PROGRAM, 16, sc4_state )
-	AM_RANGE(0x0000000, 0x0fffff) AM_READ(sc4_cs1_r) // technically we should be going through the cs handler, but this is always set to ROM, and assuming that is a lot faster
+ADDRESS_MAP_START(sc4_state::sc4_map)
 	AM_RANGE(0x0000000, 0xffffff) AM_READWRITE(sc4_mem_r, sc4_mem_w)
+	AM_RANGE(0x0000000, 0x0fffff) AM_READ(sc4_cs1_r) // technically we should be going through the cs handler, but this is always set to ROM, and assuming that is a lot faster
 ADDRESS_MAP_END
 
 
@@ -665,7 +666,7 @@ WRITE32_MEMBER(sc4_adder4_state::adder4_mem_w)
 
 }
 
-static ADDRESS_MAP_START( sc4_adder4_map, AS_PROGRAM, 32, sc4_adder4_state )
+ADDRESS_MAP_START(sc4_adder4_state::sc4_adder4_map)
 	AM_RANGE(0x00000000, 0xffffffff) AM_READWRITE(adder4_mem_r, adder4_mem_w)
 ADDRESS_MAP_END
 
@@ -773,8 +774,7 @@ void sc4_state::bfm_sc4_68307_portb_w(address_space &space, bool dedicated, uint
 {
 //  if (dedicated == false)
 	{
-		int pc = space.device().safe_pc();
-		//_m68ki_cpu_core *m68k = m68k_get_safe_token(&space.device());
+		int pc = m_maincpu->pc();
 		// serial output to the VFD at least..
 		logerror("%08x bfm_sc4_68307_portb_w %04x %04x\n", pc, data, line_mask);
 
@@ -786,7 +786,7 @@ void sc4_state::bfm_sc4_68307_portb_w(address_space &space, bool dedicated, uint
 }
 uint8_t sc4_state::bfm_sc4_68307_porta_r(address_space &space, bool dedicated, uint8_t line_mask)
 {
-	int pc = space.device().safe_pc();
+	int pc = m_maincpu->pc();
 	logerror("%08x bfm_sc4_68307_porta_r\n", pc);
 	return 0xbb;// machine().rand();
 }
@@ -890,7 +890,7 @@ WRITE_LINE_MEMBER(sc4_state::bfmdm01_busy)
 	// Must tie back to inputs somehow!
 }
 
-MACHINE_CONFIG_START( sc4_common )
+MACHINE_CONFIG_START(sc4_state::sc4_common)
 	MCFG_CPU_ADD("maincpu", M68307, 16000000)    // 68307! (EC000 core)
 	MCFG_CPU_PROGRAM_MAP(sc4_map)
 	MCFG_MC68307_SERIAL_A_TX_CALLBACK(WRITELINE(sc4_state, m68307_duart_txa))
@@ -906,7 +906,7 @@ MACHINE_CONFIG_START( sc4_common )
 	MCFG_NVRAM_ADD_1FILL("nvram")
 
 	MCFG_DEVICE_ADD("duart68681", MC68681, 16000000/4) // ?? Mhz
-	MCFG_MC68681_SET_EXTERNAL_CLOCKS(XTAL_16MHz/2/8, XTAL_16MHz/2/16, XTAL_16MHz/2/16, XTAL_16MHz/2/8)
+	MCFG_MC68681_SET_EXTERNAL_CLOCKS(XTAL(16'000'000)/2/8, XTAL(16'000'000)/2/16, XTAL(16'000'000)/2/16, XTAL(16'000'000)/2/8)
 	MCFG_MC68681_IRQ_CALLBACK(WRITELINE(sc4_state, bfm_sc4_duart_irq_handler))
 	MCFG_MC68681_A_TX_CALLBACK(WRITELINE(sc4_state, bfm_sc4_duart_txa))
 	MCFG_MC68681_INPORT_CALLBACK(READ8(sc4_state, bfm_sc4_duart_input_r))
@@ -921,8 +921,8 @@ MACHINE_CONFIG_START( sc4_common )
 MACHINE_CONFIG_END
 
 //Standard 6 reels all connected
-MACHINE_CONFIG_START( sc4 )
-	MCFG_FRAGMENT_ADD(sc4_common)
+MACHINE_CONFIG_START(sc4_state::sc4)
+	sc4_common(config);
 
 	MCFG_STARPOINT_RM20_48STEP_ADD("reel1")
 	MCFG_STEPPER_OPTIC_CALLBACK(WRITELINE(sc4_state, reel1_optic_cb))
@@ -939,8 +939,8 @@ MACHINE_CONFIG_START( sc4 )
 MACHINE_CONFIG_END
 
 //Standard 3 reels
-MACHINE_CONFIG_START( sc4_3reel )
-	MCFG_FRAGMENT_ADD(sc4_common)
+MACHINE_CONFIG_START(sc4_state::sc4_3reel)
+	sc4_common(config);
 
 	MCFG_STARPOINT_RM20_48STEP_ADD("reel1")
 	MCFG_STEPPER_OPTIC_CALLBACK(WRITELINE(sc4_state, reel1_optic_cb))
@@ -952,8 +952,8 @@ MACHINE_CONFIG_START( sc4_3reel )
 MACHINE_CONFIG_END
 
 //Standard 4 reels
-MACHINE_CONFIG_START( sc4_4reel )
-	MCFG_FRAGMENT_ADD(sc4_common)
+MACHINE_CONFIG_START(sc4_state::sc4_4reel)
+	sc4_common(config);
 
 	MCFG_STARPOINT_RM20_48STEP_ADD("reel1")
 	MCFG_STEPPER_OPTIC_CALLBACK(WRITELINE(sc4_state, reel1_optic_cb))
@@ -966,9 +966,9 @@ MACHINE_CONFIG_START( sc4_4reel )
 MACHINE_CONFIG_END
 
 //4 reels, with the last connected to RL4 not RL3
-MACHINE_CONFIG_START( sc4_4reel_alt )
+MACHINE_CONFIG_START(sc4_state::sc4_4reel_alt)
 
-	MCFG_FRAGMENT_ADD(sc4_common)
+	sc4_common(config);
 
 	MCFG_STARPOINT_RM20_48STEP_ADD("reel1")
 	MCFG_STEPPER_OPTIC_CALLBACK(WRITELINE(sc4_state, reel1_optic_cb))
@@ -983,8 +983,8 @@ MACHINE_CONFIG_END
 
 
 //Standard 5 reels
-MACHINE_CONFIG_START( sc4_5reel )
-	MCFG_FRAGMENT_ADD(sc4_common)
+MACHINE_CONFIG_START(sc4_state::sc4_5reel)
+	sc4_common(config);
 
 	MCFG_STARPOINT_RM20_48STEP_ADD("reel1")
 	MCFG_STEPPER_OPTIC_CALLBACK(WRITELINE(sc4_state, reel1_optic_cb))
@@ -999,8 +999,8 @@ MACHINE_CONFIG_START( sc4_5reel )
 MACHINE_CONFIG_END
 
 //5 reels, with RL4 skipped
-MACHINE_CONFIG_START( sc4_5reel_alt )
-	MCFG_FRAGMENT_ADD(sc4_common)
+MACHINE_CONFIG_START(sc4_state::sc4_5reel_alt)
+	sc4_common(config);
 
 	MCFG_STARPOINT_RM20_48STEP_ADD("reel1")
 	MCFG_STEPPER_OPTIC_CALLBACK(WRITELINE(sc4_state, reel1_optic_cb))
@@ -1017,9 +1017,9 @@ MACHINE_CONFIG_START( sc4_5reel_alt )
 MACHINE_CONFIG_END
 
 //6 reels, last 200 steps
-MACHINE_CONFIG_START( sc4_200_std )
+MACHINE_CONFIG_START(sc4_state::sc4_200_std)
 
-	MCFG_FRAGMENT_ADD(sc4_common)
+	sc4_common(config);
 
 	MCFG_STARPOINT_RM20_48STEP_ADD("reel1")
 	MCFG_STEPPER_OPTIC_CALLBACK(WRITELINE(sc4_state, reel1_optic_cb))
@@ -1036,8 +1036,8 @@ MACHINE_CONFIG_START( sc4_200_std )
 MACHINE_CONFIG_END
 
 //6 reels, last 200 steps
-MACHINE_CONFIG_START( sc4_200_alt )
-	MCFG_FRAGMENT_ADD(sc4_common)
+MACHINE_CONFIG_START(sc4_state::sc4_200_alt)
+	sc4_common(config);
 
 	MCFG_STARPOINT_RM20_48STEP_ADD("reel1")
 	MCFG_STEPPER_OPTIC_CALLBACK(WRITELINE(sc4_state, reel1_optic_cb))
@@ -1054,8 +1054,8 @@ MACHINE_CONFIG_START( sc4_200_alt )
 MACHINE_CONFIG_END
 
 //6 reels, RL4 200 steps
-MACHINE_CONFIG_START( sc4_200_alta )
-	MCFG_FRAGMENT_ADD(sc4_common)
+MACHINE_CONFIG_START(sc4_state::sc4_200_alta)
+	sc4_common(config);
 
 	MCFG_STARPOINT_RM20_48STEP_ADD("reel1")
 	MCFG_STEPPER_OPTIC_CALLBACK(WRITELINE(sc4_state, reel1_optic_cb))
@@ -1072,8 +1072,8 @@ MACHINE_CONFIG_START( sc4_200_alta )
 MACHINE_CONFIG_END
 
 //6 reels, 3 48 step, 3 200 step
-MACHINE_CONFIG_START( sc4_200_altb )
-	MCFG_FRAGMENT_ADD(sc4_common)
+MACHINE_CONFIG_START(sc4_state::sc4_200_altb)
+	sc4_common(config);
 
 	MCFG_STARPOINT_200STEP_ADD("reel1")
 	MCFG_STEPPER_OPTIC_CALLBACK(WRITELINE(sc4_state, reel1_optic_cb))
@@ -1090,8 +1090,8 @@ MACHINE_CONFIG_START( sc4_200_altb )
 MACHINE_CONFIG_END
 
 //5 reels, last one 200 steps
-MACHINE_CONFIG_START( sc4_200_5r )
-	MCFG_FRAGMENT_ADD(sc4_common)
+MACHINE_CONFIG_START(sc4_state::sc4_200_5r)
+	sc4_common(config);
 
 	MCFG_STARPOINT_RM20_48STEP_ADD("reel1")
 	MCFG_STEPPER_OPTIC_CALLBACK(WRITELINE(sc4_state, reel1_optic_cb))
@@ -1108,8 +1108,8 @@ MACHINE_CONFIG_END
 
 
 //5 reels, last one 200 steps, RL4 skipped
-MACHINE_CONFIG_START( sc4_200_5ra )
-	MCFG_FRAGMENT_ADD(sc4_common)
+MACHINE_CONFIG_START(sc4_state::sc4_200_5ra)
+	sc4_common(config);
 
 	MCFG_STARPOINT_RM20_48STEP_ADD("reel1")
 	MCFG_STEPPER_OPTIC_CALLBACK(WRITELINE(sc4_state, reel1_optic_cb))
@@ -1125,8 +1125,8 @@ MACHINE_CONFIG_START( sc4_200_5ra )
 MACHINE_CONFIG_END
 
 //5 reels, last one 200 steps, RL5 skipped
-MACHINE_CONFIG_START( sc4_200_5rb )
-	MCFG_FRAGMENT_ADD(sc4_common)
+MACHINE_CONFIG_START(sc4_state::sc4_200_5rb)
+	sc4_common(config);
 
 	MCFG_STARPOINT_RM20_48STEP_ADD("reel1")
 	MCFG_STEPPER_OPTIC_CALLBACK(WRITELINE(sc4_state, reel1_optic_cb))
@@ -1142,8 +1142,8 @@ MACHINE_CONFIG_START( sc4_200_5rb )
 MACHINE_CONFIG_END
 
 //5 reels, RL5 200 steps, RL4 skipped
-MACHINE_CONFIG_START( sc4_200_5rc )
-	MCFG_FRAGMENT_ADD(sc4_common)
+MACHINE_CONFIG_START(sc4_state::sc4_200_5rc)
+	sc4_common(config);
 
 	MCFG_STARPOINT_RM20_48STEP_ADD("reel1")
 	MCFG_STEPPER_OPTIC_CALLBACK(WRITELINE(sc4_state, reel1_optic_cb))
@@ -1159,8 +1159,8 @@ MACHINE_CONFIG_START( sc4_200_5rc )
 MACHINE_CONFIG_END
 
 //4 reels, last one 200 steps
-MACHINE_CONFIG_START( sc4_200_4r )
-	MCFG_FRAGMENT_ADD(sc4_common)
+MACHINE_CONFIG_START(sc4_state::sc4_200_4r)
+	sc4_common(config);
 
 	MCFG_STARPOINT_RM20_48STEP_ADD("reel1")
 	MCFG_STEPPER_OPTIC_CALLBACK(WRITELINE(sc4_state, reel1_optic_cb))
@@ -1173,8 +1173,8 @@ MACHINE_CONFIG_START( sc4_200_4r )
 MACHINE_CONFIG_END
 
 //4 reels, last one 200 steps, RL4 skipped
-MACHINE_CONFIG_START( sc4_200_4ra )
-	MCFG_FRAGMENT_ADD(sc4_common)
+MACHINE_CONFIG_START(sc4_state::sc4_200_4ra)
+	sc4_common(config);
 
 	MCFG_STARPOINT_RM20_48STEP_ADD("reel1")
 	MCFG_STEPPER_OPTIC_CALLBACK(WRITELINE(sc4_state, reel1_optic_cb))
@@ -1189,8 +1189,8 @@ MACHINE_CONFIG_END
 
 
 //4 reels, last one 200 steps, RL4,5 skipped
-MACHINE_CONFIG_START( sc4_200_4rb )
-	MCFG_FRAGMENT_ADD(sc4_common)
+MACHINE_CONFIG_START(sc4_state::sc4_200_4rb)
+	sc4_common(config);
 
 	MCFG_STARPOINT_RM20_48STEP_ADD("reel1")
 	MCFG_STEPPER_OPTIC_CALLBACK(WRITELINE(sc4_state, reel1_optic_cb))
@@ -1203,8 +1203,8 @@ MACHINE_CONFIG_START( sc4_200_4rb )
 	MCFG_STEPPER_OPTIC_CALLBACK(WRITELINE(sc4_state, reel6_optic_cb))
 MACHINE_CONFIG_END
 
-MACHINE_CONFIG_START( sc4_4reel_200 )
-	MCFG_FRAGMENT_ADD(sc4_common)
+MACHINE_CONFIG_START(sc4_state::sc4_4reel_200)
+	sc4_common(config);
 
 	MCFG_STARPOINT_200STEP_ADD("reel1")
 	MCFG_STEPPER_OPTIC_CALLBACK(WRITELINE(sc4_state, reel1_optic_cb))
@@ -1216,8 +1216,8 @@ MACHINE_CONFIG_START( sc4_4reel_200 )
 	MCFG_STEPPER_OPTIC_CALLBACK(WRITELINE(sc4_state, reel4_optic_cb))
 MACHINE_CONFIG_END
 
-MACHINE_CONFIG_START( sc4_3reel_200 )
-	MCFG_FRAGMENT_ADD(sc4_common)
+MACHINE_CONFIG_START(sc4_state::sc4_3reel_200)
+	sc4_common(config);
 
 	MCFG_STARPOINT_200STEP_ADD("reel1")
 	MCFG_STEPPER_OPTIC_CALLBACK(WRITELINE(sc4_state, reel1_optic_cb))
@@ -1227,9 +1227,9 @@ MACHINE_CONFIG_START( sc4_3reel_200 )
 	MCFG_STEPPER_OPTIC_CALLBACK(WRITELINE(sc4_state, reel3_optic_cb))
 MACHINE_CONFIG_END
 
-MACHINE_CONFIG_START( sc4_3reel_200_48 )
+MACHINE_CONFIG_START(sc4_state::sc4_3reel_200_48)
 
-	MCFG_FRAGMENT_ADD(sc4_common)
+	sc4_common(config);
 
 	MCFG_STARPOINT_200STEP_ADD("reel1")
 	MCFG_STEPPER_OPTIC_CALLBACK(WRITELINE(sc4_state, reel1_optic_cb))
@@ -1241,8 +1241,8 @@ MACHINE_CONFIG_START( sc4_3reel_200_48 )
 	MCFG_STEPPER_OPTIC_CALLBACK(WRITELINE(sc4_state, reel4_optic_cb))
 MACHINE_CONFIG_END
 
-MACHINE_CONFIG_START( sc4_no_reels )
-	MCFG_FRAGMENT_ADD(sc4_common)
+MACHINE_CONFIG_START(sc4_state::sc4_no_reels)
+	sc4_common(config);
 MACHINE_CONFIG_END
 
 MACHINE_START_MEMBER(sc4_adder4_state,adder4)
@@ -1252,8 +1252,8 @@ MACHINE_START_MEMBER(sc4_adder4_state,adder4)
 	MACHINE_START_CALL_MEMBER(sc4);
 }
 
-MACHINE_CONFIG_START( sc4_adder4 )
-	MCFG_FRAGMENT_ADD(sc4_common)
+MACHINE_CONFIG_START(sc4_adder4_state::sc4_adder4)
+	sc4_common(config);
 
 	MCFG_CPU_ADD("adder4", M68340, 25175000)     // 68340 (CPU32 core)
 	MCFG_CPU_PROGRAM_MAP(sc4_adder4_map)
@@ -1261,8 +1261,8 @@ MACHINE_CONFIG_START( sc4_adder4 )
 	MCFG_MACHINE_START_OVERRIDE(sc4_adder4_state, adder4 )
 MACHINE_CONFIG_END
 
-MACHINE_CONFIG_START( sc4dmd )
-	MCFG_FRAGMENT_ADD(sc4_common)
+MACHINE_CONFIG_START(sc4_state::sc4dmd)
+	sc4_common(config);
 	/* video hardware */
 
 	//MCFG_DEFAULT_LAYOUT(layout_sc4_dmd)

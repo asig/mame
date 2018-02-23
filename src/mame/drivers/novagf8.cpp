@@ -45,6 +45,9 @@ public:
 	DECLARE_WRITE8_MEMBER(delta1_io1_w);
 	DECLARE_READ8_MEMBER(delta1_io0_r);
 	DECLARE_READ8_MEMBER(delta1_io1_r);
+	void delta1_io(address_map &map);
+	void delta1_map(address_map &map);
+	void delta1(machine_config &config);
 
 protected:
 	virtual void machine_start() override;
@@ -116,13 +119,13 @@ READ8_MEMBER(novagf8_state::delta1_io1_r)
 
 // Delta-1
 
-static ADDRESS_MAP_START( delta1_map, AS_PROGRAM, 8, novagf8_state )
+ADDRESS_MAP_START(novagf8_state::delta1_map)
 	ADDRESS_MAP_GLOBAL_MASK(0x3fff)
 	AM_RANGE(0x0000, 0x0fff) AM_MIRROR(0x1000) AM_ROM // _A13
 	AM_RANGE(0x2000, 0x20ff) AM_MIRROR(0x1f00) AM_RAM // A13
 ADDRESS_MAP_END
 
-static ADDRESS_MAP_START( delta1_io, AS_IO, 8, novagf8_state )
+ADDRESS_MAP_START(novagf8_state::delta1_io)
 	AM_RANGE(0x0, 0x0) AM_READWRITE(delta1_io0_r, delta1_io0_w )
 	AM_RANGE(0x1, 0x1) AM_READWRITE(delta1_io1_r, delta1_io1_w )
 	AM_RANGE(0xc, 0xf) AM_DEVREADWRITE("f3853", f3853_device, read, write )
@@ -170,7 +173,7 @@ static INPUT_PORTS_START( delta1 )
 	PORT_BIT(0x08, IP_ACTIVE_HIGH, IPT_KEYPAD) PORT_CODE(KEYCODE_ENTER) PORT_CODE(KEYCODE_ENTER_PAD) PORT_NAME("Enter")
 
 	PORT_START("RESET") // not on matrix
-	PORT_BIT(0x01, IP_ACTIVE_HIGH, IPT_KEYPAD) PORT_CODE(KEYCODE_N) PORT_CHANGED_MEMBER(DEVICE_SELF, novagf8_state, reset_button, 0) PORT_NAME("New Game")
+	PORT_BIT(0x01, IP_ACTIVE_HIGH, IPT_KEYPAD) PORT_CODE(KEYCODE_N) PORT_CHANGED_MEMBER(DEVICE_SELF, novagf8_state, reset_button, nullptr) PORT_NAME("New Game")
 INPUT_PORTS_END
 
 
@@ -185,7 +188,7 @@ F3853_INTERRUPT_REQ_CB(novagf8_state::f3853_interrupt)
 	m_maincpu->set_input_line(F8_INPUT_LINE_INT_REQ, level ? ASSERT_LINE : CLEAR_LINE);
 }
 
-static MACHINE_CONFIG_START( delta1 )
+MACHINE_CONFIG_START(novagf8_state::delta1)
 
 	/* basic machine hardware */
 	MCFG_CPU_ADD("maincpu", F8, 2000000) // LC circuit, measured 2MHz

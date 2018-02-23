@@ -249,17 +249,6 @@ sega_32x_pal_device::sega_32x_pal_device(const machine_config &mconfig, const ch
 {
 }
 
-//-------------------------------------------------
-//  static_set_palette_tag: Set the tag of the
-//  palette device
-//-------------------------------------------------
-
-void sega_32x_device::static_set_palette_tag(device_t &device, const char *tag)
-{
-	downcast<sega_32x_device &>(device).m_palette.set_tag(tag);
-}
-
-
 READ16_MEMBER( sega_32x_device::_32x_68k_palette_r )
 {
 	return m_32x_palette[offset];
@@ -1503,7 +1492,7 @@ _32X_MAP_WRITEHANDLERS(slave_401c,slave_401e) // _32x_sh2_slave_401c_slave_401e_
 // SH2 memory maps
 /**********************************************************************************************/
 
-ADDRESS_MAP_START( sh2_main_map, AS_PROGRAM, 32, sega_32x_device )
+ADDRESS_MAP_START(sega_32x_device::sh2_main_map)
 	AM_RANGE(0x00000000, 0x00003fff) AM_ROMBANK("masterbios")
 
 	AM_RANGE(0x00004000, 0x00004003) AM_READWRITE(_32x_sh2_master_4000_common_4002_r, _32x_sh2_master_4000_common_4002_w )
@@ -1532,7 +1521,7 @@ ADDRESS_MAP_START( sh2_main_map, AS_PROGRAM, 32, sega_32x_device )
 	AM_RANGE(0xc0000000, 0xc0000fff) AM_RAM
 ADDRESS_MAP_END
 
-ADDRESS_MAP_START( sh2_slave_map, AS_PROGRAM, 32, sega_32x_device )
+ADDRESS_MAP_START(sega_32x_device::sh2_slave_map)
 	AM_RANGE(0x00000000, 0x00003fff) AM_ROMBANK("slavebios")
 
 	AM_RANGE(0x00004000, 0x00004003) AM_READWRITE(_32x_sh2_slave_4000_common_4002_r, _32x_sh2_slave_4000_common_4002_w )
@@ -1772,7 +1761,7 @@ const rom_entry *sega_32x_device::device_rom_region() const
 #define _32X_INTERLEAVE_LEVEL \
 	MCFG_QUANTUM_TIME(attotime::from_hz(1800000))
 
-MACHINE_CONFIG_MEMBER( sega_32x_ntsc_device::device_add_mconfig )
+MACHINE_CONFIG_START(sega_32x_ntsc_device::device_add_mconfig)
 
 #ifndef _32X_SWAP_MASTER_SLAVE_HACK
 	MCFG_CPU_ADD("32x_master_sh2", SH2, (MASTER_CLOCK_NTSC*3)/7 )
@@ -1802,7 +1791,7 @@ MACHINE_CONFIG_MEMBER( sega_32x_ntsc_device::device_add_mconfig )
 	_32X_INTERLEAVE_LEVEL
 MACHINE_CONFIG_END
 
-MACHINE_CONFIG_MEMBER( sega_32x_pal_device::device_add_mconfig )
+MACHINE_CONFIG_START(sega_32x_pal_device::device_add_mconfig)
 
 #ifndef _32X_SWAP_MASTER_SLAVE_HACK
 	MCFG_CPU_ADD("32x_master_sh2", SH2, (MASTER_CLOCK_PAL*3)/7 )

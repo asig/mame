@@ -1134,14 +1134,14 @@ WRITE_LINE_MEMBER(x68k_state::x68k_scsi_drq)
 	// TODO
 }
 
-static ADDRESS_MAP_START(x68k_map, AS_PROGRAM, 16, x68k_state )
+ADDRESS_MAP_START(x68k_state::x68k_map)
 	AM_RANGE(0x000000, 0xbffffb) AM_READWRITE(x68k_emptyram_r, x68k_emptyram_w)
 	AM_RANGE(0xbffffc, 0xbfffff) AM_READWRITE(x68k_rom0_r, x68k_rom0_w)
 	AM_RANGE(0xc00000, 0xdfffff) AM_READWRITE(x68k_gvram_r, x68k_gvram_w)
 	AM_RANGE(0xe00000, 0xe7ffff) AM_READWRITE(x68k_tvram_r, x68k_tvram_w)
 	AM_RANGE(0xe80000, 0xe81fff) AM_READWRITE(x68k_crtc_r, x68k_crtc_w)
-	AM_RANGE(0xe82000, 0xe821ff) AM_DEVREADWRITE("gfxpalette", palette_device, read, write) AM_SHARE("gfxpalette")
-	AM_RANGE(0xe82200, 0xe823ff) AM_DEVREADWRITE("pcgpalette", palette_device, read, write) AM_SHARE("pcgpalette")
+	AM_RANGE(0xe82000, 0xe821ff) AM_DEVREADWRITE("gfxpalette", palette_device, read16, write16) AM_SHARE("gfxpalette")
+	AM_RANGE(0xe82200, 0xe823ff) AM_DEVREADWRITE("pcgpalette", palette_device, read16, write16) AM_SHARE("pcgpalette")
 	AM_RANGE(0xe82400, 0xe83fff) AM_READWRITE(x68k_vid_r, x68k_vid_w)
 	AM_RANGE(0xe84000, 0xe85fff) AM_DEVREADWRITE("hd63450", hd63450_device, read, write)
 	AM_RANGE(0xe86000, 0xe87fff) AM_READWRITE(x68k_areaset_r, x68k_areaset_w)
@@ -1172,14 +1172,14 @@ static ADDRESS_MAP_START(x68k_map, AS_PROGRAM, 16, x68k_state )
 	AM_RANGE(0xfe0000, 0xffffff) AM_ROM
 ADDRESS_MAP_END
 
-static ADDRESS_MAP_START(x68kxvi_map, AS_PROGRAM, 16, x68k_state )
+ADDRESS_MAP_START(x68k_state::x68kxvi_map)
 	AM_RANGE(0x000000, 0xbffffb) AM_READWRITE(x68k_emptyram_r, x68k_emptyram_w)
 	AM_RANGE(0xbffffc, 0xbfffff) AM_READWRITE(x68k_rom0_r, x68k_rom0_w)
 	AM_RANGE(0xc00000, 0xdfffff) AM_READWRITE(x68k_gvram_r, x68k_gvram_w)
 	AM_RANGE(0xe00000, 0xe7ffff) AM_READWRITE(x68k_tvram_r, x68k_tvram_w)
 	AM_RANGE(0xe80000, 0xe81fff) AM_READWRITE(x68k_crtc_r, x68k_crtc_w)
-	AM_RANGE(0xe82000, 0xe821ff) AM_DEVREADWRITE("gfxpalette", palette_device, read, write) AM_SHARE("gfxpalette")
-	AM_RANGE(0xe82200, 0xe823ff) AM_DEVREADWRITE("pcgpalette", palette_device, read, write) AM_SHARE("pcgpalette")
+	AM_RANGE(0xe82000, 0xe821ff) AM_DEVREADWRITE("gfxpalette", palette_device, read16, write16) AM_SHARE("gfxpalette")
+	AM_RANGE(0xe82200, 0xe823ff) AM_DEVREADWRITE("pcgpalette", palette_device, read16, write16) AM_SHARE("pcgpalette")
 	AM_RANGE(0xe82400, 0xe83fff) AM_READWRITE(x68k_vid_r, x68k_vid_w)
 	AM_RANGE(0xe84000, 0xe85fff) AM_DEVREADWRITE("hd63450", hd63450_device, read, write)
 	AM_RANGE(0xe86000, 0xe87fff) AM_READWRITE(x68k_areaset_r, x68k_areaset_w)
@@ -1211,15 +1211,15 @@ static ADDRESS_MAP_START(x68kxvi_map, AS_PROGRAM, 16, x68k_state )
 	AM_RANGE(0xfe0000, 0xffffff) AM_ROM
 ADDRESS_MAP_END
 
-static ADDRESS_MAP_START(x68030_map, AS_PROGRAM, 32, x68k_state )
+ADDRESS_MAP_START(x68k_state::x68030_map)
 	ADDRESS_MAP_GLOBAL_MASK(0x00ffffff)  // Still only has 24-bit address space
 	AM_RANGE(0x000000, 0xbffffb) AM_READWRITE16(x68k_emptyram_r, x68k_emptyram_w,0xffffffff)
 	AM_RANGE(0xbffffc, 0xbfffff) AM_READWRITE16(x68k_rom0_r, x68k_rom0_w,0xffffffff)
 	AM_RANGE(0xc00000, 0xdfffff) AM_READWRITE16(x68k_gvram_r, x68k_gvram_w, 0xffffffff)
 	AM_RANGE(0xe00000, 0xe7ffff) AM_READWRITE16(x68k_tvram_r, x68k_tvram_w, 0xffffffff)
 	AM_RANGE(0xe80000, 0xe81fff) AM_READWRITE16(x68k_crtc_r, x68k_crtc_w,0xffffffff)
-	AM_RANGE(0xe82000, 0xe821ff) AM_DEVREADWRITE("gfxpalette", palette_device, read, write) AM_SHARE("gfxpalette")
-	AM_RANGE(0xe82200, 0xe823ff) AM_DEVREADWRITE("pcgpalette", palette_device, read, write) AM_SHARE("pcgpalette")
+	AM_RANGE(0xe82000, 0xe821ff) AM_DEVREADWRITE("gfxpalette", palette_device, read32, write32) AM_SHARE("gfxpalette")
+	AM_RANGE(0xe82200, 0xe823ff) AM_DEVREADWRITE("pcgpalette", palette_device, read32, write32) AM_SHARE("pcgpalette")
 	AM_RANGE(0xe82400, 0xe83fff) AM_READWRITE16(x68k_vid_r, x68k_vid_w,0xffffffff)
 	AM_RANGE(0xe84000, 0xe85fff) AM_DEVREADWRITE16("hd63450", hd63450_device, read, write, 0xffffffff)
 	AM_RANGE(0xe86000, 0xe87fff) AM_READWRITE16(x68k_areaset_r, x68k_areaset_w,0xffffffff)
@@ -1644,7 +1644,7 @@ static SLOT_INTERFACE_START(keyboard)
 	SLOT_INTERFACE("x68k", X68K_KEYBOARD)
 SLOT_INTERFACE_END
 
-static MACHINE_CONFIG_START( x68000 )
+MACHINE_CONFIG_START(x68k_state::x68000)
 	/* basic machine hardware */
 	MCFG_CPU_ADD("maincpu", M68000, 10000000)  /* 10 MHz */
 	MCFG_CPU_PROGRAM_MAP(x68k_map)
@@ -1684,7 +1684,7 @@ static MACHINE_CONFIG_START( x68000 )
 
 	MCFG_DEVICE_ADD("scc", SCC8530, 5000000)
 
-	MCFG_DEVICE_ADD(RP5C15_TAG, RP5C15, XTAL_32_768kHz)
+	MCFG_DEVICE_ADD(RP5C15_TAG, RP5C15, XTAL(32'768))
 	MCFG_RP5C15_OUT_ALARM_CB(DEVWRITELINE(MC68901_TAG, mc68901_device, i0_w))
 
 	/* video hardware */
@@ -1746,7 +1746,8 @@ static MACHINE_CONFIG_START( x68000 )
 	MCFG_X68KHDC_ADD( "x68k_hdc" )
 MACHINE_CONFIG_END
 
-static MACHINE_CONFIG_DERIVED( x68ksupr, x68000 )
+MACHINE_CONFIG_START(x68k_state::x68ksupr)
+	x68000(config);
 	MCFG_DEVICE_REMOVE("x68k_hdc")
 
 	MCFG_CPU_MODIFY("maincpu")
@@ -1767,12 +1768,14 @@ static MACHINE_CONFIG_DERIVED( x68ksupr, x68000 )
 	MCFG_MB89352A_DRQ_CB(WRITELINE(x68k_state, x68k_scsi_drq))
 MACHINE_CONFIG_END
 
-static MACHINE_CONFIG_DERIVED( x68kxvi, x68ksupr )
+MACHINE_CONFIG_START(x68k_state::x68kxvi)
+	x68ksupr(config);
 	MCFG_CPU_MODIFY("maincpu")
 	MCFG_CPU_CLOCK(16000000)  /* 16 MHz */
 MACHINE_CONFIG_END
 
-static MACHINE_CONFIG_DERIVED( x68030, x68ksupr )
+MACHINE_CONFIG_START(x68k_state::x68030)
+	x68ksupr(config);
 	MCFG_CPU_REPLACE("maincpu", M68030, 25000000)  /* 25 MHz 68EC030 */
 	MCFG_CPU_PROGRAM_MAP(x68030_map)
 	MCFG_CPU_IRQ_ACKNOWLEDGE_DRIVER(x68k_state,x68k_int_ack)

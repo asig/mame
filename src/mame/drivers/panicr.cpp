@@ -124,12 +124,14 @@ public:
 	void draw_sprites(bitmap_ind16 &bitmap,const rectangle &cliprect );
 
 	TIMER_DEVICE_CALLBACK_MEMBER(scanline);
+	void panicr(machine_config &config);
+	void panicr_map(address_map &map);
 };
 
 
-#define MASTER_CLOCK    XTAL_16MHz
-#define SOUND_CLOCK     XTAL_14_31818MHz
-#define TC15_CLOCK      XTAL_12MHz
+#define MASTER_CLOCK    XTAL(16'000'000)
+#define SOUND_CLOCK     XTAL(14'318'181)
+#define TC15_CLOCK      XTAL(12'000'000)
 
 
 /***************************************************************************
@@ -426,7 +428,7 @@ WRITE8_MEMBER(panicr_state::t5182shared_w)
 }
 
 
-static ADDRESS_MAP_START( panicr_map, AS_PROGRAM, 8, panicr_state )
+ADDRESS_MAP_START(panicr_state::panicr_map)
 	AM_RANGE(0x00000, 0x01fff) AM_RAM AM_SHARE("mainram")
 	AM_RANGE(0x02000, 0x03cff) AM_RAM AM_SHARE("spriteram") // how big is sprite ram, some places definitely have sprites at 3000+
 	AM_RANGE(0x03d00, 0x03fff) AM_RAM
@@ -606,7 +608,7 @@ TIMER_DEVICE_CALLBACK_MEMBER(panicr_state::scanline)
 		m_maincpu->set_input_line_and_vector(0, HOLD_LINE, 0xc8/4);
 }
 
-static MACHINE_CONFIG_START( panicr )
+MACHINE_CONFIG_START(panicr_state::panicr)
 	MCFG_CPU_ADD("maincpu", V20,MASTER_CLOCK/2) /* Sony 8623h9 CXQ70116D-8 (V20 compatible) */
 	MCFG_CPU_PROGRAM_MAP(panicr_map)
 	MCFG_TIMER_DRIVER_ADD_SCANLINE("scantimer", panicr_state, scanline, "screen", 0, 1)

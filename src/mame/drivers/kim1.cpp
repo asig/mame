@@ -66,7 +66,7 @@ TODO:
 //  ADDRESS MAPS
 //**************************************************************************
 
-static ADDRESS_MAP_START(kim1_map, AS_PROGRAM, 8, kim1_state)
+ADDRESS_MAP_START(kim1_state::kim1_map)
 	AM_RANGE(0x0000, 0x03ff) AM_MIRROR(0xe000) AM_RAM
 	AM_RANGE(0x1700, 0x173f) AM_MIRROR(0xe000) AM_DEVREADWRITE("miot_u3", mos6530_device, read, write )
 	AM_RANGE(0x1740, 0x177f) AM_MIRROR(0xe000) AM_DEVREADWRITE("miot_u2", mos6530_device, read, write )
@@ -245,7 +245,7 @@ void kim1_state::machine_reset()
 //  MACHINE DRIVERS
 //**************************************************************************
 
-static MACHINE_CONFIG_START( kim1 )
+MACHINE_CONFIG_START(kim1_state::kim1)
 	// basic machine hardware
 	MCFG_CPU_ADD("maincpu", M6502, 1000000)        /* 1 MHz */
 	MCFG_CPU_PROGRAM_MAP(kim1_map)

@@ -428,6 +428,8 @@ public:
 	uint32_t m_voodoo3_pci_reg[0x100];
 	uint32_t m_mpc8240_regs[256/4];
 
+	void viper(machine_config &config);
+	void viper_map(address_map &map);
 protected:
 	virtual void machine_start() override;
 	virtual void machine_reset() override;
@@ -1722,7 +1724,7 @@ READ64_MEMBER(viper_state::voodoo3_io_r)
 }
 WRITE64_MEMBER(viper_state::voodoo3_io_w)
 {
-//  printf("voodoo3_io_w: %08X%08X, %08X at %08X\n", (uint32_t)(data >> 32), (uint32_t)(data), offset, space.device().safe_pc());
+//  printf("voodoo3_io_w: %08X%08X, %08X at %08X\n", (uint32_t)(data >> 32), (uint32_t)(data), offset, m_maincpu->pc());
 
 	write64be_with_32le_device_handler(write32_delegate(FUNC(voodoo_3_device::banshee_io_w), &(*m_voodoo)), space, offset, data, mem_mask);
 }
@@ -1733,7 +1735,7 @@ READ64_MEMBER(viper_state::voodoo3_r)
 }
 WRITE64_MEMBER(viper_state::voodoo3_w)
 {
-//  printf("voodoo3_w: %08X%08X, %08X at %08X\n", (uint32_t)(data >> 32), (uint32_t)(data), offset, space.device().safe_pc());
+//  printf("voodoo3_w: %08X%08X, %08X at %08X\n", (uint32_t)(data >> 32), (uint32_t)(data), offset, m_maincpu->pc());
 
 	write64be_with_32le_device_handler(write32_delegate(FUNC(voodoo_3_device::banshee_w), &(*m_voodoo)), space, offset, data, mem_mask);
 }
@@ -1744,7 +1746,7 @@ READ64_MEMBER(viper_state::voodoo3_lfb_r)
 }
 WRITE64_MEMBER(viper_state::voodoo3_lfb_w)
 {
-//  printf("voodoo3_lfb_w: %08X%08X, %08X at %08X\n", (uint32_t)(data >> 32), (uint32_t)(data), offset, space.device().safe_pc());
+//  printf("voodoo3_lfb_w: %08X%08X, %08X at %08X\n", (uint32_t)(data >> 32), (uint32_t)(data), offset, m_maincpu->pc());
 
 	write64be_with_32le_device_handler(write32_delegate(FUNC(voodoo_3_device::banshee_fb_w), &(*m_voodoo)), space, offset, data, mem_mask);
 }
@@ -1945,7 +1947,7 @@ WRITE64_MEMBER(viper_state::e70000_w)
 			m_ds2430_timer->adjust(attotime::from_usec(40), 1);   // presence pulse for 240 microsecs
 
 			m_ds2430_unk_status = 1;
-//          printf("e70000_w: %08X%08X, %08X (mask %08X%08X) at %08X\n", (uint32_t)(data >> 32), (uint32_t)data, offset, (uint32_t)(mem_mask >> 32), (uint32_t)mem_mask, space.device().safe_pc());
+//          printf("e70000_w: %08X%08X, %08X (mask %08X%08X) at %08X\n", (uint32_t)(data >> 32), (uint32_t)data, offset, (uint32_t)(mem_mask >> 32), (uint32_t)mem_mask, m_maincpu->pc());
 		}
 		else
 		{
@@ -2072,7 +2074,7 @@ WRITE64_MEMBER(viper_state::unk_serial_w)
 
 /*****************************************************************************/
 
-static ADDRESS_MAP_START(viper_map, AS_PROGRAM, 64, viper_state )
+ADDRESS_MAP_START(viper_state::viper_map)
 //  ADDRESS_MAP_UNMAP_HIGH
 	AM_RANGE(0x00000000, 0x00ffffff) AM_MIRROR(0x1000000) AM_RAM AM_SHARE("workram")
 	AM_RANGE(0x80000000, 0x800fffff) AM_READWRITE32(epic_r, epic_w,0xffffffffffffffffU)
@@ -2370,7 +2372,7 @@ void viper_state::machine_reset()
 	m_ds2430_unk_status = 1;
 }
 
-static MACHINE_CONFIG_START( viper )
+MACHINE_CONFIG_START(viper_state::viper)
 
 	/* basic machine hardware */
 	MCFG_CPU_ADD("maincpu", MPC8240, 200000000)

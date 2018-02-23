@@ -23,8 +23,6 @@ files {
 	MAME_DIR .. "src/devices/machine/laserdsc.h",
 	MAME_DIR .. "src/devices/machine/latch.cpp",
 	MAME_DIR .. "src/devices/machine/latch.h",
-	MAME_DIR .. "src/devices/machine/myb3k_kbd.cpp",
-	MAME_DIR .. "src/devices/machine/myb3k_kbd.h",
 	MAME_DIR .. "src/devices/machine/nvram.cpp",
 	MAME_DIR .. "src/devices/machine/nvram.h",
 	MAME_DIR .. "src/devices/machine/ram.cpp",
@@ -399,6 +397,18 @@ end
 
 ---------------------------------------------------
 --
+--@src/devices/machine/74165.h,MACHINES["TTL74165"] = true
+---------------------------------------------------
+
+if (MACHINES["TTL74165"]~=null) then
+	files {
+		MAME_DIR .. "src/devices/machine/74165.cpp",
+		MAME_DIR .. "src/devices/machine/74165.h",
+	}
+end
+
+---------------------------------------------------
+--
 --@src/devices/machine/74166.h,MACHINES["TTL74166"] = true
 ---------------------------------------------------
 
@@ -610,6 +620,18 @@ if (MACHINES["AM9517A"]~=null) then
 	files {
 		MAME_DIR .. "src/devices/machine/am9517a.cpp",
 		MAME_DIR .. "src/devices/machine/am9517a.h",
+	}
+end
+
+---------------------------------------------------
+--
+--@src/devices/machine/am9519.h,MACHINES["AM9519"] = true
+---------------------------------------------------
+
+if (MACHINES["AM9519"]~=null) then
+	files {
+		MAME_DIR .. "src/devices/machine/am9519.cpp",
+		MAME_DIR .. "src/devices/machine/am9519.h",
 	}
 end
 
@@ -1810,6 +1832,18 @@ end
 
 ---------------------------------------------------
 --
+--@src/devices/machine/meters.h,MACHINES["METERS"] = true
+---------------------------------------------------
+
+if (MACHINES["METERS"]~=null) then
+	files {
+		MAME_DIR .. "src/devices/machine/meters.cpp",
+		MAME_DIR .. "src/devices/machine/meters.h",
+	}
+end
+
+---------------------------------------------------
+--
 --@src/devices/machine/microtch.h,MACHINES["MICROTOUCH"] = true
 ---------------------------------------------------
 
@@ -1988,6 +2022,18 @@ if (MACHINES["MSM6253"]~=null) then
 	files {
 		MAME_DIR .. "src/devices/machine/msm6253.cpp",
 		MAME_DIR .. "src/devices/machine/msm6253.h",
+	}
+end
+
+---------------------------------------------------
+--
+--@src/devices/machine/myb3k_kbd.h,MACHINES["MYB3K_KEYBOARD"] = true
+---------------------------------------------------
+
+if (MACHINES["MYB3K_KEYBOARD"]~=null) then
+	files {
+	MAME_DIR .. "src/devices/machine/myb3k_kbd.cpp",
+	MAME_DIR .. "src/devices/machine/myb3k_kbd.h",
 	}
 end
 
@@ -2296,6 +2342,18 @@ end
 
 ---------------------------------------------------
 --
+--@src/devices/machine/rstbuf.h,MACHINES["RSTBUF"] = true
+---------------------------------------------------
+
+if (MACHINES["RSTBUF"]~=null) then
+	files {
+		MAME_DIR .. "src/devices/machine/rstbuf.cpp",
+		MAME_DIR .. "src/devices/machine/rstbuf.h",
+	}
+end
+
+---------------------------------------------------
+--
 --@src/devices/machine/rtc4543.h,MACHINES["RTC4543"] = true
 ---------------------------------------------------
 
@@ -2500,6 +2558,18 @@ if (MACHINES["TE7750"]~=null) then
 	files {
 		MAME_DIR .. "src/devices/machine/te7750.cpp",
 		MAME_DIR .. "src/devices/machine/te7750.h",
+	}
+end
+
+---------------------------------------------------
+--
+--@src/devices/machine/ticket.h,MACHINES["TICKET"] = true
+---------------------------------------------------
+
+if (MACHINES["TICKET"]~=null) then
+	files {
+		MAME_DIR .. "src/devices/machine/ticket.cpp",
+		MAME_DIR .. "src/devices/machine/ticket.h",
 	}
 end
 

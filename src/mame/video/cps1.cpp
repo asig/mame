@@ -1533,6 +1533,7 @@ static const struct CPS1config cps1_config_table[]=
 	{"sf2cejb",     CPS_B_21_DEF, mapper_S9263B, 0x36 },
 	{"sf2cejc",     CPS_B_21_DEF, mapper_S9263B, 0x36 },
 	{"sf2bhh",      CPS_B_21_DEF, mapper_S9263B, 0x36 },
+	{"sf2bhh2",     CPS_B_21_DEF, mapper_S9263B, 0x36 },
 	{"sf2rb",       CPS_B_21_DEF, mapper_S9263B, 0x36 },
 	{"sf2rb2",      CPS_B_21_DEF, mapper_S9263B, 0x36 },
 	{"sf2rb3",      CPS_B_21_DEF, mapper_S9263B, 0x36 },
@@ -1563,7 +1564,9 @@ static const struct CPS1config cps1_config_table[]=
 	{"sf2mdta",     CPS_B_21_DEF, mapper_S9263B, 0x36, 0, 0, 1 },
 	{"sf2mdtb",     CPS_B_21_DEF, mapper_S9263B, 0x36, 0, 0, 1 },
 	{"sf2b",        CPS_B_17,     mapper_STF29,  0x36, 0, 0, 1 },
+	{"sf2b2",       CPS_B_17,     mapper_STF29,  0x36, 0, 0, 1 },
 	{"sf2ceupl",    HACK_B_1,     mapper_S9263B, 0x36, 0, 0, 1 },
+	{"sf2rules",    HACK_B_1,     mapper_S9263B, 0,    0, 0, 2 },
 	{"varth",       CPS_B_04,     mapper_VA63B },   /* CPSB test has been patched out (60=0008) register is also written to, possibly leftover from development */  // wrong, this set uses VA24B, dumped but equations still not added
 	{"varthb",      CPS_B_04,     mapper_VA63B, 0, 0, 0, 0x0F },
 	{"varthr1",     CPS_B_04,     mapper_VA63B },   /* CPSB test has been patched out (60=0008) register is also written to, possibly leftover from development */  // wrong, this set uses VA24B, dumped but equations still not added
@@ -1574,7 +1577,7 @@ static const struct CPS1config cps1_config_table[]=
 	{"cworld2ja",   CPS_B_21_DEF, mapper_Q522B }, // patched set, no battery, could be desuicided // wrong, this set uses Q529B, still not dumped
 	{"cworld2jb",   CPS_B_21_BT6, mapper_Q522B,  0x36, 0, 0x34 }, // wrong, this set uses Q563B, still not dumped
 	{"wof",         CPS_B_21_QS1, mapper_TK263B },
-	{"wofr1",       CPS_B_21_DEF, mapper_TK263B },  // patched set coming from a desuicided board?
+	{"wofr1",       CPS_B_21_DEF, mapper_TK263B },
 	{"wofa",        CPS_B_21_DEF, mapper_TK263B },  // patched set coming from a desuicided board?
 	{"wofu",        CPS_B_21_QS1, mapper_TK263B },
 	{"wofj",        CPS_B_21_QS1, mapper_TK263B },

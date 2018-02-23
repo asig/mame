@@ -29,10 +29,14 @@ public:
 	uint32_t screen_update_vt520(screen_device &screen, bitmap_ind16 &bitmap, const rectangle &cliprect);
 	required_device<cpu_device> m_maincpu;
 	required_region_ptr<uint8_t> m_rom;
+	void vt520(machine_config &config);
+	void vt420(machine_config &config);
+	void vt520_io(address_map &map);
+	void vt520_mem(address_map &map);
 };
 
 
-static ADDRESS_MAP_START(vt520_mem, AS_PROGRAM, 8, vt520_state)
+ADDRESS_MAP_START(vt520_state::vt520_mem)
 	AM_RANGE(0x0000, 0xffff) AM_RAMBANK("bank1")
 ADDRESS_MAP_END
 
@@ -49,7 +53,7 @@ READ8_MEMBER( vt520_state::vt520_some_r )
 	return 0x40;
 }
 
-static ADDRESS_MAP_START(vt520_io, AS_IO, 8, vt520_state)
+ADDRESS_MAP_START(vt520_state::vt520_io)
 	ADDRESS_MAP_UNMAP_HIGH
 	AM_RANGE(0x7ffb, 0x7ffb) AM_READ(vt520_some_r)
 ADDRESS_MAP_END
@@ -75,9 +79,9 @@ uint32_t vt520_state::screen_update_vt520(screen_device &screen, bitmap_ind16 &b
 	return 0;
 }
 
-static MACHINE_CONFIG_START( vt420 )
+MACHINE_CONFIG_START(vt520_state::vt420)
 	/* basic machine hardware */
-	MCFG_CPU_ADD("maincpu", I80C31, XTAL_43_320MHz / 3) // SCN8031HCFN40 (divider not verified)
+	MCFG_CPU_ADD("maincpu", I80C31, XTAL(43'320'000) / 3) // SCN8031HCFN40 (divider not verified)
 	MCFG_CPU_PROGRAM_MAP(vt520_mem)
 	MCFG_CPU_IO_MAP(vt520_io)
 
@@ -93,9 +97,9 @@ static MACHINE_CONFIG_START( vt420 )
 	MCFG_PALETTE_ADD_MONOCHROME("palette")
 MACHINE_CONFIG_END
 
-static MACHINE_CONFIG_START( vt520 )
+MACHINE_CONFIG_START(vt520_state::vt520)
 	/* basic machine hardware */
-	MCFG_CPU_ADD("maincpu", I80C32, XTAL_20MHz) // Philips P80C32IBPN
+	MCFG_CPU_ADD("maincpu", I80C32, XTAL(20'000'000)) // Philips P80C32IBPN
 	MCFG_CPU_PROGRAM_MAP(vt520_mem)
 	MCFG_CPU_IO_MAP(vt520_io)
 

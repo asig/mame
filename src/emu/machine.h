@@ -122,6 +122,7 @@ public:
 	DECLARE_READ8_MEMBER(read);
 	DECLARE_WRITE8_MEMBER(write);
 
+	void dummy(address_map &map);
 protected:
 	// device-level overrides
 	virtual void device_start() override;
@@ -256,9 +257,6 @@ public:
 	std::string describe_context() const;
 	std::string compose_saveload_filename(std::string &&base_filename, const char **searchpath = nullptr);
 	std::string get_statename(const char *statename_opt) const;
-
-	// CPU information
-	cpu_device *            firstcpu;           // first CPU
 
 private:
 	// video-related information

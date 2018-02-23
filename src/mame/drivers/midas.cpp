@@ -104,6 +104,10 @@ public:
 
 	DECLARE_WRITE_LINE_MEMBER(screen_vblank_midas);
 
+	void hammer(machine_config &config);
+	void livequiz(machine_config &config);
+	void hammer_map(address_map &map);
+	void livequiz_map(address_map &map);
 };
 
 
@@ -192,7 +196,7 @@ WRITE16_MEMBER(midas_state::livequiz_coin_w)
 #endif
 }
 
-static ADDRESS_MAP_START( livequiz_map, AS_PROGRAM, 16, midas_state )
+ADDRESS_MAP_START(midas_state::livequiz_map)
 	AM_RANGE(0x000000, 0x1fffff) AM_ROM
 
 	AM_RANGE(0x900000, 0x900001) AM_READ_PORT("DSW_PLAYER1")
@@ -207,7 +211,7 @@ static ADDRESS_MAP_START( livequiz_map, AS_PROGRAM, 16, midas_state )
 	AM_RANGE(0x9c0000, 0x9c0005) AM_WRITE(midas_gfxregs_w )
 	AM_RANGE(0x9c000c, 0x9c000d) AM_WRITENOP    // IRQ Ack, temporary
 
-	AM_RANGE(0xa00000, 0xa3ffff) AM_RAM_DEVWRITE("palette", palette_device, write) AM_SHARE("palette")
+	AM_RANGE(0xa00000, 0xa3ffff) AM_RAM_DEVWRITE("palette", palette_device, write16) AM_SHARE("palette")
 	AM_RANGE(0xa40000, 0xa7ffff) AM_RAM
 
 	AM_RANGE(0xb00000, 0xb00001) AM_READ(ret_ffff )
@@ -263,7 +267,7 @@ WRITE16_MEMBER(midas_state::hammer_motor_w)
 #endif
 }
 
-static ADDRESS_MAP_START( hammer_map, AS_PROGRAM, 16, midas_state )
+ADDRESS_MAP_START(midas_state::hammer_map)
 	AM_RANGE(0x000000, 0x1fffff) AM_ROM
 
 	AM_RANGE(0x900000, 0x900001) AM_READ_PORT("DSW")
@@ -278,7 +282,7 @@ static ADDRESS_MAP_START( hammer_map, AS_PROGRAM, 16, midas_state )
 	AM_RANGE(0x9c0000, 0x9c0005) AM_WRITE(midas_gfxregs_w )
 	AM_RANGE(0x9c000c, 0x9c000d) AM_WRITENOP    // IRQ Ack, temporary
 
-	AM_RANGE(0xa00000, 0xa3ffff) AM_RAM_DEVWRITE("palette", palette_device, write) AM_SHARE("palette")
+	AM_RANGE(0xa00000, 0xa3ffff) AM_RAM_DEVWRITE("palette", palette_device, write16) AM_SHARE("palette")
 	AM_RANGE(0xa40000, 0xa7ffff) AM_RAM
 
 	AM_RANGE(0xb00000, 0xb00001) AM_READ(ret_ffff )
@@ -622,10 +626,10 @@ WRITE_LINE_MEMBER(midas_state::screen_vblank_midas)
 
 
 
-static MACHINE_CONFIG_START( livequiz )
+MACHINE_CONFIG_START(midas_state::livequiz)
 
 	/* basic machine hardware */
-	MCFG_CPU_ADD("maincpu", M68000, XTAL_24MHz / 2)
+	MCFG_CPU_ADD("maincpu", M68000, XTAL(24'000'000) / 2)
 	MCFG_CPU_PROGRAM_MAP(livequiz_map)
 	MCFG_CPU_VBLANK_INT_DRIVER("screen", midas_state,  irq1_line_hold)
 
@@ -645,15 +649,15 @@ static MACHINE_CONFIG_START( livequiz )
 
 	/* sound hardware */
 	MCFG_SPEAKER_STANDARD_STEREO("lspeaker", "rspeaker")
-	MCFG_SOUND_ADD("ymz", YMZ280B, XTAL_16_9344MHz)
+	MCFG_SOUND_ADD("ymz", YMZ280B, XTAL(16'934'400))
 	MCFG_SOUND_ROUTE(0, "lspeaker", 0.80)
 	MCFG_SOUND_ROUTE(1, "rspeaker", 0.80)
 MACHINE_CONFIG_END
 
-static MACHINE_CONFIG_START( hammer )
+MACHINE_CONFIG_START(midas_state::hammer)
 
 	/* basic machine hardware */
-	MCFG_CPU_ADD("maincpu", M68000, XTAL_28MHz / 2)
+	MCFG_CPU_ADD("maincpu", M68000, XTAL(28'000'000) / 2)
 	MCFG_CPU_PROGRAM_MAP(hammer_map)
 	MCFG_CPU_VBLANK_INT_DRIVER("screen", midas_state,  irq1_line_hold)
 
@@ -678,7 +682,7 @@ static MACHINE_CONFIG_START( hammer )
 
 	/* sound hardware */
 	MCFG_SPEAKER_STANDARD_STEREO("lspeaker", "rspeaker")
-	MCFG_SOUND_ADD("ymz", YMZ280B, XTAL_16_9344MHz)
+	MCFG_SOUND_ADD("ymz", YMZ280B, XTAL(16'934'400))
 	MCFG_SOUND_ROUTE(0, "lspeaker", 0.80)
 	MCFG_SOUND_ROUTE(1, "rspeaker", 0.80)
 MACHINE_CONFIG_END

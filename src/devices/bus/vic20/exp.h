@@ -104,6 +104,7 @@ public:
 
 protected:
 	// device-level overrides
+	virtual void device_validity_check(validity_checker &valid) const override;
 	virtual void device_start() override;
 	virtual void device_reset() override;
 
@@ -160,7 +161,6 @@ protected:
 
 
 // device type definition
-extern const device_type VIC20_EXPANSION_SLOT;
 DECLARE_DEVICE_TYPE(VIC20_EXPANSION_SLOT, vic20_expansion_slot_device)
 
 

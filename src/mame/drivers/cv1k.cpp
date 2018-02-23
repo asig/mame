@@ -237,6 +237,11 @@ public:
 	uint32_t m_idleramoffs;
 	uint32_t m_idlepc;
 	void install_speedups(uint32_t idleramoff, uint32_t idlepc, bool is_typed);
+	void cv1k_d(machine_config &config);
+	void cv1k(machine_config &config);
+	void cv1k_d_map(address_map &map);
+	void cv1k_map(address_map &map);
+	void cv1k_port(address_map &map);
 };
 
 
@@ -337,7 +342,7 @@ WRITE8_MEMBER( cv1k_state::serial_rtc_eeprom_w )
 }
 
 
-static ADDRESS_MAP_START( cv1k_map, AS_PROGRAM, 64, cv1k_state )
+ADDRESS_MAP_START(cv1k_state::cv1k_map)
 	AM_RANGE(0x00000000, 0x003fffff) AM_ROM AM_REGION("maincpu", 0) AM_WRITENOP AM_SHARE("rombase") // mmmbanc writes here on startup for some reason..
 	AM_RANGE(0x0c000000, 0x0c7fffff) AM_RAM AM_SHARE("mainram")// work RAM
 	AM_RANGE(0x10000000, 0x10000007) AM_READWRITE8(flash_io_r, flash_io_w, 0xffffffffffffffffU)
@@ -347,7 +352,7 @@ static ADDRESS_MAP_START( cv1k_map, AS_PROGRAM, 64, cv1k_state )
 	AM_RANGE(0xf0000000, 0xf0ffffff) AM_RAM // mem mapped cache (sh3 internal?)
 ADDRESS_MAP_END
 
-static ADDRESS_MAP_START( cv1k_d_map, AS_PROGRAM, 64, cv1k_state )
+ADDRESS_MAP_START(cv1k_state::cv1k_d_map)
 	AM_RANGE(0x00000000, 0x003fffff) AM_ROM AM_REGION("maincpu", 0) AM_WRITENOP AM_SHARE("rombase") // mmmbanc writes here on startup for some reason..
 	AM_RANGE(0x0c000000, 0x0cffffff) AM_RAM AM_SHARE("mainram") // work RAM
 	AM_RANGE(0x10000000, 0x10000007) AM_READWRITE8(flash_io_r, flash_io_w, 0xffffffffffffffffU)
@@ -357,7 +362,7 @@ static ADDRESS_MAP_START( cv1k_d_map, AS_PROGRAM, 64, cv1k_state )
 	AM_RANGE(0xf0000000, 0xf0ffffff) AM_RAM // mem mapped cache (sh3 internal?)
 ADDRESS_MAP_END
 
-static ADDRESS_MAP_START( cv1k_port, AS_IO, 64, cv1k_state )
+ADDRESS_MAP_START(cv1k_state::cv1k_port)
 	AM_RANGE(SH3_PORT_C, SH3_PORT_C+7) AM_READ_PORT("PORT_C")
 	AM_RANGE(SH3_PORT_D, SH3_PORT_D+7) AM_READ_PORT("PORT_D")
 	AM_RANGE(SH3_PORT_E, SH3_PORT_E+7) AM_READ( flash_port_e_r )
@@ -449,10 +454,10 @@ void cv1k_state::machine_reset()
 	m_blitter->reset();
 }
 
-static MACHINE_CONFIG_START( cv1k )
+MACHINE_CONFIG_START(cv1k_state::cv1k)
 
 	/* basic machine hardware */
-	MCFG_CPU_ADD("maincpu", SH3BE, XTAL_12_8MHz*8) // 102.4MHz
+	MCFG_CPU_ADD("maincpu", SH3BE, 12.8_MHz_XTAL*8) // 102.4MHz
 	MCFG_SH4_MD0(0)  // none of this is verified
 	MCFG_SH4_MD1(0)  // (the sh3 is different to the sh4 anyway, should be changed)
 	MCFG_SH4_MD2(0)
@@ -462,7 +467,7 @@ static MACHINE_CONFIG_START( cv1k )
 	MCFG_SH4_MD6(0)
 	MCFG_SH4_MD7(1)
 	MCFG_SH4_MD8(0)
-	MCFG_SH4_CLOCK(XTAL_12_8MHz*8) // 102.4MHz
+	MCFG_SH4_CLOCK(12.8_MHz_XTAL*8) // 102.4MHz
 	MCFG_CPU_PROGRAM_MAP(cv1k_map)
 	MCFG_CPU_IO_MAP(cv1k_port)
 	MCFG_CPU_VBLANK_INT_DRIVER("screen", cv1k_state, irq2_line_hold)
@@ -481,19 +486,20 @@ static MACHINE_CONFIG_START( cv1k )
 	MCFG_PALETTE_ADD("palette", 0x10000)
 
 	MCFG_SPEAKER_STANDARD_MONO("mono")
-	MCFG_YMZ770_ADD("ymz770", XTAL_16_384MHz)
+	MCFG_YMZ770_ADD("ymz770", 16.384_MHz_XTAL)
 	MCFG_SOUND_ROUTE(1, "mono", 1.0) // only Right output used, Left is not connected
 
 	MCFG_EPIC12_ADD("blitter")
 	MCFG_EPIC12_SET_MAINRAMSIZE(0x800000)
 MACHINE_CONFIG_END
 
-static MACHINE_CONFIG_DERIVED( cv1k_d, cv1k )
+MACHINE_CONFIG_START(cv1k_state::cv1k_d)
+	cv1k(config);
 
 	/* basic machine hardware */
 	MCFG_DEVICE_REMOVE("maincpu")
 
-	MCFG_CPU_ADD("maincpu", SH3BE, XTAL_12_8MHz*8) // 102.4MHz
+	MCFG_CPU_ADD("maincpu", SH3BE, 12.8_MHz_XTAL*8) // 102.4MHz
 	MCFG_SH4_MD0(0)  // none of this is verified
 	MCFG_SH4_MD1(0)  // (the sh3 is different to the sh4 anyway, should be changed)
 	MCFG_SH4_MD2(0)
@@ -503,7 +509,7 @@ static MACHINE_CONFIG_DERIVED( cv1k_d, cv1k )
 	MCFG_SH4_MD6(0)
 	MCFG_SH4_MD7(1)
 	MCFG_SH4_MD8(0)
-	MCFG_SH4_CLOCK(XTAL_12_8MHz*8) // 102.4MHz
+	MCFG_SH4_CLOCK(12.8_MHz_XTAL*8) // 102.4MHz
 	MCFG_CPU_PROGRAM_MAP(cv1k_d_map)
 	MCFG_CPU_IO_MAP(cv1k_port)
 	MCFG_CPU_VBLANK_INT_DRIVER("screen", cv1k_state, irq2_line_hold)
@@ -863,7 +869,7 @@ ROM_END
 
 READ64_MEMBER(cv1k_state::speedup_r)
 {
-	offs_t pc = downcast<cpu_device *>(&space.device())->pc();
+	offs_t pc = m_maincpu->pc();
 
 	if (pc == m_idlepc || pc == m_idlepc + 2) m_maincpu->spin_until_time(attotime::from_usec(10));
 

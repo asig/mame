@@ -150,7 +150,7 @@ WRITE16_MEMBER(hyprduel_state::hyprduel_cpusync_trigger1_w)
 	{
 		if (!m_cpu_trigger && !m_subcpu_resetline)
 		{
-			space.device().execute().spin_until_trigger(1001);
+			m_maincpu->spin_until_trigger(1001);
 			m_cpu_trigger = 1001;
 		}
 	}
@@ -176,7 +176,7 @@ WRITE16_MEMBER(hyprduel_state::hyprduel_cpusync_trigger2_w)
 	{
 		if (!m_cpu_trigger && !m_subcpu_resetline)
 		{
-			space.device().execute().spin_until_trigger(1002);
+			m_maincpu->spin_until_trigger(1002);
 			m_cpu_trigger = 1002;
 		}
 	}
@@ -296,7 +296,7 @@ WRITE16_MEMBER(hyprduel_state::blitter_w)
 		int shift = (dst_offs & 0x80) ? 0 : 8;
 		uint16_t mask = (dst_offs & 0x80) ? 0x00ff : 0xff00;
 
-//      logerror("CPU #0 PC %06X : Blitter regs %08X, %08X, %08X\n", space.device().safe_pc(), tmap, src_offs, dst_offs);
+//      logerror("CPU #0 PC %06X : Blitter regs %08X, %08X, %08X\n", m_maincpu->pc(), tmap, src_offs, dst_offs);
 
 		dst_offs >>= 7 + 1;
 		switch (tmap)
@@ -316,7 +316,7 @@ WRITE16_MEMBER(hyprduel_state::blitter_w)
 
 			src_offs %= src_len;
 			b1 = blt_read(src, src_offs);
-//          logerror("CPU #0 PC %06X : Blitter opcode %02X at %06X\n", space.device().safe_pc(), b1, src_offs);
+//          logerror("CPU #0 PC %06X : Blitter opcode %02X at %06X\n", m_maincpu->pc(), b1, src_offs);
 			src_offs++;
 
 			count = ((~b1) & 0x3f) + 1;
@@ -413,7 +413,7 @@ WRITE16_MEMBER(hyprduel_state::blitter_w)
                                 Memory Maps
 ***************************************************************************/
 
-static ADDRESS_MAP_START( hyprduel_map, AS_PROGRAM, 16, hyprduel_state )
+ADDRESS_MAP_START(hyprduel_state::hyprduel_map)
 	AM_RANGE(0x000000, 0x07ffff) AM_ROM
 	AM_RANGE(0x400000, 0x41ffff) AM_RAM_WRITE(vram_0_w) AM_SHARE("vram_0")     /* Layer 0 */
 	AM_RANGE(0x420000, 0x43ffff) AM_RAM_WRITE(vram_1_w) AM_SHARE("vram_1")     /* Layer 1 */
@@ -446,7 +446,7 @@ static ADDRESS_MAP_START( hyprduel_map, AS_PROGRAM, 16, hyprduel_state )
 	AM_RANGE(0xfe4000, 0xffffff) AM_RAM AM_SHARE("sharedram3")
 ADDRESS_MAP_END
 
-static ADDRESS_MAP_START( hyprduel_map2, AS_PROGRAM, 16, hyprduel_state )
+ADDRESS_MAP_START(hyprduel_state::hyprduel_map2)
 	AM_RANGE(0x000000, 0x003fff) AM_RAM AM_SHARE("sharedram1")                      /* shadow ($c00000 - $c03fff : vector) */
 	AM_RANGE(0x004000, 0x007fff) AM_READONLY AM_WRITENOP AM_SHARE("sharedram3")         /* shadow ($fe4000 - $fe7fff : read only) */
 	AM_RANGE(0x400000, 0x400003) AM_DEVREADWRITE8("ymsnd", ym2151_device, read, write, 0x00ff )
@@ -460,7 +460,7 @@ ADDRESS_MAP_END
 
 /* Magical Error - video is at 8x now */
 
-static ADDRESS_MAP_START( magerror_map, AS_PROGRAM, 16, hyprduel_state )
+ADDRESS_MAP_START(hyprduel_state::magerror_map)
 	AM_RANGE(0x000000, 0x07ffff) AM_ROM
 	AM_RANGE(0x400000, 0x400001) AM_WRITE(subcpu_control_w)
 	AM_RANGE(0x800000, 0x81ffff) AM_RAM_WRITE(vram_0_w) AM_SHARE("vram_0")     /* Layer 0 */
@@ -493,7 +493,7 @@ static ADDRESS_MAP_START( magerror_map, AS_PROGRAM, 16, hyprduel_state )
 	AM_RANGE(0xfe4000, 0xffffff) AM_RAM AM_SHARE("sharedram3")
 ADDRESS_MAP_END
 
-static ADDRESS_MAP_START( magerror_map2, AS_PROGRAM, 16, hyprduel_state )
+ADDRESS_MAP_START(hyprduel_state::magerror_map2)
 	AM_RANGE(0x000000, 0x003fff) AM_RAM AM_SHARE("sharedram1")                      /* shadow ($c00000 - $c03fff : vector) */
 	AM_RANGE(0x004000, 0x007fff) AM_READONLY AM_WRITENOP AM_SHARE("sharedram3")     /* shadow ($fe4000 - $fe7fff : read only) */
 	AM_RANGE(0x400000, 0x400003) AM_NOP
@@ -651,7 +651,7 @@ MACHINE_START_MEMBER(hyprduel_state,magerror)
 	m_magerror_irq_timer->adjust(attotime::zero, 0, attotime::from_hz(968));        /* tempo? */
 }
 
-static MACHINE_CONFIG_START( hyprduel )
+MACHINE_CONFIG_START(hyprduel_state::hyprduel)
 
 	/* basic machine hardware */
 	MCFG_CPU_ADD("maincpu", M68000,20000000/2)      /* 10MHz */
@@ -692,7 +692,7 @@ static MACHINE_CONFIG_START( hyprduel )
 MACHINE_CONFIG_END
 
 
-static MACHINE_CONFIG_START( magerror )
+MACHINE_CONFIG_START(hyprduel_state::magerror)
 
 	/* basic machine hardware */
 	MCFG_CPU_ADD("maincpu", M68000,20000000/2)      /* 10MHz */
