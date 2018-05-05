@@ -20,33 +20,36 @@
 
 
 // MCU types
-DEFINE_DEVICE_TYPE(SM511, sm511_device, "sm511", "SM511") // 4Kx8 ROM, 128x4 RAM(32x4 for LCD), melody controller
-DEFINE_DEVICE_TYPE(SM512, sm512_device, "sm512", "SM512") // 4Kx8 ROM, 128x4 RAM(48x4 for LCD), melody controller
+DEFINE_DEVICE_TYPE(SM511, sm511_device, "sm511", "Sharp SM511") // 4Kx8 ROM, 128x4 RAM(32x4 for LCD), melody controller
+DEFINE_DEVICE_TYPE(SM512, sm512_device, "sm512", "Sharp SM512") // 4Kx8 ROM, 128x4 RAM(48x4 for LCD), melody controller
 
 
 // internal memory maps
-ADDRESS_MAP_START(sm511_device::program_4k)
-	AM_RANGE(0x0000, 0x0fff) AM_ROM
-ADDRESS_MAP_END
+void sm511_device::program_4k(address_map &map)
+{
+	map(0x0000, 0x0fff).rom();
+}
 
-ADDRESS_MAP_START(sm511_device::data_96_32x4)
-	AM_RANGE(0x00, 0x5f) AM_RAM
-	AM_RANGE(0x60, 0x6f) AM_RAM AM_SHARE("lcd_ram_a")
-	AM_RANGE(0x70, 0x7f) AM_RAM AM_SHARE("lcd_ram_b")
-ADDRESS_MAP_END
+void sm511_device::data_96_32x4(address_map &map)
+{
+	map(0x00, 0x5f).ram();
+	map(0x60, 0x6f).ram().share("lcd_ram_a");
+	map(0x70, 0x7f).ram().share("lcd_ram_b");
+}
 
-ADDRESS_MAP_START(sm512_device::data_80_48x4)
-	AM_RANGE(0x00, 0x4f) AM_RAM
-	AM_RANGE(0x50, 0x5f) AM_RAM AM_SHARE("lcd_ram_c")
-	AM_RANGE(0x60, 0x6f) AM_RAM AM_SHARE("lcd_ram_a")
-	AM_RANGE(0x70, 0x7f) AM_RAM AM_SHARE("lcd_ram_b")
-ADDRESS_MAP_END
+void sm512_device::data_80_48x4(address_map &map)
+{
+	map(0x00, 0x4f).ram();
+	map(0x50, 0x5f).ram().share("lcd_ram_c");
+	map(0x60, 0x6f).ram().share("lcd_ram_a");
+	map(0x70, 0x7f).ram().share("lcd_ram_b");
+}
 
 
 // disasm
-util::disasm_interface *sm511_device::create_disassembler()
+std::unique_ptr<util::disasm_interface> sm511_device::create_disassembler()
 {
-	return new sm511_disassembler;
+	return std::make_unique<sm511_disassembler>();
 }
 
 

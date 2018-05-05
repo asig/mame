@@ -135,24 +135,26 @@ WRITE8_MEMBER(magtouch_state::magtouch_io_w)
 	}
 }
 
-ADDRESS_MAP_START(magtouch_state::magtouch_map)
-	AM_RANGE(0x00000000, 0x0009ffff) AM_RAM
-	AM_RANGE(0x000a0000, 0x000bffff) AM_DEVREADWRITE8("vga", trident_vga_device, mem_r, mem_w, 0xffffffff)
-	AM_RANGE(0x000c0000, 0x000c7fff) AM_ROM AM_REGION("video_bios", 0)
-	AM_RANGE(0x000d0000, 0x000d1fff) AM_RAM AM_SHARE("nvram")
-	AM_RANGE(0x000d8000, 0x000dffff) AM_ROMBANK("rombank")
-	AM_RANGE(0x000f0000, 0x000fffff) AM_RAM AM_REGION("bios", 0 )
-	AM_RANGE(0xffff0000, 0xffffffff) AM_ROM AM_REGION("bios", 0 )
-ADDRESS_MAP_END
+void magtouch_state::magtouch_map(address_map &map)
+{
+	map(0x00000000, 0x0009ffff).ram();
+	map(0x000a0000, 0x000bffff).rw("vga", FUNC(trident_vga_device::mem_r), FUNC(trident_vga_device::mem_w));
+	map(0x000c0000, 0x000c7fff).rom().region("video_bios", 0);
+	map(0x000d0000, 0x000d1fff).ram().share("nvram");
+	map(0x000d8000, 0x000dffff).bankr("rombank");
+	map(0x000f0000, 0x000fffff).ram().region("bios", 0);
+	map(0xffff0000, 0xffffffff).rom().region("bios", 0);
+}
 
-ADDRESS_MAP_START(magtouch_state::magtouch_io)
-	AM_IMPORT_FROM(pcat32_io_common)
-	AM_RANGE(0x02e0, 0x02e7) AM_READWRITE8(magtouch_io_r, magtouch_io_w, 0xffffffff)
-	AM_RANGE(0x03b0, 0x03bf) AM_DEVREADWRITE8("vga", trident_vga_device, port_03b0_r, port_03b0_w, 0xffffffff)
-	AM_RANGE(0x03c0, 0x03cf) AM_DEVREADWRITE8("vga", trident_vga_device, port_03c0_r, port_03c0_w, 0xffffffff)
-	AM_RANGE(0x03d0, 0x03df) AM_DEVREADWRITE8("vga", trident_vga_device, port_03d0_r, port_03d0_w, 0xffffffff)
-	AM_RANGE(0x03f8, 0x03ff) AM_DEVREADWRITE8("ns16450_0", ns16450_device, ins8250_r, ins8250_w, 0xffffffff)
-ADDRESS_MAP_END
+void magtouch_state::magtouch_io(address_map &map)
+{
+	pcat32_io_common(map);
+	map(0x02e0, 0x02e7).rw(this, FUNC(magtouch_state::magtouch_io_r), FUNC(magtouch_state::magtouch_io_w));
+	map(0x03b0, 0x03bf).rw("vga", FUNC(trident_vga_device::port_03b0_r), FUNC(trident_vga_device::port_03b0_w));
+	map(0x03c0, 0x03cf).rw("vga", FUNC(trident_vga_device::port_03c0_r), FUNC(trident_vga_device::port_03c0_w));
+	map(0x03d0, 0x03df).rw("vga", FUNC(trident_vga_device::port_03d0_r), FUNC(trident_vga_device::port_03d0_w));
+	map(0x03f8, 0x03ff).rw("ns16450_0", FUNC(ns16450_device::ins8250_r), FUNC(ns16450_device::ins8250_w));
+}
 
 static INPUT_PORTS_START( magtouch )
 	PORT_START("IN0")
@@ -173,9 +175,10 @@ void magtouch_state::machine_start()
 	machine().device<nvram_device>("nvram")->set_base(memshare("nvram")->ptr(), 0x2000);
 }
 
-static SLOT_INTERFACE_START( magtouch_isa8_cards )
-	SLOT_INTERFACE("sb15",  ISA8_SOUND_BLASTER_1_5)
-SLOT_INTERFACE_END
+static void magtouch_isa8_cards(device_slot_interface &device)
+{
+	device.option_add("sb15",  ISA8_SOUND_BLASTER_1_5);
+}
 
 static DEVICE_INPUT_DEFAULTS_START( magtouch_sb_def )
 	DEVICE_INPUT_DEFAULTS("CONFIG", 0x03, 0x01)
@@ -210,7 +213,7 @@ MACHINE_CONFIG_START(magtouch_state::magtouch)
 	MCFG_I8237_OUT_IOW_1_CB(WRITE8(magtouch_state, dma8237_1_dack_w))
 
 	MCFG_DEVICE_ADD("isa", ISA8, 0)
-	MCFG_ISA8_CPU(":maincpu")
+	MCFG_ISA8_CPU("maincpu")
 	MCFG_ISA_OUT_IRQ2_CB(DEVWRITELINE("pic8259_2", pic8259_device, ir2_w))
 	MCFG_ISA_OUT_IRQ3_CB(DEVWRITELINE("pic8259_1", pic8259_device, ir3_w))
 	//MCFG_ISA_OUT_IRQ4_CB(DEVWRITELINE("pic8259_1", pic8259_device, ir4_w))
@@ -222,8 +225,8 @@ MACHINE_CONFIG_START(magtouch_state::magtouch)
 	MCFG_ISA_OUT_DRQ3_CB(DEVWRITELINE("dma8237_1", am9517a_device, dreq3_w))
 
 	MCFG_ISA8_SLOT_ADD("isa", "isa1", magtouch_isa8_cards, "sb15", true)
-	MCFG_DEVICE_CARD_DEVICE_INPUT_DEFAULTS("sb15", magtouch_sb_def)
-	MCFG_DEVICE_CARD_MACHINE_CONFIG("sb15", magtouch_sb_conf)
+	MCFG_SLOT_OPTION_DEVICE_INPUT_DEFAULTS("sb15", magtouch_sb_def)
+	MCFG_SLOT_OPTION_MACHINE_CONFIG("sb15", magtouch_sb_conf)
 MACHINE_CONFIG_END
 
 

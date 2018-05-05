@@ -933,54 +933,58 @@ MACHINE_START_MEMBER(firebeat_state,firebeat)
 	m_maincpu->ppcdrc_add_fastram(0x00000000, 0x01ffffff, false, m_work_ram);
 }
 
-ADDRESS_MAP_START(firebeat_state::firebeat_map)
-	AM_RANGE(0x00000000, 0x01ffffff) AM_RAM AM_SHARE("work_ram")
-	AM_RANGE(0x70000000, 0x70000fff) AM_READWRITE8(midi_uart_r, midi_uart_w, 0xff000000)
-	AM_RANGE(0x70006000, 0x70006003) AM_WRITE(extend_board_irq_w)
-	AM_RANGE(0x70008000, 0x7000800f) AM_READ(keyboard_wheel_r)
-	AM_RANGE(0x7000a000, 0x7000a003) AM_READ(extend_board_irq_r)
-	AM_RANGE(0x74000000, 0x740003ff) AM_READWRITE(ppc_spu_share_r, ppc_spu_share_w) // SPU shared RAM
-	AM_RANGE(0x7d000200, 0x7d00021f) AM_READ(cabinet_r)
-	AM_RANGE(0x7d000340, 0x7d000347) AM_READ(sensor_r)
-	AM_RANGE(0x7d000400, 0x7d000403) AM_DEVREADWRITE8("ymz", ymz280b_device, read, write, 0xffff0000)
-	AM_RANGE(0x7d000800, 0x7d000803) AM_READ(input_r)
-	AM_RANGE(0x7d400000, 0x7d5fffff) AM_DEVREADWRITE8("flash_main", fujitsu_29f016a_device, read, write, 0xffffffff)
-	AM_RANGE(0x7d800000, 0x7d9fffff) AM_DEVREADWRITE8("flash_snd1", fujitsu_29f016a_device, read, write, 0xffffffff)
-	AM_RANGE(0x7da00000, 0x7dbfffff) AM_DEVREADWRITE8("flash_snd2", fujitsu_29f016a_device, read, write, 0xffffffff)
-	AM_RANGE(0x7dc00000, 0x7dc0000f) AM_DEVREADWRITE8("duart_com", pc16552_device, read, write, 0xffffffff)
-	AM_RANGE(0x7e000000, 0x7e00003f) AM_DEVREADWRITE8("rtc", rtc65271_device, rtc_r, rtc_w, 0xffffffff)
-	AM_RANGE(0x7e000100, 0x7e00013f) AM_DEVREADWRITE8("rtc", rtc65271_device, xram_r, xram_w, 0xffffffff)
-	AM_RANGE(0x7e800000, 0x7e8000ff) AM_DEVREADWRITE("gcu0", k057714_device, read, write)
-	AM_RANGE(0x7fe00000, 0x7fe0000f) AM_READWRITE(ata_command_r, ata_command_w)
-	AM_RANGE(0x7fe80000, 0x7fe8000f) AM_READWRITE(ata_control_r, ata_control_w)
-	AM_RANGE(0x7ff80000, 0x7fffffff) AM_ROM AM_REGION("user1", 0)       /* System BIOS */
-ADDRESS_MAP_END
+void firebeat_state::firebeat_map(address_map &map)
+{
+	map(0x00000000, 0x01ffffff).ram().share("work_ram");
+	map(0x70000000, 0x70000fff).rw(this, FUNC(firebeat_state::midi_uart_r), FUNC(firebeat_state::midi_uart_w)).umask32(0xff000000);
+	map(0x70006000, 0x70006003).w(this, FUNC(firebeat_state::extend_board_irq_w));
+	map(0x70008000, 0x7000800f).r(this, FUNC(firebeat_state::keyboard_wheel_r));
+	map(0x7000a000, 0x7000a003).r(this, FUNC(firebeat_state::extend_board_irq_r));
+	map(0x74000000, 0x740003ff).rw(this, FUNC(firebeat_state::ppc_spu_share_r), FUNC(firebeat_state::ppc_spu_share_w)); // SPU shared RAM
+	map(0x7d000200, 0x7d00021f).r(this, FUNC(firebeat_state::cabinet_r));
+	map(0x7d000340, 0x7d000347).r(this, FUNC(firebeat_state::sensor_r));
+	map(0x7d000400, 0x7d000401).rw("ymz", FUNC(ymz280b_device::read), FUNC(ymz280b_device::write));
+	map(0x7d000800, 0x7d000803).r(this, FUNC(firebeat_state::input_r));
+	map(0x7d400000, 0x7d5fffff).rw("flash_main", FUNC(fujitsu_29f016a_device::read), FUNC(fujitsu_29f016a_device::write));
+	map(0x7d800000, 0x7d9fffff).rw("flash_snd1", FUNC(fujitsu_29f016a_device::read), FUNC(fujitsu_29f016a_device::write));
+	map(0x7da00000, 0x7dbfffff).rw("flash_snd2", FUNC(fujitsu_29f016a_device::read), FUNC(fujitsu_29f016a_device::write));
+	map(0x7dc00000, 0x7dc0000f).rw(m_duart_com, FUNC(pc16552_device::read), FUNC(pc16552_device::write));
+	map(0x7e000000, 0x7e00003f).rw("rtc", FUNC(rtc65271_device::rtc_r), FUNC(rtc65271_device::rtc_w));
+	map(0x7e000100, 0x7e00013f).rw("rtc", FUNC(rtc65271_device::xram_r), FUNC(rtc65271_device::xram_w));
+	map(0x7e800000, 0x7e8000ff).rw("gcu0", FUNC(k057714_device::read), FUNC(k057714_device::write));
+	map(0x7fe00000, 0x7fe0000f).rw(this, FUNC(firebeat_state::ata_command_r), FUNC(firebeat_state::ata_command_w));
+	map(0x7fe80000, 0x7fe8000f).rw(this, FUNC(firebeat_state::ata_control_r), FUNC(firebeat_state::ata_control_w));
+	map(0x7ff80000, 0x7fffffff).rom().region("user1", 0);       /* System BIOS */
+}
 
-ADDRESS_MAP_START(firebeat_state::firebeat2_map)
-	AM_IMPORT_FROM(firebeat_map)
-	AM_RANGE(0x7e800100, 0x7e8001ff) AM_DEVREADWRITE("gcu1", k057714_device, read, write)
-ADDRESS_MAP_END
+void firebeat_state::firebeat2_map(address_map &map)
+{
+	firebeat_map(map);
+	map(0x7e800100, 0x7e8001ff).rw("gcu1", FUNC(k057714_device::read), FUNC(k057714_device::write));
+}
 
-ADDRESS_MAP_START(firebeat_state::spu_map)
-	AM_RANGE(0x000000, 0x07ffff) AM_ROM
-	AM_RANGE(0x100000, 0x13ffff) AM_RAM
-	AM_RANGE(0x200000, 0x200001) AM_READ(spu_unk_r)
-	AM_RANGE(0x220000, 0x220001) AM_WRITE(spu_220000_w)
-	AM_RANGE(0x230000, 0x230001) AM_WRITE(spu_irq_ack_w)
-	AM_RANGE(0x260000, 0x260001) AM_WRITE(spu_sdram_bank_w)
-	AM_RANGE(0x280000, 0x2807ff) AM_READWRITE(m68k_spu_share_r, m68k_spu_share_w)
-	AM_RANGE(0x300000, 0x30000f) AM_DEVREADWRITE("spu_ata", ata_interface_device, read_cs0, write_cs0)
-	AM_RANGE(0x340000, 0x34000f) AM_DEVREADWRITE("spu_ata", ata_interface_device, read_cs1, write_cs1)
-	AM_RANGE(0x400000, 0x400fff) AM_DEVREADWRITE("rf5c400", rf5c400_device, rf5c400_r, rf5c400_w)
-	AM_RANGE(0x800000, 0x83ffff) AM_RAM         // SDRAM
-	AM_RANGE(0xfc0000, 0xffffff) AM_RAM         // SDRAM
-ADDRESS_MAP_END
+void firebeat_state::spu_map(address_map &map)
+{
+	map(0x000000, 0x07ffff).rom();
+	map(0x100000, 0x13ffff).ram();
+	map(0x200000, 0x200001).r(this, FUNC(firebeat_state::spu_unk_r));
+	map(0x220000, 0x220001).w(this, FUNC(firebeat_state::spu_220000_w));
+	map(0x230000, 0x230001).w(this, FUNC(firebeat_state::spu_irq_ack_w));
+	map(0x260000, 0x260001).w(this, FUNC(firebeat_state::spu_sdram_bank_w));
+	map(0x280000, 0x2807ff).rw(this, FUNC(firebeat_state::m68k_spu_share_r), FUNC(firebeat_state::m68k_spu_share_w));
+	map(0x300000, 0x30000f).rw(m_spuata, FUNC(ata_interface_device::read_cs0), FUNC(ata_interface_device::write_cs0));
+	map(0x340000, 0x34000f).rw(m_spuata, FUNC(ata_interface_device::read_cs1), FUNC(ata_interface_device::write_cs1));
+	map(0x400000, 0x400fff).rw("rf5c400", FUNC(rf5c400_device::rf5c400_r), FUNC(rf5c400_device::rf5c400_w));
+	map(0x800000, 0x83ffff).ram();         // SDRAM
+	map(0xfc0000, 0xffffff).ram();         // SDRAM
+}
 
-ADDRESS_MAP_START(firebeat_state::ymz280b_map)
-	ADDRESS_MAP_GLOBAL_MASK(0x3fffff)
-	AM_RANGE(0x000000, 0x1fffff) AM_DEVREAD("flash_snd1", fujitsu_29f016a_device, read)
-	AM_RANGE(0x200000, 0x3fffff) AM_DEVREAD("flash_snd2", fujitsu_29f016a_device, read)
-ADDRESS_MAP_END
+void firebeat_state::ymz280b_map(address_map &map)
+{
+	map.global_mask(0x3fffff);
+	map(0x000000, 0x1fffff).r("flash_snd1", FUNC(fujitsu_29f016a_device::read));
+	map(0x200000, 0x3fffff).r("flash_snd2", FUNC(fujitsu_29f016a_device::read));
+}
 
 /*****************************************************************************/
 
@@ -1159,13 +1163,14 @@ WRITE_LINE_MEMBER( firebeat_state::ata_interrupt )
 void firebeat_state::cdrom_config(device_t *device)
 {
 	device = device->subdevice("cdda");
-	MCFG_SOUND_ROUTE(0, "^^^^lspeaker", 1.0)
-	MCFG_SOUND_ROUTE(1, "^^^^rspeaker", 1.0)
+	MCFG_SOUND_ROUTE(0, "^^lspeaker", 1.0)
+	MCFG_SOUND_ROUTE(1, "^^rspeaker", 1.0)
 }
 
-static SLOT_INTERFACE_START(firebeat_ata_devices)
-	SLOT_INTERFACE("cdrom", ATAPI_FIXED_CDROM)
-SLOT_INTERFACE_END
+static void firebeat_ata_devices(device_slot_interface &device)
+{
+	device.option_add("cdrom", ATAPI_FIXED_CDROM);
+}
 
 MACHINE_CONFIG_START(firebeat_state::firebeat)
 
@@ -1187,7 +1192,7 @@ MACHINE_CONFIG_START(firebeat_state::firebeat)
 	MCFG_ATA_INTERFACE_IRQ_HANDLER(WRITELINE(firebeat_state, ata_interrupt))
 
 	MCFG_DEVICE_MODIFY("ata:1")
-	MCFG_DEVICE_CARD_MACHINE_CONFIG( "cdrom", cdrom_config )
+	MCFG_SLOT_OPTION_MACHINE_CONFIG( "cdrom", cdrom_config )
 
 	/* video hardware */
 	MCFG_PALETTE_ADD_RRRRRGGGGGBBBBB("palette")
@@ -1219,9 +1224,9 @@ MACHINE_CONFIG_START(firebeat_state::firebeat)
 	MCFG_DEVICE_ADD("duart_com:chan1", NS16550, XTAL(19'660'800))
 	MCFG_DEVICE_ADD("duart_midi", PC16552D, 0)  // in all memory maps, pgmd to 31250baud
 	MCFG_DEVICE_ADD("duart_midi:chan0", NS16550, XTAL(24'000'000))
-	MCFG_INS8250_OUT_INT_CB(DEVWRITELINE(DEVICE_SELF_OWNER, firebeat_state, midi_uart_ch0_irq_callback))
+	MCFG_INS8250_OUT_INT_CB(WRITELINE(firebeat_state, midi_uart_ch0_irq_callback))
 	MCFG_DEVICE_ADD("duart_midi:chan1", NS16550, XTAL(24'000'000))
-	MCFG_INS8250_OUT_INT_CB(DEVWRITELINE(DEVICE_SELF_OWNER, firebeat_state, midi_uart_ch1_irq_callback))
+	MCFG_INS8250_OUT_INT_CB(WRITELINE(firebeat_state, midi_uart_ch1_irq_callback))
 MACHINE_CONFIG_END
 
 MACHINE_CONFIG_START(firebeat_state::firebeat2)
@@ -1244,7 +1249,7 @@ MACHINE_CONFIG_START(firebeat_state::firebeat2)
 	MCFG_ATA_INTERFACE_IRQ_HANDLER(WRITELINE(firebeat_state, ata_interrupt))
 
 	MCFG_DEVICE_MODIFY("ata:1")
-	MCFG_DEVICE_CARD_MACHINE_CONFIG( "cdrom", cdrom_config )
+	MCFG_SLOT_OPTION_MACHINE_CONFIG( "cdrom", cdrom_config )
 
 	/* video hardware */
 	MCFG_PALETTE_ADD_RRRRRGGGGGBBBBB("palette")
@@ -1287,9 +1292,9 @@ MACHINE_CONFIG_START(firebeat_state::firebeat2)
 	MCFG_DEVICE_ADD("duart_com:chan1", NS16550, XTAL(19'660'800))
 	MCFG_DEVICE_ADD("duart_midi", PC16552D, 0)
 	MCFG_DEVICE_ADD("duart_midi:chan0", NS16550, XTAL(24'000'000))
-	MCFG_INS8250_OUT_INT_CB(DEVWRITELINE(DEVICE_SELF_OWNER, firebeat_state, midi_uart_ch0_irq_callback))
+	MCFG_INS8250_OUT_INT_CB(WRITELINE(firebeat_state, midi_uart_ch0_irq_callback))
 	MCFG_DEVICE_ADD("duart_midi:chan1", NS16550, XTAL(24'000'000))
-	MCFG_INS8250_OUT_INT_CB(DEVWRITELINE(DEVICE_SELF_OWNER, firebeat_state, midi_uart_ch1_irq_callback))
+	MCFG_INS8250_OUT_INT_CB(WRITELINE(firebeat_state, midi_uart_ch1_irq_callback))
 	MCFG_MIDI_KBD_ADD("kbd0", DEVWRITELINE("duart_midi:chan0", ins8250_uart_device, rx_w), 31250)
 	MCFG_MIDI_KBD_ADD("kbd1", DEVWRITELINE("duart_midi:chan1", ins8250_uart_device, rx_w), 31250)
 MACHINE_CONFIG_END

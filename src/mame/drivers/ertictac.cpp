@@ -62,17 +62,18 @@ READ32_MEMBER(ertictac_state::ertictac_podule_r)
 	return 0;
 }
 
-ADDRESS_MAP_START(ertictac_state::ertictac_map)
-	AM_RANGE(0x00000000, 0x01ffffff) AM_READWRITE(archimedes_memc_logical_r, archimedes_memc_logical_w)
-	AM_RANGE(0x02000000, 0x02ffffff) AM_RAM AM_SHARE("physicalram") /* physical RAM - 16 MB for now, should be 512k for the A310 */
+void ertictac_state::ertictac_map(address_map &map)
+{
+	map(0x00000000, 0x01ffffff).rw(this, FUNC(ertictac_state::archimedes_memc_logical_r), FUNC(ertictac_state::archimedes_memc_logical_w));
+	map(0x02000000, 0x02ffffff).ram().share("physicalram"); /* physical RAM - 16 MB for now, should be 512k for the A310 */
 
-	AM_RANGE(0x03000000, 0x033fffff) AM_READWRITE(archimedes_ioc_r, archimedes_ioc_w)
-	AM_RANGE(0x03340000, 0x0334001f) AM_READ(ertictac_podule_r)
-	AM_RANGE(0x033c0000, 0x033c001f) AM_READ(ertictac_podule_r)
-	AM_RANGE(0x03400000, 0x035fffff) AM_READWRITE(archimedes_vidc_r, archimedes_vidc_w)
-	AM_RANGE(0x03600000, 0x037fffff) AM_READWRITE(archimedes_memc_r, archimedes_memc_w)
-	AM_RANGE(0x03800000, 0x03ffffff) AM_ROM AM_REGION("maincpu", 0) AM_WRITE(archimedes_memc_page_w)
-ADDRESS_MAP_END
+	map(0x03000000, 0x033fffff).rw(this, FUNC(ertictac_state::archimedes_ioc_r), FUNC(ertictac_state::archimedes_ioc_w));
+	map(0x03340000, 0x0334001f).r(this, FUNC(ertictac_state::ertictac_podule_r));
+	map(0x033c0000, 0x033c001f).r(this, FUNC(ertictac_state::ertictac_podule_r));
+	map(0x03400000, 0x035fffff).rw(this, FUNC(ertictac_state::archimedes_vidc_r), FUNC(ertictac_state::archimedes_vidc_w));
+	map(0x03600000, 0x037fffff).rw(this, FUNC(ertictac_state::archimedes_memc_r), FUNC(ertictac_state::archimedes_memc_w));
+	map(0x03800000, 0x03ffffff).rom().region("maincpu", 0).w(this, FUNC(ertictac_state::archimedes_memc_page_w));
+}
 
 static INPUT_PORTS_START( ertictac )
 	PORT_START("SYSTEM")
@@ -246,14 +247,14 @@ MACHINE_CONFIG_START(ertictac_state::ertictac)
 	MCFG_SOUND_ADD("dac6", DAC_16BIT_R2R_TWOS_COMPLEMENT, 0) MCFG_SOUND_ROUTE(0, "speaker", 0.05) // unknown DAC
 	MCFG_SOUND_ADD("dac7", DAC_16BIT_R2R_TWOS_COMPLEMENT, 0) MCFG_SOUND_ROUTE(0, "speaker", 0.05) // unknown DAC
 	MCFG_DEVICE_ADD("vref", VOLTAGE_REGULATOR, 0) MCFG_VOLTAGE_REGULATOR_OUTPUT(5.0)
-	MCFG_SOUND_ROUTE_EX(0, "dac0", 1.0, DAC_VREF_POS_INPUT) MCFG_SOUND_ROUTE_EX(0, "dac0", -1.0, DAC_VREF_NEG_INPUT)
-	MCFG_SOUND_ROUTE_EX(0, "dac1", 1.0, DAC_VREF_POS_INPUT) MCFG_SOUND_ROUTE_EX(0, "dac1", -1.0, DAC_VREF_NEG_INPUT)
-	MCFG_SOUND_ROUTE_EX(0, "dac2", 1.0, DAC_VREF_POS_INPUT) MCFG_SOUND_ROUTE_EX(0, "dac2", -1.0, DAC_VREF_NEG_INPUT)
-	MCFG_SOUND_ROUTE_EX(0, "dac3", 1.0, DAC_VREF_POS_INPUT) MCFG_SOUND_ROUTE_EX(0, "dac3", -1.0, DAC_VREF_NEG_INPUT)
-	MCFG_SOUND_ROUTE_EX(0, "dac4", 1.0, DAC_VREF_POS_INPUT) MCFG_SOUND_ROUTE_EX(0, "dac4", -1.0, DAC_VREF_NEG_INPUT)
-	MCFG_SOUND_ROUTE_EX(0, "dac5", 1.0, DAC_VREF_POS_INPUT) MCFG_SOUND_ROUTE_EX(0, "dac5", -1.0, DAC_VREF_NEG_INPUT)
-	MCFG_SOUND_ROUTE_EX(0, "dac6", 1.0, DAC_VREF_POS_INPUT) MCFG_SOUND_ROUTE_EX(0, "dac6", -1.0, DAC_VREF_NEG_INPUT)
-	MCFG_SOUND_ROUTE_EX(0, "dac7", 1.0, DAC_VREF_POS_INPUT) MCFG_SOUND_ROUTE_EX(0, "dac7", -1.0, DAC_VREF_NEG_INPUT)
+	MCFG_SOUND_ROUTE(0, "dac0", 1.0, DAC_VREF_POS_INPUT) MCFG_SOUND_ROUTE(0, "dac0", -1.0, DAC_VREF_NEG_INPUT)
+	MCFG_SOUND_ROUTE(0, "dac1", 1.0, DAC_VREF_POS_INPUT) MCFG_SOUND_ROUTE(0, "dac1", -1.0, DAC_VREF_NEG_INPUT)
+	MCFG_SOUND_ROUTE(0, "dac2", 1.0, DAC_VREF_POS_INPUT) MCFG_SOUND_ROUTE(0, "dac2", -1.0, DAC_VREF_NEG_INPUT)
+	MCFG_SOUND_ROUTE(0, "dac3", 1.0, DAC_VREF_POS_INPUT) MCFG_SOUND_ROUTE(0, "dac3", -1.0, DAC_VREF_NEG_INPUT)
+	MCFG_SOUND_ROUTE(0, "dac4", 1.0, DAC_VREF_POS_INPUT) MCFG_SOUND_ROUTE(0, "dac4", -1.0, DAC_VREF_NEG_INPUT)
+	MCFG_SOUND_ROUTE(0, "dac5", 1.0, DAC_VREF_POS_INPUT) MCFG_SOUND_ROUTE(0, "dac5", -1.0, DAC_VREF_NEG_INPUT)
+	MCFG_SOUND_ROUTE(0, "dac6", 1.0, DAC_VREF_POS_INPUT) MCFG_SOUND_ROUTE(0, "dac6", -1.0, DAC_VREF_NEG_INPUT)
+	MCFG_SOUND_ROUTE(0, "dac7", 1.0, DAC_VREF_POS_INPUT) MCFG_SOUND_ROUTE(0, "dac7", -1.0, DAC_VREF_NEG_INPUT)
 MACHINE_CONFIG_END
 
 ROM_START( ertictac )

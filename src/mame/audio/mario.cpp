@@ -418,7 +418,6 @@ void mario_state::set_ea(int ea)
 
 void mario_state::sound_start()
 {
-	device_t *audiocpu = machine().device("audiocpu");
 	uint8_t *SND = memregion("audiocpu")->base();
 
 #if USE_8039
@@ -426,11 +425,11 @@ void mario_state::sound_start()
 #endif
 
 	m_eabank = nullptr;
-	if (audiocpu != nullptr && audiocpu->type() != Z80)
+	if (m_audiocpu->type() != Z80)
 	{
 
 		m_eabank = "bank1";
-		audiocpu->memory().space(AS_PROGRAM).install_read_bank(0x000, 0x7ff, "bank1");
+		m_audiocpu->space(AS_PROGRAM).install_read_bank(0x000, 0x7ff, "bank1");
 		membank("bank1")->configure_entry(0, &SND[0]);
 		membank("bank1")->configure_entry(1, &SND[0x1000]);
 
@@ -448,7 +447,7 @@ void mario_state::sound_start()
 
 void mario_state::sound_reset()
 {
-	address_space &space = machine().device("audiocpu")->memory().space(AS_PROGRAM);
+	address_space &space = m_audiocpu->space(AS_PROGRAM);
 
 #if USE_8039
 	set_ea(1);
@@ -611,21 +610,24 @@ WRITE8_MEMBER(mario_state::mario_sh3_w)
  *
  *************************************/
 
-ADDRESS_MAP_START(mario_state::mario_sound_map)
-	AM_RANGE(0x0000, 0x07ff) AM_ROMBANK("bank1") AM_REGION("audiocpu", 0)
-	AM_RANGE(0x0800, 0x0fff) AM_ROM
-ADDRESS_MAP_END
+void mario_state::mario_sound_map(address_map &map)
+{
+	map(0x0000, 0x07ff).bankr("bank1").region("audiocpu", 0);
+	map(0x0800, 0x0fff).rom();
+}
 
-ADDRESS_MAP_START(mario_state::mario_sound_io_map)
-	AM_RANGE(0x00, 0xff) AM_READ(mario_sh_tune_r) AM_WRITE(mario_sh_sound_w)
-ADDRESS_MAP_END
+void mario_state::mario_sound_io_map(address_map &map)
+{
+	map(0x00, 0xff).r(this, FUNC(mario_state::mario_sh_tune_r)).w(this, FUNC(mario_state::mario_sh_sound_w));
+}
 
-ADDRESS_MAP_START(mario_state::masao_sound_map)
-	AM_RANGE(0x0000, 0x0fff) AM_ROM
-	AM_RANGE(0x2000, 0x23ff) AM_RAM
-	AM_RANGE(0x4000, 0x4000) AM_DEVREADWRITE("aysnd", ay8910_device, data_r, data_w)
-	AM_RANGE(0x6000, 0x6000) AM_DEVWRITE("aysnd", ay8910_device, address_w)
-ADDRESS_MAP_END
+void mario_state::masao_sound_map(address_map &map)
+{
+	map(0x0000, 0x0fff).rom();
+	map(0x2000, 0x23ff).ram();
+	map(0x4000, 0x4000).rw("aysnd", FUNC(ay8910_device::data_r), FUNC(ay8910_device::data_w));
+	map(0x6000, 0x6000).w("aysnd", FUNC(ay8910_device::address_w));
+}
 
 
 /*************************************

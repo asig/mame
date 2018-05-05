@@ -719,7 +719,7 @@ private:
 	template<typename UintType>
 	UintType unmap_r(address_space &space, offs_t offset, UintType mask)
 	{
-		if (m_space.log_unmap() && !m_space.m_manager.machine().side_effect_disabled())
+		if (m_space.log_unmap() && !m_space.m_manager.machine().side_effects_disabled())
 		{
 			m_space.device().logerror(
 					m_space.is_octal()
@@ -791,7 +791,7 @@ private:
 	template<typename UintType>
 	void unmap_w(address_space &space, offs_t offset, UintType data, UintType mask)
 	{
-		if (m_space.log_unmap() && !m_space.m_manager.machine().side_effect_disabled())
+		if (m_space.log_unmap() && !m_space.m_manager.machine().side_effects_disabled())
 		{
 			m_space.device().logerror(
 					m_space.is_octal()
@@ -1905,7 +1905,7 @@ memory_region *memory_manager::region_containing(const void *memory, offs_t byte
 
 	// look through the region list and return the first match
 	for (auto &region : m_regionlist)
-		if (data >= region.second->base() && (data + bytes) < region.second->end())
+		if (data >= region.second->base() && (data + bytes) <= region.second->end())
 			return region.second.get();
 
 	// didn't find one
@@ -2043,8 +2043,6 @@ void address_space::check_optimize_all(const char *function, int width, offs_t a
 
 	if (addrmask & ~m_addrmask)
 		fatalerror("%s: In range %x-%x mask %x mirror %x select %x, mask is outside of the global address mask %x, did you mean %x ?\n", function, addrstart, addrend, addrmask, addrmirror, addrselect, m_addrmask, addrmask & m_addrmask);
-	if (addrmirror & ~m_addrmask)
-		fatalerror("%s: In range %x-%x mask %x mirror %x select %x, mirror is outside of the global address mask %x, did you mean %x ?\n", function, addrstart, addrend, addrmask, addrmirror, addrselect, m_addrmask, addrmirror & m_addrmask);
 	if (addrselect & ~m_addrmask)
 		fatalerror("%s: In range %x-%x mask %x mirror %x select %x, select is outside of the global address mask %x, did you mean %x ?\n", function, addrstart, addrend, addrmask, addrmirror, addrselect, m_addrmask, addrselect & m_addrmask);
 	if (addrmask & ~changing_bits)
@@ -2101,12 +2099,14 @@ void address_space::check_optimize_all(const char *function, int width, offs_t a
 
 		addrstart &= ~default_lowbits_mask;
 		addrend |= default_lowbits_mask;
+		if(changing_bits < default_lowbits_mask)
+			changing_bits = default_lowbits_mask;
 	}
 
 	nstart = addrstart;
 	nend = addrend;
 	nmask = (addrmask ? addrmask : changing_bits) | addrselect;
-	nmirror = addrmirror | addrselect;
+	nmirror = (addrmirror & m_addrmask) | addrselect;
 	if(nmirror && !(nstart & changing_bits) && !((~nend) & changing_bits)) {
 		// If the range covers the a complete power-of-two zone, it is
 		// possible to remove 1 bits from the mirror, pushing the end

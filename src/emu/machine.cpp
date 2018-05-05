@@ -107,8 +107,7 @@ osd_interface &running_machine::osd() const
 //-------------------------------------------------
 
 running_machine::running_machine(const machine_config &_config, machine_manager &manager)
-	: primary_screen(nullptr),
-		m_side_effect_disabled(0),
+	: m_side_effects_disabled(0),
 		debug_flags(0),
 		m_config(_config),
 		m_system(_config.gamedrv()),
@@ -142,9 +141,6 @@ running_machine::running_machine(const machine_config &_config, machine_manager 
 	device_iterator iter(root_device());
 	for (device_t &device : iter)
 		device.set_machine(*this);
-
-	// find devices
-	primary_screen = screen_device_iterator(root_device()).first();
 
 	// fetch core options
 	if (options().debug())
@@ -1322,9 +1318,10 @@ WRITE8_MEMBER(dummy_space_device::write)
 	throw emu_fatalerror("Attempted to write to generic address space (offs %X = %02X)\n", offset, data);
 }
 
-ADDRESS_MAP_START(dummy_space_device::dummy)
-	AM_RANGE(0x00000000, 0xffffffff) AM_READWRITE(read, write)
-ADDRESS_MAP_END
+void dummy_space_device::dummy(address_map &map)
+{
+	map(0x00000000, 0xffffffff).rw(this, FUNC(dummy_space_device::read), FUNC(dummy_space_device::write));
+}
 
 DEFINE_DEVICE_TYPE(DUMMY_SPACE, dummy_space_device, "dummy_space", "Dummy Space")
 

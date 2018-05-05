@@ -460,15 +460,17 @@ SOUND_RESET_MEMBER(n8080_state,helifire)
 }
 
 
-ADDRESS_MAP_START(n8080_state::n8080_sound_cpu_map)
-	ADDRESS_MAP_GLOBAL_MASK(0x3ff)
-	AM_RANGE(0x0000, 0x03ff) AM_ROM
-ADDRESS_MAP_END
+void n8080_state::n8080_sound_cpu_map(address_map &map)
+{
+	map.global_mask(0x3ff);
+	map(0x0000, 0x03ff).rom();
+}
 
 
-ADDRESS_MAP_START(n8080_state::helifire_sound_io_map)
-	AM_RANGE(0x00, 0x7f) AM_READ(helifire_8035_external_ram_r)
-ADDRESS_MAP_END
+void n8080_state::helifire_sound_io_map(address_map &map)
+{
+	map(0x00, 0x7f).r(this, FUNC(n8080_state::helifire_8035_external_ram_r));
+}
 
 
 MACHINE_CONFIG_START(n8080_state::spacefev_sound)
@@ -491,7 +493,7 @@ MACHINE_CONFIG_START(n8080_state::spacefev_sound)
 
 	MCFG_SOUND_ADD("n8080_dac", DAC_1BIT, 0) MCFG_SOUND_ROUTE(ALL_OUTPUTS, "speaker", 0.15)
 	MCFG_DEVICE_ADD("vref", VOLTAGE_REGULATOR, 0) MCFG_VOLTAGE_REGULATOR_OUTPUT(5.0)
-	MCFG_SOUND_ROUTE_EX(0, "n8080_dac", 1.0, DAC_VREF_POS_INPUT)
+	MCFG_SOUND_ROUTE(0, "n8080_dac", 1.0, DAC_VREF_POS_INPUT)
 
 	MCFG_SOUND_ADD("snsnd", SN76477, 0)
 	MCFG_SN76477_NOISE_PARAMS(RES_K(36), RES_K(150), CAP_N(1)) // noise + filter
@@ -529,7 +531,7 @@ MACHINE_CONFIG_START(n8080_state::sheriff_sound)
 
 	MCFG_SOUND_ADD("n8080_dac", DAC_1BIT, 0) MCFG_SOUND_ROUTE(ALL_OUTPUTS, "speaker", 0.15)
 	MCFG_DEVICE_ADD("vref", VOLTAGE_REGULATOR, 0) MCFG_VOLTAGE_REGULATOR_OUTPUT(5.0)
-	MCFG_SOUND_ROUTE_EX(0, "n8080_dac", 1.0, DAC_VREF_POS_INPUT)
+	MCFG_SOUND_ROUTE(0, "n8080_dac", 1.0, DAC_VREF_POS_INPUT)
 
 	MCFG_SOUND_ADD("snsnd", SN76477, 0)
 	MCFG_SN76477_NOISE_PARAMS(RES_K(36), RES_K(100), CAP_N(1)) // noise + filter
@@ -570,5 +572,5 @@ MACHINE_CONFIG_START(n8080_state::helifire_sound)
 	MCFG_SPEAKER_STANDARD_MONO("speaker")
 	MCFG_SOUND_ADD("helifire_dac", DAC_8BIT_R2R, 0) MCFG_SOUND_ROUTE(ALL_OUTPUTS, "speaker", 0.15) // unknown DAC
 	MCFG_DEVICE_ADD("vref", VOLTAGE_REGULATOR, 0) MCFG_VOLTAGE_REGULATOR_OUTPUT(5.0)
-	MCFG_SOUND_ROUTE_EX(0, "helifire_dac", 1.0, DAC_VREF_POS_INPUT) MCFG_SOUND_ROUTE_EX(0, "helifire_dac", -1.0, DAC_VREF_NEG_INPUT)
+	MCFG_SOUND_ROUTE(0, "helifire_dac", 1.0, DAC_VREF_POS_INPUT) MCFG_SOUND_ROUTE(0, "helifire_dac", -1.0, DAC_VREF_NEG_INPUT)
 MACHINE_CONFIG_END

@@ -532,17 +532,20 @@ WRITE8_MEMBER(replicator_state::port_w)
 * Address maps                                       *
 \****************************************************/
 
-ADDRESS_MAP_START(replicator_state::replicator_prg_map)
-	AM_RANGE(0x0000, 0x1FFFF) AM_ROM
-ADDRESS_MAP_END
+void replicator_state::replicator_prg_map(address_map &map)
+{
+	map(0x0000, 0x1FFFF).rom();
+}
 
-ADDRESS_MAP_START(replicator_state::replicator_data_map)
-	AM_RANGE(0x0200, 0x21FF) AM_RAM  /* ATMEGA1280 Internal SRAM */
-ADDRESS_MAP_END
+void replicator_state::replicator_data_map(address_map &map)
+{
+	map(0x0200, 0x21FF).ram();  /* ATMEGA1280 Internal SRAM */
+}
 
-ADDRESS_MAP_START(replicator_state::replicator_io_map)
-	AM_RANGE(AVR8_IO_PORTA, AVR8_IO_PORTL) AM_READWRITE( port_r, port_w )
-ADDRESS_MAP_END
+void replicator_state::replicator_io_map(address_map &map)
+{
+	map(AVR8_IO_PORTA, AVR8_IO_PORTL).rw(this, FUNC(replicator_state::port_r), FUNC(replicator_state::port_w));
+}
 
 /****************************************************\
 * Input ports                                        *
@@ -640,7 +643,7 @@ MACHINE_CONFIG_START(replicator_state::replicator)
 	MCFG_SPEAKER_STANDARD_MONO("speaker")
 	MCFG_SOUND_ADD("dac", DAC_1BIT, 0) MCFG_SOUND_ROUTE(0, "speaker", 0.5)
 	MCFG_DEVICE_ADD("vref", VOLTAGE_REGULATOR, 0) MCFG_VOLTAGE_REGULATOR_OUTPUT(5.0)
-	MCFG_SOUND_ROUTE_EX(0, "dac", 1.0, DAC_VREF_POS_INPUT)
+	MCFG_SOUND_ROUTE(0, "dac", 1.0, DAC_VREF_POS_INPUT)
 MACHINE_CONFIG_END
 
 ROM_START( replica1 )

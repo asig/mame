@@ -32,26 +32,14 @@ class chexx_state : public driver_device
 {
 public:
 	chexx_state(const machine_config &mconfig, device_type type, const char *tag)
-		: driver_device(mconfig, type, tag),
-			m_maincpu(*this, "maincpu"),
-			m_via(*this, "via6522"),
-			m_digitalker(*this, "digitalker"),
-			m_aysnd(*this, "aysnd")
+		: driver_device(mconfig, type, tag)
+		, m_maincpu(*this, "maincpu")
+		, m_via(*this, "via6522")
+		, m_digitalker(*this, "digitalker")
+		, m_aysnd(*this, "aysnd")
+		, m_digits(*this, "digit%u", 0U)
 	{
 	}
-
-	// devices
-	required_device<cpu_device> m_maincpu;
-	required_device<via6522_device> m_via;
-	required_device<digitalker_device> m_digitalker;
-	optional_device<ay8910_device> m_aysnd; // only faceoffh
-
-	// vars
-	uint8_t  m_port_a, m_port_b;
-	uint8_t  m_bank;
-	uint32_t m_shift;
-	uint8_t  m_lamp;
-	uint8_t  m_ay_cmd, m_ay_data;
 
 	// callbacks
 	TIMER_DEVICE_CALLBACK_MEMBER(update);
@@ -73,16 +61,32 @@ public:
 	DECLARE_WRITE8_MEMBER(ay_w);
 	DECLARE_WRITE8_MEMBER(lamp_w);
 
+	void faceoffh(machine_config &config);
+	void chexx83(machine_config &config);
+	void chexx83_map(address_map &map);
+	void faceoffh_map(address_map &map);
+
+private:
+	// vars
+	uint8_t  m_port_a, m_port_b;
+	uint8_t  m_bank;
+	uint32_t m_shift;
+	uint8_t  m_lamp;
+	uint8_t  m_ay_cmd, m_ay_data;
+
 	// digitalker
 	void digitalker_set_bank(uint8_t bank);
 
 	// driver_device overrides
 	virtual void machine_start() override;
 	virtual void machine_reset() override;
-	void faceoffh(machine_config &config);
-	void chexx83(machine_config &config);
-	void chexx83_map(address_map &map);
-	void faceoffh_map(address_map &map);
+
+	// devices
+	required_device<cpu_device> m_maincpu;
+	required_device<via6522_device> m_via;
+	required_device<digitalker_device> m_digitalker;
+	optional_device<ay8910_device> m_aysnd; // only faceoffh
+	output_finder<4> m_digits;
 };
 
 
@@ -139,13 +143,12 @@ WRITE_LINE_MEMBER(chexx_state::via_cb2_out)
 	m_shift = ((m_shift << 1) & 0xffffff) | state;
 
 	// 7segs (score)
-	static const uint8_t patterns[16] = { 0x3f, 0x06, 0x5b, 0x4f, 0x66, 0x6d, 0x7c, 0x07, 0x7f, 0x67, 0, 0, 0, 0, 0, 0 }; // 4511
+	constexpr uint8_t patterns[16] = { 0x3f, 0x06, 0x5b, 0x4f, 0x66, 0x6d, 0x7c, 0x07, 0x7f, 0x67, 0, 0, 0, 0, 0, 0 }; // 4511
 
-	output().set_digit_value(0, patterns[(m_shift >> (16+4)) & 0xf]);
-	output().set_digit_value(1, patterns[(m_shift >> (16+0)) & 0xf]);
-
-	output().set_digit_value(2, patterns[(m_shift >>  (8+4)) & 0xf]);
-	output().set_digit_value(3, patterns[(m_shift >>  (8+0)) & 0xf]);
+	m_digits[0] = patterns[(m_shift >> (16+4)) & 0xf];
+	m_digits[1] = patterns[(m_shift >> (16+0)) & 0xf];
+	m_digits[2] = patterns[(m_shift >>  (8+4)) & 0xf];
+	m_digits[3] = patterns[(m_shift >>  (8+0)) & 0xf];
 
 	// Leds (period being played)
 	output().set_led_value(0, BIT(m_shift,2));
@@ -174,12 +177,13 @@ READ8_MEMBER(chexx_state::input_r)
 
 // Chexx Memory Map
 
-ADDRESS_MAP_START(chexx_state::chexx83_map)
-	AM_RANGE(0x0000, 0x007f) AM_RAM AM_MIRROR(0x100) // 6810 - 128 x 8 static RAM
-	AM_RANGE(0x4000, 0x400f) AM_DEVREADWRITE("via6522", via6522_device, read, write)
-	AM_RANGE(0x8000, 0x8000) AM_READ(input_r)
-	AM_RANGE(0xf800, 0xffff) AM_ROM AM_REGION("maincpu", 0)
-ADDRESS_MAP_END
+void chexx_state::chexx83_map(address_map &map)
+{
+	map(0x0000, 0x007f).ram().mirror(0x100); // 6810 - 128 x 8 static RAM
+	map(0x4000, 0x400f).rw(m_via, FUNC(via6522_device::read), FUNC(via6522_device::write));
+	map(0x8000, 0x8000).r(this, FUNC(chexx_state::input_r));
+	map(0xf800, 0xffff).rom().region("maincpu", 0);
+}
 
 // Face-Off Memory Map
 
@@ -211,14 +215,15 @@ WRITE8_MEMBER(chexx_state::ay_w)
 	m_ay_cmd = data;
 }
 
-ADDRESS_MAP_START(chexx_state::faceoffh_map)
-	AM_RANGE(0x0000, 0x007f) AM_RAM AM_MIRROR(0x100) // M58725P - 2KB
-	AM_RANGE(0x4000, 0x400f) AM_DEVREADWRITE("via6522", via6522_device, read, write)
-	AM_RANGE(0x8000, 0x8000) AM_READ(input_r)
-	AM_RANGE(0xa000, 0xa001) AM_WRITE(ay_w)
-	AM_RANGE(0xc000, 0xc000) AM_WRITE(lamp_w)
-	AM_RANGE(0xf000, 0xffff) AM_ROM AM_REGION("maincpu", 0)
-ADDRESS_MAP_END
+void chexx_state::faceoffh_map(address_map &map)
+{
+	map(0x0000, 0x007f).ram().mirror(0x100); // M58725P - 2KB
+	map(0x4000, 0x400f).rw(m_via, FUNC(via6522_device::read), FUNC(via6522_device::write));
+	map(0x8000, 0x8000).r(this, FUNC(chexx_state::input_r));
+	map(0xa000, 0xa001).w(this, FUNC(chexx_state::ay_w));
+	map(0xc000, 0xc000).w(this, FUNC(chexx_state::lamp_w));
+	map(0xf000, 0xffff).rom().region("maincpu", 0);
+}
 
 // Inputs
 
@@ -249,13 +254,14 @@ static INPUT_PORTS_START( chexx83 )
 	PORT_DIPSETTING(    0x08, "4" ) // 80
 	PORT_DIPSETTING(    0x0c, "5" ) // 100
 	PORT_BIT( 0x70, IP_ACTIVE_LOW, IPT_UNKNOWN )
-	PORT_BIT( 0x80, IP_ACTIVE_LOW, IPT_SPECIAL ) // multiplexed inputs
+	PORT_BIT( 0x80, IP_ACTIVE_LOW, IPT_CUSTOM ) // multiplexed inputs
 INPUT_PORTS_END
 
 // Machine
 
 void chexx_state::machine_start()
 {
+	m_digits.resolve();
 }
 
 void chexx_state::digitalker_set_bank(uint8_t bank)

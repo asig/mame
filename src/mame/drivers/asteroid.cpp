@@ -190,6 +190,7 @@ There is not a rev 03 known or dumped. An Asteroids rev 03 is not mentioned in a
 #include "cpu/m6502/m6502.h"
 #include "machine/74259.h"
 #include "machine/atari_vg.h"
+#include "machine/output_latch.h"
 #include "machine/watchdog.h"
 #include "sound/pokey.h"
 #include "video/avgdvg.h"
@@ -226,88 +227,74 @@ WRITE_LINE_MEMBER(asteroid_state::coin_counter_right_w)
 
 /*************************************
  *
- *  Lunar Lander LEDs/lamps
- *
- *************************************/
-
-WRITE8_MEMBER(asteroid_state::llander_led_w)
-{
-	static const char *const lampname[] =
-	{
-		"lamp0", "lamp1", "lamp2", "lamp3", "lamp4"
-	};
-
-	for (int i = 0; i < 5; i++)
-		output().set_value(lampname[i], (data >> (4 - i)) & 1);
-}
-
-
-/*************************************
- *
  *  Main CPU memory handlers
  *
  *************************************/
 
-ADDRESS_MAP_START(asteroid_state::asteroid_map)
-	ADDRESS_MAP_GLOBAL_MASK(0x7fff)
-	AM_RANGE(0x0000, 0x01ff) AM_RAM
-	AM_RANGE(0x0200, 0x02ff) AM_RAMBANK("ram1") AM_SHARE("ram1")
-	AM_RANGE(0x0300, 0x03ff) AM_RAMBANK("ram2") AM_SHARE("ram2")
-	AM_RANGE(0x2000, 0x2007) AM_READ(asteroid_IN0_r)    /* IN0 */
-	AM_RANGE(0x2400, 0x2407) AM_READ(asteroid_IN1_r)    /* IN1 */
-	AM_RANGE(0x2800, 0x2803) AM_READ(asteroid_DSW1_r)   /* DSW1 */
-	AM_RANGE(0x3000, 0x3000) AM_DEVWRITE("dvg", dvg_device, go_w)
-	AM_RANGE(0x3200, 0x3200) AM_WRITE(asteroid_bank_switch_w)
-	AM_RANGE(0x3400, 0x3400) AM_DEVWRITE("watchdog", watchdog_timer_device, reset_w)
-	AM_RANGE(0x3600, 0x3600) AM_WRITE(asteroid_explode_w)
-	AM_RANGE(0x3a00, 0x3a00) AM_WRITE(asteroid_thump_w)
-	AM_RANGE(0x3c00, 0x3c07) AM_DEVWRITE("audiolatch", ls259_device, write_d7)
-	AM_RANGE(0x3e00, 0x3e00) AM_WRITE(asteroid_noise_reset_w)
-	AM_RANGE(0x4000, 0x47ff) AM_RAM AM_SHARE("vectorram") AM_REGION("maincpu", 0x4000)
-	AM_RANGE(0x5000, 0x57ff) AM_ROM                     /* vector rom */
-	AM_RANGE(0x6800, 0x7fff) AM_ROM
-ADDRESS_MAP_END
+void asteroid_state::asteroid_map(address_map &map)
+{
+	map.global_mask(0x7fff);
+	map(0x0000, 0x01ff).ram();
+	map(0x0200, 0x02ff).bankrw("ram1").share("ram1");
+	map(0x0300, 0x03ff).bankrw("ram2").share("ram2");
+	map(0x2000, 0x2007).r(this, FUNC(asteroid_state::asteroid_IN0_r)).nopw();    /* IN0 */
+	map(0x2400, 0x2407).r(this, FUNC(asteroid_state::asteroid_IN1_r));    /* IN1 */
+	map(0x2800, 0x2803).r(this, FUNC(asteroid_state::asteroid_DSW1_r)).nopw();   /* DSW1 */
+	map(0x3000, 0x3000).w(m_dvg, FUNC(dvg_device::go_w));
+	map(0x3200, 0x3200).w("outlatch", FUNC(output_latch_device::write));
+	map(0x3400, 0x3400).w("watchdog", FUNC(watchdog_timer_device::reset_w));
+	map(0x3600, 0x3600).w(this, FUNC(asteroid_state::asteroid_explode_w));
+	map(0x3a00, 0x3a00).w(this, FUNC(asteroid_state::asteroid_thump_w));
+	map(0x3c00, 0x3c07).w("audiolatch", FUNC(ls259_device::write_d7));
+	map(0x3e00, 0x3e00).w(this, FUNC(asteroid_state::asteroid_noise_reset_w));
+	map(0x4000, 0x47ff).ram().share("vectorram").region("maincpu", 0x4000);
+	map(0x5000, 0x57ff).rom();                     /* vector rom */
+	map(0x6800, 0x7fff).rom();
+}
 
 
-ADDRESS_MAP_START(asteroid_state::astdelux_map)
-	ADDRESS_MAP_GLOBAL_MASK(0x7fff)
-	AM_RANGE(0x0000, 0x01ff) AM_RAM
-	AM_RANGE(0x0200, 0x02ff) AM_RAMBANK("ram1") AM_SHARE("ram1")
-	AM_RANGE(0x0300, 0x03ff) AM_RAMBANK("ram2") AM_SHARE("ram2")
-	AM_RANGE(0x2000, 0x2007) AM_READ(asteroid_IN0_r)    /* IN0 */
-	AM_RANGE(0x2400, 0x2407) AM_READ(asteroid_IN1_r)    /* IN1 */
-	AM_RANGE(0x2800, 0x2803) AM_READ(asteroid_DSW1_r)   /* DSW1 */
-	AM_RANGE(0x2c00, 0x2c0f) AM_DEVREADWRITE("pokey", pokey_device, read, write)
-	AM_RANGE(0x2c40, 0x2c7f) AM_DEVREAD("earom", atari_vg_earom_device, read)
-	AM_RANGE(0x3000, 0x3000) AM_DEVWRITE("dvg", dvg_device, go_w)
-	AM_RANGE(0x3200, 0x323f) AM_DEVWRITE("earom", atari_vg_earom_device, write)
-	AM_RANGE(0x3400, 0x3400) AM_DEVWRITE("watchdog", watchdog_timer_device, reset_w)
-	AM_RANGE(0x3600, 0x3600) AM_WRITE(asteroid_explode_w)
-	AM_RANGE(0x3a00, 0x3a00) AM_DEVWRITE("earom", atari_vg_earom_device, ctrl_w)
-	AM_RANGE(0x3c00, 0x3c07) AM_DEVWRITE("audiolatch", ls259_device, write_d7)
-	AM_RANGE(0x3e00, 0x3e00) AM_WRITE(asteroid_noise_reset_w)
-	AM_RANGE(0x4000, 0x47ff) AM_RAM AM_SHARE("vectorram") AM_REGION("maincpu", 0x4000)
-	AM_RANGE(0x4800, 0x57ff) AM_ROM                     /* vector rom */
-	AM_RANGE(0x6000, 0x7fff) AM_ROM
-ADDRESS_MAP_END
+void asteroid_state::astdelux_map(address_map &map)
+{
+	map.global_mask(0x7fff);
+	map(0x0000, 0x01ff).ram();
+	map(0x0200, 0x02ff).bankrw("ram1").share("ram1");
+	map(0x0300, 0x03ff).bankrw("ram2").share("ram2");
+	map(0x2000, 0x2007).r(this, FUNC(asteroid_state::asteroid_IN0_r)).nopw();    /* IN0 */
+	map(0x2400, 0x2407).r(this, FUNC(asteroid_state::asteroid_IN1_r)).nopw();    /* IN1 */
+	map(0x2800, 0x2803).r(this, FUNC(asteroid_state::asteroid_DSW1_r));   /* DSW1 */
+	map(0x2c00, 0x2c0f).rw("pokey", FUNC(pokey_device::read), FUNC(pokey_device::write));
+	map(0x2c40, 0x2c7f).r("earom", FUNC(atari_vg_earom_device::read));
+	map(0x3000, 0x3000).w(m_dvg, FUNC(dvg_device::go_w));
+	map(0x3200, 0x323f).w("earom", FUNC(atari_vg_earom_device::write)).nopr();
+	map(0x3400, 0x3400).w("watchdog", FUNC(watchdog_timer_device::reset_w));
+	map(0x3600, 0x3600).w(this, FUNC(asteroid_state::asteroid_explode_w));
+	map(0x3a00, 0x3a00).w("earom", FUNC(atari_vg_earom_device::ctrl_w));
+	map(0x3c00, 0x3c07).w("audiolatch", FUNC(ls259_device::write_d7));
+	map(0x3e00, 0x3e00).w(this, FUNC(asteroid_state::asteroid_noise_reset_w));
+	map(0x4000, 0x47ff).ram().share("vectorram").region("maincpu", 0x4000);
+	map(0x4800, 0x57ff).rom();                     /* vector rom */
+	map(0x6000, 0x7fff).rom();
+}
 
 
-ADDRESS_MAP_START(asteroid_state::llander_map)
-	ADDRESS_MAP_GLOBAL_MASK(0x7fff)
-	AM_RANGE(0x0000, 0x00ff) AM_RAM AM_MIRROR(0x1f00)
-	AM_RANGE(0x2000, 0x2000) AM_READ_PORT("IN0")
-	AM_RANGE(0x2400, 0x2407) AM_READ(asteroid_IN1_r)    /* IN1 */
-	AM_RANGE(0x2800, 0x2803) AM_READ(asteroid_DSW1_r)   /* DSW1 */
-	AM_RANGE(0x2c00, 0x2c00) AM_READ_PORT("THRUST")
-	AM_RANGE(0x3000, 0x3000) AM_DEVWRITE("dvg", dvg_device, go_w)
-	AM_RANGE(0x3200, 0x3200) AM_WRITE(llander_led_w)
-	AM_RANGE(0x3400, 0x3400) AM_DEVWRITE("watchdog", watchdog_timer_device, reset_w)
-	AM_RANGE(0x3c00, 0x3c00) AM_WRITE(llander_sounds_w)
-	AM_RANGE(0x3e00, 0x3e00) AM_WRITE(llander_snd_reset_w)
-	AM_RANGE(0x4000, 0x47ff) AM_RAM AM_SHARE("vectorram") AM_REGION("maincpu", 0x4000)
-	AM_RANGE(0x4800, 0x5fff) AM_ROM                     /* vector rom */
-	AM_RANGE(0x6000, 0x7fff) AM_ROM
-ADDRESS_MAP_END
+void asteroid_state::llander_map(address_map &map)
+{
+	map.global_mask(0x7fff);
+	map(0x0000, 0x00ff).ram().mirror(0x1f00);
+	map(0x2000, 0x2000).portr("IN0");
+	map(0x2400, 0x2407).r(this, FUNC(asteroid_state::asteroid_IN1_r));    /* IN1 */
+	map(0x2800, 0x2803).r(this, FUNC(asteroid_state::asteroid_DSW1_r));   /* DSW1 */
+	map(0x2c00, 0x2c00).portr("THRUST");
+	map(0x3000, 0x3000).w(m_dvg, FUNC(dvg_device::go_w));
+	map(0x3200, 0x3200).w("outlatch", FUNC(output_latch_device::write));
+	map(0x3400, 0x3400).w("watchdog", FUNC(watchdog_timer_device::reset_w));
+	map(0x3c00, 0x3c00).w(this, FUNC(asteroid_state::llander_sounds_w));
+	map(0x3e00, 0x3e00).w(this, FUNC(asteroid_state::llander_snd_reset_w));
+	map(0x4000, 0x47ff).ram().share("vectorram").region("maincpu", 0x4000);
+	map(0x4800, 0x5fff).rom();                     /* vector rom */
+	map(0x5800, 0x5800).nopw(); // INC access?
+	map(0x6000, 0x7fff).rom();
+}
 
 
 
@@ -326,8 +313,8 @@ static INPUT_PORTS_START( asteroid )
 	PORT_START("IN0")
 	PORT_BIT( 0x01, IP_ACTIVE_HIGH, IPT_UNKNOWN )
 	/* Bit 2 is the 3 KHz source and Bit 3 the VG_HALT bit    */
-	PORT_BIT( 0x02, IP_ACTIVE_HIGH, IPT_SPECIAL ) PORT_CUSTOM_MEMBER(DEVICE_SELF, asteroid_state,clock_r, nullptr)
-	PORT_BIT( 0x04, IP_ACTIVE_LOW, IPT_SPECIAL ) PORT_CUSTOM_MEMBER("dvg", dvg_device, done_r, nullptr)
+	PORT_BIT( 0x02, IP_ACTIVE_HIGH, IPT_CUSTOM ) PORT_CUSTOM_MEMBER(DEVICE_SELF, asteroid_state,clock_r, nullptr)
+	PORT_BIT( 0x04, IP_ACTIVE_LOW, IPT_CUSTOM ) PORT_CUSTOM_MEMBER("dvg", dvg_device, done_r, nullptr)
 	PORT_BIT( 0x08, IP_ACTIVE_HIGH, IPT_BUTTON5 ) PORT_CODE(KEYCODE_SPACE) PORT_CODE(JOYCODE_BUTTON3)       /* hyperspace */
 	PORT_BIT( 0x10, IP_ACTIVE_HIGH, IPT_BUTTON3 ) PORT_CODE(KEYCODE_LCONTROL) PORT_CODE(JOYCODE_BUTTON1)    /* fire */
 	PORT_BIT( 0x20, IP_ACTIVE_HIGH, IPT_SERVICE1 ) PORT_NAME("Diagnostic Step")
@@ -366,6 +353,11 @@ static INPUT_PORTS_START( asteroid )
 	PORT_DIPSETTING (   0x80, DEF_STR( 1C_1C ) )
 	PORT_DIPSETTING (   0x40, DEF_STR( 1C_2C ) )
 	PORT_DIPSETTING (   0x00, DEF_STR( Free_Play ) )
+
+	PORT_START("COCKTAIL")
+	PORT_CONFNAME(1, 0, DEF_STR(Cabinet))
+	PORT_CONFSETTING(0, DEF_STR(Upright))
+	PORT_CONFSETTING(1, DEF_STR(Cocktail))
 INPUT_PORTS_END
 
 
@@ -381,7 +373,7 @@ static INPUT_PORTS_START( asteroidb )
 	PORT_BIT( 0x20, IP_ACTIVE_LOW, IPT_UNKNOWN )
 	PORT_BIT( 0x40, IP_ACTIVE_LOW, IPT_UNKNOWN )
 	/* Bit 7 is VG_HALT */
-	PORT_BIT( 0x80, IP_ACTIVE_LOW, IPT_SPECIAL ) PORT_CUSTOM_MEMBER("dvg", dvg_device, done_r, nullptr)
+	PORT_BIT( 0x80, IP_ACTIVE_LOW, IPT_CUSTOM ) PORT_CUSTOM_MEMBER("dvg", dvg_device, done_r, nullptr)
 
 	PORT_MODIFY("IN1")
 	PORT_BIT( 0x01, IP_ACTIVE_HIGH, IPT_START1 )
@@ -418,9 +410,9 @@ static INPUT_PORTS_START( asterock )
 
 	PORT_MODIFY("IN0")
 	/* Bit 0 is VG_HALT and Bit 2 is the 3 KHz source */
-	PORT_BIT( 0x01, IP_ACTIVE_LOW, IPT_SPECIAL ) PORT_CUSTOM_MEMBER("dvg", dvg_device, done_r, nullptr)
+	PORT_BIT( 0x01, IP_ACTIVE_LOW, IPT_CUSTOM ) PORT_CUSTOM_MEMBER("dvg", dvg_device, done_r, nullptr)
 	PORT_BIT( 0x02, IP_ACTIVE_HIGH, IPT_UNKNOWN )
-	PORT_BIT( 0x04, IP_ACTIVE_HIGH, IPT_SPECIAL ) PORT_CUSTOM_MEMBER(DEVICE_SELF, asteroid_state,clock_r, nullptr)
+	PORT_BIT( 0x04, IP_ACTIVE_HIGH, IPT_CUSTOM ) PORT_CUSTOM_MEMBER(DEVICE_SELF, asteroid_state,clock_r, nullptr)
 	PORT_BIT( 0x08, IP_ACTIVE_LOW, IPT_BUTTON5 ) PORT_CODE(KEYCODE_SPACE) PORT_CODE(JOYCODE_BUTTON3)        /* hyperspace */
 	PORT_BIT( 0x10, IP_ACTIVE_LOW, IPT_BUTTON3 ) PORT_CODE(KEYCODE_LCONTROL) PORT_CODE(JOYCODE_BUTTON1)     /* fire */
 	PORT_BIT( 0x20, IP_ACTIVE_LOW, IPT_SERVICE1 ) PORT_NAME("Diagnostic Step")
@@ -460,8 +452,8 @@ static INPUT_PORTS_START( astdelux )
 	PORT_START("IN0")
 	PORT_BIT( 0x01, IP_ACTIVE_HIGH, IPT_UNUSED ) /* According to schematics */
 	/* Bit 2 is the 3 KHz source and Bit 3 the VG_HALT bit    */
-	PORT_BIT( 0x02, IP_ACTIVE_HIGH, IPT_SPECIAL ) PORT_CUSTOM_MEMBER(DEVICE_SELF, asteroid_state,clock_r, nullptr)
-	PORT_BIT( 0x04, IP_ACTIVE_LOW, IPT_SPECIAL ) PORT_CUSTOM_MEMBER("dvg", dvg_device, done_r, nullptr)
+	PORT_BIT( 0x02, IP_ACTIVE_HIGH, IPT_CUSTOM ) PORT_CUSTOM_MEMBER(DEVICE_SELF, asteroid_state,clock_r, nullptr)
+	PORT_BIT( 0x04, IP_ACTIVE_LOW, IPT_CUSTOM ) PORT_CUSTOM_MEMBER("dvg", dvg_device, done_r, nullptr)
 	PORT_BIT( 0x08, IP_ACTIVE_HIGH, IPT_BUTTON5 ) PORT_CODE(KEYCODE_SPACE) PORT_CODE(JOYCODE_BUTTON3)       /* hyperspace */
 	PORT_BIT( 0x10, IP_ACTIVE_HIGH, IPT_BUTTON3 ) PORT_CODE(KEYCODE_LCONTROL) PORT_CODE(JOYCODE_BUTTON1)    /* fire */
 	PORT_BIT( 0x20, IP_ACTIVE_HIGH, IPT_SERVICE1 ) PORT_NAME("Diagnostic Step")
@@ -537,18 +529,23 @@ static INPUT_PORTS_START( astdelux )
 	PORT_DIPUNUSED_DIPLOC( 0x04, 0x04, "M12:3" )            // Listed as "Unused"
 	PORT_DIPUNUSED_DIPLOC( 0x08, 0x08, "M12:4" )            // Listed as "Unused"
 #endif
+
+	PORT_START("COCKTAIL")
+	PORT_CONFNAME(1, 0, DEF_STR(Cabinet))
+	PORT_CONFSETTING(0, DEF_STR(Upright))
+	PORT_CONFSETTING(1, DEF_STR(Cocktail))
 INPUT_PORTS_END
 
 
 static INPUT_PORTS_START( llander )
 	PORT_START("IN0")
 	/* Bit 0 is VG_HALT */
-	PORT_BIT( 0x01, IP_ACTIVE_HIGH, IPT_SPECIAL ) PORT_CUSTOM_MEMBER("dvg", dvg_device, done_r, nullptr)
+	PORT_BIT( 0x01, IP_ACTIVE_HIGH, IPT_CUSTOM ) PORT_CUSTOM_MEMBER("dvg", dvg_device, done_r, nullptr)
 	PORT_SERVICE( 0x02, IP_ACTIVE_LOW )
 	PORT_BIT( 0x04, IP_ACTIVE_LOW, IPT_TILT )
 	/* Of the rest, Bit 6 is the 3KHz source. 3,4 and 5 are unknown */
 	PORT_BIT( 0x38, IP_ACTIVE_LOW, IPT_UNKNOWN )
-	PORT_BIT( 0x40, IP_ACTIVE_HIGH, IPT_SPECIAL ) PORT_CUSTOM_MEMBER(DEVICE_SELF, asteroid_state,clock_r, nullptr)
+	PORT_BIT( 0x40, IP_ACTIVE_HIGH, IPT_CUSTOM ) PORT_CUSTOM_MEMBER(DEVICE_SELF, asteroid_state,clock_r, nullptr)
 	PORT_BIT( 0x80, IP_ACTIVE_LOW, IPT_SERVICE1 ) PORT_NAME("Diagnostic Step")
 
 	PORT_START("IN1")
@@ -660,6 +657,16 @@ MACHINE_CONFIG_START(asteroid_state::asteroid_base)
 
 	MCFG_TTL153_ADD("dsw_sel")
 
+	MCFG_DEVICE_ADD("outlatch", OUTPUT_LATCH, 0) // LS174 at N11
+	MCFG_OUTPUT_LATCH_BIT0_HANDLER(OUTPUT("led1")) MCFG_DEVCB_INVERT // 2 PLYR START LAMP
+	MCFG_OUTPUT_LATCH_BIT1_HANDLER(OUTPUT("led0")) MCFG_DEVCB_INVERT // 1 PLYR START LAMP
+	MCFG_OUTPUT_LATCH_BIT2_HANDLER(MEMBANK("ram1")) // RAMSEL
+	MCFG_DEVCB_CHAIN_OUTPUT(MEMBANK("ram2"))
+	MCFG_DEVCB_CHAIN_OUTPUT(WRITELINE(asteroid_state, cocktail_inv_w))
+	MCFG_OUTPUT_LATCH_BIT3_HANDLER(WRITELINE(asteroid_state, coin_counter_left_w)) // COIN CNTRL
+	MCFG_OUTPUT_LATCH_BIT4_HANDLER(WRITELINE(asteroid_state, coin_counter_center_w)) // COIN CNTRC
+	MCFG_OUTPUT_LATCH_BIT5_HANDLER(WRITELINE(asteroid_state, coin_counter_right_w)) // COIN CNTRR
+
 	/* video hardware */
 	MCFG_VECTOR_ADD("vector")
 	MCFG_SCREEN_ADD("screen", VECTOR)
@@ -705,14 +712,16 @@ MACHINE_CONFIG_START(asteroid_state::astdelux)
 	MCFG_POKEY_OUTPUT_RC(RES_K(10), CAP_U(0.015), 5.0)
 	MCFG_SOUND_ROUTE(ALL_OUTPUTS, "mono", 1.0)
 
+	MCFG_DEVICE_REMOVE("outlatch")
 	MCFG_DEVICE_MODIFY("audiolatch")
-	MCFG_ADDRESSABLE_LATCH_Q0_OUT_CB(WRITELINE(asteroid_state, start1_led_w))
-	MCFG_ADDRESSABLE_LATCH_Q1_OUT_CB(WRITELINE(asteroid_state, start2_led_w))
-	MCFG_ADDRESSABLE_LATCH_Q4_OUT_CB(MEMBANK("ram1"))
+	MCFG_ADDRESSABLE_LATCH_Q0_OUT_CB(OUTPUT("led0")) MCFG_DEVCB_INVERT // START1
+	MCFG_ADDRESSABLE_LATCH_Q1_OUT_CB(OUTPUT("led1")) MCFG_DEVCB_INVERT // START2
+	MCFG_ADDRESSABLE_LATCH_Q4_OUT_CB(MEMBANK("ram1")) // RAMSEL
 	MCFG_DEVCB_CHAIN_OUTPUT(MEMBANK("ram2"))
-	MCFG_ADDRESSABLE_LATCH_Q5_OUT_CB(WRITELINE(asteroid_state, coin_counter_left_w))
-	MCFG_ADDRESSABLE_LATCH_Q6_OUT_CB(WRITELINE(asteroid_state, coin_counter_center_w))
-	MCFG_ADDRESSABLE_LATCH_Q7_OUT_CB(WRITELINE(asteroid_state, coin_counter_right_w))
+	MCFG_DEVCB_CHAIN_OUTPUT(WRITELINE(asteroid_state, cocktail_inv_w))
+	MCFG_ADDRESSABLE_LATCH_Q5_OUT_CB(WRITELINE(asteroid_state, coin_counter_left_w)) // LEFT COIN
+	MCFG_ADDRESSABLE_LATCH_Q6_OUT_CB(WRITELINE(asteroid_state, coin_counter_center_w)) // CENTER COIN
+	MCFG_ADDRESSABLE_LATCH_Q7_OUT_CB(WRITELINE(asteroid_state, coin_counter_right_w)) // RIGHT COIN
 MACHINE_CONFIG_END
 
 
@@ -728,6 +737,14 @@ MACHINE_CONFIG_START(asteroid_state::llander)
 	MCFG_SCREEN_REFRESH_RATE(CLOCK_3KHZ/12/6)
 	MCFG_SCREEN_VISIBLE_AREA(522, 1566, 270, 1070)
 	MCFG_SCREEN_UPDATE_DEVICE("vector", vector_device, screen_update)
+
+	MCFG_DEVICE_MODIFY("outlatch") // LS174 at N11
+	MCFG_OUTPUT_LATCH_BIT0_HANDLER(OUTPUT("lamp4")) // LAMP5 (COMMAND MISSION)
+	MCFG_OUTPUT_LATCH_BIT1_HANDLER(OUTPUT("lamp3")) // LAMP4 (PRIME MISSION)
+	MCFG_OUTPUT_LATCH_BIT2_HANDLER(OUTPUT("lamp2")) // LAMP3 (CADET MISSION)
+	MCFG_OUTPUT_LATCH_BIT3_HANDLER(OUTPUT("lamp1")) // LAMP2 (TRAINING MISSION)
+	MCFG_OUTPUT_LATCH_BIT4_HANDLER(OUTPUT("lamp0")) // START/SELECT LEDs
+	MCFG_OUTPUT_LATCH_BIT5_HANDLER(NOOP)
 
 	/* sound hardware */
 	llander_sound(config);

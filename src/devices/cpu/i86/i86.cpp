@@ -88,8 +88,8 @@ const uint8_t i8086_cpu_device::m_i8086_timing[] =
 
 /***************************************************************************/
 
-DEFINE_DEVICE_TYPE(I8086, i8086_cpu_device, "i8086", "I8086")
-DEFINE_DEVICE_TYPE(I8088, i8088_cpu_device, "i8088", "I8088")
+DEFINE_DEVICE_TYPE(I8086, i8086_cpu_device, "i8086", "Intel I8086")
+DEFINE_DEVICE_TYPE(I8088, i8088_cpu_device, "i8088", "Intel I8088")
 
 i8088_cpu_device::i8088_cpu_device(const machine_config &mconfig, const char *tag, device_t *owner, uint32_t clock)
 	: i8086_cpu_device(mconfig, I8088, tag, owner, clock, 8)
@@ -237,7 +237,7 @@ void i8086_cpu_device::execute_run()
 
 		if (!m_seg_prefix)
 		{
-			debugger_instruction_hook( this, update_pc() );
+			debugger_instruction_hook( update_pc() );
 		}
 
 		uint8_t op = fetch_op();
@@ -504,7 +504,7 @@ void i8086_common_cpu_device::device_start()
 
 	state_add(STATE_GENFLAGS, "GENFLAGS", m_TF).formatstr("%16s").noshow();
 
-	m_icountptr = &m_icount;
+	set_icountptr(m_icount);
 
 	m_lock_handler.resolve_safe();
 }
@@ -615,9 +615,9 @@ void i8086_common_cpu_device::execute_set_input( int inptnum, int state )
 	}
 }
 
-util::disasm_interface *i8086_common_cpu_device::create_disassembler()
+std::unique_ptr<util::disasm_interface> i8086_common_cpu_device::create_disassembler()
 {
-	return new i386_disassembler(this);
+	return std::make_unique<i386_disassembler>(this);
 }
 
 int i8086_common_cpu_device::get_mode() const

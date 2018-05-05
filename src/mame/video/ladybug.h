@@ -9,7 +9,7 @@
 
 
 #define MCFG_LADYBUG_VIDEO_GFXDECODE(tag) \
-	downcast<ladybug_video_device &>(*device).set_gfxdecode_tag("^" tag);
+	downcast<ladybug_video_device &>(*device).set_gfxdecode_tag(tag);
 
 
 // used by ladybug and sraider
@@ -36,7 +36,7 @@ private:
 	required_device<gfxdecode_device>   m_gfxdecode;
 	std::unique_ptr<u8 []>              m_spr_ram;
 	std::unique_ptr<u8 []>              m_bg_ram;
-	tilemap_t	                        *m_bg_tilemap;
+	tilemap_t                           *m_bg_tilemap;
 };
 
 

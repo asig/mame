@@ -594,192 +594,210 @@ READ8_MEMBER(namcos2_state::ack_mcu_vbl_r)
     0xc00000 ONWARDS are unverified memory locations on the video board
 */
 
-ADDRESS_MAP_START(namcos2_state::namcos2_68k_default_cpu_board_am)
-	AM_RANGE(0x200000, 0x3fffff) AM_ROM AM_REGION("data_rom", 0)
-	AM_RANGE(0x400000, 0x41ffff) AM_READWRITE(c123_tilemap_videoram_r,c123_tilemap_videoram_w)
-	AM_RANGE(0x420000, 0x42003f) AM_READWRITE(c123_tilemap_control_r,c123_tilemap_control_w)
-	AM_RANGE(0x440000, 0x44ffff) AM_READWRITE(paletteram_word_r,paletteram_word_w) AM_SHARE("paletteram")
-	AM_RANGE(0x460000, 0x460fff) AM_MIRROR(0xf000) AM_READWRITE(dpram_word_r,dpram_word_w)
-	AM_RANGE(0x480000, 0x483fff) AM_DEVREADWRITE("sci", namco_c139_device, ram_r, ram_w)
-	AM_RANGE(0x4a0000, 0x4a000f) AM_DEVICE("sci", namco_c139_device, regs_map)
-ADDRESS_MAP_END
+void namcos2_state::namcos2_68k_default_cpu_board_am(address_map &map)
+{
+	map(0x200000, 0x3fffff).rom().region("data_rom", 0);
+	map(0x400000, 0x41ffff).rw(this, FUNC(namcos2_state::c123_tilemap_videoram_r), FUNC(namcos2_state::c123_tilemap_videoram_w));
+	map(0x420000, 0x42003f).rw(this, FUNC(namcos2_state::c123_tilemap_control_r), FUNC(namcos2_state::c123_tilemap_control_w));
+	map(0x440000, 0x44ffff).rw(this, FUNC(namcos2_state::paletteram_word_r), FUNC(namcos2_state::paletteram_word_w)).share("paletteram");
+	map(0x460000, 0x460fff).mirror(0xf000).rw(this, FUNC(namcos2_state::dpram_word_r), FUNC(namcos2_state::dpram_word_w));
+	map(0x480000, 0x483fff).rw(m_sci, FUNC(namco_c139_device::ram_r), FUNC(namco_c139_device::ram_w));
+	map(0x4a0000, 0x4a000f).m(m_sci, FUNC(namco_c139_device::regs_map));
+}
 
 /*************************************************************/
 
-ADDRESS_MAP_START(namcos2_state::common_default_am)
-	AM_IMPORT_FROM( namcos2_68k_default_cpu_board_am )
-	AM_RANGE(0xc00000, 0xc03fff) AM_RAM AM_SHARE("spriteram")
-	AM_RANGE(0xc40000, 0xc40001) AM_READWRITE(gfx_ctrl_r, gfx_ctrl_w)
-	AM_RANGE(0xc80000, 0xc9ffff) AM_RAM_WRITE(rozram_word_w) AM_SHARE("rozram")
-	AM_RANGE(0xcc0000, 0xcc000f) AM_RAM AM_SHARE("rozctrl")
-	AM_RANGE(0xd00000, 0xd0000f) AM_READWRITE(namcos2_68k_key_r,namcos2_68k_key_w)
-ADDRESS_MAP_END
+void namcos2_state::common_default_am(address_map &map)
+{
+	namcos2_68k_default_cpu_board_am(map);
+	map(0xc00000, 0xc03fff).ram().share("spriteram");
+	map(0xc40000, 0xc40001).rw(this, FUNC(namcos2_state::gfx_ctrl_r), FUNC(namcos2_state::gfx_ctrl_w));
+	map(0xc80000, 0xc9ffff).ram().w(this, FUNC(namcos2_state::rozram_word_w)).share("rozram");
+	map(0xcc0000, 0xcc000f).ram().share("rozctrl");
+	map(0xd00000, 0xd0000f).rw(this, FUNC(namcos2_state::namcos2_68k_key_r), FUNC(namcos2_state::namcos2_68k_key_w));
+}
 
-ADDRESS_MAP_START(namcos2_state::master_default_am)
-	AM_IMPORT_FROM( common_default_am )
-	AM_RANGE(0x000000, 0x03ffff) AM_ROM
-	AM_RANGE(0x100000, 0x10ffff) AM_RAMBANK(NAMCOS2_68K_MASTER_RAM)
-	AM_RANGE(0x180000, 0x183fff) AM_READWRITE8(namcos2_68k_eeprom_r,namcos2_68k_eeprom_w,0x00ff)
-	AM_RANGE(0x1c0000, 0x1fffff) AM_DEVICE("master_intc", namco_c148_device, map)
-ADDRESS_MAP_END
+void namcos2_state::master_default_am(address_map &map)
+{
+	common_default_am(map);
+	map(0x000000, 0x03ffff).rom();
+	map(0x100000, 0x10ffff).bankrw(NAMCOS2_68K_MASTER_RAM);
+	map(0x180000, 0x183fff).rw(this, FUNC(namcos2_state::namcos2_68k_eeprom_r), FUNC(namcos2_state::namcos2_68k_eeprom_w)).umask16(0x00ff);
+	map(0x1c0000, 0x1fffff).m(m_master_intc, FUNC(namco_c148_device::map));
+}
 
-ADDRESS_MAP_START(namcos2_state::slave_default_am)
-	AM_IMPORT_FROM( common_default_am )
-	AM_RANGE(0x000000, 0x03ffff) AM_ROM
-	AM_RANGE(0x100000, 0x13ffff) AM_RAMBANK(NAMCOS2_68K_SLAVE_RAM)
-	AM_RANGE(0x1c0000, 0x1fffff) AM_DEVICE("slave_intc", namco_c148_device, map)
-ADDRESS_MAP_END
+void namcos2_state::slave_default_am(address_map &map)
+{
+	common_default_am(map);
+	map(0x000000, 0x03ffff).rom();
+	map(0x100000, 0x13ffff).bankrw(NAMCOS2_68K_SLAVE_RAM);
+	map(0x1c0000, 0x1fffff).m(m_slave_intc, FUNC(namco_c148_device::map));
+}
 
-
-/*************************************************************/
-
-ADDRESS_MAP_START(namcos2_state::common_finallap_am)
-	AM_IMPORT_FROM( namcos2_68k_default_cpu_board_am )
-	AM_RANGE(0x300000, 0x33ffff) AM_READ(namcos2_finallap_prot_r)
-	AM_RANGE(0x800000, 0x80ffff) AM_RAM AM_SHARE("spriteram")
-	AM_RANGE(0x840000, 0x840001) AM_READWRITE(gfx_ctrl_r, gfx_ctrl_w)
-	AM_RANGE(0x880000, 0x89ffff) AM_DEVREADWRITE("c45_road", namco_c45_road_device, read, write)
-	AM_RANGE(0x8c0000, 0x8c0001) AM_WRITENOP
-ADDRESS_MAP_END
-
-ADDRESS_MAP_START(namcos2_state::master_finallap_am)
-	AM_IMPORT_FROM( common_finallap_am )
-	AM_RANGE(0x000000, 0x03ffff) AM_ROM
-	AM_RANGE(0x100000, 0x10ffff) AM_RAMBANK(NAMCOS2_68K_MASTER_RAM)
-	AM_RANGE(0x180000, 0x183fff) AM_READWRITE8(namcos2_68k_eeprom_r,namcos2_68k_eeprom_w,0x00ff)
-	AM_RANGE(0x1c0000, 0x1fffff) AM_DEVICE("master_intc", namco_c148_device, map)
-ADDRESS_MAP_END
-
-ADDRESS_MAP_START(namcos2_state::slave_finallap_am)
-	AM_IMPORT_FROM( common_finallap_am )
-	AM_RANGE(0x000000, 0x03ffff) AM_ROM
-	AM_RANGE(0x100000, 0x13ffff) AM_RAMBANK(NAMCOS2_68K_SLAVE_RAM)
-	AM_RANGE(0x1c0000, 0x1fffff) AM_DEVICE("slave_intc", namco_c148_device, map)
-ADDRESS_MAP_END
 
 /*************************************************************/
 
-ADDRESS_MAP_START(namcos2_state::common_sgunner_am)
-	AM_IMPORT_FROM( namcos2_68k_default_cpu_board_am )
-	AM_RANGE(0x800000, 0x8141ff) AM_READWRITE(c355_obj_ram_r,c355_obj_ram_w)
-	AM_RANGE(0x818000, 0x818001) AM_WRITENOP
-	AM_RANGE(0xa00000, 0xa0000f) AM_READWRITE(namcos2_68k_key_r,namcos2_68k_key_w)
-ADDRESS_MAP_END
+void namcos2_state::common_finallap_am(address_map &map)
+{
+	namcos2_68k_default_cpu_board_am(map);
+	map(0x300000, 0x33ffff).r(this, FUNC(namcos2_state::namcos2_finallap_prot_r));
+	map(0x800000, 0x80ffff).ram().share("spriteram");
+	map(0x840000, 0x840001).rw(this, FUNC(namcos2_state::gfx_ctrl_r), FUNC(namcos2_state::gfx_ctrl_w));
+	map(0x880000, 0x89ffff).rw(m_c45_road, FUNC(namco_c45_road_device::read), FUNC(namco_c45_road_device::write));
+	map(0x8c0000, 0x8c0001).nopw();
+}
 
-ADDRESS_MAP_START(namcos2_state::master_sgunner_am)
-	AM_IMPORT_FROM( common_sgunner_am )
-	AM_RANGE(0x000000, 0x03ffff) AM_ROM
-	AM_RANGE(0x100000, 0x10ffff) AM_RAMBANK(NAMCOS2_68K_MASTER_RAM)
-	AM_RANGE(0x180000, 0x183fff) AM_READWRITE8(namcos2_68k_eeprom_r,namcos2_68k_eeprom_w,0x00ff)
-	AM_RANGE(0x1c0000, 0x1fffff) AM_DEVICE("master_intc", namco_c148_device, map)
-ADDRESS_MAP_END
+void namcos2_state::master_finallap_am(address_map &map)
+{
+	common_finallap_am(map);
+	map(0x000000, 0x03ffff).rom();
+	map(0x100000, 0x10ffff).bankrw(NAMCOS2_68K_MASTER_RAM);
+	map(0x180000, 0x183fff).rw(this, FUNC(namcos2_state::namcos2_68k_eeprom_r), FUNC(namcos2_state::namcos2_68k_eeprom_w)).umask16(0x00ff);
+	map(0x1c0000, 0x1fffff).m(m_master_intc, FUNC(namco_c148_device::map));
+}
 
-ADDRESS_MAP_START(namcos2_state::slave_sgunner_am)
-	AM_IMPORT_FROM( common_sgunner_am )
-	AM_RANGE(0x000000, 0x03ffff) AM_ROM
-	AM_RANGE(0x100000, 0x13ffff) AM_RAMBANK(NAMCOS2_68K_SLAVE_RAM)
-	AM_RANGE(0x1c0000, 0x1fffff) AM_DEVICE("slave_intc", namco_c148_device, map)
-ADDRESS_MAP_END
-
-/*************************************************************/
-
-ADDRESS_MAP_START(namcos2_state::common_metlhawk_am)
-	AM_IMPORT_FROM( namcos2_68k_default_cpu_board_am )
-	AM_RANGE(0xc00000, 0xc03fff) AM_RAM AM_SHARE("spriteram")
-	AM_RANGE(0xc40000, 0xc4ffff) AM_READWRITE(c169_roz_videoram_r,c169_roz_videoram_w) AM_SHARE("rozvideoram")
-	AM_RANGE(0xd00000, 0xd0001f) AM_READWRITE(c169_roz_control_r,c169_roz_control_w)
-	AM_RANGE(0xe00000, 0xe00001) AM_READWRITE(gfx_ctrl_r, gfx_ctrl_w) /* ??? */
-ADDRESS_MAP_END
-
-ADDRESS_MAP_START(namcos2_state::master_metlhawk_am)
-	AM_IMPORT_FROM( common_metlhawk_am )
-	AM_RANGE(0x000000, 0x03ffff) AM_ROM
-	AM_RANGE(0x100000, 0x10ffff) AM_RAMBANK(NAMCOS2_68K_MASTER_RAM)
-	AM_RANGE(0x180000, 0x183fff) AM_READWRITE8(namcos2_68k_eeprom_r,namcos2_68k_eeprom_w,0x00ff)
-	AM_RANGE(0x1c0000, 0x1fffff) AM_DEVICE("master_intc", namco_c148_device, map)
-ADDRESS_MAP_END
-
-ADDRESS_MAP_START(namcos2_state::slave_metlhawk_am)
-	AM_IMPORT_FROM( common_metlhawk_am )
-	AM_RANGE(0x000000, 0x03ffff) AM_ROM
-	AM_RANGE(0x100000, 0x13ffff) AM_RAMBANK(NAMCOS2_68K_SLAVE_RAM)
-	AM_RANGE(0x1c0000, 0x1fffff) AM_DEVICE("slave_intc", namco_c148_device, map)
-ADDRESS_MAP_END
+void namcos2_state::slave_finallap_am(address_map &map)
+{
+	common_finallap_am(map);
+	map(0x000000, 0x03ffff).rom();
+	map(0x100000, 0x13ffff).bankrw(NAMCOS2_68K_SLAVE_RAM);
+	map(0x1c0000, 0x1fffff).m(m_slave_intc, FUNC(namco_c148_device::map));
+}
 
 /*************************************************************/
 
-ADDRESS_MAP_START(namcos2_state::common_luckywld_am)
-	AM_IMPORT_FROM( namcos2_68k_default_cpu_board_am )
-	AM_RANGE(0x800000, 0x8141ff) AM_READWRITE(c355_obj_ram_r,c355_obj_ram_w)
-	AM_RANGE(0x818000, 0x818001) AM_NOP /* enable? */
-	AM_RANGE(0x81a000, 0x81a001) AM_WRITENOP /* enable? */
-	AM_RANGE(0x840000, 0x840001) AM_READNOP
-	AM_RANGE(0x900000, 0x900007) AM_READWRITE(c355_obj_position_r,c355_obj_position_w)
-	AM_RANGE(0xa00000, 0xa1ffff) AM_DEVREADWRITE("c45_road", namco_c45_road_device, read, write)
-	AM_RANGE(0xc00000, 0xc0ffff) AM_READWRITE(c169_roz_videoram_r,c169_roz_videoram_w) AM_SHARE("rozvideoram")
-	AM_RANGE(0xd00000, 0xd0001f) AM_READWRITE(c169_roz_control_r,c169_roz_control_w)
-	AM_RANGE(0xf00000, 0xf00007) AM_READWRITE(namcos2_68k_key_r,namcos2_68k_key_w)
-ADDRESS_MAP_END
+void namcos2_state::common_sgunner_am(address_map &map)
+{
+	namcos2_68k_default_cpu_board_am(map);
+	map(0x800000, 0x8141ff).rw(this, FUNC(namcos2_state::c355_obj_ram_r), FUNC(namcos2_state::c355_obj_ram_w));
+	map(0x818000, 0x818001).nopw();
+	map(0xa00000, 0xa0000f).rw(this, FUNC(namcos2_state::namcos2_68k_key_r), FUNC(namcos2_state::namcos2_68k_key_w));
+}
 
-ADDRESS_MAP_START(namcos2_state::master_luckywld_am)
-	AM_IMPORT_FROM( common_luckywld_am )
-	AM_RANGE(0x000000, 0x03ffff) AM_ROM
-	AM_RANGE(0x100000, 0x10ffff) AM_RAMBANK(NAMCOS2_68K_MASTER_RAM)
-	AM_RANGE(0x180000, 0x183fff) AM_READWRITE8(namcos2_68k_eeprom_r,namcos2_68k_eeprom_w,0x00ff)
-	AM_RANGE(0x1c0000, 0x1fffff) AM_DEVICE("master_intc", namco_c148_device, map)
-ADDRESS_MAP_END
+void namcos2_state::master_sgunner_am(address_map &map)
+{
+	common_sgunner_am(map);
+	map(0x000000, 0x03ffff).rom();
+	map(0x100000, 0x10ffff).bankrw(NAMCOS2_68K_MASTER_RAM);
+	map(0x180000, 0x183fff).rw(this, FUNC(namcos2_state::namcos2_68k_eeprom_r), FUNC(namcos2_state::namcos2_68k_eeprom_w)).umask16(0x00ff);
+	map(0x1c0000, 0x1fffff).m(m_master_intc, FUNC(namco_c148_device::map));
+}
 
-ADDRESS_MAP_START(namcos2_state::slave_luckywld_am)
-	AM_IMPORT_FROM( common_luckywld_am )
-	AM_RANGE(0x000000, 0x03ffff) AM_ROM
-	AM_RANGE(0x100000, 0x13ffff) AM_RAMBANK(NAMCOS2_68K_SLAVE_RAM)
-	AM_RANGE(0x1c0000, 0x1fffff) AM_DEVICE("slave_intc", namco_c148_device, map)
-ADDRESS_MAP_END
+void namcos2_state::slave_sgunner_am(address_map &map)
+{
+	common_sgunner_am(map);
+	map(0x000000, 0x03ffff).rom();
+	map(0x100000, 0x13ffff).bankrw(NAMCOS2_68K_SLAVE_RAM);
+	map(0x1c0000, 0x1fffff).m(m_slave_intc, FUNC(namco_c148_device::map));
+}
+
+/*************************************************************/
+
+void namcos2_state::common_metlhawk_am(address_map &map)
+{
+	namcos2_68k_default_cpu_board_am(map);
+	map(0xc00000, 0xc03fff).ram().share("spriteram");
+	map(0xc40000, 0xc4ffff).rw(this, FUNC(namcos2_state::c169_roz_videoram_r), FUNC(namcos2_state::c169_roz_videoram_w)).share("rozvideoram");
+	map(0xd00000, 0xd0001f).rw(this, FUNC(namcos2_state::c169_roz_control_r), FUNC(namcos2_state::c169_roz_control_w));
+	map(0xe00000, 0xe00001).rw(this, FUNC(namcos2_state::gfx_ctrl_r), FUNC(namcos2_state::gfx_ctrl_w)); /* ??? */
+}
+
+void namcos2_state::master_metlhawk_am(address_map &map)
+{
+	common_metlhawk_am(map);
+	map(0x000000, 0x03ffff).rom();
+	map(0x100000, 0x10ffff).bankrw(NAMCOS2_68K_MASTER_RAM);
+	map(0x180000, 0x183fff).rw(this, FUNC(namcos2_state::namcos2_68k_eeprom_r), FUNC(namcos2_state::namcos2_68k_eeprom_w)).umask16(0x00ff);
+	map(0x1c0000, 0x1fffff).m(m_master_intc, FUNC(namco_c148_device::map));
+}
+
+void namcos2_state::slave_metlhawk_am(address_map &map)
+{
+	common_metlhawk_am(map);
+	map(0x000000, 0x03ffff).rom();
+	map(0x100000, 0x13ffff).bankrw(NAMCOS2_68K_SLAVE_RAM);
+	map(0x1c0000, 0x1fffff).m(m_slave_intc, FUNC(namco_c148_device::map));
+}
+
+/*************************************************************/
+
+void namcos2_state::common_luckywld_am(address_map &map)
+{
+	namcos2_68k_default_cpu_board_am(map);
+	map(0x800000, 0x8141ff).rw(this, FUNC(namcos2_state::c355_obj_ram_r), FUNC(namcos2_state::c355_obj_ram_w));
+	map(0x818000, 0x818001).noprw(); /* enable? */
+	map(0x81a000, 0x81a001).nopw(); /* enable? */
+	map(0x840000, 0x840001).nopr();
+	map(0x900000, 0x900007).rw(this, FUNC(namcos2_state::c355_obj_position_r), FUNC(namcos2_state::c355_obj_position_w));
+	map(0xa00000, 0xa1ffff).rw(m_c45_road, FUNC(namco_c45_road_device::read), FUNC(namco_c45_road_device::write));
+	map(0xc00000, 0xc0ffff).rw(this, FUNC(namcos2_state::c169_roz_videoram_r), FUNC(namcos2_state::c169_roz_videoram_w)).share("rozvideoram");
+	map(0xd00000, 0xd0001f).rw(this, FUNC(namcos2_state::c169_roz_control_r), FUNC(namcos2_state::c169_roz_control_w));
+	map(0xf00000, 0xf00007).rw(this, FUNC(namcos2_state::namcos2_68k_key_r), FUNC(namcos2_state::namcos2_68k_key_w));
+}
+
+void namcos2_state::master_luckywld_am(address_map &map)
+{
+	common_luckywld_am(map);
+	map(0x000000, 0x03ffff).rom();
+	map(0x100000, 0x10ffff).bankrw(NAMCOS2_68K_MASTER_RAM);
+	map(0x180000, 0x183fff).rw(this, FUNC(namcos2_state::namcos2_68k_eeprom_r), FUNC(namcos2_state::namcos2_68k_eeprom_w)).umask16(0x00ff);
+	map(0x1c0000, 0x1fffff).m(m_master_intc, FUNC(namco_c148_device::map));
+}
+
+void namcos2_state::slave_luckywld_am(address_map &map)
+{
+	common_luckywld_am(map);
+	map(0x000000, 0x03ffff).rom();
+	map(0x100000, 0x13ffff).bankrw(NAMCOS2_68K_SLAVE_RAM);
+	map(0x1c0000, 0x1fffff).m(m_slave_intc, FUNC(namco_c148_device::map));
+}
 
 /*************************************************************/
 /* 6809 SOUND CPU Memory declarations                        */
 /*************************************************************/
 
-ADDRESS_MAP_START(namcos2_state::sound_default_am)
-	AM_RANGE(0x0000, 0x3fff) AM_ROMBANK("bank6") /* banked */
-	AM_RANGE(0x4000, 0x4001) AM_DEVREADWRITE("ymsnd", ym2151_device,read,write)
-	AM_RANGE(0x5000, 0x6fff) AM_DEVREADWRITE("c140", c140_device, c140_r,c140_w)
-	AM_RANGE(0x7000, 0x77ff) AM_READWRITE(dpram_byte_r,dpram_byte_w) AM_SHARE("dpram")
-	AM_RANGE(0x7800, 0x7fff) AM_READWRITE(dpram_byte_r,dpram_byte_w) /* mirror */
-	AM_RANGE(0x8000, 0x9fff) AM_RAM
-	AM_RANGE(0xa000, 0xbfff) AM_WRITENOP /* Amplifier enable on 1st write */
-	AM_RANGE(0xc000, 0xc001) AM_WRITE(namcos2_sound_bankselect_w)
-	AM_RANGE(0xd001, 0xd001) AM_WRITENOP /* Watchdog */
-	AM_RANGE(0xe000, 0xe000) AM_WRITENOP
-	AM_RANGE(0xd000, 0xffff) AM_ROM
-ADDRESS_MAP_END
+void namcos2_state::sound_default_am(address_map &map)
+{
+	map(0x0000, 0x3fff).bankr("bank6"); /* banked */
+	map(0x4000, 0x4001).rw("ymsnd", FUNC(ym2151_device::read), FUNC(ym2151_device::write));
+	map(0x5000, 0x6fff).rw("c140", FUNC(c140_device::c140_r), FUNC(c140_device::c140_w));
+	map(0x7000, 0x77ff).rw(this, FUNC(namcos2_state::dpram_byte_r), FUNC(namcos2_state::dpram_byte_w)).share("dpram");
+	map(0x7800, 0x7fff).rw(this, FUNC(namcos2_state::dpram_byte_r), FUNC(namcos2_state::dpram_byte_w)); /* mirror */
+	map(0x8000, 0x9fff).ram();
+	map(0xa000, 0xbfff).nopw(); /* Amplifier enable on 1st write */
+	map(0xc000, 0xc001).w(this, FUNC(namcos2_state::namcos2_sound_bankselect_w));
+	map(0xd001, 0xd001).nopw(); /* Watchdog */
+	map(0xe000, 0xe000).nopw();
+	map(0xd000, 0xffff).rom();
+}
 
 
 /*************************************************************/
 /* 68705 IO CPU Memory declarations                          */
 /*************************************************************/
 
-ADDRESS_MAP_START(namcos2_state::mcu_default_am)
+void namcos2_state::mcu_default_am(address_map &map)
+{
 	/* input ports and dips are mapped here */
-	AM_RANGE(0x0000, 0x003f) AM_RAM /* Fill in register to stop logging */
-	AM_RANGE(0x0000, 0x0000) AM_READNOP /* Keep logging quiet */
-	AM_RANGE(0x0001, 0x0001) AM_READ_PORT("MCUB")
-	AM_RANGE(0x0002, 0x0002) AM_READ_PORT("MCUC")
-	AM_RANGE(0x0003, 0x0003) AM_READWRITE(namcos2_mcu_port_d_r,namcos2_mcu_port_d_w)
-	AM_RANGE(0x0007, 0x0007) AM_READ_PORT("MCUH")
-	AM_RANGE(0x0010, 0x0010) AM_READWRITE(namcos2_mcu_analog_ctrl_r,namcos2_mcu_analog_ctrl_w)
-	AM_RANGE(0x0011, 0x0011) AM_READWRITE(namcos2_mcu_analog_port_r,namcos2_mcu_analog_port_w)
-	AM_RANGE(0x0040, 0x01bf) AM_RAM
-	AM_RANGE(0x01c0, 0x1fff) AM_ROM
-	AM_RANGE(0x2000, 0x2000) AM_READ_PORT("DSW")
-	AM_RANGE(0x3000, 0x3000) AM_READ_PORT("MCUDI0")
-	AM_RANGE(0x3001, 0x3001) AM_READ_PORT("MCUDI1")
-	AM_RANGE(0x3002, 0x3002) AM_READ_PORT("MCUDI2")
-	AM_RANGE(0x3003, 0x3003) AM_READ_PORT("MCUDI3")
-	AM_RANGE(0x5000, 0x57ff) AM_READWRITE(dpram_byte_r,dpram_byte_w) AM_SHARE("dpram")
-	AM_RANGE(0x6000, 0x6fff) AM_READNOP /* watchdog */
-	AM_RANGE(0x8000, 0xffff) AM_ROM
-ADDRESS_MAP_END
+	map(0x0000, 0x003f).ram(); /* Fill in register to stop logging */
+	map(0x0000, 0x0000).nopr(); /* Keep logging quiet */
+	map(0x0001, 0x0001).portr("MCUB");
+	map(0x0002, 0x0002).portr("MCUC");
+	map(0x0003, 0x0003).rw(this, FUNC(namcos2_state::namcos2_mcu_port_d_r), FUNC(namcos2_state::namcos2_mcu_port_d_w));
+	map(0x0007, 0x0007).portr("MCUH");
+	map(0x0010, 0x0010).rw(this, FUNC(namcos2_state::namcos2_mcu_analog_ctrl_r), FUNC(namcos2_state::namcos2_mcu_analog_ctrl_w));
+	map(0x0011, 0x0011).rw(this, FUNC(namcos2_state::namcos2_mcu_analog_port_r), FUNC(namcos2_state::namcos2_mcu_analog_port_w));
+	map(0x0040, 0x01bf).ram();
+	map(0x01c0, 0x1fff).rom();
+	map(0x2000, 0x2000).portr("DSW");
+	map(0x3000, 0x3000).portr("MCUDI0");
+	map(0x3001, 0x3001).portr("MCUDI1");
+	map(0x3002, 0x3002).portr("MCUDI2");
+	map(0x3003, 0x3003).portr("MCUDI3");
+	map(0x5000, 0x57ff).rw(this, FUNC(namcos2_state::dpram_byte_r), FUNC(namcos2_state::dpram_byte_w)).share("dpram");
+	map(0x6000, 0x6fff).nopr(); /* watchdog */
+	map(0x8000, 0xffff).rom();
+}
 
 
 /*************************************************************/
@@ -795,17 +813,18 @@ WRITE8_MEMBER(namcos2_state::c68_p3_w)
 	m_player_mux = (data & 0x80) ? 1 : 0;
 }
 
-ADDRESS_MAP_START(namcos2_state::c68_default_am)
+void namcos2_state::c68_default_am(address_map &map)
+{
 	/* input ports and dips are mapped here */
-	AM_RANGE(0x2000, 0x2000) AM_READ_PORT("DSW")
-	AM_RANGE(0x3000, 0x3000) AM_READ_PORT("MCUDI0")
-	AM_RANGE(0x3001, 0x3001) AM_READ_PORT("MCUDI1")
-	AM_RANGE(0x3002, 0x3002) AM_READ_PORT("MCUDI2")
-	AM_RANGE(0x3003, 0x3003) AM_READ_PORT("MCUDI3")
-	AM_RANGE(0x5000, 0x57ff) AM_READWRITE(dpram_byte_r,dpram_byte_w) AM_SHARE("dpram")
-	AM_RANGE(0x6000, 0x6fff) AM_READ(ack_mcu_vbl_r) // VBL ack
-	AM_RANGE(0x8000, 0xffff) AM_ROM AM_REGION("c68", 0)
-ADDRESS_MAP_END
+	map(0x2000, 0x2000).portr("DSW");
+	map(0x3000, 0x3000).portr("MCUDI0");
+	map(0x3001, 0x3001).portr("MCUDI1");
+	map(0x3002, 0x3002).portr("MCUDI2");
+	map(0x3003, 0x3003).portr("MCUDI3");
+	map(0x5000, 0x57ff).rw(this, FUNC(namcos2_state::dpram_byte_r), FUNC(namcos2_state::dpram_byte_w)).share("dpram");
+	map(0x6000, 0x6fff).r(this, FUNC(namcos2_state::ack_mcu_vbl_r)); // VBL ack
+	map(0x8000, 0xffff).rom().region("c68", 0);
+}
 
 /*************************************************************/
 /*                                                           */
@@ -3108,39 +3127,39 @@ ROM_START( finalap2j )
 	ROM_LOAD( "finalap2.nv",  0x000000, 0x2000, CRC(c7ae5d0a) SHA1(9527e44accec0ec9d1990138d1b0bfc71957cc8a) )
 ROM_END
 
-/* FINAL LAP 3 (WORLD) */
+/* FINAL LAP 3 WORLD (REV. C) */
 ROM_START( finalap3 ) // this set displays MOTION (Ver. 3) in the test mode menu
 	ROM_REGION( 0x040000, "maincpu", 0 ) /* Master CPU */
-	ROM_LOAD16_BYTE( "fl3mpr0.bin",  0x000000, 0x020000, CRC(9ff361ff) SHA1(0a197f5a3e9a03455cd5afe6979587baf757973f) )
-	ROM_LOAD16_BYTE( "fl3mpr1.bin",  0x000001, 0x020000, CRC(17efb7f2) SHA1(74940950b8b1a3353a130846937c9f651be3f335) )
+	ROM_LOAD16_BYTE( "flt2_mpr0c.11d",  0x000000, 0x020000, CRC(9ff361ff) SHA1(0a197f5a3e9a03455cd5afe6979587baf757973f) )
+	ROM_LOAD16_BYTE( "flt2_mpr1c.13d",  0x000001, 0x020000, CRC(17efb7f2) SHA1(74940950b8b1a3353a130846937c9f651be3f335) )
 
 	ROM_REGION( 0x040000, "slave", 0 ) /* Slave CPU */
-	ROM_LOAD16_BYTE( "flt1sp0",  0x000000, 0x020000, CRC(e804ced1) SHA1(b31e1fddd202ba503b28455a270e8d45a348dc2e) )
-	ROM_LOAD16_BYTE( "flt1sp1",  0x000001, 0x020000, CRC(3a2b24ee) SHA1(e4f16f30516dab13cc8b1cb6c80ec1df129f8851) )
+	ROM_LOAD16_BYTE( "flt1_sp0.11k",  0x000000, 0x020000, CRC(e804ced1) SHA1(b31e1fddd202ba503b28455a270e8d45a348dc2e) )
+	ROM_LOAD16_BYTE( "flt1_sp1.13k",  0x000001, 0x020000, CRC(3a2b24ee) SHA1(e4f16f30516dab13cc8b1cb6c80ec1df129f8851) )
 
 	ROM_REGION( 0x030000, "audiocpu", 0 ) /* Sound CPU (Banked) */
-	ROM_LOAD( "flt1snd0",  0x00c000, 0x004000, CRC(60b72aed) SHA1(f12e157ae5e9f373ba1d75012b869b1c4ad9fb00) )
-	ROM_CONTINUE(          0x010000, 0x01c000 )
-	ROM_RELOAD(            0x010000, 0x020000 )
+	ROM_LOAD( "flt1_snd0.7j",  0x00c000, 0x004000, CRC(60b72aed) SHA1(f12e157ae5e9f373ba1d75012b869b1c4ad9fb00) )
+	ROM_CONTINUE(              0x010000, 0x01c000 )
+	ROM_RELOAD(                0x010000, 0x020000 )
 
 	ROM_REGION( 0x010000, "mcu", 0 ) /* I/O MCU */
 	ROM_LOAD( "sys2mcpu.bin",  0x000000, 0x002000, CRC(a342a97e) SHA1(2c420d34dba21e409bf78ddca710fc7de65a6642) )
 	ROM_LOAD( "sys2c65c.bin",  0x008000, 0x008000, BAD_DUMP CRC(a5b2a4ff) SHA1(068bdfcc71a5e83706e8b23330691973c1c214dc) )
 
 	ROM_REGION( 0x400000, "gfx1", 0 ) /* Sprites */
-	ROM_LOAD( "fltobj0",  0x000000, 0x80000, CRC(eab19ec6) SHA1(2859e88b94aa873f3b6ba22790f2211f3e172dd1) )
-	ROM_LOAD( "fltobj2",  0x080000, 0x80000, CRC(2a3b7ded) SHA1(455d9d6cf7d497687f93af899fc20bbff6129391) )
-	ROM_LOAD( "fltobj4",  0x100000, 0x80000, CRC(84aa500c) SHA1(087c0089478a270154f50f3b0f001428e80d74c7) )
-	ROM_LOAD( "fltobj6",  0x180000, 0x80000, CRC(33118e63) SHA1(126cc034909e05da953a1a67d6c0f18f5304b407) )
-	ROM_LOAD( "fltobj1",  0x200000, 0x80000, CRC(4ef37a51) SHA1(2f43691cfcd852773ae5e1d879f556f232bae877) )
-	ROM_LOAD( "fltobj3",  0x280000, 0x80000, CRC(b86dc7cd) SHA1(25402d7111c1277a618b313d1244c1a567ce458a) )
-	ROM_LOAD( "fltobj5",  0x300000, 0x80000, CRC(6a53e603) SHA1(6087c694e0e30a98c84227991d9c2e9c39c3e9ca) )
-	ROM_LOAD( "fltobj7",  0x380000, 0x80000, CRC(b52a85e2) SHA1(1eea10eb20ae56309397238a52e9ea0756912412) )
+	ROM_LOAD( "flt_obj-0.4c",  0x000000, 0x80000, CRC(eab19ec6) SHA1(2859e88b94aa873f3b6ba22790f2211f3e172dd1) )
+	ROM_LOAD( "flt_obj-2.4a",  0x080000, 0x80000, CRC(2a3b7ded) SHA1(455d9d6cf7d497687f93af899fc20bbff6129391) )
+	ROM_LOAD( "flt_obj-4.8c",  0x100000, 0x80000, CRC(84aa500c) SHA1(087c0089478a270154f50f3b0f001428e80d74c7) )
+	ROM_LOAD( "flt_obj-6.8a",  0x180000, 0x80000, CRC(33118e63) SHA1(126cc034909e05da953a1a67d6c0f18f5304b407) )
+	ROM_LOAD( "flt_obj-1.2c",  0x200000, 0x80000, CRC(4ef37a51) SHA1(2f43691cfcd852773ae5e1d879f556f232bae877) )
+	ROM_LOAD( "flt_obj-3.2a",  0x280000, 0x80000, CRC(b86dc7cd) SHA1(25402d7111c1277a618b313d1244c1a567ce458a) )
+	ROM_LOAD( "flt_obj-5.5c",  0x300000, 0x80000, CRC(6a53e603) SHA1(6087c694e0e30a98c84227991d9c2e9c39c3e9ca) )
+	ROM_LOAD( "flt_obj-7.6a",  0x380000, 0x80000, CRC(b52a85e2) SHA1(1eea10eb20ae56309397238a52e9ea0756912412) )
 
 	ROM_REGION( 0x200000, "gfx2", 0 ) /* Tiles */
-	ROM_LOAD( "flt2_chr-0.bin", 0x000000, 0x40000, CRC(5954f270) SHA1(6f26365d89f38d4ab477908f32823e06f1a84e09) )
+	ROM_LOAD( "flt2_chr-0.11n", 0x000000, 0x40000, CRC(5954f270) SHA1(6f26365d89f38d4ab477908f32823e06f1a84e09) )
 	ROM_LOAD( "fltchr-1.11p",   0x040000, 0x40000, CRC(2e68d13c) SHA1(46bb0628da1f97e0f6865f37e53a01d2e8391255) )
-	ROM_LOAD( "flt2_chr-2.bin", 0x080000, 0x40000, CRC(98f3b190) SHA1(4858dab070c0c46d37148312664c6a616765c240) )
+	ROM_LOAD( "flt2_chr-2.11r", 0x080000, 0x40000, CRC(98f3b190) SHA1(4858dab070c0c46d37148312664c6a616765c240) )
 	ROM_LOAD( "fltchr-3.11s",   0x0c0000, 0x40000, CRC(e9b05a1f) SHA1(6b7e08f4f535fb99692920612f751a49c3cd529e) )
 	ROM_LOAD( "fltchr-4.9n",    0x100000, 0x40000, CRC(5ae43767) SHA1(f3e24dd5ba2cffffd616ddee628e423aa0aec1d2) )
 	ROM_LOAD( "fltchr-5.9p",    0x140000, 0x40000, CRC(b5f4e780) SHA1(a7d64d150121eda5d82f5651a06a11683220577a) )
@@ -3148,18 +3167,18 @@ ROM_START( finalap3 ) // this set displays MOTION (Ver. 3) in the test mode menu
 	ROM_LOAD( "fltchr-7.9s",    0x1c0000, 0x40000, CRC(85db9e94) SHA1(918f414c1dd51f7451a9a491ba1d60f5f9a38c3e) )
 
 	ROM_REGION( 0x080000, "gfx4", 0 ) /* Mask shape */
-	NAMCOS2_GFXROM_LOAD_256K( "flt2_sha.bin",  0x000000, CRC(6986565b) SHA1(df95f2ad5d1e938551d33153f2dcc4711ffd0eba) )
+	NAMCOS2_GFXROM_LOAD_256K( "flt2_sha.7n",  0x000000, CRC(6986565b) SHA1(df95f2ad5d1e938551d33153f2dcc4711ffd0eba) )
 
-	ROM_REGION16_BE( 0x200000, "data_rom", 0 ) /* Shared data roms */
-	NAMCOS2_DATA_LOAD_E_128K( "flt1d0",  0x000000, CRC(80004966) SHA1(112b2a9b0ea792d5dbff1b9cf904da788aeede29) )
-	NAMCOS2_DATA_LOAD_O_128K( "flt1d1",  0x000000, CRC(a2e93e8c) SHA1(9c8a5431a79153a70eb6939d16e0a5a6be235e75) )
+	ROM_REGION16_BE( 0x200000, "data_rom", 0 ) /* Shared data ROMs */
+	NAMCOS2_DATA_LOAD_E_128K( "flt1_d0.13s",  0x000000, CRC(80004966) SHA1(112b2a9b0ea792d5dbff1b9cf904da788aeede29) )
+	NAMCOS2_DATA_LOAD_O_128K( "flt1_d1.13p",  0x000000, CRC(a2e93e8c) SHA1(9c8a5431a79153a70eb6939d16e0a5a6be235e75) )
 
-	ROM_REGION( 0x100, "c45_road:clut", 0 ) /* prom for road colors */
-	ROM_LOAD( "fl1-3.5b", 0, 0x100, CRC(d179d99a) SHA1(4e64f284c74d2b77f893bd28aaa6489084056aa2) )
+	ROM_REGION( 0x100, "c45_road:clut", 0 ) /* PROM for road colors */
+	ROM_LOAD( "fl1_3.5b", 0, 0x100, CRC(d179d99a) SHA1(4e64f284c74d2b77f893bd28aaa6489084056aa2) )
 
 	ROM_REGION( 0x100000, "c140", 0 ) /* Sound voices */
-	ROM_LOAD( "fltvoi1",  0x000000, 0x080000, CRC(4fc7c0ba) SHA1(bbfd1764fd79087bba5e6199e8916c28bed4d3f4) )
-	ROM_LOAD( "fltvoi2",  0x080000, 0x080000, CRC(409c62df) SHA1(0c2f088168f1f92f2f767ea47522c0e8f4a10265) )
+	ROM_LOAD( "flt_voi-1.3m",  0x000000, 0x080000, CRC(4fc7c0ba) SHA1(bbfd1764fd79087bba5e6199e8916c28bed4d3f4) )
+	ROM_LOAD( "flt_voi-2.3l",  0x080000, 0x080000, CRC(409c62df) SHA1(0c2f088168f1f92f2f767ea47522c0e8f4a10265) )
 
 	ROM_REGION( 8*1024, "user2", 0 ) /* zoom */
 	ROM_LOAD( "04544191.6r", 0, 8*1024, CRC(90db1bf6) SHA1(dbb9e50a8efc3b4012fcf587cc87da9ef42a1b80) )
@@ -3169,39 +3188,39 @@ ROM_START( finalap3 ) // this set displays MOTION (Ver. 3) in the test mode menu
 ROM_END
 
 
-/* FINAL LAP 3 (WORLD) */
+/* FINAL LAP 3 WORLD */
 ROM_START( finalap3a )
 	ROM_REGION( 0x040000, "maincpu", 0 ) /* Master CPU */
-	ROM_LOAD16_BYTE( "flt2-mp0",  0x000000, 0x020000, CRC(22082168) SHA1(d3090a91bda70fb46d3b7846d32db36c1f42d5cc) )
-	ROM_LOAD16_BYTE( "flt2-mp1",  0x000001, 0x020000, CRC(2ec21977) SHA1(fe8ded6402da710255e09cdb22ba1ef5acd78518) )
+	ROM_LOAD16_BYTE( "flt2-mp0.11d",  0x000000, 0x020000, CRC(22082168) SHA1(d3090a91bda70fb46d3b7846d32db36c1f42d5cc) )
+	ROM_LOAD16_BYTE( "flt2-mp1.13d",  0x000001, 0x020000, CRC(2ec21977) SHA1(fe8ded6402da710255e09cdb22ba1ef5acd78518) )
 
 	ROM_REGION( 0x040000, "slave", 0 ) /* Slave CPU */
-	ROM_LOAD16_BYTE( "flt1sp0",  0x000000, 0x020000, CRC(e804ced1) SHA1(b31e1fddd202ba503b28455a270e8d45a348dc2e) )
-	ROM_LOAD16_BYTE( "flt1sp1",  0x000001, 0x020000, CRC(3a2b24ee) SHA1(e4f16f30516dab13cc8b1cb6c80ec1df129f8851) )
+	ROM_LOAD16_BYTE( "flt1_sp0.11k",  0x000000, 0x020000, CRC(e804ced1) SHA1(b31e1fddd202ba503b28455a270e8d45a348dc2e) )
+	ROM_LOAD16_BYTE( "flt1_sp1.13k",  0x000001, 0x020000, CRC(3a2b24ee) SHA1(e4f16f30516dab13cc8b1cb6c80ec1df129f8851) )
 
 	ROM_REGION( 0x030000, "audiocpu", 0 ) /* Sound CPU (Banked) */
-	ROM_LOAD( "flt1snd0",  0x00c000, 0x004000, CRC(60b72aed) SHA1(f12e157ae5e9f373ba1d75012b869b1c4ad9fb00) )
-	ROM_CONTINUE(          0x010000, 0x01c000 )
-	ROM_RELOAD(            0x010000, 0x020000 )
+	ROM_LOAD( "flt1_snd0.7j",  0x00c000, 0x004000, CRC(60b72aed) SHA1(f12e157ae5e9f373ba1d75012b869b1c4ad9fb00) )
+	ROM_CONTINUE(              0x010000, 0x01c000 )
+	ROM_RELOAD(                0x010000, 0x020000 )
 
 	ROM_REGION( 0x010000, "mcu", 0 ) /* I/O MCU */
 	ROM_LOAD( "sys2mcpu.bin",  0x000000, 0x002000, CRC(a342a97e) SHA1(2c420d34dba21e409bf78ddca710fc7de65a6642) )
 	ROM_LOAD( "sys2c65c.bin",  0x008000, 0x008000, BAD_DUMP CRC(a5b2a4ff) SHA1(068bdfcc71a5e83706e8b23330691973c1c214dc) )
 
 	ROM_REGION( 0x400000, "gfx1", 0 ) /* Sprites */
-	ROM_LOAD( "fltobj0",  0x000000, 0x80000, CRC(eab19ec6) SHA1(2859e88b94aa873f3b6ba22790f2211f3e172dd1) )
-	ROM_LOAD( "fltobj2",  0x080000, 0x80000, CRC(2a3b7ded) SHA1(455d9d6cf7d497687f93af899fc20bbff6129391) )
-	ROM_LOAD( "fltobj4",  0x100000, 0x80000, CRC(84aa500c) SHA1(087c0089478a270154f50f3b0f001428e80d74c7) )
-	ROM_LOAD( "fltobj6",  0x180000, 0x80000, CRC(33118e63) SHA1(126cc034909e05da953a1a67d6c0f18f5304b407) )
-	ROM_LOAD( "fltobj1",  0x200000, 0x80000, CRC(4ef37a51) SHA1(2f43691cfcd852773ae5e1d879f556f232bae877) )
-	ROM_LOAD( "fltobj3",  0x280000, 0x80000, CRC(b86dc7cd) SHA1(25402d7111c1277a618b313d1244c1a567ce458a) )
-	ROM_LOAD( "fltobj5",  0x300000, 0x80000, CRC(6a53e603) SHA1(6087c694e0e30a98c84227991d9c2e9c39c3e9ca) )
-	ROM_LOAD( "fltobj7",  0x380000, 0x80000, CRC(b52a85e2) SHA1(1eea10eb20ae56309397238a52e9ea0756912412) )
+	ROM_LOAD( "flt_obj-0.4c",  0x000000, 0x80000, CRC(eab19ec6) SHA1(2859e88b94aa873f3b6ba22790f2211f3e172dd1) )
+	ROM_LOAD( "flt_obj-2.4a",  0x080000, 0x80000, CRC(2a3b7ded) SHA1(455d9d6cf7d497687f93af899fc20bbff6129391) )
+	ROM_LOAD( "flt_obj-4.8c",  0x100000, 0x80000, CRC(84aa500c) SHA1(087c0089478a270154f50f3b0f001428e80d74c7) )
+	ROM_LOAD( "flt_obj-6.8a",  0x180000, 0x80000, CRC(33118e63) SHA1(126cc034909e05da953a1a67d6c0f18f5304b407) )
+	ROM_LOAD( "flt_obj-1.2c",  0x200000, 0x80000, CRC(4ef37a51) SHA1(2f43691cfcd852773ae5e1d879f556f232bae877) )
+	ROM_LOAD( "flt_obj-3.2a",  0x280000, 0x80000, CRC(b86dc7cd) SHA1(25402d7111c1277a618b313d1244c1a567ce458a) )
+	ROM_LOAD( "flt_obj-5.5c",  0x300000, 0x80000, CRC(6a53e603) SHA1(6087c694e0e30a98c84227991d9c2e9c39c3e9ca) )
+	ROM_LOAD( "flt_obj-7.6a",  0x380000, 0x80000, CRC(b52a85e2) SHA1(1eea10eb20ae56309397238a52e9ea0756912412) )
 
 	ROM_REGION( 0x200000, "gfx2", 0 ) /* Tiles */
-	ROM_LOAD( "flt2_chr-0.bin", 0x000000, 0x40000, CRC(5954f270) SHA1(6f26365d89f38d4ab477908f32823e06f1a84e09) )
+	ROM_LOAD( "flt2_chr-0.11n", 0x000000, 0x40000, CRC(5954f270) SHA1(6f26365d89f38d4ab477908f32823e06f1a84e09) )
 	ROM_LOAD( "fltchr-1.11p",   0x040000, 0x40000, CRC(2e68d13c) SHA1(46bb0628da1f97e0f6865f37e53a01d2e8391255) )
-	ROM_LOAD( "flt2_chr-2.bin", 0x080000, 0x40000, CRC(98f3b190) SHA1(4858dab070c0c46d37148312664c6a616765c240) )
+	ROM_LOAD( "flt2_chr-2.11r", 0x080000, 0x40000, CRC(98f3b190) SHA1(4858dab070c0c46d37148312664c6a616765c240) )
 	ROM_LOAD( "fltchr-3.11s",   0x0c0000, 0x40000, CRC(e9b05a1f) SHA1(6b7e08f4f535fb99692920612f751a49c3cd529e) )
 	ROM_LOAD( "fltchr-4.9n",    0x100000, 0x40000, CRC(5ae43767) SHA1(f3e24dd5ba2cffffd616ddee628e423aa0aec1d2) )
 	ROM_LOAD( "fltchr-5.9p",    0x140000, 0x40000, CRC(b5f4e780) SHA1(a7d64d150121eda5d82f5651a06a11683220577a) )
@@ -3209,18 +3228,18 @@ ROM_START( finalap3a )
 	ROM_LOAD( "fltchr-7.9s",    0x1c0000, 0x40000, CRC(85db9e94) SHA1(918f414c1dd51f7451a9a491ba1d60f5f9a38c3e) )
 
 	ROM_REGION( 0x080000, "gfx4", 0 ) /* Mask shape */
-	NAMCOS2_GFXROM_LOAD_256K( "flt2_sha.bin",  0x000000, CRC(6986565b) SHA1(df95f2ad5d1e938551d33153f2dcc4711ffd0eba) )
+	NAMCOS2_GFXROM_LOAD_256K( "flt2_sha.7n",  0x000000, CRC(6986565b) SHA1(df95f2ad5d1e938551d33153f2dcc4711ffd0eba) )
 
-	ROM_REGION16_BE( 0x200000, "data_rom", 0 ) /* Shared data roms */
-	NAMCOS2_DATA_LOAD_E_128K( "flt1d0",  0x000000, CRC(80004966) SHA1(112b2a9b0ea792d5dbff1b9cf904da788aeede29) )
-	NAMCOS2_DATA_LOAD_O_128K( "flt1d1",  0x000000, CRC(a2e93e8c) SHA1(9c8a5431a79153a70eb6939d16e0a5a6be235e75) )
+	ROM_REGION16_BE( 0x200000, "data_rom", 0 ) /* Shared data ROMs */
+	NAMCOS2_DATA_LOAD_E_128K( "flt1_d0.13s",  0x000000, CRC(80004966) SHA1(112b2a9b0ea792d5dbff1b9cf904da788aeede29) )
+	NAMCOS2_DATA_LOAD_O_128K( "flt1_d1.13p",  0x000000, CRC(a2e93e8c) SHA1(9c8a5431a79153a70eb6939d16e0a5a6be235e75) )
 
-	ROM_REGION( 0x100, "c45_road:clut", 0 ) /* prom for road colors */
-	ROM_LOAD( "fl1-3.5b", 0, 0x100, CRC(d179d99a) SHA1(4e64f284c74d2b77f893bd28aaa6489084056aa2) )
+	ROM_REGION( 0x100, "c45_road:clut", 0 ) /* PROM for road colors */
+	ROM_LOAD( "fl1_3.5b", 0, 0x100, CRC(d179d99a) SHA1(4e64f284c74d2b77f893bd28aaa6489084056aa2) )
 
 	ROM_REGION( 0x100000, "c140", 0 ) /* Sound voices */
-	ROM_LOAD( "fltvoi1",  0x000000, 0x080000, CRC(4fc7c0ba) SHA1(bbfd1764fd79087bba5e6199e8916c28bed4d3f4) )
-	ROM_LOAD( "fltvoi2",  0x080000, 0x080000, CRC(409c62df) SHA1(0c2f088168f1f92f2f767ea47522c0e8f4a10265) )
+	ROM_LOAD( "flt_voi-1.3m",  0x000000, 0x080000, CRC(4fc7c0ba) SHA1(bbfd1764fd79087bba5e6199e8916c28bed4d3f4) )
+	ROM_LOAD( "flt_voi-2.3l",  0x080000, 0x080000, CRC(409c62df) SHA1(0c2f088168f1f92f2f767ea47522c0e8f4a10265) )
 
 	ROM_REGION( 8*1024, "user2", 0 ) /* zoom */
 	ROM_LOAD( "04544191.6r", 0, 8*1024, CRC(90db1bf6) SHA1(dbb9e50a8efc3b4012fcf587cc87da9ef42a1b80) )
@@ -3236,31 +3255,31 @@ ROM_END
 /* FINAL LAP 3 JAPAN */
 ROM_START( finalap3j )
 	ROM_REGION( 0x040000, "maincpu", 0 ) /* Master CPU */
-	ROM_LOAD16_BYTE( "fltmp0",  0x000000, 0x020000, CRC(2f2a997a) SHA1(02c805b0727d55bd7782d3352d3563c490694fdb) )
-	ROM_LOAD16_BYTE( "fltmp1",  0x000001, 0x020000, CRC(b505ca0b) SHA1(2dd6c264806a32466df78a0bc1f44e2e2796f81e) )
+	ROM_LOAD16_BYTE( "flt_mp0.11d",  0x000000, 0x020000, CRC(2f2a997a) SHA1(02c805b0727d55bd7782d3352d3563c490694fdb) )
+	ROM_LOAD16_BYTE( "flt_mp1.13d",  0x000001, 0x020000, CRC(b505ca0b) SHA1(2dd6c264806a32466df78a0bc1f44e2e2796f81e) )
 
 	ROM_REGION( 0x040000, "slave", 0 ) /* Slave CPU */
-	ROM_LOAD16_BYTE( "flt1sp0",  0x000000, 0x020000, CRC(e804ced1) SHA1(b31e1fddd202ba503b28455a270e8d45a348dc2e) )
-	ROM_LOAD16_BYTE( "flt1sp1",  0x000001, 0x020000, CRC(3a2b24ee) SHA1(e4f16f30516dab13cc8b1cb6c80ec1df129f8851) )
+	ROM_LOAD16_BYTE( "flt1_sp0.11k",  0x000000, 0x020000, CRC(e804ced1) SHA1(b31e1fddd202ba503b28455a270e8d45a348dc2e) )
+	ROM_LOAD16_BYTE( "flt1_sp1.13k",  0x000001, 0x020000, CRC(3a2b24ee) SHA1(e4f16f30516dab13cc8b1cb6c80ec1df129f8851) )
 
 	ROM_REGION( 0x030000, "audiocpu", 0 ) /* Sound CPU (Banked) */
-	ROM_LOAD( "flt1snd0",  0x00c000, 0x004000, CRC(60b72aed) SHA1(f12e157ae5e9f373ba1d75012b869b1c4ad9fb00) )
-	ROM_CONTINUE(          0x010000, 0x01c000 )
-	ROM_RELOAD(            0x010000, 0x020000 )
+	ROM_LOAD( "flt1_snd0.7j",  0x00c000, 0x004000, CRC(60b72aed) SHA1(f12e157ae5e9f373ba1d75012b869b1c4ad9fb00) )
+	ROM_CONTINUE(              0x010000, 0x01c000 )
+	ROM_RELOAD(                0x010000, 0x020000 )
 
 	ROM_REGION( 0x010000, "mcu", 0 ) /* I/O MCU */
 	ROM_LOAD( "sys2mcpu.bin",  0x000000, 0x002000, CRC(a342a97e) SHA1(2c420d34dba21e409bf78ddca710fc7de65a6642) )
 	ROM_LOAD( "sys2c65c.bin",  0x008000, 0x008000, BAD_DUMP CRC(a5b2a4ff) SHA1(068bdfcc71a5e83706e8b23330691973c1c214dc) )
 
 	ROM_REGION( 0x400000, "gfx1", 0 ) /* Sprites */
-	ROM_LOAD( "fltobj0",  0x000000, 0x80000, CRC(eab19ec6) SHA1(2859e88b94aa873f3b6ba22790f2211f3e172dd1) )
-	ROM_LOAD( "fltobj2",  0x080000, 0x80000, CRC(2a3b7ded) SHA1(455d9d6cf7d497687f93af899fc20bbff6129391) )
-	ROM_LOAD( "fltobj4",  0x100000, 0x80000, CRC(84aa500c) SHA1(087c0089478a270154f50f3b0f001428e80d74c7) )
-	ROM_LOAD( "fltobj6",  0x180000, 0x80000, CRC(33118e63) SHA1(126cc034909e05da953a1a67d6c0f18f5304b407) )
-	ROM_LOAD( "fltobj1",  0x200000, 0x80000, CRC(4ef37a51) SHA1(2f43691cfcd852773ae5e1d879f556f232bae877) )
-	ROM_LOAD( "fltobj3",  0x280000, 0x80000, CRC(b86dc7cd) SHA1(25402d7111c1277a618b313d1244c1a567ce458a) )
-	ROM_LOAD( "fltobj5",  0x300000, 0x80000, CRC(6a53e603) SHA1(6087c694e0e30a98c84227991d9c2e9c39c3e9ca) )
-	ROM_LOAD( "fltobj7",  0x380000, 0x80000, CRC(b52a85e2) SHA1(1eea10eb20ae56309397238a52e9ea0756912412) )
+	ROM_LOAD( "flt_obj-0.4c",  0x000000, 0x80000, CRC(eab19ec6) SHA1(2859e88b94aa873f3b6ba22790f2211f3e172dd1) )
+	ROM_LOAD( "flt_obj-2.4a",  0x080000, 0x80000, CRC(2a3b7ded) SHA1(455d9d6cf7d497687f93af899fc20bbff6129391) )
+	ROM_LOAD( "flt_obj-4.8c",  0x100000, 0x80000, CRC(84aa500c) SHA1(087c0089478a270154f50f3b0f001428e80d74c7) )
+	ROM_LOAD( "flt_obj-6.8a",  0x180000, 0x80000, CRC(33118e63) SHA1(126cc034909e05da953a1a67d6c0f18f5304b407) )
+	ROM_LOAD( "flt_obj-1.2c",  0x200000, 0x80000, CRC(4ef37a51) SHA1(2f43691cfcd852773ae5e1d879f556f232bae877) )
+	ROM_LOAD( "flt_obj-3.2a",  0x280000, 0x80000, CRC(b86dc7cd) SHA1(25402d7111c1277a618b313d1244c1a567ce458a) )
+	ROM_LOAD( "flt_obj-5.5c",  0x300000, 0x80000, CRC(6a53e603) SHA1(6087c694e0e30a98c84227991d9c2e9c39c3e9ca) )
+	ROM_LOAD( "flt_obj-7.6a",  0x380000, 0x80000, CRC(b52a85e2) SHA1(1eea10eb20ae56309397238a52e9ea0756912412) )
 
 	ROM_REGION( 0x200000, "gfx2", 0 ) /* Tiles */
 	ROM_LOAD( "fltchr-0.11n", 0x000000, 0x40000, CRC(97ed5b62) SHA1(ce076ae71c6b2950be2a303829072d59732315df) )
@@ -3273,18 +3292,18 @@ ROM_START( finalap3j )
 	ROM_LOAD( "fltchr-7.9s",  0x1c0000, 0x40000, CRC(85db9e94) SHA1(918f414c1dd51f7451a9a491ba1d60f5f9a38c3e) )
 
 	ROM_REGION( 0x080000, "gfx4", 0 ) /* Mask shape */
-	NAMCOS2_GFXROM_LOAD_256K( "fltsha",  0x000000, CRC(211bbd83) SHA1(17502830d1af1e2cfbc17e2f3bb303f2a0c27e68) )
+	NAMCOS2_GFXROM_LOAD_256K( "flt_sha.7n",  0x000000, CRC(211bbd83) SHA1(17502830d1af1e2cfbc17e2f3bb303f2a0c27e68) )
 
-	ROM_REGION16_BE( 0x200000, "data_rom", 0 ) /* Shared data roms */
-	NAMCOS2_DATA_LOAD_E_128K( "flt1d0",  0x000000, CRC(80004966) SHA1(112b2a9b0ea792d5dbff1b9cf904da788aeede29) )
-	NAMCOS2_DATA_LOAD_O_128K( "flt1d1",  0x000000, CRC(a2e93e8c) SHA1(9c8a5431a79153a70eb6939d16e0a5a6be235e75) )
+	ROM_REGION16_BE( 0x200000, "data_rom", 0 ) /* Shared data ROMs */
+	NAMCOS2_DATA_LOAD_E_128K( "flt1_d0.13s",  0x000000, CRC(80004966) SHA1(112b2a9b0ea792d5dbff1b9cf904da788aeede29) )
+	NAMCOS2_DATA_LOAD_O_128K( "flt1_d1.13p",  0x000000, CRC(a2e93e8c) SHA1(9c8a5431a79153a70eb6939d16e0a5a6be235e75) )
 
-	ROM_REGION( 0x100, "c45_road:clut", 0 ) /* prom for road colors */
-	ROM_LOAD( "fl1-3.5b", 0, 0x100, CRC(d179d99a) SHA1(4e64f284c74d2b77f893bd28aaa6489084056aa2) )
+	ROM_REGION( 0x100, "c45_road:clut", 0 ) /* PROM for road colors */
+	ROM_LOAD( "fl1_3.5b", 0, 0x100, CRC(d179d99a) SHA1(4e64f284c74d2b77f893bd28aaa6489084056aa2) )
 
 	ROM_REGION( 0x100000, "c140", 0 ) /* Sound voices */
-	ROM_LOAD( "fltvoi1",  0x000000, 0x080000, CRC(4fc7c0ba) SHA1(bbfd1764fd79087bba5e6199e8916c28bed4d3f4) )
-	ROM_LOAD( "fltvoi2",  0x080000, 0x080000, CRC(409c62df) SHA1(0c2f088168f1f92f2f767ea47522c0e8f4a10265) )
+	ROM_LOAD( "flt_voi-1.3m",  0x000000, 0x080000, CRC(4fc7c0ba) SHA1(bbfd1764fd79087bba5e6199e8916c28bed4d3f4) )
+	ROM_LOAD( "flt_voi-2.3l",  0x080000, 0x080000, CRC(409c62df) SHA1(0c2f088168f1f92f2f767ea47522c0e8f4a10265) )
 
 	ROM_REGION( 8*1024, "user2", 0 ) /* zoom */
 	ROM_LOAD( "04544191.6r", 0, 8*1024, CRC(90db1bf6) SHA1(dbb9e50a8efc3b4012fcf587cc87da9ef42a1b80) )
@@ -3335,7 +3354,7 @@ ROM_START( finalap3jc )
 	ROM_LOAD( "flt_chr-7.9s",  0x1c0000, 0x40000, CRC(85db9e94) SHA1(918f414c1dd51f7451a9a491ba1d60f5f9a38c3e) )
 
 	ROM_REGION( 0x080000, "gfx4", 0 ) /* Mask shape */
-	NAMCOS2_GFXROM_LOAD_256K( "flt sha.7n",  0x000000, CRC(211bbd83) SHA1(17502830d1af1e2cfbc17e2f3bb303f2a0c27e68) )
+	NAMCOS2_GFXROM_LOAD_256K( "flt_sha.7n",  0x000000, CRC(211bbd83) SHA1(17502830d1af1e2cfbc17e2f3bb303f2a0c27e68) )
 
 	ROM_REGION16_BE( 0x200000, "data_rom", 0 ) /* Shared data ROMs */
 	NAMCOS2_DATA_LOAD_E_128K( "flt1_d0.13s",  0x000000, CRC(80004966) SHA1(112b2a9b0ea792d5dbff1b9cf904da788aeede29) )
@@ -5932,10 +5951,10 @@ GAME( 1991, cosmogngj,  cosmogng, base,     base,     namcos2_state, cosmogng, R
 GAME( 1992, bubbletr,   0,        gollygho, bubbletr, namcos2_state, bubbletr, ROT180, "Namco", "Bubble Trouble (World, Rev B)", MACHINE_REQUIRES_ARTWORK )
 GAME( 1992, bubbletrj,  bubbletr, gollygho, bubbletr, namcos2_state, bubbletr, ROT180, "Namco", "Bubble Trouble (Japan, Rev C)", MACHINE_REQUIRES_ARTWORK )
 
-GAMEL(1992, finalap3,   0,        finallap, finalap3, namcos2_state, finalap3, ROT0,   "Namco", "Final Lap 3 (World, set 1)", MACHINE_IMPERFECT_GRAPHICS | MACHINE_IMPERFECT_SOUND | MACHINE_NODEVICE_LAN, layout_finallap )
+GAMEL(1992, finalap3,   0,        finallap, finalap3, namcos2_state, finalap3, ROT0,   "Namco", "Final Lap 3 (World, Rev C)", MACHINE_IMPERFECT_GRAPHICS | MACHINE_IMPERFECT_SOUND | MACHINE_NODEVICE_LAN, layout_finallap )
 GAMEL(1992, finalap3a,  finalap3, finallap, finalap3, namcos2_state, finalap3, ROT0,   "Namco", "Final Lap 3 (World, set 2)", MACHINE_IMPERFECT_GRAPHICS | MACHINE_IMPERFECT_SOUND | MACHINE_NODEVICE_LAN, layout_finallap )
 GAMEL(1992, finalap3j,  finalap3, finallap, finalap3, namcos2_state, finalap3, ROT0,   "Namco", "Final Lap 3 (Japan)", MACHINE_IMPERFECT_GRAPHICS | MACHINE_IMPERFECT_SOUND | MACHINE_NODEVICE_LAN, layout_finallap )
-GAMEL(1992, finalap3jc, finalap3, finallap, finalap3, namcos2_state, finalap3, ROT0,   "Namco", "Final Lap 3 (Japan - Rev C)", MACHINE_IMPERFECT_GRAPHICS | MACHINE_IMPERFECT_SOUND | MACHINE_NODEVICE_LAN, layout_finallap )
+GAMEL(1992, finalap3jc, finalap3, finallap, finalap3, namcos2_state, finalap3, ROT0,   "Namco", "Final Lap 3 (Japan, Rev C)", MACHINE_IMPERFECT_GRAPHICS | MACHINE_IMPERFECT_SOUND | MACHINE_NODEVICE_LAN, layout_finallap )
 GAMEL(1992, finalap3bl, finalap3, finallap, finalap3, namcos2_state, finalap3, ROT0,   "Namco", "Final Lap 3 (bootleg)", MACHINE_NOT_WORKING | MACHINE_IMPERFECT_GRAPHICS | MACHINE_IMPERFECT_SOUND | MACHINE_NODEVICE_LAN, layout_finallap )
 
 GAME( 1992, luckywld,   0,        luckywld, luckywld, namcos2_state, luckywld, ROT0,   "Namco", "Lucky & Wild", 0 )

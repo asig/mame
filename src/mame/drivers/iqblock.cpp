@@ -9,8 +9,6 @@ Driver by Nicola Salmoria and Ernesto Corvi
 TODO:
 - Who generates IRQ and NMI? How many should there be per frame?
 
-- Sound chip is a UM3567. Is this compatible to something already in MAME? yes, YM2413
-
 - Coin 2 doesn't work? DIP switch setting?
 
 - Protection:
@@ -111,25 +109,27 @@ WRITE8_MEMBER(iqblock_state::port_C_w)
 	/* bit 7 could be a second coin counter, but coin 2 doesn't seem to work... */
 }
 
-ADDRESS_MAP_START(iqblock_state::main_map)
-	AM_RANGE(0x0000, 0xefff) AM_ROM
-	AM_RANGE(0xf000, 0xffff) AM_RAM AM_SHARE("rambase")
-ADDRESS_MAP_END
+void iqblock_state::main_map(address_map &map)
+{
+	map(0x0000, 0xefff).rom();
+	map(0xf000, 0xffff).ram().share("rambase");
+}
 
 
-ADDRESS_MAP_START(iqblock_state::main_portmap)
-	AM_RANGE(0x2000, 0x23ff) AM_DEVWRITE("palette", palette_device, write8) AM_SHARE("palette")
-	AM_RANGE(0x2800, 0x2bff) AM_DEVWRITE("palette", palette_device, write8_ext) AM_SHARE("palette_ext")
-	AM_RANGE(0x5080, 0x5083) AM_DEVREADWRITE("ppi8255", i8255_device, read, write)
-	AM_RANGE(0x5090, 0x5090) AM_READ_PORT("SW0")
-	AM_RANGE(0x50a0, 0x50a0) AM_READ_PORT("SW1")
-	AM_RANGE(0x50b0, 0x50b1) AM_DEVWRITE("ymsnd", ym2413_device, write) // UM3567_data_port_0_w
-	AM_RANGE(0x50c0, 0x50c0) AM_WRITE(irqack_w)
-	AM_RANGE(0x6000, 0x603f) AM_WRITE(fgscroll_w)
-	AM_RANGE(0x6800, 0x69ff) AM_WRITE(fgvideoram_w) AM_SHARE("fgvideoram") /* initialized up to 6fff... bug or larger tilemap? */
-	AM_RANGE(0x7000, 0x7fff) AM_RAM_WRITE(bgvideoram_w) AM_SHARE("bgvideoram")
-	AM_RANGE(0x8000, 0xffff) AM_ROM AM_REGION("user1", 0)
-ADDRESS_MAP_END
+void iqblock_state::main_portmap(address_map &map)
+{
+	map(0x2000, 0x23ff).w("palette", FUNC(palette_device::write8)).share("palette");
+	map(0x2800, 0x2bff).w("palette", FUNC(palette_device::write8_ext)).share("palette_ext");
+	map(0x5080, 0x5083).rw("ppi8255", FUNC(i8255_device::read), FUNC(i8255_device::write));
+	map(0x5090, 0x5090).portr("SW0");
+	map(0x50a0, 0x50a0).portr("SW1");
+	map(0x50b0, 0x50b1).w("ymsnd", FUNC(ym2413_device::write)); // UM3567_data_port_0_w
+	map(0x50c0, 0x50c0).w(this, FUNC(iqblock_state::irqack_w));
+	map(0x6000, 0x603f).w(this, FUNC(iqblock_state::fgscroll_w));
+	map(0x6800, 0x69ff).w(this, FUNC(iqblock_state::fgvideoram_w)).share("fgvideoram"); /* initialized up to 6fff... bug or larger tilemap? */
+	map(0x7000, 0x7fff).ram().w(this, FUNC(iqblock_state::bgvideoram_w)).share("bgvideoram");
+	map(0x8000, 0xffff).rom().region("user1", 0);
+}
 
 static INPUT_PORTS_START( iqblock )
 	PORT_START("P1")
@@ -269,19 +269,19 @@ static INPUT_PORTS_START( grndtour )
 	PORT_DIPSETTING(    0x01, DEF_STR( Off ) )
 	PORT_DIPSETTING(    0x00, DEF_STR( On ) )
 	// in Level test mode the following select the start level, do they have any effect during normal gameplay?
-	PORT_DIPNAME( 0x02, 0x02, DEF_STR( Unknown ) )
+	PORT_DIPNAME( 0x02, 0x02, "Level Test +1" )
 	PORT_DIPSETTING(    0x02, DEF_STR( Off ) )
 	PORT_DIPSETTING(    0x00, DEF_STR( On ) )
-	PORT_DIPNAME( 0x04, 0x04, DEF_STR( Unknown ) )
+	PORT_DIPNAME( 0x04, 0x04, "Level Test +2" )
 	PORT_DIPSETTING(    0x04, DEF_STR( Off ) )
 	PORT_DIPSETTING(    0x00, DEF_STR( On ) )
-	PORT_DIPNAME( 0x08, 0x08, DEF_STR( Unknown ) )
+	PORT_DIPNAME( 0x08, 0x08, "Level Test +4" )
 	PORT_DIPSETTING(    0x08, DEF_STR( Off ) )
 	PORT_DIPSETTING(    0x00, DEF_STR( On ) )
-	PORT_DIPNAME( 0x10, 0x10, DEF_STR( Unknown ) )
+	PORT_DIPNAME( 0x10, 0x10, "Level Test +8" )
 	PORT_DIPSETTING(    0x10, DEF_STR( Off ) )
 	PORT_DIPSETTING(    0x00, DEF_STR( On ) )
-	PORT_DIPNAME( 0x20, 0x20, DEF_STR( Unknown ) )
+	PORT_DIPNAME( 0x20, 0x20, "Level Test +16" )
 	PORT_DIPSETTING(    0x20, DEF_STR( Off ) )
 	PORT_DIPSETTING(    0x00, DEF_STR( On ) )
 	PORT_DIPNAME( 0xc0, 0xc0, "Test Mode" )
@@ -382,45 +382,23 @@ MACHINE_CONFIG_END
 ***************************************************************************/
 
 /*
-IQ Block
-IGS, 1996
+IQ-Block
+IGS 1993
 
-PCB Layout
-----------
+PCB 0036-5
+                              SW1     SW2
 
-IGS PCB N0- 0131-4
-|---------------------------------------|
-|uPD1242H     VOL    U3567   3.579545MHz|
-|                               AR17961 |
-|   HD64180RP8                          |
-|  16MHz                         BATTERY|
-|                                       |
-|                         SPEECH.U17    |
-|                                       |
-|J                        6264          |
-|A                                      |
-|M      8255              V.U18         |
-|M                                      |
-|A                                      |
-|                                       |
-|                                       |
-|                      |-------|        |
-|                      |       |        |
-|       CG.U7          |IGS017 |        |
-|                      |       |        |
-|       TEXT.U8        |-------|   PAL  |
-|            22MHz               61256  |
-|                   DSW1  DSW2  DSW3    |
-|---------------------------------------|
-Notes:
-      HD64180RP8 - Hitachi HD64180 CPU. Clocks 16MHz (pins 2 & 3), 8MHz (pin 64)
-      61256   - 32k x8 SRAM (DIP28)
-      6264    - 8k x8 SRAM (DIP28)
-      IGS017  - Custom IGS IC (QFP208)
-      AR17961 - == Oki M6295 (QFP44). Clock 1.000MHz [16/16]. pin 7 = high
-      U3567   - == YM2413. Clock 3.579545MHz
-      VSync   - 60Hz
-      HSync   - 15.31kHz
+  12MHz         W2466             8255
+
+          IGS002   U24.5
+                   U25.4   AMT001  6116-45
+                                   6116-45
+  Z80              U26.3
+                   U27.2
+  U7.V5            U28.1
+  U8.6
+  W2466
+                              UMC UM3567
 */
 
 ROM_START( iqblock )
@@ -536,5 +514,5 @@ DRIVER_INIT_MEMBER(iqblock_state,grndtour)
 
 
 
-GAME( 1993, iqblock,  0, iqblock,  iqblock, iqblock_state, iqblock,  ROT0, "IGS", "IQ-Block", MACHINE_SUPPORTS_SAVE )
-GAME( 1993, grndtour, 0, iqblock,  grndtour,iqblock_state, grndtour, ROT0, "IGS", "Grand Tour", MACHINE_SUPPORTS_SAVE )
+GAME( 1993, iqblock,  0, iqblock,  iqblock, iqblock_state, iqblock,  ROT0, "IGS", "IQ-Block (V100U)",   MACHINE_SUPPORTS_SAVE )
+GAME( 1993, grndtour, 0, iqblock,  grndtour,iqblock_state, grndtour, ROT0, "IGS", "Grand Tour (V100U)", MACHINE_SUPPORTS_SAVE )

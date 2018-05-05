@@ -195,16 +195,16 @@ static const uint8_t fcmp_cr_table_source[32] =
 };
 
 
-DEFINE_DEVICE_TYPE(PPC601,    ppc601_device,    "ppc601",     "PowerPC 601")
-DEFINE_DEVICE_TYPE(PPC602,    ppc602_device,    "ppc602",     "PowerPC 602")
-DEFINE_DEVICE_TYPE(PPC603,    ppc603_device,    "ppc603",     "PowerPC 603")
-DEFINE_DEVICE_TYPE(PPC603E,   ppc603e_device,   "ppc603e",    "PowerPC 603E")
-DEFINE_DEVICE_TYPE(PPC603R,   ppc603r_device,   "ppc603r",    "PowerPC 603R")
-DEFINE_DEVICE_TYPE(PPC604,    ppc604_device,    "ppc604",     "PowerPC 604")
-DEFINE_DEVICE_TYPE(MPC8240,   mpc8240_device,   "mpc8240",    "PowerPC MPC8240")
-DEFINE_DEVICE_TYPE(PPC403GA,  ppc403ga_device,  "ppc403ga",   "PowerPC 403GA")
-DEFINE_DEVICE_TYPE(PPC403GCX, ppc403gcx_device, "ppc403gcx",  "PowerPC 403GCX")
-DEFINE_DEVICE_TYPE(PPC405GP,  ppc405gp_device,  "ppc405gp",   "PowerPC 405GP")
+DEFINE_DEVICE_TYPE(PPC601,    ppc601_device,    "ppc601",     "IBM PowerPC 601")
+DEFINE_DEVICE_TYPE(PPC602,    ppc602_device,    "ppc602",     "IBM PowerPC 602")
+DEFINE_DEVICE_TYPE(PPC603,    ppc603_device,    "ppc603",     "IBM PowerPC 603")
+DEFINE_DEVICE_TYPE(PPC603E,   ppc603e_device,   "ppc603e",    "IBM PowerPC 603E")
+DEFINE_DEVICE_TYPE(PPC603R,   ppc603r_device,   "ppc603r",    "IBM PowerPC 603R")
+DEFINE_DEVICE_TYPE(PPC604,    ppc604_device,    "ppc604",     "IBM PowerPC 604")
+DEFINE_DEVICE_TYPE(MPC8240,   mpc8240_device,   "mpc8240",    "IBM PowerPC MPC8240")
+DEFINE_DEVICE_TYPE(PPC403GA,  ppc403ga_device,  "ppc403ga",   "IBM PowerPC 403GA")
+DEFINE_DEVICE_TYPE(PPC403GCX, ppc403gcx_device, "ppc403gcx",  "IBM PowerPC 403GCX")
+DEFINE_DEVICE_TYPE(PPC405GP,  ppc405gp_device,  "ppc405gp",   "IBM PowerPC 405GP")
 
 
 ppc_device::ppc_device(const machine_config &mconfig, device_type type, const char *tag, device_t *owner, uint32_t clock, int address_bits, int data_bits, powerpc_flavor flavor, uint32_t cap, uint32_t tb_divisor, address_map_constructor internal_map)
@@ -229,6 +229,10 @@ ppc_device::ppc_device(const machine_config &mconfig, device_type type, const ch
 	set_vtlb_dynamic_entries(POWERPC_TLB_ENTRIES);
 	if (m_cap & PPCCAP_603_MMU)
 		set_vtlb_fixed_entries(PPC603_FIXED_TLB_ENTRIES);
+}
+
+ppc_device::~ppc_device()
+{
 }
 
 //ppc403_device::ppc403_device(const machine_config &mconfig, const char *tag, device_t *owner, uint32_t clock)
@@ -276,9 +280,10 @@ ppc604_device::ppc604_device(const machine_config &mconfig, const char *tag, dev
 {
 }
 
-ADDRESS_MAP_START(ppc4xx_device::internal_ppc4xx)
-	AM_RANGE(0x40000000, 0x4000000f) AM_READWRITE8(ppc4xx_spu_r, ppc4xx_spu_w, 0xffffffff)
-ADDRESS_MAP_END
+void ppc4xx_device::internal_ppc4xx(address_map &map)
+{
+	map(0x40000000, 0x4000000f).rw(this, FUNC(ppc4xx_device::ppc4xx_spu_r), FUNC(ppc4xx_device::ppc4xx_spu_w));
+}
 
 ppc4xx_device::ppc4xx_device(const machine_config &mconfig, device_type type, const char *tag, device_t *owner, uint32_t clock, powerpc_flavor flavor, uint32_t cap, uint32_t tb_divisor)
 	: ppc_device(mconfig, type, tag, owner, clock, 31, 32, flavor, cap, tb_divisor, address_map_constructor(FUNC(ppc4xx_device::internal_ppc4xx), this))
@@ -814,7 +819,7 @@ void ppc_device::device_start()
 	state_add(STATE_GENSP, "GENSP", m_core->r[31]).noshow();
 	state_add(STATE_GENFLAGS, "GENFLAGS", m_debugger_temp).noshow().formatstr("%1s");
 
-	m_icountptr = &m_core->icount;
+	set_icountptr(m_core->icount);
 
 	uint32_t flags = 0;
 	/* initialize the UML generator */
@@ -864,7 +869,7 @@ void ppc_device::device_start()
 	m_drcuml->symbol_add(&m_fcmp_cr_table, sizeof(m_fcmp_cr_table), "fcmp_cr_table");
 
 	/* initialize the front-end helper */
-	m_drcfe = std::make_unique<ppc_frontend>(this, COMPILE_BACKWARDS_BYTES, COMPILE_FORWARDS_BYTES, SINGLE_INSTRUCTION_MODE ? 1 : COMPILE_MAX_SEQUENCE);
+	m_drcfe = std::make_unique<frontend>(*this, COMPILE_BACKWARDS_BYTES, COMPILE_FORWARDS_BYTES, SINGLE_INSTRUCTION_MODE ? 1 : COMPILE_MAX_SEQUENCE);
 
 	/* compute the register parameters */
 	for (int regnum = 0; regnum < 32; regnum++)
@@ -1165,9 +1170,9 @@ void ppc_device::device_reset()
     CPU
 -------------------------------------------------*/
 
-util::disasm_interface *ppc_device::create_disassembler()
+std::unique_ptr<util::disasm_interface> ppc_device::create_disassembler()
 {
-	return new powerpc_disassembler;
+	return std::make_unique<powerpc_disassembler>();
 }
 
 

@@ -65,25 +65,27 @@ READ8_MEMBER(fruitpc_state::fruit_inp_r)
 	return 0;
 }
 
-ADDRESS_MAP_START(fruitpc_state::fruitpc_map)
-	AM_RANGE(0x00000000, 0x0009ffff) AM_RAM
-	AM_RANGE(0x000a0000, 0x000bffff) AM_DEVREADWRITE8("vga", vga_device, mem_r, mem_w, 0xffffffff) // VGA VRAM
-	AM_RANGE(0x000c0000, 0x000dffff) AM_ROM AM_REGION("bios", 0)
-	AM_RANGE(0x000e0000, 0x000fffff) AM_RAM AM_REGION("bios", 0)
-	AM_RANGE(0x00100000, 0x008fffff) AM_RAM  // 8MB RAM
-	AM_RANGE(0x02000000, 0x28ffffff) AM_NOP
-	AM_RANGE(0xfffe0000, 0xffffffff) AM_ROM AM_REGION("bios", 0)    /* System BIOS */
-ADDRESS_MAP_END
+void fruitpc_state::fruitpc_map(address_map &map)
+{
+	map(0x00000000, 0x0009ffff).ram();
+	map(0x000a0000, 0x000bffff).rw("vga", FUNC(vga_device::mem_r), FUNC(vga_device::mem_w)); // VGA VRAM
+	map(0x000c0000, 0x000dffff).rom().region("bios", 0);
+	map(0x000e0000, 0x000fffff).ram().region("bios", 0);
+	map(0x00100000, 0x008fffff).ram();  // 8MB RAM
+	map(0x02000000, 0x28ffffff).noprw();
+	map(0xfffe0000, 0xffffffff).rom().region("bios", 0);    /* System BIOS */
+}
 
-ADDRESS_MAP_START(fruitpc_state::fruitpc_io)
-	AM_IMPORT_FROM(pcat32_io_common)
-	AM_RANGE(0x01f0, 0x01f7) AM_DEVREADWRITE16("ide", ide_controller_device, read_cs0, write_cs0, 0xffffffff)
-	AM_RANGE(0x0310, 0x0313) AM_READ8(fruit_inp_r, 0xffffffff)
-	AM_RANGE(0x03b0, 0x03bf) AM_DEVREADWRITE8("vga", vga_device, port_03b0_r, port_03b0_w, 0xffffffff)
-	AM_RANGE(0x03c0, 0x03cf) AM_DEVREADWRITE8("vga", vga_device, port_03c0_r, port_03c0_w, 0xffffffff)
-	AM_RANGE(0x03d0, 0x03df) AM_DEVREADWRITE8("vga", vga_device, port_03d0_r, port_03d0_w, 0xffffffff)
-	AM_RANGE(0x03f0, 0x03f7) AM_DEVREADWRITE16("ide", ide_controller_device, read_cs1, write_cs1, 0xffffffff)
-ADDRESS_MAP_END
+void fruitpc_state::fruitpc_io(address_map &map)
+{
+	pcat32_io_common(map);
+	map(0x01f0, 0x01f7).rw("ide", FUNC(ide_controller_device::read_cs0), FUNC(ide_controller_device::write_cs0));
+	map(0x0310, 0x0313).r(this, FUNC(fruitpc_state::fruit_inp_r));
+	map(0x03b0, 0x03bf).rw("vga", FUNC(vga_device::port_03b0_r), FUNC(vga_device::port_03b0_w));
+	map(0x03c0, 0x03cf).rw("vga", FUNC(vga_device::port_03c0_r), FUNC(vga_device::port_03c0_w));
+	map(0x03d0, 0x03df).rw("vga", FUNC(vga_device::port_03d0_r), FUNC(vga_device::port_03d0_w));
+	map(0x03f0, 0x03f7).rw("ide", FUNC(ide_controller_device::read_cs1), FUNC(ide_controller_device::write_cs1));
+}
 
 static INPUT_PORTS_START( fruitpc )
 	PORT_START("INP1")
@@ -113,9 +115,10 @@ INPUT_PORTS_END
 //TODO: use atmb device
 WRITE8_MEMBER( fruitpc_state::dma8237_1_dack_w ){ m_isabus->dack_w(1, data); }
 
-static SLOT_INTERFACE_START( fruitpc_isa8_cards )
-	SLOT_INTERFACE("sb15",  ISA8_SOUND_BLASTER_1_5)
-SLOT_INTERFACE_END
+static void fruitpc_isa8_cards(device_slot_interface &device)
+{
+	device.option_add("sb15",  ISA8_SOUND_BLASTER_1_5);
+}
 
 static DEVICE_INPUT_DEFAULTS_START( fruitpc_sb_def )
 	DEVICE_INPUT_DEFAULTS("CONFIG", 0x03, 0x01)
@@ -145,7 +148,7 @@ MACHINE_CONFIG_START(fruitpc_state::fruitpc)
 	MCFG_I8237_OUT_IOW_1_CB(WRITE8(fruitpc_state, dma8237_1_dack_w))
 
 	MCFG_DEVICE_ADD("isa", ISA8, 0)
-	MCFG_ISA8_CPU(":maincpu")
+	MCFG_ISA8_CPU("maincpu")
 	MCFG_ISA_OUT_IRQ2_CB(DEVWRITELINE("pic8259_2", pic8259_device, ir2_w))
 	MCFG_ISA_OUT_IRQ3_CB(DEVWRITELINE("pic8259_1", pic8259_device, ir3_w))
 	MCFG_ISA_OUT_IRQ4_CB(DEVWRITELINE("pic8259_1", pic8259_device, ir4_w))
@@ -157,8 +160,8 @@ MACHINE_CONFIG_START(fruitpc_state::fruitpc)
 	MCFG_ISA_OUT_DRQ3_CB(DEVWRITELINE("dma8237_1", am9517a_device, dreq3_w))
 
 	MCFG_ISA8_SLOT_ADD("isa", "isa1", fruitpc_isa8_cards, "sb15", true)
-	MCFG_DEVICE_CARD_DEVICE_INPUT_DEFAULTS("sb15", fruitpc_sb_def)
-	MCFG_DEVICE_CARD_MACHINE_CONFIG("sb15", fruitpc_sb_conf)
+	MCFG_SLOT_OPTION_DEVICE_INPUT_DEFAULTS("sb15", fruitpc_sb_def)
+	MCFG_SLOT_OPTION_MACHINE_CONFIG("sb15", fruitpc_sb_conf)
 MACHINE_CONFIG_END
 
 ROM_START( fruitpc )

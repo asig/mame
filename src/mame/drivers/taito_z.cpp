@@ -231,53 +231,352 @@ Notes:
 
 
 ****************************************************************************
+Guru-Readme for Chase HQ (Taito 1988)
 
-ChaseHQ (Guru)
--------
-
-Video board
------------
-                 Pal  b52-28d  b52-28b
-                 Pal      17d      17b
-                 Pal      28c      28a
-                 Pal      77c      17a
-
-b52-30
-    34
-    31
-    35
-    32                     b52-27  pal20       TC020VAR  b52-03  b52-127
-    36                         51                        b52-126  b52-124 Pal
-                               50
-                               49                  Pal   b52-125
-    33   Pal  b52-19                                      Pal   b52-25
-    37    38                 b52-18b                      Pal   122
-         Pal      Pal        b52-18a                      Pal   123
-         b52-20   b52-21     b52-18
-
-
-CPU board
+CPU Board
 ---------
-                                                    b52-119 Pal
-                                                    b52-118 Pal
-                                68000-12
-                            b52-131    129
-b52-113                     b52-130    136
-b52-114
-b52-115                 TC0140SYT
-b52-116
 
-             YM2610                          b52-29
-                                                      26.686MHz
-                                                      24 MHz
-           16MHz                             TC0100SCN
+K1100357A
+J1100157A CPU PCB
+K1100357A CHASE HQ UP (sticker for upright)
+M4300099A CHASE HQ DX (sticker for DX cabinet)
+|------------------------------------------------------------------------|
+|  B52-113.IC73     |---------|                     B52-119.IC20(PAL20L8)|
+|                   |TAITO    |           68000-12  B52-118.IC21(PAL20L8)|
+|  B52-114.IC72     |TC0140SYT|                                          |-|
+|M                  |         |      B52-131.IC37 B52-129.IC30           | |
+|  B52-115.IC71     |---------|      B52-130.IC36 B52-136.IC29           | |
+|                                       TMM2063     TMM2063              | |
+|  B52-116.IC70      Z80                                                 | |
+|                    B52-137.IC51         B52-29.IC27         26.686MHz  | |
+| TD62003                                  |---------|        24MHz      | |
+|V           YM2610                        |TAITO    |                   | |
+|                                          |TC0100SCN|      43256        |-|
+|             16MHz                        |         |                   |
+|                           TMM2063        |---------|      43256        |
+|          TC0050DCA                   |---------|                       |-|
+|            Y3016-F        TMM2063    |TAITO    | |------|              | |
+|                                      |TC0170ABT| |TAITO |              | |
+|        TL074 TL074                   |         | |TC0110|   B52-01.IC7 | |
+|  MB3735  VOLUME B52-121.IC57(PAL20L8)|---------| |PCR   |              | |
+|G    PC050CM     B52-120.IC56(PAL16L8)            |------|              | |
+|  |---------|       68000-12       |---------|  B52-06.IC24 B52-28.IC4  | |
+|  |TCOO40IOC|    B52-133.IC55      |TAITO    |       TMM2063   TMM2063  | |
+|  |---------|        B52-132.IC39  |TC0150ROD|       TMM2063   TMM2063  |-|
+| MB3771                            |         |                          |
+| DIPSWB DIPSWA   TMM2063  TMM2063  |---------|           TC0070RGB      |
+|------------------------------------------------------------------------|
+Notes:
+      68000 - Motorola MC68000P12 CPUs, clock input 12.000MHz [24/2]
+        Z80 - Zilog Z0840004PSC Z80 CPU, clock input 4.000MHz [16/4]
+     YM2610 - Yamaha YM2610 sound chip, clock input 8.000MHz [16/2]
+    Y3016-F - Yamaha Y3016-F 2-Channel Serial & Binary Input Floating D/A Converter (SOIC16)
+              Clock input 2.66666MHz (16/2/3, source = pin 64 of YM2610)
+    TMM2063 - Toshiba TMM2063AP-70 8k x8-bit SRAM (DIP28)
+      43256 - NEC D43256AC-10L 32k x8-bit SRAM (DIP28)
+     MB3771 - Fujitsu MB3771 System Reset IC (DIP8)
+     MB3735 - Fujitsu MB3735 20w BTL Mono Power AMP. Note this amp chip has one input and one output, so sound
+              is mono. Where two speakers are present (cockpit/DX) the same sounds are output to both speakers
+              because the edge connector pins 10+L and 11+M are hard-wired together.
+      TL074 - Texas Instruments TL074 JFET Low-Noise Quad OP Amp
+    TD62003 - Toshiba TD62003 PNP 50V 0.5A Quad Darlington Switch (for driving CPU-controlled lamps via 2x NEC 2SB1150 PNP Darlington Transistors)
+          G - 28-Way Connector (Not JAMMA, but power/ground pins are the same as JAMMA)
+          V - 5-pin video connector
+          M - 50-pin flat cable connector. Only populated on the moving cabinet version. This is used to connect the motor PCB to the
+              main PCB. This connector and some adjacent 74LS244/245 logic chips are not populated on the upright PCB version.
 
-       Pal b52-121
-       Pal b52-120                      TC0170ABT   TC0110PCR    b52-01
-          68000-12
-                                        b52-06
-         TC0040IOC  b52-133 b52-132  TC0150ROD    b52-28
+      Syncs - Horizontal: 15.675kHz
+              Vertical: 60.0554Hz
 
+       ROMs -
+              B52-137.IC51 - Z80 Sound Program
+
+              B52-131.IC37 \
+              B52-129.IC30 | Main 68k Program (27C1001 EPROMs)
+              B52-130.IC36 |
+              B52-136.IC29 /
+
+              B52-133.IC55 \ Sub 68k Program (27C512 EPROMs)
+              B52-132.IC39 /
+
+              B52-29.IC27  - Tilemaps (23C4000 mask ROM)
+
+              B52-01.IC7   - Road/Sprite Priority & Palette Select (MMI63S141 BI-POLAR PROM)
+
+              B52-06.IC24  - Road A/B Internal Priority (MMI63S141 BI-POLAR PROM)
+
+              B52-28.IC4   - TC0150ROD ROM for Road data (23C4000 mask ROM)
+
+              Note: These ROMs match the World ROM-set in MAME ('chasehq'). These are the same ROMs found on a Chase HQ DX cabinet
+                    board-set which suggests any/all Chase HQ ROM-sets will work with the deluxe motion cabinet providing the Motor
+                    PCB is present and working.
+
+Taito custom ICs -
+                  TC0070RGB - 5-bit RGB Video Mixer/RGB DAC (Ceramic Flat Pack SIL25)
+                  PC050CM   - Coin/Counter/Lockout Functions
+                  TC0060DCA - 2-Channel Digital to Analog Conversion for Audio (Ceramic Flat Pack SIL20)
+                              Note: 2 channel audio from the YM2610 is input and output separately here but on the output it is
+                              merged via 2x 2.7k resistors to a single audio signal and fed to the MB3735 AMP chip on pin 1.
+                              The output from the MB3735 is mono.
+                  TC0140SYT - Sound Communication
+                  TC0040IOC - I/O Controls (start/shift/wheel/accelerator etc) and DIP switch management.
+                              This chip provides the master reset output on pin 2.
+                              On the upright cabinet, the accelerate pedal is a normally open switch (it is either off or on).
+                              The shift lever is a normally open switch (off/on). When open it is set to low gear and when closed
+                              (i.e. when pin 20 of connector G is grounded) it is set to high gear.
+                              The steering wheel hardware on Chase HQ uses one half of a trackball mechanism (left/right only)
+                              which is basically like a spinner. There is a segmented disc with optical sensor and another optical
+                              sensor to detect the wheel center position. The wheel returns to the center position with the help of
+                              a centering spring. The cockpit & DX cabs use 5k pots for the steering and accelerator, although
+                              micro-switches will also work fine with the correct control mechanisms.
+                  TC0110PCR - Palette Generator
+                  TC0100SCN - Tilemap Generator
+                  TC0150ROD - Road Generator
+                  TC0170ABT - Motion Object Generator
+
+
+Edge Connector Pinouts (NOTE! This is correct as per schematics. Pinout found on the internet is not accurate)
+----------------------
+
+            COMPONENT  |  SOLDER                       Video Connector (NOTE: when facing the edge connector, pin 5 is on the left)
+           ------------+------------                   ---------------
+               GND | 1 | A | GND                       1 GROUND
+               GND | 2 | B | GND                       2 RED
+               +5V | 3 | C | +5V                       3 GREEN
+               +5V | 4 | D | +5V                       4 BLUE
+               -5V | 5 | E | -5V                       5 SYNC
+              +12V | 6 | F | +12V
+               KEY |   |   | KEY
+         Counter 1 | 8 | J | Counter 2
+         Lockout 1 | 9 | K | Lockout 2                 Connector "H" (on video board. Note the PCB will work without this connector wired up)
+       Speaker 1 + |10---L | Speaker 2 + (cockpit/DX   -------------
+       Speaker 1 - |11---M | Speaker 2 - (cockpit/DX)  1  GND
+          Volume 1 |12 | N | Volume 2 (cockpit/DX)     2  GND
+               N/C |13 | P |                           3  GND
+               GND |14 | R | Service Coin              4  GND
+               GND |15 | S | Brake                     5  +5V
+            Coin 1 |16 | T | Coin 2                    6  +5V
+                   |17 | U |                           7  +5V
+             Nitro |18 | V | Tilt                      8  +5V
+Wheel Center Sense |19 | W | Start                     9  N/C
+             Shift |20 | X | Accelerate                10 N/C
+                   |21 | Y |                           11 N/C
+            Lamp 1 |22 | Z | Lamp 2                    12 N/C
+               N/C |23 | a |
+                   |24 | b |
+                   |25 | c |
+     Steering Left |26 | d | Steering Right
+               GND |27 | e | GND
+               GND |28 | f | GND
+
+Note:
+      - 22 & Z are used to drive CPU-controlled lamps in the top header.
+      - N/C means there is no trace connected to this edge connector pad.
+      - Speaker 1 and 2 are hard-wired together at the edge connector and
+        the PCB has a single mono amp chip so sound is mono regardless
+        of how many speakers are in the cabinet.
+
+
+Connector "M" (to Motor Control PCB, using standard 50-pin flat cable)
+Note the labels shown are the signals.
+
+  ------------+--------------
+   /MTRES | A | 1 | MTA0  \
+      GND | B | 2 | MTA1  |
+      GND | C | 3 | MTA2  |
+      GND | D | 4 | MTA3  |
+      GND | E | 5 | MTA4  |
+      GND | F | 6 | MTA5  | 11-bit Address Bus to/from Motor PCB
+      GND | H | 7 | MTA6  |
+      GND | J | 8 | MTA7  |
+      GND | K | 9 | MTA8  |
+      GND | L | 10| MTA9  |
+      GND | M | 11| MTA10 /
+      GND | N | 12| MTD0  \
+      GND | P | 13| MTD1  |
+      GND | R | 14| MTD2  |
+      GND | S | 15| MTD3  |
+      GND | T | 16| MTD4  | 8-bit Data Bus to/from Motor PCB
+      GND | U | 17| MTD5  |
+      GND | V | 18| MTD6  |
+      GND | W | 19| MTD7  /
+      GND | X | 20| MTR/W   Read/Write to/from Motor PCB
+      GND | Y | 21| MOTOR   Motor On/Off Signal?
+      GND | Z | 22| MTDTA   Acknowledge Signal?
+      GND | a | 23| GND
+      GND | b | 24| MTCK    Z80 clock from main board = 3.000MHz (24/8)
+      GND | c | 25| GND
+
+/MTRES is the Z80 reset signal. This stays low in upright cabinet mode, but when the
+cabinet DIPs are set to deluxe this will go high to reset the Z80 on the motor PCB.
+If the motor PCB is not present the signal will toggle low then high trying to reset
+the Z80 until an acknowledge/ready signal (possibly MTDTA) comes back from the motor PCB.
+Note none of these signals are present at the edge connector "M" if the 4 IC's at
+IC78, IC79, IC80 & IC81 are not populated (i.e. if it's an upright PCB version).
+Also note all these signals are present somewhere on the main PCB even if those logic chips
+are not populated and regardless of the ROM set used. Most likely any ROM set will work
+as a Deluxe version if the Motor PCB is present and working.
+
+
+DIP Switches
+------------
+
+DIPSWA
+|--------------------------------|---------------|-------------------------------|
+| 1   2   3   4   5   6   7   8  | Function      | Option                        |
+|--------------------------------|---------------|-------------------------------|
+|OFF OFF                         | Cabinet       | Upright / Steering Lock*      |
+|ON  OFF                         |               | Upright / Free Steering       |
+|OFF ON                          |               | Cockpit / Steering Lock       |
+|ON  ON                          |               | Deluxe  / Free Steering       |
+|--------------------------------|---------------|-------------------------------|
+|        OFF                     | Test Mode     | Game*                         |
+|        ON                      |               | Test                          |
+|--------------------------------|---------------|-------------------------------|
+|            OFF                 | Demo Sounds   | On*                           |
+|            ON                  |               | Off                           |
+|--------------------------------|---------------|-------------------------------|
+|                OFF OFF         | Coin A        | 1 Coin 1 Credit*              |
+|                ON  OFF         |               | 2 Coins 1 Credit              |
+|                OFF ON          |               | 3 Coins 1 Credit              |
+|                ON  ON          |               | 4 Coins 1 Credit              |
+|--------------------------------|---------------|-------------------------------|
+|                        OFF OFF | Coin B        | 1 Coin 2 Credits*             |
+|                        ON  OFF |               | 1 Coin 3 Credits              |
+|                        OFF ON  |               | 1 Coin 4 Credits              |
+|                        ON  ON  |               | 1 Coin 6 Credits              |
+|--------------------------------|---------------|-------------------------------|
+Notes:
+* = Factory default setting
+
+Coinage varies by region. Coinage shown is World Coinage.
+
+DIPSWA 1 & 2 must be set to upright/cockpit cabinets otherwise there is an error on boot-up.
+If both SW1 & SW2 are on, it enables the deluxe motion cabinet and the Motor PCB must be
+present and working otherwise the game will complain with an error on boot-up "DIPSW A INITIAL ERROR!"
+
+Upright uses digital pedals. Digital Pedals means pedals are micro-switch (on/off only)
+Cockpit/Deluxe uses analog pedals. Analog Pedals means pedals use 5k-ohm potentiometers.
+Steering Lock means steering wheel uses 5k-ohm potentiometers and restricted wheel movement.
+Free Steering means steering wheel uses spinner-like mechanism with additional sensor for center position and spring to re-center the wheel.
+
+DIPSWB
+|--------------------------------|----------------|-------------------------------|
+| 1   2   3   4   5   6   7   8  | Function       | Option                        |
+|--------------------------------|----------------|-------------------------------|
+|OFF OFF                         | Difficulty     | Medium*                       |
+|ON  OFF                         |                | Easy                          |
+|OFF ON                          |                | Hard                          |
+|ON  ON                          |                | Hardest                       |
+|--------------------------------|----------------|-------------------------------|
+|        OFF OFF                 | Timer          | 60 Seconds*                   |
+|        ON  OFF                 |                | 70 Seconds                    |
+|        OFF ON                  |                | 65 Seconds                    |
+|        ON  ON                  |                | 55 Seconds                    |
+|--------------------------------|----------------|-------------------------------|
+|                OFF             | Number of      | 3*                            |
+|                ON              | Nitros         | 5                             |
+|--------------------------------|----------------|-------------------------------|
+|                    OFF         | Discount On    | Yes. 1 Coin To Continue*      |
+|                    ON          | Continue       | No Discount To Continue       |
+|--------------------------------|----------------|-------------------------------|
+|                        OFF     | Criminal Damage| Clear*                        |
+|                        ON      | On Continue    | Carry Over To Continued Game  |
+|--------------------------------|----------------|-------------------------------|
+|                            OFF | Allow Continue | Yes*                          |
+|                            ON  |                | No                            |
+|--------------------------------|----------------|-------------------------------|
+* = Factory default setting
+
+
+Video Board
+-----------
+
+K1100358A
+J1100158A VIDEO PCB
+K1100358A CHASE HQ CP (sticker)
+|------------------------------------------------------------------------|
+|         B52-26.IC15 B52-26.IC52                                        |
+|         B52-17.IC16 B52-17.IC53                                        |
+| H       B52-26.IC17 B52-26.IC54                                        |-|
+|         B52-17.IC18 B52-17.IC55                                        | |
+|                                                                        | |
+|                     62256 62256 62256 62256 62256 62256 62256 62256    | |
+|                                                                        | |
+|                     62256 62256 62256 62256 62256 62256 62256 62256    | |
+|                                                                        | |
+|  B52-30.IC4                          |---------|     B52-127.IC156     | |
+|                                      |TAITO    |                       |-|
+|  B52-34.IC5                          |TC0020VAR|                       |
+|                                      |         | B52-03.IC135          |
+|  B52-31.IC6                          |---------| B52-126.IC136         |-|
+|                          B52-27.IC64                      B52-124.IC180| |
+|  B52-35.IC7              B52-51.IC65                                   | |
+|                          B52-50.IC66            B52-25.IC123           | |
+|  B52-32.IC8                       B52-125.IC112 B52-122.IC124          | |
+|                          B52-49.IC68            B52-123.IC125          | |
+|  B52-36.IC9                                                            | |
+|                                B52-16.IC92                             | |
+|  B52-33.IC10 B52-19.IC33       B52-18.IC93                             |-|
+|              B52-38.IC34       B52-16.IC94                       2018  |
+|  B52-37.IC11 B52-20.IC35 B52-21.IC51                             2018  |
+|------------------------------------------------------------------------|
+Notes:
+      2018                       - 2k x8-bit SRAM
+      62256                      - 32k x8-bit SRAM
+      IC4/5/6                    - MB834100 Mask ROM
+      IC7/8/9/10/11/34           - 23C4000 Mask ROM
+      IC15/16/17/18/52/53/54/55  - PAL20R8
+      IC33/35/51/112/124/125/180 - PAL16L8
+      IC92/93/94                 - 63S141 Bi-Polar PROM
+      IC64/IC123                 - PAL20L8
+      IC135/136/156              - 63S441 Bi-Polar PROM
+      IC68                       - 27C64 EPROM
+      IC65/66                    - 27C512 EPROM
+      TC0020VAR                  - Taito custom IC Sprite Generator
+
+
+Motor PCB (only for full motion DX cabinet)
+---------
+
+J9100093A
+K9100120A
+DRIVE LOGIC P.C.B.
+|-----------------------------------------------|
+|                       BRT BRY T1 T2 Y1 Y2 OPT | <-- 7 LEDs
+|                                               |
+|             B14-32.IC27  HC14                 |
+|     4584    B14-33.IC26  LS07   TL081 TL081   |
+|1    4584                 LS02               b1|
+|8              D4701      LS32   TL081 TL081   |
+|W    TLP521-4             LS139                |
+|A              D4701      LS74   TL081 TL081   |
+|Y                         LS393              b2|
+|           LS273          LS393                |
+|           LS273 LS161    LS30                 |
+|           LS273 LS161    LS04                 |
+|   LS244   LS273 LS161    LS138                |
+|   LS245   LS245 LS161                         |
+|   LS157   2016                                |
+|                    2016                       |
+|R  LS157   LS138  27C256.IC17                  |
+|                                               |
+|   LS157  B14-34.IC6  Z80                      |
+|                                               |
+|-----------------------------------------------|
+Notes: (all IC's shown)
+         R        - 50 pin flat cable connector joining to main board connector M
+         18WAY    - 36 pin card edge connector joining to numerous sensors and switches on the DX cabinet
+         b1/b2    - 20 pin flat cable joining 2x Motor Power PCBs to Drive Logic PCB
+         Z80      - Z80A CPU. Clock input 3.000MHz from main board (24/8)
+         27C256   - 32k x8-bit EPROM
+         TLP521-4 - Toshiba TLP521-4 Photocoupler With 4 Isolated Channels
+         D4701    - NEC D4701 Incremental Encoder Counter
+         TL081    - Texas Instruments TL081 JFET-Input Operational Amplifier
+         4584     - Hex Schmitt Trigger Logic IC
+         2016     - 2k x8-bit SRAM
+         B14-*    - PAL16L8. Note the PALs and this Drive Logic PCB come from a Top Speed DX.
+                    The Chase HQ DX cabs are just converted Top Speed DX cabs.
 
 
 ****************************************************************************
@@ -922,7 +1221,7 @@ when forming the background. They jerk a bit relative to
 each other... probably a cpu sync thing, perhaps also some
 fine-tuning required on the zoomed sprite dimension calcs.
 
-Light gun interrupt timing arbitrary.
+ADC clock unknown.
 
 
 Double Axle
@@ -975,6 +1274,7 @@ DIP switches are not verified
 
 #include "cpu/m68000/m68000.h"
 #include "cpu/z80/z80.h"
+#include "machine/adc0808.h"
 #include "machine/eepromser.h"
 #include "sound/2610intf.h"
 #include "sound/flt_vol.h"
@@ -1030,15 +1330,10 @@ void taitoz_state::device_timer(emu_timer &timer, device_timer_id id, int param,
 		/* 68000 A */
 		m_maincpu->set_input_line(6, HOLD_LINE);
 		break;
-	case TIMER_TAITOZ_CPUB_INTERRUPT5:
-		/* 68000 B */
-		m_subcpu->set_input_line(5, HOLD_LINE);
-		break;
 	default:
 		assert_always(false, "Unknown id in taitoz_state::device_timer");
 	}
 }
-
 
 /***** Routines for particular games *****/
 
@@ -1160,63 +1455,6 @@ READ8_MEMBER(taitoz_state::chasehq_input_bypass_r)
 }
 
 
-READ16_MEMBER(taitoz_state::bshark_stick_r)
-{
-	switch (offset)
-	{
-		case 0x00:
-			return ioport("STICKX")->read();
-
-		case 0x01:
-			return ioport("X_ADJUST")->read();
-
-		case 0x02:
-			return ioport("STICKY")->read();
-
-		case 0x03:
-			return ioport("Y_ADJUST")->read();
-	}
-
-	logerror("CPU #0 PC %06x: warning - read unmapped stick offset %06x\n", m_maincpu->pc(), offset);
-
-	return 0xff;
-}
-
-
-READ16_MEMBER(taitoz_state::nightstr_stick_r)
-{
-	switch (offset)
-	{
-		case 0x00:
-			return ioport("STICKX")->read();
-
-		case 0x01:
-			return ioport("STICKY")->read();
-
-		case 0x02:
-			return ioport("X_ADJUST")->read();
-
-		case 0x03:
-			return ioport("Y_ADJUST")->read();
-	}
-
-	logerror("CPU #0 PC %06x: warning - read unmapped stick offset %06x\n", m_maincpu->pc(), offset);
-
-	return 0xff;
-}
-
-WRITE16_MEMBER(taitoz_state::bshark_stick_w)
-{
-	/* Each write invites a new interrupt as soon as the
-	   hardware has got the next a/d conversion ready. We set a token
-	   delay of 10000 cycles; our "coords" are always ready
-	   but we don't want CPUA to have an int6 before int4 is over (?)
-	*/
-
-	timer_set(m_maincpu->cycles_to_attotime(10000), TIMER_TAITOZ_INTERRUPT6);
-}
-
-
 READ16_MEMBER(taitoz_state::sci_steer_input_r)
 {
 	uint16_t steer = 0xff80 + m_steer.read_safe(0x80);
@@ -1235,39 +1473,6 @@ READ16_MEMBER(taitoz_state::sci_steer_input_r)
 	return 0xff;
 }
 
-
-READ16_MEMBER(taitoz_state::spacegun_lightgun_r)
-{
-	switch (offset)
-	{
-		case 0x00:
-			return ioport("STICKX1")->read();
-
-		case 0x01:
-			return ioport("STICKY1")->read();
-
-		case 0x02:
-			return ioport("STICKX2")->read();
-
-		case 0x03:
-			return ioport("STICKY2")->read();
-	}
-
-	return 0x00;
-}
-
-WRITE16_MEMBER(taitoz_state::spacegun_lightgun_w)
-{
-	/* Each write invites a new lightgun interrupt as soon as the
-	   hardware has got the next coordinate ready. We set a token
-	   delay of 10000 cycles; our "lightgun" coords are always ready
-	   but we don't want CPUB to have an int5 before int4 is over (?).
-
-	   Four lightgun interrupts happen before the collected coords
-	   are moved to shared ram where CPUA can use them. */
-
-	timer_set(m_subcpu->cycles_to_attotime(10000), TIMER_TAITOZ_CPUB_INTERRUPT5);
-}
 
 WRITE16_MEMBER(taitoz_state::spacegun_gun_output_w)
 {
@@ -1293,6 +1498,8 @@ READ16_MEMBER(taitoz_state::dblaxle_steer_input_r)
 
 	return 0x00;
 }
+
+// TODO: proper motorcpu hook-up
 
 
 READ16_MEMBER(taitoz_state::chasehq_motor_r)
@@ -1458,271 +1665,293 @@ WRITE8_MEMBER(taitoz_state::taitoz_pancontrol)
 ***********************************************************/
 
 
-ADDRESS_MAP_START(taitoz_state::contcirc_map)
-	AM_RANGE(0x000000, 0x03ffff) AM_ROM
-	AM_RANGE(0x080000, 0x083fff) AM_RAM
-	AM_RANGE(0x084000, 0x087fff) AM_RAM AM_SHARE("share1")
-	AM_RANGE(0x090000, 0x090001) AM_WRITE(contcirc_out_w)    /* road palette bank, sub CPU reset, 3d glasses control */
-	AM_RANGE(0x100000, 0x100007) AM_DEVREADWRITE("tc0110pcr", tc0110pcr_device, word_r, step1_rbswap_word_w)   /* palette */
-	AM_RANGE(0x200000, 0x20ffff) AM_DEVREADWRITE("tc0100scn", tc0100scn_device, word_r, word_w)    /* tilemaps */
-	AM_RANGE(0x220000, 0x22000f) AM_DEVREADWRITE("tc0100scn", tc0100scn_device, ctrl_word_r, ctrl_word_w)
-	AM_RANGE(0x300000, 0x301fff) AM_DEVREADWRITE("tc0150rod", tc0150rod_device, word_r, word_w)    /* "root ram" */
-	AM_RANGE(0x400000, 0x4006ff) AM_RAM AM_SHARE("spriteram")
-ADDRESS_MAP_END
+void taitoz_state::contcirc_map(address_map &map)
+{
+	map(0x000000, 0x03ffff).rom();
+	map(0x080000, 0x083fff).ram();
+	map(0x084000, 0x087fff).ram().share("share1");
+	map(0x090000, 0x090001).w(this, FUNC(taitoz_state::contcirc_out_w));    /* road palette bank, sub CPU reset, 3d glasses control */
+	map(0x100000, 0x100007).rw(m_tc0110pcr, FUNC(tc0110pcr_device::word_r), FUNC(tc0110pcr_device::step1_rbswap_word_w));   /* palette */
+	map(0x200000, 0x20ffff).rw(m_tc0100scn, FUNC(tc0100scn_device::word_r), FUNC(tc0100scn_device::word_w));    /* tilemaps */
+	map(0x220000, 0x22000f).rw(m_tc0100scn, FUNC(tc0100scn_device::ctrl_word_r), FUNC(tc0100scn_device::ctrl_word_w));
+	map(0x300000, 0x301fff).rw(m_tc0150rod, FUNC(tc0150rod_device::word_r), FUNC(tc0150rod_device::word_w));    /* "root ram" */
+	map(0x400000, 0x4006ff).ram().share("spriteram");
+}
 
-ADDRESS_MAP_START(taitoz_state::contcirc_cpub_map)
-	AM_RANGE(0x000000, 0x03ffff) AM_ROM
-	AM_RANGE(0x080000, 0x083fff) AM_RAM
-	AM_RANGE(0x084000, 0x087fff) AM_RAM AM_SHARE("share1")
-	AM_RANGE(0x100000, 0x100001) AM_READ8(contcirc_input_bypass_r, 0x00ff) AM_DEVWRITE8("tc0040ioc", tc0040ioc_device, portreg_w, 0x00ff)
-	AM_RANGE(0x100002, 0x100003) AM_DEVREADWRITE8("tc0040ioc", tc0040ioc_device, watchdog_r, port_w, 0x00ff)
-	AM_RANGE(0x200000, 0x200003) AM_READWRITE(taitoz_sound_r, taitoz_sound_w)
-ADDRESS_MAP_END
-
-
-ADDRESS_MAP_START(taitoz_state::chasehq_map)
-	AM_RANGE(0x000000, 0x07ffff) AM_ROM
-	AM_RANGE(0x100000, 0x107fff) AM_RAM
-	AM_RANGE(0x108000, 0x10bfff) AM_RAM AM_SHARE("share1")
-	AM_RANGE(0x10c000, 0x10ffff) AM_RAM
-	AM_RANGE(0x400000, 0x400001) AM_READ8(chasehq_input_bypass_r, 0x00ff) AM_DEVWRITE8("tc0040ioc", tc0040ioc_device, portreg_w, 0x00ff)
-	AM_RANGE(0x400002, 0x400003) AM_DEVREADWRITE8("tc0040ioc", tc0040ioc_device, watchdog_r, port_w, 0x00ff)
-	AM_RANGE(0x800000, 0x800001) AM_WRITE(chasehq_cpua_ctrl_w)
-	AM_RANGE(0x820000, 0x820003) AM_READWRITE(taitoz_sound_r, taitoz_sound_w)
-	AM_RANGE(0xa00000, 0xa00007) AM_DEVREADWRITE("tc0110pcr", tc0110pcr_device, word_r, step1_word_w)  /* palette */
-	AM_RANGE(0xc00000, 0xc0ffff) AM_DEVREADWRITE("tc0100scn", tc0100scn_device, word_r, word_w)    /* tilemaps */
-	AM_RANGE(0xc20000, 0xc2000f) AM_DEVREADWRITE("tc0100scn", tc0100scn_device, ctrl_word_r, ctrl_word_w)
-	AM_RANGE(0xd00000, 0xd007ff) AM_RAM AM_SHARE("spriteram")
-	AM_RANGE(0xe00000, 0xe003ff) AM_READWRITE(chasehq_motor_r, chasehq_motor_w) /* motor cpu */
-ADDRESS_MAP_END
-
-ADDRESS_MAP_START(taitoz_state::chq_cpub_map)
-	AM_RANGE(0x000000, 0x01ffff) AM_ROM
-	AM_RANGE(0x100000, 0x103fff) AM_RAM
-	AM_RANGE(0x108000, 0x10bfff) AM_RAM AM_SHARE("share1")
-	AM_RANGE(0x800000, 0x801fff) AM_DEVREADWRITE("tc0150rod", tc0150rod_device, word_r, word_w)
-ADDRESS_MAP_END
+void taitoz_state::contcirc_cpub_map(address_map &map)
+{
+	map(0x000000, 0x03ffff).rom();
+	map(0x080000, 0x083fff).ram();
+	map(0x084000, 0x087fff).ram().share("share1");
+	map(0x100001, 0x100001).r(this, FUNC(taitoz_state::contcirc_input_bypass_r)).w(m_tc0040ioc, FUNC(tc0040ioc_device::portreg_w)).umask16(0x00ff);
+	map(0x100003, 0x100003).rw(m_tc0040ioc, FUNC(tc0040ioc_device::watchdog_r), FUNC(tc0040ioc_device::port_w));
+	map(0x200000, 0x200003).rw(this, FUNC(taitoz_state::taitoz_sound_r), FUNC(taitoz_state::taitoz_sound_w));
+}
 
 
-ADDRESS_MAP_START(taitoz_state::enforce_map)
-	AM_RANGE(0x000000, 0x03ffff) AM_ROM
-	AM_RANGE(0x100000, 0x103fff) AM_RAM
-	AM_RANGE(0x104000, 0x107fff) AM_RAM AM_SHARE("share1")
-	AM_RANGE(0x200000, 0x200001) AM_WRITE(cpua_ctrl_w)  // works without?
-	AM_RANGE(0x300000, 0x3006ff) AM_RAM AM_SHARE("spriteram")
-	AM_RANGE(0x400000, 0x401fff) AM_DEVREADWRITE("tc0150rod", tc0150rod_device, word_r, word_w)    /* "root ram" ??? */
-	AM_RANGE(0x500000, 0x500007) AM_DEVREADWRITE("tc0110pcr", tc0110pcr_device, word_r, step1_rbswap_word_w)   /* palette */
-	AM_RANGE(0x600000, 0x60ffff) AM_DEVREADWRITE("tc0100scn", tc0100scn_device, word_r, word_w)    /* tilemaps */
-	AM_RANGE(0x620000, 0x62000f) AM_DEVREADWRITE("tc0100scn", tc0100scn_device, ctrl_word_r, ctrl_word_w)
-ADDRESS_MAP_END
+void taitoz_state::chasehq_map(address_map &map)
+{
+	map(0x000000, 0x07ffff).rom();
+	map(0x100000, 0x107fff).ram();
+	map(0x108000, 0x10bfff).ram().share("share1");
+	map(0x10c000, 0x10ffff).ram();
+	map(0x400001, 0x400001).r(this, FUNC(taitoz_state::chasehq_input_bypass_r)).w(m_tc0040ioc, FUNC(tc0040ioc_device::portreg_w)).umask16(0x00ff);
+	map(0x400003, 0x400003).rw(m_tc0040ioc, FUNC(tc0040ioc_device::watchdog_r), FUNC(tc0040ioc_device::port_w));
+	map(0x800000, 0x800001).w(this, FUNC(taitoz_state::chasehq_cpua_ctrl_w));
+	map(0x820000, 0x820003).rw(this, FUNC(taitoz_state::taitoz_sound_r), FUNC(taitoz_state::taitoz_sound_w));
+	map(0xa00000, 0xa00007).rw(m_tc0110pcr, FUNC(tc0110pcr_device::word_r), FUNC(tc0110pcr_device::step1_word_w));  /* palette */
+	map(0xc00000, 0xc0ffff).rw(m_tc0100scn, FUNC(tc0100scn_device::word_r), FUNC(tc0100scn_device::word_w));    /* tilemaps */
+	map(0xc20000, 0xc2000f).rw(m_tc0100scn, FUNC(tc0100scn_device::ctrl_word_r), FUNC(tc0100scn_device::ctrl_word_w));
+	map(0xd00000, 0xd007ff).ram().share("spriteram");
+	map(0xe00000, 0xe003ff).rw(this, FUNC(taitoz_state::chasehq_motor_r), FUNC(taitoz_state::chasehq_motor_w)); /* motor cpu */
+}
 
-ADDRESS_MAP_START(taitoz_state::enforce_cpub_map)
-	AM_RANGE(0x000000, 0x03ffff) AM_ROM
-	AM_RANGE(0x100000, 0x103fff) AM_RAM
-	AM_RANGE(0x104000, 0x107fff) AM_RAM AM_SHARE("share1")
-	AM_RANGE(0x200000, 0x200003) AM_READWRITE(taitoz_sound_r, taitoz_sound_w)
-	AM_RANGE(0x300000, 0x300003) AM_DEVREADWRITE8("tc0040ioc", tc0040ioc_device, read, write, 0x00ff)
-ADDRESS_MAP_END
-
-
-ADDRESS_MAP_START(taitoz_state::bshark_map)
-	AM_RANGE(0x000000, 0x07ffff) AM_ROM
-	AM_RANGE(0x100000, 0x10ffff) AM_RAM
-	AM_RANGE(0x110000, 0x113fff) AM_RAM AM_SHARE("share1")
-	AM_RANGE(0x400000, 0x40000f) AM_DEVREADWRITE8("tc0220ioc", tc0220ioc_device, read, write, 0x00ff)
-	AM_RANGE(0x600000, 0x600001) AM_WRITE(cpua_ctrl_w)
-	AM_RANGE(0x800000, 0x800007) AM_READWRITE(bshark_stick_r, bshark_stick_w)
-	AM_RANGE(0xa00000, 0xa01fff) AM_RAM_DEVWRITE("palette", palette_device, write16) AM_SHARE("palette")
-	AM_RANGE(0xc00000, 0xc00fff) AM_RAM AM_SHARE("spriteram")
-	AM_RANGE(0xd00000, 0xd0ffff) AM_DEVREADWRITE("tc0100scn", tc0100scn_device, word_r, word_w)    /* tilemaps */
-	AM_RANGE(0xd20000, 0xd2000f) AM_DEVREADWRITE("tc0100scn", tc0100scn_device, ctrl_word_r, ctrl_word_w)
-ADDRESS_MAP_END
-
-ADDRESS_MAP_START(taitoz_state::bsharkjjs_map)
-	AM_RANGE(0x000000, 0x07ffff) AM_ROM
-	AM_RANGE(0x100000, 0x10ffff) AM_RAM
-	AM_RANGE(0x110000, 0x113fff) AM_RAM AM_SHARE("share1")
-	AM_RANGE(0x400000, 0x40000f) AM_DEVREADWRITE8("tc0220ioc", tc0220ioc_device, read, write, 0x00ff)
-	AM_RANGE(0x600000, 0x600001) AM_WRITE(cpua_ctrl_w)
-//  AM_RANGE(0x800000, 0x800007) AM_READWRITE(bshark_stick_r, bshark_stick_w) /* No analog stick, this is the Joystick version */
-	AM_RANGE(0xa00000, 0xa01fff) AM_RAM_DEVWRITE("palette", palette_device, write16) AM_SHARE("palette")
-	AM_RANGE(0xc00000, 0xc00fff) AM_RAM AM_SHARE("spriteram")
-	AM_RANGE(0xd00000, 0xd0ffff) AM_DEVREADWRITE("tc0100scn", tc0100scn_device, word_r, word_w)    /* tilemaps */
-	AM_RANGE(0xd20000, 0xd2000f) AM_DEVREADWRITE("tc0100scn", tc0100scn_device, ctrl_word_r, ctrl_word_w)
-ADDRESS_MAP_END
-
-ADDRESS_MAP_START(taitoz_state::bshark_cpub_map)
-	AM_RANGE(0x000000, 0x07ffff) AM_ROM
-	AM_RANGE(0x108000, 0x10bfff) AM_RAM
-	AM_RANGE(0x110000, 0x113fff) AM_RAM AM_SHARE("share1")
-	AM_RANGE(0x400000, 0x400007) AM_WRITE8(taitoz_pancontrol, 0x00ff)  /* pan */
-//  AM_RANGE(0x40000a, 0x40000b) AM_READ(taitoz_unknown_r)  // ???
-	AM_RANGE(0x600000, 0x600007) AM_DEVREADWRITE8("ymsnd", ym2610_device, read, write, 0x00ff)
-	AM_RANGE(0x60000c, 0x60000d) AM_NOP // interrupt controller?
-	AM_RANGE(0x60000e, 0x60000f) AM_NOP
-	AM_RANGE(0x800000, 0x801fff) AM_DEVREADWRITE("tc0150rod", tc0150rod_device, word_r, word_w)
-ADDRESS_MAP_END
+void taitoz_state::chq_cpub_map(address_map &map)
+{
+	map(0x000000, 0x01ffff).rom();
+	map(0x100000, 0x103fff).ram();
+	map(0x108000, 0x10bfff).ram().share("share1");
+	map(0x800000, 0x801fff).rw(m_tc0150rod, FUNC(tc0150rod_device::word_r), FUNC(tc0150rod_device::word_w));
+}
 
 
-ADDRESS_MAP_START(taitoz_state::sci_map)
-	AM_RANGE(0x000000, 0x07ffff) AM_ROM
-	AM_RANGE(0x100000, 0x107fff) AM_RAM
-	AM_RANGE(0x108000, 0x10bfff) AM_RAM AM_SHARE("share1")
-	AM_RANGE(0x10c000, 0x10ffff) AM_RAM
-	AM_RANGE(0x200000, 0x20000f) AM_DEVREADWRITE8("tc0220ioc", tc0220ioc_device, read, write, 0x00ff)
-	AM_RANGE(0x200010, 0x20001f) AM_READ(sci_steer_input_r)
-//  AM_RANGE(0x400000, 0x400001) AM_WRITE(cpua_ctrl_w)  // ?? doesn't seem to fit what's written
-	AM_RANGE(0x420000, 0x420003) AM_READWRITE(taitoz_sound_r, taitoz_sound_w)
-	AM_RANGE(0x800000, 0x801fff) AM_RAM_DEVWRITE("palette", palette_device, write16) AM_SHARE("palette")
-	AM_RANGE(0xa00000, 0xa0ffff) AM_DEVREADWRITE("tc0100scn", tc0100scn_device, word_r, word_w)    /* tilemaps */
-	AM_RANGE(0xa20000, 0xa2000f) AM_DEVREADWRITE("tc0100scn", tc0100scn_device, ctrl_word_r, ctrl_word_w)
-	AM_RANGE(0xc00000, 0xc03fff) AM_RAM AM_SHARE("spriteram")
-	AM_RANGE(0xc08000, 0xc08001) AM_READWRITE(sci_spriteframe_r, sci_spriteframe_w)
-ADDRESS_MAP_END
+void taitoz_state::enforce_map(address_map &map)
+{
+	map(0x000000, 0x03ffff).rom();
+	map(0x100000, 0x103fff).ram();
+	map(0x104000, 0x107fff).ram().share("share1");
+	map(0x200000, 0x200001).w(this, FUNC(taitoz_state::cpua_ctrl_w));  // works without?
+	map(0x300000, 0x3006ff).ram().share("spriteram");
+	map(0x400000, 0x401fff).rw(m_tc0150rod, FUNC(tc0150rod_device::word_r), FUNC(tc0150rod_device::word_w));    /* "root ram" ??? */
+	map(0x500000, 0x500007).rw(m_tc0110pcr, FUNC(tc0110pcr_device::word_r), FUNC(tc0110pcr_device::step1_rbswap_word_w));   /* palette */
+	map(0x600000, 0x60ffff).rw(m_tc0100scn, FUNC(tc0100scn_device::word_r), FUNC(tc0100scn_device::word_w));    /* tilemaps */
+	map(0x620000, 0x62000f).rw(m_tc0100scn, FUNC(tc0100scn_device::ctrl_word_r), FUNC(tc0100scn_device::ctrl_word_w));
+}
 
-ADDRESS_MAP_START(taitoz_state::sci_cpub_map)
-	AM_RANGE(0x000000, 0x01ffff) AM_ROM
-	AM_RANGE(0x200000, 0x203fff) AM_RAM
-	AM_RANGE(0x208000, 0x20bfff) AM_RAM AM_SHARE("share1")
-	AM_RANGE(0xa00000, 0xa01fff) AM_DEVREADWRITE("tc0150rod", tc0150rod_device, word_r, word_w)
-ADDRESS_MAP_END
-
-
-ADDRESS_MAP_START(taitoz_state::nightstr_map)
-	AM_RANGE(0x000000, 0x07ffff) AM_ROM
-	AM_RANGE(0x100000, 0x10ffff) AM_RAM
-	AM_RANGE(0x110000, 0x113fff) AM_RAM AM_SHARE("share1")
-	AM_RANGE(0x400000, 0x40000f) AM_DEVREADWRITE8("tc0220ioc", tc0220ioc_device, read, write, 0x00ff)
-	AM_RANGE(0x800000, 0x800001) AM_WRITE(cpua_ctrl_w)
-	AM_RANGE(0x820000, 0x820003) AM_READWRITE(taitoz_sound_r, taitoz_sound_w)
-	AM_RANGE(0xa00000, 0xa00007) AM_DEVREADWRITE("tc0110pcr", tc0110pcr_device, word_r, step1_word_w)  /* palette */
-	AM_RANGE(0xc00000, 0xc0ffff) AM_DEVREADWRITE("tc0100scn", tc0100scn_device, word_r, word_w)    /* tilemaps */
-	AM_RANGE(0xc20000, 0xc2000f) AM_DEVREADWRITE("tc0100scn", tc0100scn_device, ctrl_word_r, ctrl_word_w)
-	AM_RANGE(0xd00000, 0xd007ff) AM_RAM AM_SHARE("spriteram")
-	AM_RANGE(0xe00000, 0xe00011) AM_WRITE(nightstr_motor_w)    /* Motor outputs */
-	AM_RANGE(0xe40000, 0xe40007) AM_READWRITE(nightstr_stick_r, bshark_stick_w)
-ADDRESS_MAP_END
-
-ADDRESS_MAP_START(taitoz_state::nightstr_cpub_map)
-	AM_RANGE(0x000000, 0x03ffff) AM_ROM
-	AM_RANGE(0x100000, 0x103fff) AM_RAM
-	AM_RANGE(0x104000, 0x107fff) AM_RAM AM_SHARE("share1")
-	AM_RANGE(0x800000, 0x801fff) AM_DEVREADWRITE("tc0150rod", tc0150rod_device, word_r, word_w)
-ADDRESS_MAP_END
+void taitoz_state::enforce_cpub_map(address_map &map)
+{
+	map(0x000000, 0x03ffff).rom();
+	map(0x100000, 0x103fff).ram();
+	map(0x104000, 0x107fff).ram().share("share1");
+	map(0x200000, 0x200003).rw(this, FUNC(taitoz_state::taitoz_sound_r), FUNC(taitoz_state::taitoz_sound_w));
+	map(0x300000, 0x300003).rw(m_tc0040ioc, FUNC(tc0040ioc_device::read), FUNC(tc0040ioc_device::write)).umask16(0x00ff);
+}
 
 
-ADDRESS_MAP_START(taitoz_state::aquajack_map)
-	AM_RANGE(0x000000, 0x03ffff) AM_ROM
-	AM_RANGE(0x100000, 0x103fff) AM_RAM
-	AM_RANGE(0x104000, 0x107fff) AM_RAM AM_SHARE("share1")
-	AM_RANGE(0x200000, 0x200001) AM_WRITE(cpua_ctrl_w)  // not needed, but it's probably like the others
-	AM_RANGE(0x300000, 0x300007) AM_DEVREADWRITE("tc0110pcr", tc0110pcr_device, word_r, step1_word_w)  /* palette */
-	AM_RANGE(0x800000, 0x801fff) AM_DEVREADWRITE("tc0150rod", tc0150rod_device, word_r, word_w)
-	AM_RANGE(0xa00000, 0xa0ffff) AM_DEVREADWRITE("tc0100scn", tc0100scn_device, word_r, word_w)    /* tilemaps */
-	AM_RANGE(0xa20000, 0xa2000f) AM_DEVREADWRITE("tc0100scn", tc0100scn_device, ctrl_word_r, ctrl_word_w)
-	AM_RANGE(0xc40000, 0xc403ff) AM_RAM AM_SHARE("spriteram")
-ADDRESS_MAP_END
+void taitoz_state::bshark_map(address_map &map)
+{
+	map(0x000000, 0x07ffff).rom();
+	map(0x100000, 0x10ffff).ram();
+	map(0x110000, 0x113fff).ram().share("share1");
+	map(0x400000, 0x40000f).rw(m_tc0220ioc, FUNC(tc0220ioc_device::read), FUNC(tc0220ioc_device::write)).umask16(0x00ff);
+	map(0x600000, 0x600001).w(this, FUNC(taitoz_state::cpua_ctrl_w));
+	map(0x800000, 0x80000f).rw("adc", FUNC(adc0808_device::data_r), FUNC(adc0808_device::address_offset_start_w)).umask16(0x00ff);
+	map(0xa00000, 0xa01fff).ram().w("palette", FUNC(palette_device::write16)).share("palette");
+	map(0xc00000, 0xc00fff).ram().share("spriteram");
+	map(0xd00000, 0xd0ffff).rw(m_tc0100scn, FUNC(tc0100scn_device::word_r), FUNC(tc0100scn_device::word_w));    /* tilemaps */
+	map(0xd20000, 0xd2000f).rw(m_tc0100scn, FUNC(tc0100scn_device::ctrl_word_r), FUNC(tc0100scn_device::ctrl_word_w));
+}
 
-ADDRESS_MAP_START(taitoz_state::aquajack_cpub_map)
-	AM_RANGE(0x000000, 0x03ffff) AM_ROM
-	AM_RANGE(0x100000, 0x103fff) AM_RAM
-	AM_RANGE(0x104000, 0x107fff) AM_RAM AM_SHARE("share1")
-	AM_RANGE(0x200000, 0x20000f) AM_DEVREADWRITE8("tc0220ioc", tc0220ioc_device, read, write, 0x00ff)
-	AM_RANGE(0x300000, 0x300003) AM_READWRITE(taitoz_sound_r, taitoz_sound_w)
-	AM_RANGE(0x800800, 0x80083f) AM_READ(aquajack_unknown_r) // Read regularly after write to 800800...
-//  AM_RANGE(0x800800, 0x800801) AM_WRITE(taitoz_unknown_w)
-//  AM_RANGE(0x900000, 0x900007) AM_READWRITE(taitoz_unknown_r, taitoz_unknown_w)
-ADDRESS_MAP_END
+void taitoz_state::bsharkjjs_map(address_map &map)
+{
+	map(0x000000, 0x07ffff).rom();
+	map(0x100000, 0x10ffff).ram();
+	map(0x110000, 0x113fff).ram().share("share1");
+	map(0x400000, 0x40000f).rw(m_tc0220ioc, FUNC(tc0220ioc_device::read), FUNC(tc0220ioc_device::write)).umask16(0x00ff);
+	map(0x600000, 0x600001).w(this, FUNC(taitoz_state::cpua_ctrl_w));
+//  map(0x800000, 0x80000f) // No analog stick, this is the Joystick version
+	map(0xa00000, 0xa01fff).ram().w("palette", FUNC(palette_device::write16)).share("palette");
+	map(0xc00000, 0xc00fff).ram().share("spriteram");
+	map(0xd00000, 0xd0ffff).rw(m_tc0100scn, FUNC(tc0100scn_device::word_r), FUNC(tc0100scn_device::word_w));    /* tilemaps */
+	map(0xd20000, 0xd2000f).rw(m_tc0100scn, FUNC(tc0100scn_device::ctrl_word_r), FUNC(tc0100scn_device::ctrl_word_w));
+}
 
-
-ADDRESS_MAP_START(taitoz_state::spacegun_map)
-	AM_RANGE(0x000000, 0x07ffff) AM_ROM
-	AM_RANGE(0x30c000, 0x30ffff) AM_RAM
-	AM_RANGE(0x310000, 0x31ffff) AM_RAM AM_SHARE("share1")
-	AM_RANGE(0x500000, 0x5005ff) AM_RAM AM_SHARE("spriteram")
-	AM_RANGE(0x900000, 0x90ffff) AM_DEVREADWRITE("tc0100scn", tc0100scn_device, word_r, word_w)    /* tilemaps */
-	AM_RANGE(0x920000, 0x92000f) AM_DEVREADWRITE("tc0100scn", tc0100scn_device, ctrl_word_r, ctrl_word_w)
-	AM_RANGE(0xb00000, 0xb00007) AM_DEVREADWRITE("tc0110pcr", tc0110pcr_device, word_r, step1_rbswap_word_w)   /* palette */
-ADDRESS_MAP_END
-
-ADDRESS_MAP_START(taitoz_state::spacegun_cpub_map)
-	AM_RANGE(0x000000, 0x03ffff) AM_ROM
-	AM_RANGE(0x20c000, 0x20ffff) AM_RAM
-	AM_RANGE(0x210000, 0x21ffff) AM_RAM AM_SHARE("share1")
-	AM_RANGE(0x800000, 0x80000f) AM_DEVREADWRITE8("tc0510nio", tc0510nio_device, read, write, 0x00ff).cswidth(16)
-	AM_RANGE(0xc00000, 0xc00007) AM_DEVREADWRITE8("ymsnd", ym2610_device, read, write, 0x00ff)
-	AM_RANGE(0xc0000c, 0xc0000d) AM_NOP // interrupt controller?
-	AM_RANGE(0xc0000e, 0xc0000f) AM_NOP
-	AM_RANGE(0xc20000, 0xc20007) AM_WRITE8(taitoz_pancontrol, 0x00ff)  /* pan */
-	AM_RANGE(0xe00000, 0xe00001) AM_WRITE(spacegun_gun_output_w)    /* gun outputs */
-	AM_RANGE(0xf00000, 0xf00007) AM_READWRITE(spacegun_lightgun_r, spacegun_lightgun_w)
-ADDRESS_MAP_END
+void taitoz_state::bshark_cpub_map(address_map &map)
+{
+	map(0x000000, 0x07ffff).rom();
+	map(0x108000, 0x10bfff).ram();
+	map(0x110000, 0x113fff).ram().share("share1");
+	map(0x400000, 0x400007).w(this, FUNC(taitoz_state::taitoz_pancontrol)).umask16(0x00ff);  /* pan */
+//  map(0x40000a, 0x40000b).r(this, FUNC(taitoz_state::taitoz_unknown_r));  // ???
+	map(0x600000, 0x600007).rw("ymsnd", FUNC(ym2610_device::read), FUNC(ym2610_device::write)).umask16(0x00ff);
+	map(0x60000c, 0x60000d).noprw(); // interrupt controller?
+	map(0x60000e, 0x60000f).noprw();
+	map(0x800000, 0x801fff).rw(m_tc0150rod, FUNC(tc0150rod_device::word_r), FUNC(tc0150rod_device::word_w));
+}
 
 
-ADDRESS_MAP_START(taitoz_state::dblaxle_map)
-	AM_RANGE(0x000000, 0x07ffff) AM_ROM
-	AM_RANGE(0x200000, 0x203fff) AM_RAM
-	AM_RANGE(0x210000, 0x21ffff) AM_RAM AM_SHARE("share1")
-	AM_RANGE(0x400000, 0x40000f) AM_DEVREADWRITE("tc0510nio", tc0510nio_device, halfword_wordswap_r, halfword_wordswap_w)
-	AM_RANGE(0x400010, 0x40001f) AM_READ(dblaxle_steer_input_r)
-	AM_RANGE(0x600000, 0x600001) AM_WRITE(dblaxle_cpua_ctrl_w)  /* could this be causing int6 ? */
-	AM_RANGE(0x620000, 0x620003) AM_READWRITE(taitoz_sound_r, taitoz_sound_w)
-	AM_RANGE(0x800000, 0x801fff) AM_RAM_DEVWRITE("palette", palette_device, write16) AM_SHARE("palette")
-	AM_RANGE(0x900000, 0x90ffff) AM_DEVREADWRITE("tc0480scp", tc0480scp_device, word_r, word_w)      /* tilemap mirror */
-	AM_RANGE(0xa00000, 0xa0ffff) AM_DEVREADWRITE("tc0480scp", tc0480scp_device, word_r, word_w)      /* tilemaps */
-	AM_RANGE(0xa30000, 0xa3002f) AM_DEVREADWRITE("tc0480scp", tc0480scp_device, ctrl_word_r, ctrl_word_w)
-	AM_RANGE(0xc00000, 0xc03fff) AM_RAM AM_SHARE("spriteram") /* mostly unused ? */
-	AM_RANGE(0xc08000, 0xc08001) AM_READWRITE(sci_spriteframe_r, sci_spriteframe_w) /* set in int6, seems to stay zero */
-ADDRESS_MAP_END
+void taitoz_state::sci_map(address_map &map)
+{
+	map(0x000000, 0x07ffff).rom();
+	map(0x100000, 0x107fff).ram();
+	map(0x108000, 0x10bfff).ram().share("share1");
+	map(0x10c000, 0x10ffff).ram();
+	map(0x200000, 0x20000f).rw(m_tc0220ioc, FUNC(tc0220ioc_device::read), FUNC(tc0220ioc_device::write)).umask16(0x00ff);
+	map(0x200010, 0x20001f).r(this, FUNC(taitoz_state::sci_steer_input_r));
+//  map(0x400000, 0x400001).w(this, FUNC(taitoz_state::cpua_ctrl_w));  // ?? doesn't seem to fit what's written
+	map(0x420000, 0x420003).rw(this, FUNC(taitoz_state::taitoz_sound_r), FUNC(taitoz_state::taitoz_sound_w));
+	map(0x800000, 0x801fff).ram().w("palette", FUNC(palette_device::write16)).share("palette");
+	map(0xa00000, 0xa0ffff).rw(m_tc0100scn, FUNC(tc0100scn_device::word_r), FUNC(tc0100scn_device::word_w));    /* tilemaps */
+	map(0xa20000, 0xa2000f).rw(m_tc0100scn, FUNC(tc0100scn_device::ctrl_word_r), FUNC(tc0100scn_device::ctrl_word_w));
+	map(0xc00000, 0xc03fff).ram().share("spriteram");
+	map(0xc08000, 0xc08001).rw(this, FUNC(taitoz_state::sci_spriteframe_r), FUNC(taitoz_state::sci_spriteframe_w));
+}
 
-ADDRESS_MAP_START(taitoz_state::dblaxle_cpub_map)
-	AM_RANGE(0x000000, 0x03ffff) AM_ROM
-	AM_RANGE(0x100000, 0x103fff) AM_RAM
-	AM_RANGE(0x110000, 0x11ffff) AM_RAM AM_SHARE("share1")
-	AM_RANGE(0x300000, 0x301fff) AM_DEVREADWRITE("tc0150rod", tc0150rod_device, word_r, word_w)
-	AM_RANGE(0x500000, 0x503fff) AM_RAM /* network ram ? (see Gunbustr) */
-ADDRESS_MAP_END
+void taitoz_state::sci_cpub_map(address_map &map)
+{
+	map(0x000000, 0x01ffff).rom();
+	map(0x200000, 0x203fff).ram();
+	map(0x208000, 0x20bfff).ram().share("share1");
+	map(0xa00000, 0xa01fff).rw(m_tc0150rod, FUNC(tc0150rod_device::word_r), FUNC(tc0150rod_device::word_w));
+}
 
 
-ADDRESS_MAP_START(taitoz_state::racingb_map)
-	AM_RANGE(0x000000, 0x07ffff) AM_ROM
-	AM_RANGE(0x100000, 0x103fff) AM_RAM
-	AM_RANGE(0x110000, 0x11ffff) AM_RAM AM_SHARE("share1")
-	AM_RANGE(0x300000, 0x30000f) AM_DEVREADWRITE("tc0510nio", tc0510nio_device, halfword_wordswap_r, halfword_wordswap_w)
-	AM_RANGE(0x300010, 0x30001f) AM_READ(dblaxle_steer_input_r)
-	AM_RANGE(0x500002, 0x500003) AM_WRITE(cpua_ctrl_w)
-	AM_RANGE(0x520000, 0x520003) AM_READWRITE(taitoz_sound_r, taitoz_sound_w)
-	AM_RANGE(0x700000, 0x701fff) AM_RAM_DEVWRITE("palette", palette_device, write16) AM_SHARE("palette")
-	AM_RANGE(0x900000, 0x90ffff) AM_DEVREADWRITE("tc0480scp", tc0480scp_device, word_r, word_w)      /* tilemaps */
-	AM_RANGE(0x930000, 0x93002f) AM_DEVREADWRITE("tc0480scp", tc0480scp_device, ctrl_word_r, ctrl_word_w)
-	AM_RANGE(0xb00000, 0xb03fff) AM_RAM AM_SHARE("spriteram") /* mostly unused ? */
-	AM_RANGE(0xb08000, 0xb08001) AM_READWRITE(sci_spriteframe_r, sci_spriteframe_w) /* alternates 0/0x100 */
-ADDRESS_MAP_END
+void taitoz_state::nightstr_map(address_map &map)
+{
+	map(0x000000, 0x07ffff).rom();
+	map(0x100000, 0x10ffff).ram();
+	map(0x110000, 0x113fff).ram().share("share1");
+	map(0x400000, 0x40000f).rw(m_tc0220ioc, FUNC(tc0220ioc_device::read), FUNC(tc0220ioc_device::write)).umask16(0x00ff);
+	map(0x800000, 0x800001).w(this, FUNC(taitoz_state::cpua_ctrl_w));
+	map(0x820000, 0x820003).rw(this, FUNC(taitoz_state::taitoz_sound_r), FUNC(taitoz_state::taitoz_sound_w));
+	map(0xa00000, 0xa00007).rw(m_tc0110pcr, FUNC(tc0110pcr_device::word_r), FUNC(tc0110pcr_device::step1_word_w));  /* palette */
+	map(0xc00000, 0xc0ffff).rw(m_tc0100scn, FUNC(tc0100scn_device::word_r), FUNC(tc0100scn_device::word_w));    /* tilemaps */
+	map(0xc20000, 0xc2000f).rw(m_tc0100scn, FUNC(tc0100scn_device::ctrl_word_r), FUNC(tc0100scn_device::ctrl_word_w));
+	map(0xd00000, 0xd007ff).ram().share("spriteram");
+	map(0xe00000, 0xe00011).w(this, FUNC(taitoz_state::nightstr_motor_w));    /* Motor outputs */
+	map(0xe40000, 0xe4000f).rw("adc", FUNC(adc0808_device::data_r), FUNC(adc0808_device::address_offset_start_w)).umask16(0x00ff);
+}
 
-ADDRESS_MAP_START(taitoz_state::racingb_cpub_map)
-	AM_RANGE(0x000000, 0x03ffff) AM_ROM
-	AM_RANGE(0x400000, 0x403fff) AM_RAM
-	AM_RANGE(0x410000, 0x41ffff) AM_RAM AM_SHARE("share1")
-	AM_RANGE(0xa00000, 0xa01fff) AM_DEVREADWRITE("tc0150rod", tc0150rod_device, word_r, word_w)
-	AM_RANGE(0xd00000, 0xd03fff) AM_RAM /* network ram ? */
-ADDRESS_MAP_END
+void taitoz_state::nightstr_cpub_map(address_map &map)
+{
+	map(0x000000, 0x03ffff).rom();
+	map(0x100000, 0x103fff).ram();
+	map(0x104000, 0x107fff).ram().share("share1");
+	map(0x800000, 0x801fff).rw(m_tc0150rod, FUNC(tc0150rod_device::word_r), FUNC(tc0150rod_device::word_w));
+}
+
+
+void taitoz_state::aquajack_map(address_map &map)
+{
+	map(0x000000, 0x03ffff).rom();
+	map(0x100000, 0x103fff).ram();
+	map(0x104000, 0x107fff).ram().share("share1");
+	map(0x200000, 0x200001).w(this, FUNC(taitoz_state::cpua_ctrl_w));  // not needed, but it's probably like the others
+	map(0x300000, 0x300007).rw(m_tc0110pcr, FUNC(tc0110pcr_device::word_r), FUNC(tc0110pcr_device::step1_word_w));  /* palette */
+	map(0x800000, 0x801fff).rw(m_tc0150rod, FUNC(tc0150rod_device::word_r), FUNC(tc0150rod_device::word_w));
+	map(0xa00000, 0xa0ffff).rw(m_tc0100scn, FUNC(tc0100scn_device::word_r), FUNC(tc0100scn_device::word_w));    /* tilemaps */
+	map(0xa20000, 0xa2000f).rw(m_tc0100scn, FUNC(tc0100scn_device::ctrl_word_r), FUNC(tc0100scn_device::ctrl_word_w));
+	map(0xc40000, 0xc403ff).ram().share("spriteram");
+}
+
+void taitoz_state::aquajack_cpub_map(address_map &map)
+{
+	map(0x000000, 0x03ffff).rom();
+	map(0x100000, 0x103fff).ram();
+	map(0x104000, 0x107fff).ram().share("share1");
+	map(0x200000, 0x20000f).rw(m_tc0220ioc, FUNC(tc0220ioc_device::read), FUNC(tc0220ioc_device::write)).umask16(0x00ff);
+	map(0x300000, 0x300003).rw(this, FUNC(taitoz_state::taitoz_sound_r), FUNC(taitoz_state::taitoz_sound_w));
+	map(0x800800, 0x80083f).r(this, FUNC(taitoz_state::aquajack_unknown_r)); // Read regularly after write to 800800...
+//  map(0x800800, 0x800801).w(this, FUNC(taitoz_state::taitoz_unknown_w));
+//  map(0x900000, 0x900007).rw(this, FUNC(taitoz_state::taitoz_unknown_r), FUNC(taitoz_state::taitoz_unknown_w));
+}
+
+
+void taitoz_state::spacegun_map(address_map &map)
+{
+	map(0x000000, 0x07ffff).rom();
+	map(0x30c000, 0x30ffff).ram();
+	map(0x310000, 0x31ffff).ram().share("share1");
+	map(0x500000, 0x5005ff).ram().share("spriteram");
+	map(0x900000, 0x90ffff).rw(m_tc0100scn, FUNC(tc0100scn_device::word_r), FUNC(tc0100scn_device::word_w));    /* tilemaps */
+	map(0x920000, 0x92000f).rw(m_tc0100scn, FUNC(tc0100scn_device::ctrl_word_r), FUNC(tc0100scn_device::ctrl_word_w));
+	map(0xb00000, 0xb00007).rw(m_tc0110pcr, FUNC(tc0110pcr_device::word_r), FUNC(tc0110pcr_device::step1_rbswap_word_w));   /* palette */
+}
+
+void taitoz_state::spacegun_cpub_map(address_map &map)
+{
+	map(0x000000, 0x03ffff).rom();
+	map(0x20c000, 0x20ffff).ram();
+	map(0x210000, 0x21ffff).ram().share("share1");
+	map(0x800000, 0x80000f).rw(m_tc0510nio, FUNC(tc0510nio_device::read), FUNC(tc0510nio_device::write)).umask16(0x00ff).cswidth(16);
+	map(0xc00000, 0xc00007).rw("ymsnd", FUNC(ym2610_device::read), FUNC(ym2610_device::write)).umask16(0x00ff);
+	map(0xc0000c, 0xc0000d).noprw(); // interrupt controller?
+	map(0xc0000e, 0xc0000f).noprw();
+	map(0xc20000, 0xc20007).w(this, FUNC(taitoz_state::taitoz_pancontrol)).umask16(0x00ff);  /* pan */
+	map(0xe00000, 0xe00001).w(this, FUNC(taitoz_state::spacegun_gun_output_w));    /* gun outputs */
+	map(0xf00000, 0xf0000f).rw("adc", FUNC(adc0808_device::data_r), FUNC(adc0808_device::address_offset_start_w)).umask16(0x00ff);
+}
+
+
+void taitoz_state::dblaxle_map(address_map &map)
+{
+	map(0x000000, 0x07ffff).rom();
+	map(0x200000, 0x203fff).ram();
+	map(0x210000, 0x21ffff).ram().share("share1");
+	map(0x400000, 0x40000f).rw(m_tc0510nio, FUNC(tc0510nio_device::halfword_wordswap_r), FUNC(tc0510nio_device::halfword_wordswap_w));
+	map(0x400010, 0x40001f).r(this, FUNC(taitoz_state::dblaxle_steer_input_r));
+	map(0x600000, 0x600001).w(this, FUNC(taitoz_state::dblaxle_cpua_ctrl_w));  /* could this be causing int6 ? */
+	map(0x620000, 0x620003).rw(this, FUNC(taitoz_state::taitoz_sound_r), FUNC(taitoz_state::taitoz_sound_w));
+	map(0x800000, 0x801fff).ram().w("palette", FUNC(palette_device::write16)).share("palette");
+	map(0x900000, 0x90ffff).rw(m_tc0480scp, FUNC(tc0480scp_device::word_r), FUNC(tc0480scp_device::word_w));      /* tilemap mirror */
+	map(0xa00000, 0xa0ffff).rw(m_tc0480scp, FUNC(tc0480scp_device::word_r), FUNC(tc0480scp_device::word_w));      /* tilemaps */
+	map(0xa30000, 0xa3002f).rw(m_tc0480scp, FUNC(tc0480scp_device::ctrl_word_r), FUNC(tc0480scp_device::ctrl_word_w));
+	map(0xc00000, 0xc03fff).ram().share("spriteram"); /* mostly unused ? */
+	map(0xc08000, 0xc08001).rw(this, FUNC(taitoz_state::sci_spriteframe_r), FUNC(taitoz_state::sci_spriteframe_w)); /* set in int6, seems to stay zero */
+}
+
+void taitoz_state::dblaxle_cpub_map(address_map &map)
+{
+	map(0x000000, 0x03ffff).rom();
+	map(0x100000, 0x103fff).ram();
+	map(0x110000, 0x11ffff).ram().share("share1");
+	map(0x300000, 0x301fff).rw(m_tc0150rod, FUNC(tc0150rod_device::word_r), FUNC(tc0150rod_device::word_w));
+	map(0x500000, 0x503fff).ram(); /* network ram ? (see Gunbustr) */
+}
+
+
+void taitoz_state::racingb_map(address_map &map)
+{
+	map(0x000000, 0x07ffff).rom();
+	map(0x100000, 0x103fff).ram();
+	map(0x110000, 0x11ffff).ram().share("share1");
+	map(0x300000, 0x30000f).rw(m_tc0510nio, FUNC(tc0510nio_device::halfword_wordswap_r), FUNC(tc0510nio_device::halfword_wordswap_w));
+	map(0x300010, 0x30001f).r(this, FUNC(taitoz_state::dblaxle_steer_input_r));
+	map(0x500002, 0x500003).w(this, FUNC(taitoz_state::cpua_ctrl_w));
+	map(0x520000, 0x520003).rw(this, FUNC(taitoz_state::taitoz_sound_r), FUNC(taitoz_state::taitoz_sound_w));
+	map(0x700000, 0x701fff).ram().w("palette", FUNC(palette_device::write16)).share("palette");
+	map(0x900000, 0x90ffff).rw(m_tc0480scp, FUNC(tc0480scp_device::word_r), FUNC(tc0480scp_device::word_w));      /* tilemaps */
+	map(0x930000, 0x93002f).rw(m_tc0480scp, FUNC(tc0480scp_device::ctrl_word_r), FUNC(tc0480scp_device::ctrl_word_w));
+	map(0xb00000, 0xb03fff).ram().share("spriteram"); /* mostly unused ? */
+	map(0xb08000, 0xb08001).rw(this, FUNC(taitoz_state::sci_spriteframe_r), FUNC(taitoz_state::sci_spriteframe_w)); /* alternates 0/0x100 */
+}
+
+void taitoz_state::racingb_cpub_map(address_map &map)
+{
+	map(0x000000, 0x03ffff).rom();
+	map(0x400000, 0x403fff).ram();
+	map(0x410000, 0x41ffff).ram().share("share1");
+	map(0xa00000, 0xa01fff).rw(m_tc0150rod, FUNC(tc0150rod_device::word_r), FUNC(tc0150rod_device::word_w));
+	map(0xd00000, 0xd03fff).ram(); /* network ram ? */
+}
 
 
 /***************************************************************************/
 
-ADDRESS_MAP_START(taitoz_state::z80_sound_map)
-	AM_RANGE(0x0000, 0x3fff) AM_ROM
-	AM_RANGE(0x4000, 0x7fff) AM_ROMBANK("z80bank")
-	AM_RANGE(0xc000, 0xdfff) AM_RAM
-	AM_RANGE(0xe000, 0xe003) AM_DEVREADWRITE("ymsnd", ym2610_device, read, write)
-	AM_RANGE(0xe200, 0xe200) AM_READNOP AM_DEVWRITE("tc0140syt", tc0140syt_device, slave_port_w)
-	AM_RANGE(0xe201, 0xe201) AM_DEVREADWRITE("tc0140syt", tc0140syt_device, slave_comm_r, slave_comm_w)
-	AM_RANGE(0xe400, 0xe403) AM_WRITE(taitoz_pancontrol) /* pan */
-	AM_RANGE(0xea00, 0xea00) AM_READNOP
-	AM_RANGE(0xee00, 0xee00) AM_WRITENOP /* ? */
-	AM_RANGE(0xf000, 0xf000) AM_WRITENOP /* ? */
-	AM_RANGE(0xf200, 0xf200) AM_WRITE(sound_bankswitch_w)
-ADDRESS_MAP_END
+void taitoz_state::z80_sound_map(address_map &map)
+{
+	map(0x0000, 0x3fff).rom();
+	map(0x4000, 0x7fff).bankr("z80bank");
+	map(0xc000, 0xdfff).ram();
+	map(0xe000, 0xe003).rw("ymsnd", FUNC(ym2610_device::read), FUNC(ym2610_device::write));
+	map(0xe200, 0xe200).nopr().w(m_tc0140syt, FUNC(tc0140syt_device::slave_port_w));
+	map(0xe201, 0xe201).rw(m_tc0140syt, FUNC(tc0140syt_device::slave_comm_r), FUNC(tc0140syt_device::slave_comm_w));
+	map(0xe400, 0xe403).w(this, FUNC(taitoz_state::taitoz_pancontrol)); /* pan */
+	map(0xea00, 0xea00).nopr();
+	map(0xee00, 0xee00).nopw(); /* ? */
+	map(0xf000, 0xf000).nopw(); /* ? */
+	map(0xf200, 0xf200).w(this, FUNC(taitoz_state::sound_bankswitch_w));
+}
 
 
 /***********************************************************
@@ -2029,7 +2258,7 @@ static INPUT_PORTS_START( contcirc )
 	PORT_BIT( 0x04, IP_ACTIVE_HIGH, IPT_COIN2 )
 	PORT_BIT( 0x08, IP_ACTIVE_HIGH, IPT_COIN1 )
 	PORT_BIT( 0x10, IP_ACTIVE_LOW,  IPT_SERVICE1 )
-	PORT_BIT( 0xe0, IP_ACTIVE_HIGH, IPT_SPECIAL ) PORT_CUSTOM_MEMBER(DEVICE_SELF, taitoz_state, taitoz_pedal_r, "GAS") PORT_CONDITION("DSWA", 0x01, EQUALS, 0x01)
+	PORT_BIT( 0xe0, IP_ACTIVE_HIGH, IPT_CUSTOM ) PORT_CUSTOM_MEMBER(DEVICE_SELF, taitoz_state, taitoz_pedal_r, "GAS") PORT_CONDITION("DSWA", 0x01, EQUALS, 0x01)
 	PORT_BIT( 0xe0, IP_ACTIVE_LOW,  IPT_BUTTON1 ) PORT_NAME("Gas Switch") PORT_CONDITION("DSWA", 0x01, EQUALS, 0x00)
 
 	PORT_START("IN1")
@@ -2038,7 +2267,7 @@ static INPUT_PORTS_START( contcirc )
 	PORT_BIT( 0x04, IP_ACTIVE_LOW,  IPT_TILT )
 	PORT_BIT( 0x08, IP_ACTIVE_LOW,  IPT_START1 )
 	PORT_BIT( 0x10, IP_ACTIVE_LOW,  IPT_BUTTON3 ) PORT_NAME("Shifter") PORT_TOGGLE
-	PORT_BIT( 0xe0, IP_ACTIVE_HIGH, IPT_SPECIAL ) PORT_CUSTOM_MEMBER(DEVICE_SELF, taitoz_state, taitoz_pedal_r, "BRAKE") PORT_CONDITION("DSWA", 0x01, EQUALS, 0x01)
+	PORT_BIT( 0xe0, IP_ACTIVE_HIGH, IPT_CUSTOM ) PORT_CUSTOM_MEMBER(DEVICE_SELF, taitoz_state, taitoz_pedal_r, "BRAKE") PORT_CONDITION("DSWA", 0x01, EQUALS, 0x01)
 	PORT_BIT( 0xe0, IP_ACTIVE_LOW,  IPT_BUTTON2 ) PORT_NAME("Brake Switch") PORT_CONDITION("DSWA", 0x01, EQUALS, 0x00) // no function?
 
 	PORT_START("IN2")   /* unused */
@@ -2111,7 +2340,7 @@ static INPUT_PORTS_START( chasehq ) // IN3-6 perhaps used with cockpit setup? //
 	PORT_BIT( 0x04, IP_ACTIVE_HIGH, IPT_COIN1 )
 	PORT_BIT( 0x08, IP_ACTIVE_HIGH, IPT_COIN2 )
 	PORT_BIT( 0x10, IP_ACTIVE_LOW,  IPT_SERVICE1 )
-	PORT_BIT( 0xe0, IP_ACTIVE_HIGH, IPT_SPECIAL ) PORT_CUSTOM_MEMBER(DEVICE_SELF, taitoz_state, taitoz_pedal_r, "BRAKE") PORT_CONDITION("DSWA", 0x02, EQUALS, 0x00)
+	PORT_BIT( 0xe0, IP_ACTIVE_HIGH, IPT_CUSTOM ) PORT_CUSTOM_MEMBER(DEVICE_SELF, taitoz_state, taitoz_pedal_r, "BRAKE") PORT_CONDITION("DSWA", 0x02, EQUALS, 0x00)
 	PORT_BIT( 0x20, IP_ACTIVE_LOW,  IPT_BUTTON2 ) PORT_NAME("Brake Switch") PORT_CONDITION("DSWA", 0x02, EQUALS, 0x02)
 
 	PORT_START("IN1")
@@ -2120,7 +2349,7 @@ static INPUT_PORTS_START( chasehq ) // IN3-6 perhaps used with cockpit setup? //
 	PORT_BIT( 0x04, IP_ACTIVE_LOW,  IPT_SERVICE2 ) PORT_NAME("Calibrate") // ?
 	PORT_BIT( 0x08, IP_ACTIVE_LOW,  IPT_START1 )
 	PORT_BIT( 0x10, IP_ACTIVE_LOW,  IPT_BUTTON4 ) PORT_NAME("Shifter") PORT_TOGGLE
-	PORT_BIT( 0xe0, IP_ACTIVE_HIGH, IPT_SPECIAL ) PORT_CUSTOM_MEMBER(DEVICE_SELF, taitoz_state, taitoz_pedal_r, "GAS") PORT_CONDITION("DSWA", 0x02, EQUALS, 0x00)
+	PORT_BIT( 0xe0, IP_ACTIVE_HIGH, IPT_CUSTOM ) PORT_CUSTOM_MEMBER(DEVICE_SELF, taitoz_state, taitoz_pedal_r, "GAS") PORT_CONDITION("DSWA", 0x02, EQUALS, 0x00)
 	PORT_BIT( 0x20, IP_ACTIVE_LOW,  IPT_BUTTON1 ) PORT_NAME("Gas Switch") PORT_CONDITION("DSWA", 0x02, EQUALS, 0x02)
 
 	PORT_START("IN2")   /* unused */
@@ -3200,6 +3429,13 @@ MACHINE_CONFIG_START(taitoz_state::bshark)
 
 	MCFG_QUANTUM_TIME(attotime::from_hz(6000))
 
+	MCFG_DEVICE_ADD("adc", ADC0809, 500000) // clock unknown
+	MCFG_ADC0808_EOC_FF_CB(INPUTLINE("maincpu", 6))
+	MCFG_ADC0808_IN0_CB(IOPORT("STICKX"))
+	MCFG_ADC0808_IN1_CB(IOPORT("X_ADJUST"))
+	MCFG_ADC0808_IN2_CB(IOPORT("STICKY"))
+	MCFG_ADC0808_IN3_CB(IOPORT("Y_ADJUST"))
+
 	MCFG_DEVICE_ADD("tc0220ioc", TC0220IOC, 0)
 	MCFG_TC0220IOC_READ_0_CB(IOPORT("DSWA"))
 	MCFG_TC0220IOC_READ_1_CB(IOPORT("DSWB"))
@@ -3261,6 +3497,7 @@ MACHINE_CONFIG_START(taitoz_state::bsharkjjs)
 	MCFG_CPU_MODIFY("maincpu")
 	MCFG_CPU_PROGRAM_MAP(bsharkjjs_map)
 
+	MCFG_DEVICE_REMOVE("adc")
 MACHINE_CONFIG_END
 
 
@@ -3359,6 +3596,13 @@ MACHINE_CONFIG_START(taitoz_state::nightstr)
 	MCFG_MACHINE_RESET_OVERRIDE(taitoz_state,taitoz)
 
 	MCFG_QUANTUM_TIME(attotime::from_hz(6000))
+
+	MCFG_DEVICE_ADD("adc", ADC0809, 500000) // clock unknown
+	MCFG_ADC0808_EOC_FF_CB(INPUTLINE("maincpu", 6))
+	MCFG_ADC0808_IN0_CB(IOPORT("STICKX"))
+	MCFG_ADC0808_IN1_CB(IOPORT("STICKY"))
+	MCFG_ADC0808_IN2_CB(IOPORT("X_ADJUST"))
+	MCFG_ADC0808_IN3_CB(IOPORT("Y_ADJUST"))
 
 	MCFG_DEVICE_ADD("tc0220ioc", TC0220IOC, 0)
 	MCFG_TC0220IOC_READ_0_CB(IOPORT("DSWA"))
@@ -3518,6 +3762,13 @@ MACHINE_CONFIG_START(taitoz_state::spacegun)
 
 	MCFG_EEPROM_SERIAL_93C46_ADD("eeprom")
 	MCFG_EEPROM_SERIAL_DATA(spacegun_default_eeprom, 128)
+
+	MCFG_DEVICE_ADD("adc", ADC0809, 500000) // clock unknown
+	MCFG_ADC0808_EOC_FF_CB(INPUTLINE("sub", 5))
+	MCFG_ADC0808_IN0_CB(IOPORT("STICKX1"))
+	MCFG_ADC0808_IN1_CB(IOPORT("STICKY1"))
+	MCFG_ADC0808_IN2_CB(IOPORT("STICKX2"))
+	MCFG_ADC0808_IN3_CB(IOPORT("STICKY2"))
 
 	MCFG_DEVICE_ADD("tc0510nio", TC0510NIO, 0)
 	MCFG_TC0510NIO_READ_0_CB(IOPORT("DSWA"))
@@ -3912,6 +4163,9 @@ ROM_START( chasehq )
 	ROM_REGION( 0x10000, "audiocpu", 0 )    /* Z80 sound cpu */
 	ROM_LOAD( "b52-137.51",   0x00000, 0x10000, CRC(37abb74a) SHA1(1feb1e49102c13a90e02c150472545cd9f6334da) )
 
+	ROM_REGION( 0x8000, "motorcpu", 0 )
+	ROM_LOAD( "27c256.ic17",   0x0000, 0x8000, CRC(e52dfee1) SHA1(6e58e18eb2de3c899b950a4307ea21cd23683657) )
+
 	ROM_REGION( 0x80000, "gfx1", 0 )
 	ROM_LOAD( "b52-29.27", 0x00000, 0x80000, CRC(8366d27c) SHA1(d7c5f588b39742927228ce73e5d69bda1e903df6) ) /* SCR 8x8 */
 
@@ -3990,6 +4244,9 @@ ROM_START( chasehqj )
 
 	ROM_REGION( 0x10000, "audiocpu", 0 )    /* Z80 sound cpu */
 	ROM_LOAD( "b52-134.51",    0x00000, 0x10000, CRC(91faac7f) SHA1(05f00e0909444566877d0ef678bae49f107e1628) )
+
+	ROM_REGION( 0x8000, "motorcpu", 0 )
+	ROM_LOAD( "27c256.ic17",   0x0000, 0x8000, CRC(e52dfee1) SHA1(6e58e18eb2de3c899b950a4307ea21cd23683657) )
 
 	ROM_REGION( 0x80000, "gfx1", 0 )
 	ROM_LOAD( "b52-29.27", 0x00000, 0x80000, CRC(8366d27c) SHA1(d7c5f588b39742927228ce73e5d69bda1e903df6) ) /* SCR 8x8*/
@@ -4150,6 +4407,9 @@ ROM_START( chasehqu )
 
 	ROM_REGION( 0x10000, "audiocpu", 0 )    /* Z80 sound cpu */
 	ROM_LOAD( "b52-137.51",   0x00000, 0x10000, CRC(37abb74a) SHA1(1feb1e49102c13a90e02c150472545cd9f6334da) )
+
+	ROM_REGION( 0x8000, "motorcpu", 0 )
+	ROM_LOAD( "27c256.ic17",   0x0000, 0x8000, CRC(e52dfee1) SHA1(6e58e18eb2de3c899b950a4307ea21cd23683657) )
 
 	ROM_REGION( 0x80000, "gfx1", 0 )
 	ROM_LOAD( "b52-29.27", 0x00000, 0x80000, CRC(8366d27c) SHA1(d7c5f588b39742927228ce73e5d69bda1e903df6) ) /* SCR 8x8*/

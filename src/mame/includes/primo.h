@@ -14,6 +14,7 @@
 #include "imagedev/snapquik.h"
 #include "imagedev/cassette.h"
 #include "sound/spkrdev.h"
+#include "screen.h"
 
 #include "bus/cbmiec/cbmiec.h"
 #include "bus/generic/slot.h"
@@ -29,7 +30,8 @@ public:
 		m_speaker(*this, "speaker"),
 		m_cassette(*this, "cassette"),
 		m_cart1(*this, "cartslot1"),
-		m_cart2(*this, "cartslot2")
+		m_cart2(*this, "cartslot2"),
+		m_screen(*this, "screen")
 	{ }
 
 	DECLARE_DRIVER_INIT(primo48);
@@ -54,7 +56,7 @@ protected:
 	virtual void machine_start() override;
 	DECLARE_MACHINE_RESET(primob);
 	uint32_t screen_update_primo(screen_device &screen, bitmap_ind16 &bitmap, const rectangle &cliprect);
-	INTERRUPT_GEN_MEMBER(primo_vblank_interrupt);
+	DECLARE_WRITE_LINE_MEMBER(vblank_irq);
 	void primo_draw_scanline(bitmap_ind16 &bitmap, int primo_scanline);
 	void primo_update_memory();
 	void primo_common_driver_init (primo_state *state);
@@ -77,6 +79,7 @@ private:
 	required_device<cassette_image_device> m_cassette;
 	required_device<generic_slot_device> m_cart1;
 	required_device<generic_slot_device> m_cart2;
+	required_device<screen_device> m_screen;
 
 	memory_region *m_cart1_rom;
 	memory_region *m_cart2_rom;

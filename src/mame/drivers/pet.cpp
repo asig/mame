@@ -884,18 +884,20 @@ WRITE8_MEMBER( cbm8296_state::write )
 //  ADDRESS_MAP( pet2001_mem )
 //-------------------------------------------------
 
-ADDRESS_MAP_START(pet_state::pet2001_mem)
-	AM_RANGE(0x0000, 0xffff) AM_READWRITE(read, write)
-ADDRESS_MAP_END
+void pet_state::pet2001_mem(address_map &map)
+{
+	map(0x0000, 0xffff).rw(this, FUNC(pet_state::read), FUNC(pet_state::write));
+}
 
 
 //-------------------------------------------------
 //  ADDRESS_MAP( cbm8296_mem )
 //-------------------------------------------------
 
-ADDRESS_MAP_START(cbm8296_state::cbm8296_mem)
-	AM_RANGE(0x0000, 0xffff) AM_READWRITE(read, write)
-ADDRESS_MAP_END
+void cbm8296_state::cbm8296_mem(address_map &map)
+{
+	map(0x0000, 0xffff).rw(this, FUNC(cbm8296_state::read), FUNC(cbm8296_state::write));
+}
 
 
 
@@ -1582,9 +1584,10 @@ MC6845_UPDATE_ROW( pet80_state::cbm8296_update_row )
 //  SLOT_INTERFACE( cbm8296d_ieee488_devices )
 //-------------------------------------------------
 
-SLOT_INTERFACE_START( cbm8296d_ieee488_devices )
-	SLOT_INTERFACE("c8250lp", C8250LP)
-SLOT_INTERFACE_END
+void cbm8296d_ieee488_devices(device_slot_interface &device)
+{
+	device.option_add("c8250lp", C8250LP);
+}
 
 
 

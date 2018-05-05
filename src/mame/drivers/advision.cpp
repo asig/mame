@@ -36,14 +36,16 @@ READ8_MEMBER( advision_state::rom_r )
 	return m_cart->read_rom(space, offset & 0xfff);
 }
 
-ADDRESS_MAP_START(advision_state::program_map)
-	AM_RANGE(0x0000, 0x03ff) AM_ROMBANK("bank1")
-	AM_RANGE(0x0400, 0x0fff) AM_READ(rom_r)
-ADDRESS_MAP_END
+void advision_state::program_map(address_map &map)
+{
+	map(0x0000, 0x03ff).bankr("bank1");
+	map(0x0400, 0x0fff).r(this, FUNC(advision_state::rom_r));
+}
 
-ADDRESS_MAP_START(advision_state::io_map)
-	AM_RANGE(0x00, 0xff) AM_READWRITE(ext_ram_r, ext_ram_w)
-ADDRESS_MAP_END
+void advision_state::io_map(address_map &map)
+{
+	map(0x00, 0xff).rw(this, FUNC(advision_state::ext_ram_r), FUNC(advision_state::ext_ram_w));
+}
 
 /* Input Ports */
 
@@ -92,7 +94,7 @@ MACHINE_CONFIG_START(advision_state::advision)
 	MCFG_SPEAKER_STANDARD_MONO("speaker")
 	MCFG_SOUND_ADD("dac", DAC_2BIT_BINARY_WEIGHTED, 0) MCFG_SOUND_ROUTE(ALL_OUTPUTS, "speaker", 0.25) // unknown DAC
 	MCFG_DEVICE_ADD("vref", VOLTAGE_REGULATOR, 0) MCFG_VOLTAGE_REGULATOR_OUTPUT(5.0)
-	MCFG_SOUND_ROUTE_EX(0, "dac", 1.0, DAC_VREF_POS_INPUT) MCFG_SOUND_ROUTE_EX(0, "dac", -1.0, DAC_VREF_NEG_INPUT)
+	MCFG_SOUND_ROUTE(0, "dac", 1.0, DAC_VREF_POS_INPUT) MCFG_SOUND_ROUTE(0, "dac", -1.0, DAC_VREF_NEG_INPUT)
 
 	/* cartridge */
 	MCFG_GENERIC_CARTSLOT_ADD("cartslot", generic_plain_slot, "advision_cart")

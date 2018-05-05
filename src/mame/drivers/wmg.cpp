@@ -122,23 +122,25 @@ private:
  *  Address Map
  *
  *************************************/
-ADDRESS_MAP_START(wmg_state::wmg_cpu1)
-	AM_RANGE(0x0000, 0x8fff) AM_READ_BANK("bank1") AM_WRITEONLY AM_SHARE("videoram")
-	AM_RANGE(0x9000, 0xbfff) AM_RAM
-	AM_RANGE(0xc000, 0xcfff) AM_ROMBANK("bank7")
-	AM_RANGE(0xd000, 0xffff) AM_ROMBANK("bank5")
-	AM_RANGE(0xd000, 0xd000) AM_WRITE(wmg_d000_w)
-ADDRESS_MAP_END
+void wmg_state::wmg_cpu1(address_map &map)
+{
+	map(0x0000, 0x8fff).bankr("bank1").writeonly().share("videoram");
+	map(0x9000, 0xbfff).ram();
+	map(0xc000, 0xcfff).bankr("bank7");
+	map(0xd000, 0xffff).bankr("bank5");
+	map(0xd000, 0xd000).w(this, FUNC(wmg_state::wmg_d000_w));
+}
 
-ADDRESS_MAP_START(wmg_state::wmg_cpu2)
-	AM_RANGE(0x0000, 0x007f) AM_RAM     /* internal RAM */
-	AM_RANGE(0x0080, 0x00ff) AM_RAM     /* MC6810 RAM */
-	AM_RANGE(0x0400, 0x0403) AM_MIRROR(0x8000) AM_DEVREADWRITE("pia_2", pia6821_device, read, write)
+void wmg_state::wmg_cpu2(address_map &map)
+{
+	map(0x0000, 0x007f).ram();     /* internal RAM */
+	map(0x0080, 0x00ff).ram();     /* MC6810 RAM */
+	map(0x0400, 0x0403).mirror(0x8000).rw(m_pia_2, FUNC(pia6821_device::read), FUNC(pia6821_device::write));
 /* These next 2 are actually banked in CPU 1, but its not something Mame can handle very well. Placed here instead. */
-	AM_RANGE(0xc000, 0xc00f) AM_MIRROR(0x03f0) AM_WRITEONLY AM_SHARE("paletteram")
-	AM_RANGE(0xd000, 0xefff) AM_RAM AM_SHARE("nvram")
-	AM_RANGE(0xf000, 0xffff) AM_ROMBANK("bank6")
-ADDRESS_MAP_END
+	map(0xc000, 0xc00f).mirror(0x03f0).writeonly().share("paletteram");
+	map(0xd000, 0xefff).ram().share("nvram");
+	map(0xf000, 0xffff).bankr("bank6");
+}
 
 /***************************************************************
  *
@@ -150,10 +152,10 @@ ADDRESS_MAP_END
  ***************************************************************/
 static INPUT_PORTS_START( wmg )
 	PORT_START("IN0")
-	PORT_BIT( 0xff, IP_ACTIVE_HIGH, IPT_SPECIAL ) PORT_CUSTOM_MEMBER(DEVICE_SELF, wmg_state, wmg_mux_r, "0")
+	PORT_BIT( 0xff, IP_ACTIVE_HIGH, IPT_CUSTOM ) PORT_CUSTOM_MEMBER(DEVICE_SELF, wmg_state, wmg_mux_r, "0")
 
 	PORT_START("IN1")
-	PORT_BIT( 0xff, IP_ACTIVE_HIGH, IPT_SPECIAL ) PORT_CUSTOM_MEMBER(DEVICE_SELF, wmg_state, wmg_mux_r, "1")
+	PORT_BIT( 0xff, IP_ACTIVE_HIGH, IPT_CUSTOM ) PORT_CUSTOM_MEMBER(DEVICE_SELF, wmg_state, wmg_mux_r, "1")
 
 	PORT_START("IN2")
 	PORT_BIT( 0x01, IP_ACTIVE_HIGH, IPT_OTHER ) PORT_NAME("Auto Up / Manual Down") PORT_TOGGLE PORT_CODE(KEYCODE_F1)
@@ -519,7 +521,7 @@ MACHINE_CONFIG_START(wmg_state::wmg)
 
 	MCFG_SOUND_ADD("dac", MC1408, 0) MCFG_SOUND_ROUTE(ALL_OUTPUTS, "speaker", 0.25) // unknown DAC
 	MCFG_DEVICE_ADD("vref", VOLTAGE_REGULATOR, 0) MCFG_VOLTAGE_REGULATOR_OUTPUT(5.0)
-	MCFG_SOUND_ROUTE_EX(0, "dac", 1.0, DAC_VREF_POS_INPUT) MCFG_SOUND_ROUTE_EX(0, "dac", -1.0, DAC_VREF_NEG_INPUT)
+	MCFG_SOUND_ROUTE(0, "dac", 1.0, DAC_VREF_POS_INPUT) MCFG_SOUND_ROUTE(0, "dac", -1.0, DAC_VREF_NEG_INPUT)
 
 	/* pia */
 	MCFG_DEVICE_ADD("pia_0", PIA6821, 0)

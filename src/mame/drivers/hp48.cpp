@@ -1246,11 +1246,12 @@ ROM_END
    run-time.
  */
 
-ADDRESS_MAP_START(hp48_state::hp48)
+void hp48_state::hp48(address_map &map)
+{
 
-	AM_RANGE( 0x00000, 0xfffff ) AM_NOP /* configured at run-time */
+	map(0x00000, 0xfffff).noprw(); /* configured at run-time */
 
-ADDRESS_MAP_END
+}
 
 
 
@@ -1262,10 +1263,10 @@ MACHINE_CONFIG_START(hp48_state::hp48_common)
 	/* cpu */
 	MCFG_CPU_ADD ( "maincpu", SATURN, 3937007 ) /* almost 4 MHz */
 	MCFG_CPU_PROGRAM_MAP ( hp48)
-	MCFG_SATURN_CONFIG( WRITE32(hp48_state, hp48_reg_out), READ32(hp48_state, hp48_reg_in),
-						WRITELINE(hp48_state, hp48_mem_reset), WRITE32(hp48_state, hp48_mem_config),
-						WRITE32(hp48_state, hp48_mem_unconfig), READ32(hp48_state, hp48_mem_id),
-						WRITE32(hp48_state, hp48_mem_crc), WRITELINE(hp48_state, hp48_rsi) )
+	MCFG_SATURN_CONFIG( WRITE32(hp48_state, reg_out), READ32(hp48_state, reg_in),
+						WRITELINE(hp48_state, mem_reset), WRITE32(hp48_state, mem_config),
+						WRITE32(hp48_state, mem_unconfig), READ32(hp48_state, mem_id),
+						WRITE32(hp48_state, mem_crc), WRITELINE(hp48_state, rsi) )
 
 	/* memory */
 	MCFG_NVRAM_ADD_0FILL("nvram")
@@ -1286,7 +1287,7 @@ MACHINE_CONFIG_START(hp48_state::hp48_common)
 	MCFG_SPEAKER_STANDARD_MONO("speaker")
 	MCFG_SOUND_ADD("dac", DAC_1BIT, 0) MCFG_SOUND_ROUTE(ALL_OUTPUTS, "speaker", 0.5)
 	MCFG_DEVICE_ADD("vref", VOLTAGE_REGULATOR, 0) MCFG_VOLTAGE_REGULATOR_OUTPUT(5.0)
-	MCFG_SOUND_ROUTE_EX(0, "dac", 1.0, DAC_VREF_POS_INPUT)
+	MCFG_SOUND_ROUTE(0, "dac", 1.0, DAC_VREF_POS_INPUT)
 MACHINE_CONFIG_END
 
 MACHINE_CONFIG_START(hp48_state::hp48gx)
@@ -1294,8 +1295,8 @@ MACHINE_CONFIG_START(hp48_state::hp48gx)
 	MCFG_MACHINE_START_OVERRIDE  (hp48_state, hp48gx )
 
 	/* expansion ports */
-	MCFG_HP48_PORT_ADD ( "port1", 0, HP48_CE2,     128*1024 )
-	MCFG_HP48_PORT_ADD ( "port2", 1, HP48_NCE3, 4*1024*1024 )
+	MCFG_HP48_PORT_ADD ( "port1", HP48_CE2,     128*1024 )
+	MCFG_HP48_PORT_ADD ( "port2", HP48_NCE3, 4*1024*1024 )
 
 	/* serial I/O */
 	//MCFG_XMODEM_ADD( "rs232_x", hp48_xmodem_rs232_conf )
@@ -1329,8 +1330,8 @@ MACHINE_CONFIG_START(hp48_state::hp48sx)
 	MCFG_MACHINE_START_OVERRIDE  (hp48_state, hp48sx )
 
 	/* expansion ports */
-	MCFG_HP48_PORT_ADD  ( "port1", 0, HP48_CE1, 128*1024)
-	MCFG_HP48_PORT_ADD  ( "port2", 1, HP48_CE2, 128*1024)
+	MCFG_HP48_PORT_ADD  ( "port1", HP48_CE1, 128*1024)
+	MCFG_HP48_PORT_ADD  ( "port2", HP48_CE2, 128*1024)
 
 	/* serial I/O */
 	//MCFG_KERMIT_ADD( "rs232_k", hp48_kermit_rs232_conf )

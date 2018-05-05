@@ -17,12 +17,13 @@
 #include "video/ramdac.h"
 
 // default address map
-ADDRESS_MAP_START(ramdac_device::ramdac_palram)
-	AM_RANGE(0x000, 0x0ff) AM_RAM // R bank
-	AM_RANGE(0x100, 0x1ff) AM_RAM // G bank
-	AM_RANGE(0x200, 0x2ff) AM_RAM // B bank
-	AM_RANGE(0x300, 0x3ff) AM_NOP
-ADDRESS_MAP_END
+void ramdac_device::ramdac_palram(address_map &map)
+{
+	map(0x000, 0x0ff).ram(); // R bank
+	map(0x100, 0x1ff).ram(); // G bank
+	map(0x200, 0x2ff).ram(); // B bank
+	map(0x300, 0x3ff).noprw();
+}
 
 //**************************************************************************
 //  GLOBAL VARIABLES
@@ -48,16 +49,6 @@ ramdac_device::ramdac_device(const machine_config &mconfig, const char *tag, dev
 		m_color_base(0),
 		m_split_read_reg(0)
 {
-}
-
-//-------------------------------------------------
-//  static_set_palette_tag: Set the tag of the
-//  palette device
-//-------------------------------------------------
-
-void ramdac_device::static_set_palette_tag(device_t &device, const char *tag)
-{
-	downcast<ramdac_device &>(device).m_palette.set_tag(tag);
 }
 
 //-------------------------------------------------

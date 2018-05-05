@@ -147,22 +147,23 @@ WRITE16_MEMBER(quantum_state::led_w)
  *
  *************************************/
 
-ADDRESS_MAP_START(quantum_state::main_map)
-	AM_RANGE(0x000000, 0x013fff) AM_ROM
-	AM_RANGE(0x018000, 0x01cfff) AM_RAM
-	AM_RANGE(0x800000, 0x801fff) AM_RAM AM_SHARE("vectorram")
-	AM_RANGE(0x840000, 0x84001f) AM_DEVREADWRITE8("pokey1", pokey_device, read, write, 0x00ff)
-	AM_RANGE(0x840020, 0x84003f) AM_DEVREADWRITE8("pokey2", pokey_device, read, write, 0x00ff)
-	AM_RANGE(0x900000, 0x9001ff) AM_RAM AM_SHARE("nvram")
-	AM_RANGE(0x940000, 0x940001) AM_READ(trackball_r) /* trackball */
-	AM_RANGE(0x948000, 0x948001) AM_READ_PORT("SYSTEM")
-	AM_RANGE(0x950000, 0x95001f) AM_WRITEONLY AM_SHARE("colorram")
-	AM_RANGE(0x958000, 0x958001) AM_WRITE(led_w)
-	AM_RANGE(0x960000, 0x960001) AM_WRITENOP
-	AM_RANGE(0x968000, 0x968001) AM_DEVWRITE("avg", avg_quantum_device, reset_word_w)
-	AM_RANGE(0x970000, 0x970001) AM_DEVWRITE("avg", avg_quantum_device, go_word_w)
-	AM_RANGE(0x978000, 0x978001) AM_READNOP AM_DEVWRITE("watchdog", watchdog_timer_device, reset16_w)
-ADDRESS_MAP_END
+void quantum_state::main_map(address_map &map)
+{
+	map(0x000000, 0x013fff).rom();
+	map(0x018000, 0x01cfff).ram();
+	map(0x800000, 0x801fff).ram().share("vectorram");
+	map(0x840000, 0x84001f).rw("pokey1", FUNC(pokey_device::read), FUNC(pokey_device::write)).umask16(0x00ff);
+	map(0x840020, 0x84003f).rw("pokey2", FUNC(pokey_device::read), FUNC(pokey_device::write)).umask16(0x00ff);
+	map(0x900000, 0x9001ff).ram().share("nvram");
+	map(0x940000, 0x940001).r(this, FUNC(quantum_state::trackball_r)); /* trackball */
+	map(0x948000, 0x948001).portr("SYSTEM");
+	map(0x950000, 0x95001f).writeonly().share("colorram");
+	map(0x958000, 0x958001).w(this, FUNC(quantum_state::led_w));
+	map(0x960000, 0x960001).nopw();
+	map(0x968000, 0x968001).w(m_avg, FUNC(avg_quantum_device::reset_word_w));
+	map(0x970000, 0x970001).w(m_avg, FUNC(avg_quantum_device::go_word_w));
+	map(0x978000, 0x978001).nopr().w("watchdog", FUNC(watchdog_timer_device::reset16_w));
+}
 
 
 /*************************************
@@ -174,7 +175,7 @@ ADDRESS_MAP_END
 static INPUT_PORTS_START( quantum )
 	PORT_START("SYSTEM")
 	/* YHALT here MUST BE ALWAYS 0  */
-	PORT_BIT( 0x0001, IP_ACTIVE_HIGH, IPT_SPECIAL ) PORT_CUSTOM_MEMBER("avg", avg_quantum_device, done_r, nullptr) /* vg YHALT */
+	PORT_BIT( 0x0001, IP_ACTIVE_HIGH, IPT_CUSTOM ) PORT_CUSTOM_MEMBER("avg", avg_quantum_device, done_r, nullptr) /* vg YHALT */
 	PORT_BIT( 0x0002, IP_ACTIVE_LOW, IPT_COIN3 )
 	PORT_BIT( 0x0004, IP_ACTIVE_LOW, IPT_START1 )
 	PORT_BIT( 0x0008, IP_ACTIVE_LOW, IPT_START2 )
@@ -306,7 +307,7 @@ MACHINE_CONFIG_START(quantum_state::quantum)
 	MCFG_POKEY_POT6_R_CB(READ8(quantum_state, input_1_r))
 	MCFG_POKEY_POT7_R_CB(READ8(quantum_state, input_1_r))
 	MCFG_POKEY_OUTPUT_OPAMP(RES_K(1), 0.0, 5.0)
-	MCFG_SOUND_ROUTE_EX(0, "discrete", 1.0, 0)
+	MCFG_SOUND_ROUTE(0, "discrete", 1.0, 0)
 
 	MCFG_SOUND_ADD("pokey2", POKEY, 600000)
 	MCFG_POKEY_POT0_R_CB(READ8(quantum_state, input_2_r))
@@ -318,7 +319,7 @@ MACHINE_CONFIG_START(quantum_state::quantum)
 	MCFG_POKEY_POT6_R_CB(READ8(quantum_state, input_2_r))
 	MCFG_POKEY_POT7_R_CB(READ8(quantum_state, input_2_r))
 	MCFG_POKEY_OUTPUT_OPAMP(RES_K(1), 0.0, 5.0)
-	MCFG_SOUND_ROUTE_EX(0, "discrete", 1.0, 1)
+	MCFG_SOUND_ROUTE(0, "discrete", 1.0, 1)
 
 	MCFG_SOUND_ADD("discrete", DISCRETE, 0)
 	MCFG_DISCRETE_INTF(quantum)

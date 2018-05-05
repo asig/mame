@@ -61,11 +61,12 @@ ToDo:
 ///////////////////////////
 
 // 512 kbyte ram + no memory mapped flash
-ADDRESS_MAP_START(cybiko_state::cybikov1_mem)
-	AM_RANGE( 0x000000, 0x007fff ) AM_ROM
-	AM_RANGE( 0x600000, 0x600001 ) AM_READWRITE( cybiko_lcd_r, cybiko_lcd_w )
+void cybiko_state::cybikov1_mem(address_map &map)
+{
+	map(0x000000, 0x007fff).rom();
+	map(0x600000, 0x600001).rw(this, FUNC(cybiko_state::cybiko_lcd_r), FUNC(cybiko_state::cybiko_lcd_w));
 //  AM_RANGE( 0xe00000, 0xe07fff ) AM_READ( cybikov1_key_r )
-ADDRESS_MAP_END
+}
 
 /*
 
@@ -101,21 +102,23 @@ ptr: 243150=24297a
 //  +-------------------------------------+
 
 // 256 kbyte ram + 256 kbyte memory mapped flash
-ADDRESS_MAP_START(cybiko_state::cybikov2_mem)
-	AM_RANGE( 0x000000, 0x007fff ) AM_ROM
-	AM_RANGE( 0x100000, 0x13ffff ) AM_DEVREAD8("flash2", sst_39vf020_device, read, 0xffff) AM_MIRROR( 0x0c0000 )
-	AM_RANGE( 0x600000, 0x600001 ) AM_READWRITE( cybiko_lcd_r, cybiko_lcd_w ) AM_MIRROR( 0x1ffffe )
-	AM_RANGE( 0xe00000, 0xffdbff ) AM_READ( cybikov2_key_r )
-ADDRESS_MAP_END
+void cybiko_state::cybikov2_mem(address_map &map)
+{
+	map(0x000000, 0x007fff).rom();
+	map(0x100000, 0x13ffff).r("flash2", FUNC(sst_39vf020_device::read)).mirror(0x0c0000);
+	map(0x600000, 0x600001).rw(this, FUNC(cybiko_state::cybiko_lcd_r), FUNC(cybiko_state::cybiko_lcd_w)).mirror(0x1ffffe);
+	map(0xe00000, 0xffdbff).r(this, FUNC(cybiko_state::cybikov2_key_r));
+}
 
 // 2048 kbyte ram + 512 kbyte memory mapped flash
-ADDRESS_MAP_START(cybiko_state::cybikoxt_mem)
-	AM_RANGE( 0x000000, 0x007fff ) AM_ROM AM_MIRROR( 0x038000 )
-	AM_RANGE( 0x100000, 0x100001 ) AM_READWRITE( cybiko_lcd_r, cybiko_lcd_w )
-	AM_RANGE( 0x200000, 0x200003 ) AM_WRITE( cybiko_usb_w )
-	AM_RANGE( 0x600000, 0x67ffff ) AM_DEVREAD("flashxt", sst_39vf400a_device, read) AM_MIRROR( 0x180000 )
-	AM_RANGE( 0xe00000, 0xefffff ) AM_READ( cybikoxt_key_r )
-ADDRESS_MAP_END
+void cybiko_state::cybikoxt_mem(address_map &map)
+{
+	map(0x000000, 0x007fff).rom().mirror(0x038000);
+	map(0x100000, 0x100001).rw(this, FUNC(cybiko_state::cybiko_lcd_r), FUNC(cybiko_state::cybiko_lcd_w));
+	map(0x200000, 0x200003).w(this, FUNC(cybiko_state::cybiko_usb_w));
+	map(0x600000, 0x67ffff).r("flashxt", FUNC(sst_39vf400a_device::read)).mirror(0x180000);
+	map(0xe00000, 0xefffff).r(this, FUNC(cybiko_state::cybikoxt_key_r));
+}
 
 WRITE16_MEMBER(cybiko_state::serflash_w)
 {
@@ -182,25 +185,28 @@ READ16_MEMBER(cybiko_state::port0_r)
 // ADDRESS MAP - IO //
 //////////////////////
 
-ADDRESS_MAP_START(cybiko_state::cybikov1_io)
-	AM_RANGE(h8_device::PORT_3, h8_device::PORT_3) AM_WRITE(serflash_w)
-	AM_RANGE(h8_device::PORT_F, h8_device::PORT_F) AM_READWRITE(clock_r, clock_w)
-	AM_RANGE(h8_device::ADC_1,  h8_device::ADC_1)  AM_READ(adc1_r)
-	AM_RANGE(h8_device::ADC_2,  h8_device::ADC_2)  AM_READ(adc2_r)
-ADDRESS_MAP_END
+void cybiko_state::cybikov1_io(address_map &map)
+{
+	map(h8_device::PORT_3, h8_device::PORT_3).w(this, FUNC(cybiko_state::serflash_w));
+	map(h8_device::PORT_F, h8_device::PORT_F).rw(this, FUNC(cybiko_state::clock_r), FUNC(cybiko_state::clock_w));
+	map(h8_device::ADC_1, h8_device::ADC_1).r(this, FUNC(cybiko_state::adc1_r));
+	map(h8_device::ADC_2, h8_device::ADC_2).r(this, FUNC(cybiko_state::adc2_r));
+}
 
-ADDRESS_MAP_START(cybiko_state::cybikov2_io)
-	AM_RANGE(h8_device::PORT_1, h8_device::PORT_1) AM_READ(port0_r)
-	AM_RANGE(h8_device::PORT_3, h8_device::PORT_3) AM_WRITE(serflash_w)
-	AM_RANGE(h8_device::PORT_F, h8_device::PORT_F) AM_READWRITE(clock_r, clock_w)
-	AM_RANGE(h8_device::ADC_1,  h8_device::ADC_1)  AM_READ(adc1_r)
-	AM_RANGE(h8_device::ADC_2,  h8_device::ADC_2)  AM_READ(adc2_r)
-ADDRESS_MAP_END
+void cybiko_state::cybikov2_io(address_map &map)
+{
+	map(h8_device::PORT_1, h8_device::PORT_1).r(this, FUNC(cybiko_state::port0_r));
+	map(h8_device::PORT_3, h8_device::PORT_3).w(this, FUNC(cybiko_state::serflash_w));
+	map(h8_device::PORT_F, h8_device::PORT_F).rw(this, FUNC(cybiko_state::clock_r), FUNC(cybiko_state::clock_w));
+	map(h8_device::ADC_1, h8_device::ADC_1).r(this, FUNC(cybiko_state::adc1_r));
+	map(h8_device::ADC_2, h8_device::ADC_2).r(this, FUNC(cybiko_state::adc2_r));
+}
 
-ADDRESS_MAP_START(cybiko_state::cybikoxt_io)
-	AM_RANGE(h8_device::PORT_A, h8_device::PORT_A) AM_READ(xtpower_r)
-	AM_RANGE(h8_device::PORT_F, h8_device::PORT_F) AM_READWRITE(xtclock_r, xtclock_w)
-ADDRESS_MAP_END
+void cybiko_state::cybikoxt_io(address_map &map)
+{
+	map(h8_device::PORT_A, h8_device::PORT_A).r(this, FUNC(cybiko_state::xtpower_r));
+	map(h8_device::PORT_F, h8_device::PORT_F).rw(this, FUNC(cybiko_state::xtclock_r), FUNC(cybiko_state::xtclock_w));
+}
 
 /////////////////
 // INPUT PORTS //
@@ -391,8 +397,8 @@ MACHINE_CONFIG_START(cybiko_state::cybikov1)
 	MCFG_CPU_IO_MAP( cybikov1_io )
 
 	MCFG_DEVICE_MODIFY("maincpu:sci1")
-	MCFG_H8_SCI_TX_CALLBACK(DEVWRITELINE("^flash1", at45db041_device, si_w))
-	MCFG_H8_SCI_CLK_CALLBACK(DEVWRITELINE("^flash1", at45db041_device, sck_w))
+	MCFG_H8_SCI_TX_CALLBACK(DEVWRITELINE("flash1", at45db041_device, si_w))
+	MCFG_H8_SCI_CLK_CALLBACK(DEVWRITELINE("flash1", at45db041_device, sck_w))
 
 	// screen
 	MCFG_SCREEN_ADD("screen", RASTER)
@@ -423,14 +429,14 @@ MACHINE_CONFIG_START(cybiko_state::cybikov1)
 
 	/* serial debug port */
 	MCFG_RS232_PORT_ADD ("debug_serial", default_rs232_devices, nullptr)
-	MCFG_DEVICE_CARD_DEVICE_INPUT_DEFAULTS("null_modem", debug_serial)
-	MCFG_DEVICE_CARD_DEVICE_INPUT_DEFAULTS("terminal", debug_serial)
-	MCFG_DEVICE_CARD_DEVICE_INPUT_DEFAULTS("pty", debug_serial)
+	MCFG_SLOT_OPTION_DEVICE_INPUT_DEFAULTS("null_modem", debug_serial)
+	MCFG_SLOT_OPTION_DEVICE_INPUT_DEFAULTS("terminal", debug_serial)
+	MCFG_SLOT_OPTION_DEVICE_INPUT_DEFAULTS("pty", debug_serial)
 
 	MCFG_DEVICE_MODIFY("debug_serial")
-	MCFG_RS232_RXD_HANDLER(DEVWRITELINE(":maincpu:sci2", h8_sci_device, rx_w))
+	MCFG_RS232_RXD_HANDLER(DEVWRITELINE("maincpu:sci2", h8_sci_device, rx_w))
 	MCFG_DEVICE_MODIFY("maincpu:sci2")
-	MCFG_H8_SCI_TX_CALLBACK(DEVWRITELINE(":debug_serial", rs232_port_device, write_txd))
+	MCFG_H8_SCI_TX_CALLBACK(DEVWRITELINE("debug_serial", rs232_port_device, write_txd))
 
 	/* quickload */
 	MCFG_QUICKLOAD_ADD("quickload", cybiko_state, cybiko, "bin,nv", 0)
@@ -444,8 +450,8 @@ MACHINE_CONFIG_START(cybiko_state::cybikov2)
 	MCFG_CPU_IO_MAP(cybikov2_io)
 
 	MCFG_DEVICE_MODIFY("maincpu:sci1")
-	MCFG_H8_SCI_TX_CALLBACK(DEVWRITELINE("^flash1", at45db041_device, si_w))
-	MCFG_H8_SCI_CLK_CALLBACK(DEVWRITELINE("^flash1", at45db041_device, sck_w))
+	MCFG_H8_SCI_TX_CALLBACK(DEVWRITELINE("flash1", at45db041_device, si_w))
+	MCFG_H8_SCI_CLK_CALLBACK(DEVWRITELINE("flash1", at45db041_device, sck_w))
 
 	// machine
 	MCFG_SST_39VF020_ADD("flash2")
@@ -457,9 +463,9 @@ MACHINE_CONFIG_START(cybiko_state::cybikov2)
 
 	/* serial debug port */
 	MCFG_DEVICE_MODIFY("debug_serial")
-	MCFG_RS232_RXD_HANDLER(DEVWRITELINE(":maincpu:sci2", h8_sci_device, rx_w))
+	MCFG_RS232_RXD_HANDLER(DEVWRITELINE("maincpu:sci2", h8_sci_device, rx_w))
 	MCFG_DEVICE_MODIFY("maincpu:sci2")
-	MCFG_H8_SCI_TX_CALLBACK(DEVWRITELINE(":debug_serial", rs232_port_device, write_txd))
+	MCFG_H8_SCI_TX_CALLBACK(DEVWRITELINE("debug_serial", rs232_port_device, write_txd))
 MACHINE_CONFIG_END
 
 MACHINE_CONFIG_START(cybiko_state::cybikoxt)
@@ -479,9 +485,9 @@ MACHINE_CONFIG_START(cybiko_state::cybikoxt)
 
 	/* serial debug port */
 	MCFG_DEVICE_MODIFY("debug_serial")
-	MCFG_RS232_RXD_HANDLER(DEVWRITELINE(":maincpu:sci2", h8_sci_device, rx_w))
+	MCFG_RS232_RXD_HANDLER(DEVWRITELINE("maincpu:sci2", h8_sci_device, rx_w))
 	MCFG_DEVICE_MODIFY("maincpu:sci2")
-	MCFG_H8_SCI_TX_CALLBACK(DEVWRITELINE(":debug_serial", rs232_port_device, write_txd))
+	MCFG_H8_SCI_TX_CALLBACK(DEVWRITELINE("debug_serial", rs232_port_device, write_txd))
 
 	/* quickload */
 	MCFG_DEVICE_REMOVE("quickload")

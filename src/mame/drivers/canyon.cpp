@@ -101,16 +101,6 @@ WRITE8_MEMBER(canyon_state::output_latch_w)
 	m_outlatch->write_bit((offset & 0x180) >> 6 | BIT(offset, 0), BIT(offset, 1));
 }
 
-WRITE_LINE_MEMBER(canyon_state::led1_w)
-{
-	output().set_led_value(0, state);
-}
-
-WRITE_LINE_MEMBER(canyon_state::led2_w)
-{
-	output().set_led_value(1, state);
-}
-
 
 
 
@@ -120,18 +110,19 @@ WRITE_LINE_MEMBER(canyon_state::led2_w)
  *
  *************************************/
 
-ADDRESS_MAP_START(canyon_state::main_map)
-	ADDRESS_MAP_GLOBAL_MASK(0x3fff)
-	AM_RANGE(0x0000, 0x00ff) AM_MIRROR(0x100) AM_RAM
-	AM_RANGE(0x0400, 0x0401) AM_WRITE(canyon_motor_w)
-	AM_RANGE(0x0500, 0x0500) AM_WRITE(canyon_explode_w)
-	AM_RANGE(0x0501, 0x0501) AM_DEVWRITE("watchdog", watchdog_timer_device, reset_w) /* watchdog, disabled in service mode */
-	AM_RANGE(0x0600, 0x0603) AM_SELECT(0x0180) AM_WRITE(output_latch_w)
-	AM_RANGE(0x0800, 0x0bff) AM_RAM_WRITE(canyon_videoram_w) AM_SHARE("videoram")
-	AM_RANGE(0x1000, 0x17ff) AM_READ(canyon_switches_r) AM_WRITENOP  /* sloppy code writes here */
-	AM_RANGE(0x1800, 0x1fff) AM_READ(canyon_options_r)
-	AM_RANGE(0x2000, 0x3fff) AM_ROM
-ADDRESS_MAP_END
+void canyon_state::main_map(address_map &map)
+{
+	map.global_mask(0x3fff);
+	map(0x0000, 0x00ff).mirror(0x100).ram();
+	map(0x0400, 0x0401).w(this, FUNC(canyon_state::canyon_motor_w));
+	map(0x0500, 0x0500).w(this, FUNC(canyon_state::canyon_explode_w));
+	map(0x0501, 0x0501).w(m_watchdog, FUNC(watchdog_timer_device::reset_w)); /* watchdog, disabled in service mode */
+	map(0x0600, 0x0603).select(0x0180).w(this, FUNC(canyon_state::output_latch_w));
+	map(0x0800, 0x0bff).ram().w(this, FUNC(canyon_state::canyon_videoram_w)).share("videoram");
+	map(0x1000, 0x17ff).r(this, FUNC(canyon_state::canyon_switches_r)).nopw();  /* sloppy code writes here */
+	map(0x1800, 0x1fff).r(this, FUNC(canyon_state::canyon_options_r));
+	map(0x2000, 0x3fff).rom();
+}
 
 
 
@@ -257,8 +248,8 @@ MACHINE_CONFIG_START(canyon_state::canyon)
 	MCFG_DEVICE_ADD("outlatch", F9334, 0) // C7
 	MCFG_ADDRESSABLE_LATCH_Q0_OUT_CB(DEVWRITELINE("discrete", discrete_device, write_line<CANYON_WHISTLE1_EN>))
 	MCFG_ADDRESSABLE_LATCH_Q1_OUT_CB(DEVWRITELINE("discrete", discrete_device, write_line<CANYON_WHISTLE2_EN>))
-	MCFG_ADDRESSABLE_LATCH_Q2_OUT_CB(WRITELINE(canyon_state, led1_w))
-	MCFG_ADDRESSABLE_LATCH_Q3_OUT_CB(WRITELINE(canyon_state, led2_w))
+	MCFG_ADDRESSABLE_LATCH_Q2_OUT_CB(OUTPUT("led0")) // 1 PLAYER LAMP
+	MCFG_ADDRESSABLE_LATCH_Q3_OUT_CB(OUTPUT("led1")) // 2 PLAYER LAMP
 	MCFG_ADDRESSABLE_LATCH_Q4_OUT_CB(DEVWRITELINE("discrete", discrete_device, write_line<CANYON_ATTRACT1_EN>))
 	MCFG_ADDRESSABLE_LATCH_Q5_OUT_CB(DEVWRITELINE("discrete", discrete_device, write_line<CANYON_ATTRACT2_EN>))
 

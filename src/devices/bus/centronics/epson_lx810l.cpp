@@ -95,13 +95,14 @@ const tiny_rom_entry *epson_ap2000_device::device_rom_region() const
 //  ADDRESS_MAP( lx810l_mem )
 //-------------------------------------------------
 
-ADDRESS_MAP_START(epson_lx810l_device::lx810l_mem)
-	AM_RANGE(0x0000, 0x7fff) AM_ROM /* 32k firmware */
-	AM_RANGE(0x8000, 0x9fff) AM_RAM /* 8k external RAM */
-	AM_RANGE(0xa000, 0xbfff) AM_READWRITE(fakemem_r, fakemem_w) /* fake memory, write one, set all */
-	AM_RANGE(0xc000, 0xc00f) AM_MIRROR(0x1ff0) AM_DEVREADWRITE("e05a30", e05a30_device, read, write)
-	AM_RANGE(0xe000, 0xfeff) AM_NOP /* not used */
-ADDRESS_MAP_END
+void epson_lx810l_device::lx810l_mem(address_map &map)
+{
+	map(0x0000, 0x7fff).rom(); /* 32k firmware */
+	map(0x8000, 0x9fff).ram(); /* 8k external RAM */
+	map(0xa000, 0xbfff).rw(this, FUNC(epson_lx810l_device::fakemem_r), FUNC(epson_lx810l_device::fakemem_w)); /* fake memory, write one, set all */
+	map(0xc000, 0xc00f).mirror(0x1ff0).rw("e05a30", FUNC(e05a30_device::read), FUNC(e05a30_device::write));
+	map(0xe000, 0xfeff).noprw(); /* not used */
+}
 
 
 //-------------------------------------------------
@@ -143,7 +144,7 @@ MACHINE_CONFIG_START(epson_lx810l_device::device_add_mconfig)
 	MCFG_SPEAKER_STANDARD_MONO("speaker")
 	MCFG_SOUND_ADD("dac", DAC_1BIT, 0) MCFG_SOUND_ROUTE(ALL_OUTPUTS, "speaker", 0.25)
 	MCFG_DEVICE_ADD("vref", VOLTAGE_REGULATOR, 0) MCFG_VOLTAGE_REGULATOR_OUTPUT(5.0)
-	MCFG_SOUND_ROUTE_EX(0, "dac", 1.0, DAC_VREF_POS_INPUT)
+	MCFG_SOUND_ROUTE(0, "dac", 1.0, DAC_VREF_POS_INPUT)
 
 	/* gate array */
 	MCFG_DEVICE_ADD("e05a30", E05A30, 0)
@@ -314,7 +315,7 @@ void epson_lx810l_device::device_start()
 {
 	m_cr_timer = timer_alloc(TIMER_CR);
 
-	machine().first_screen()->register_screen_bitmap(m_bitmap);
+	m_screen->register_screen_bitmap(m_bitmap);
 	m_bitmap.fill(0xffffff); /* Start with a clean white piece of paper */
 }
 

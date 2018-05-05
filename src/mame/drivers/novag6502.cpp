@@ -143,6 +143,7 @@ void novagbase_state::machine_start()
 	m_led_select = 0;
 	m_led_data = 0;
 	m_lcd_control = 0;
+	m_lcd_data = 0;
 
 	// register for savestates
 	save_item(NAME(m_display_maxy));
@@ -157,6 +158,7 @@ void novagbase_state::machine_start()
 	save_item(NAME(m_led_select));
 	save_item(NAME(m_led_data));
 	save_item(NAME(m_lcd_control));
+	save_item(NAME(m_lcd_data));
 }
 
 void novagbase_state::machine_reset()
@@ -401,14 +403,15 @@ WRITE8_MEMBER(novag6502_state::sexpert_lcd_control_w)
 	// d0: HD44780 RS
 	// d1: HD44780 R/W
 	// d2: HD44780 E
+	if (m_lcd_control & ~data & 4 && ~data & 2)
+		m_lcd->write(space, m_lcd_control & 1, m_lcd_data);
 	m_lcd_control = data & 7;
 }
 
 WRITE8_MEMBER(novag6502_state::sexpert_lcd_data_w)
 {
 	// d0-d7: HD44780 data
-	if (m_lcd_control & 4 && ~m_lcd_control & 2)
-		m_lcd->write(space, m_lcd_control & 1, data);
+	m_lcd_data = data;
 }
 
 WRITE8_MEMBER(novag6502_state::sexpert_leds_w)
@@ -506,44 +509,48 @@ WRITE8_MEMBER(novag6502_state::sforte_lcd_data_w)
 
 // Super Constellation / Constellation Forte
 
-ADDRESS_MAP_START(novag6502_state::supercon_map)
-	AM_RANGE(0x0000, 0x0fff) AM_RAM AM_SHARE("nvram")
-	AM_RANGE(0x1c00, 0x1c00) AM_WRITENOP // printer/clock?
-	AM_RANGE(0x1d00, 0x1d00) AM_WRITENOP // printer/clock?
-	AM_RANGE(0x1e00, 0x1e00) AM_READWRITE(supercon_input2_r, supercon_mux_w)
-	AM_RANGE(0x1f00, 0x1f00) AM_READWRITE(supercon_input1_r, supercon_control_w)
-	AM_RANGE(0x2000, 0xffff) AM_ROM
-ADDRESS_MAP_END
+void novag6502_state::supercon_map(address_map &map)
+{
+	map(0x0000, 0x0fff).ram().share("nvram");
+	map(0x1c00, 0x1c00).nopw(); // printer/clock?
+	map(0x1d00, 0x1d00).nopw(); // printer/clock?
+	map(0x1e00, 0x1e00).rw(this, FUNC(novag6502_state::supercon_input2_r), FUNC(novag6502_state::supercon_mux_w));
+	map(0x1f00, 0x1f00).rw(this, FUNC(novag6502_state::supercon_input1_r), FUNC(novag6502_state::supercon_control_w));
+	map(0x2000, 0xffff).rom();
+}
 
-ADDRESS_MAP_START(novag6502_state::cforte_map)
-	AM_IMPORT_FROM( supercon_map )
-	AM_RANGE(0x1e00, 0x1e00) AM_READWRITE(supercon_input2_r, cforte_mux_w)
-	AM_RANGE(0x1f00, 0x1f00) AM_READWRITE(supercon_input1_r, cforte_control_w)
-ADDRESS_MAP_END
+void novag6502_state::cforte_map(address_map &map)
+{
+	supercon_map(map);
+	map(0x1e00, 0x1e00).rw(this, FUNC(novag6502_state::supercon_input2_r), FUNC(novag6502_state::cforte_mux_w));
+	map(0x1f00, 0x1f00).rw(this, FUNC(novag6502_state::supercon_input1_r), FUNC(novag6502_state::cforte_control_w));
+}
 
 
 // Super Expert / Super Forte
 
-ADDRESS_MAP_START(novag6502_state::sforte_map)
-	AM_RANGE(0x0000, 0x1fef) AM_RAM AM_SHARE("nvram") // 8KB RAM, but RAM CE pin is deactivated on $1ff0-$1fff
-	AM_RANGE(0x1ff0, 0x1ff0) AM_READ(sexpert_input1_r)
-	AM_RANGE(0x1ff1, 0x1ff1) AM_READ(sexpert_input2_r)
-	AM_RANGE(0x1ff2, 0x1ff2) AM_WRITENOP // printer
-	AM_RANGE(0x1ff3, 0x1ff3) AM_WRITENOP // printer
-	AM_RANGE(0x1ff6, 0x1ff6) AM_WRITE(sforte_lcd_control_w)
-	AM_RANGE(0x1ff7, 0x1ff7) AM_WRITE(sforte_lcd_data_w)
-	AM_RANGE(0x1ffc, 0x1fff) AM_DEVREADWRITE("acia", mos6551_device, read, write)
-	AM_RANGE(0x2000, 0x7fff) AM_ROM
-	AM_RANGE(0x8000, 0xffff) AM_ROMBANK("bank1")
-ADDRESS_MAP_END
+void novag6502_state::sforte_map(address_map &map)
+{
+	map(0x0000, 0x1fef).ram().share("nvram"); // 8KB RAM, but RAM CE pin is deactivated on $1ff0-$1fff
+	map(0x1ff0, 0x1ff0).r(this, FUNC(novag6502_state::sexpert_input1_r));
+	map(0x1ff1, 0x1ff1).r(this, FUNC(novag6502_state::sexpert_input2_r));
+	map(0x1ff2, 0x1ff2).nopw(); // printer
+	map(0x1ff3, 0x1ff3).nopw(); // printer
+	map(0x1ff6, 0x1ff6).w(this, FUNC(novag6502_state::sforte_lcd_control_w));
+	map(0x1ff7, 0x1ff7).w(this, FUNC(novag6502_state::sforte_lcd_data_w));
+	map(0x1ffc, 0x1fff).rw("acia", FUNC(mos6551_device::read), FUNC(mos6551_device::write));
+	map(0x2000, 0x7fff).rom();
+	map(0x8000, 0xffff).bankr("bank1");
+}
 
-ADDRESS_MAP_START(novag6502_state::sexpert_map)
-	AM_IMPORT_FROM( sforte_map )
-	AM_RANGE(0x1ff4, 0x1ff4) AM_WRITE(sexpert_leds_w)
-	AM_RANGE(0x1ff5, 0x1ff5) AM_WRITE(sexpert_mux_w)
-	AM_RANGE(0x1ff6, 0x1ff6) AM_WRITE(sexpert_lcd_control_w)
-	AM_RANGE(0x1ff7, 0x1ff7) AM_WRITE(sexpert_lcd_data_w)
-ADDRESS_MAP_END
+void novag6502_state::sexpert_map(address_map &map)
+{
+	sforte_map(map);
+	map(0x1ff4, 0x1ff4).w(this, FUNC(novag6502_state::sexpert_leds_w));
+	map(0x1ff5, 0x1ff5).w(this, FUNC(novag6502_state::sexpert_mux_w));
+	map(0x1ff6, 0x1ff6).w(this, FUNC(novag6502_state::sexpert_lcd_control_w));
+	map(0x1ff7, 0x1ff7).w(this, FUNC(novag6502_state::sexpert_lcd_data_w));
+}
 
 
 

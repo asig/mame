@@ -11,7 +11,6 @@
 #include "emu.h"
 #include "coco_rs232.h"
 
-#include "cococart.h"
 #include "machine/mos6551.h"
 #include "bus/rs232/rs232.h"
 
@@ -32,8 +31,8 @@
 namespace
 {
 	class coco_rs232_device :
-		public device_t,
-		public device_cococart_interface
+			public device_t,
+			public device_cococart_interface
 	{
 	public:
 		// construction/destruction
@@ -96,7 +95,7 @@ MACHINE_CONFIG_END
 
 ROM_START(coco_rs232_device)
 	ROM_REGION(0x1000, "eprom", ROMREGION_ERASE00)
-	ROM_LOAD("Deluxe_RS-232_Program_Pak_1983_26-2226_Tandy.rom", 0x0000, 0x1000, CRC(d990e1f9) SHA1(3fad25f3462a0b581b9c182ac11ad90c8fa08cb6))
+	ROM_LOAD("deluxe_rs-232_program_pak_1983_26-2226_tandy.rom", 0x0000, 0x1000, CRC(d990e1f9) SHA1(3fad25f3462a0b581b9c182ac11ad90c8fa08cb6))
 ROM_END
 
 //-------------------------------------------------
@@ -112,4 +111,6 @@ const tiny_rom_entry *coco_rs232_device::device_rom_region() const
 //  DEVICE DECLARATION
 //**************************************************************************
 
-DEFINE_DEVICE_TYPE(COCO_RS232, coco_rs232_device, "coco_rs232", "CoCo Deluxe RS-232 PAK")
+DEFINE_DEVICE_TYPE_PRIVATE(COCO_RS232, device_cococart_interface, coco_rs232_device, "coco_rs232", "CoCo Deluxe RS-232 PAK")
+template class device_finder<device_cococart_interface, false>;
+template class device_finder<device_cococart_interface, true>;

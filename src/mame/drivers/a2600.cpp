@@ -29,21 +29,22 @@ TODO:
 static const uint16_t supported_screen_heights[4] = { 262, 312, 328, 342 };
 
 
-ADDRESS_MAP_START(a2600_base_state::a2600_mem) // 6507 has 13-bit address space, 0x0000 - 0x1fff
-	AM_RANGE(0x0000, 0x007f) AM_MIRROR(0x0f00) AM_DEVREADWRITE("tia_video", tia_video_device, read, write)
-	AM_RANGE(0x0080, 0x00ff) AM_MIRROR(0x0d00) AM_RAM AM_SHARE("riot_ram")
+void a2600_base_state::a2600_mem(address_map &map) // 6507 has 13-bit address space, 0x0000 - 0x1fff
+{
+	map(0x0000, 0x007f).mirror(0x0f00).rw("tia_video", FUNC(tia_video_device::read), FUNC(tia_video_device::write));
+	map(0x0080, 0x00ff).mirror(0x0d00).ram().share("riot_ram");
 #if USE_NEW_RIOT
-	AM_RANGE(0x0280, 0x029f) AM_MIRROR(0x0d00) AM_DEVICE("riot", mos6532_t, io_map)
+	map(0x0280, 0x029f).mirror(0x0d00).m("riot", FUNC(mos6532_t::io_map));
 #else
-	AM_RANGE(0x0280, 0x029f) AM_MIRROR(0x0d00) AM_DEVREADWRITE("riot", riot6532_device, read, write)
+	map(0x0280, 0x029f).mirror(0x0d00).rw("riot", FUNC(riot6532_device::read), FUNC(riot6532_device::write));
 #endif
-	// AM_RANGE(0x1000, 0x1fff) is cart data and it is configured at reset time, depending on the mounted cart!
-ADDRESS_MAP_END
+	// map(0x1000, 0x1fff) is cart data and it is configured at reset time, depending on the mounted cart!
+}
 
 
 READ8_MEMBER(a2600_state::cart_over_all_r)
 {
-	if (!machine().side_effect_disabled())
+	if (!machine().side_effects_disabled())
 		m_cart->write_bank(space, offset, 0);
 
 	int masked_offset = offset &~ 0x0d00;
@@ -265,7 +266,7 @@ WRITE16_MEMBER(a2600_base_state::a2600_tia_vsync_callback_pal)
 // TODO: is this the correct behavior for the real hardware?!?
 READ8_MEMBER(a2600_state::cart_over_riot_r)
 {
-	if (!machine().side_effect_disabled())
+	if (!machine().side_effects_disabled())
 		m_cart->write_bank(space, offset, 0);
 	return m_riot_ram[0x20 + offset];
 }
@@ -465,33 +466,34 @@ static INPUT_PORTS_START( a2600 )
 INPUT_PORTS_END
 
 
-static SLOT_INTERFACE_START(a2600_cart)
-	SLOT_INTERFACE_INTERNAL("a26_2k",    A26_ROM_2K)
-	SLOT_INTERFACE_INTERNAL("a26_4k",    A26_ROM_4K)
-	SLOT_INTERFACE_INTERNAL("a26_f4",    A26_ROM_F4)
-	SLOT_INTERFACE_INTERNAL("a26_f6",    A26_ROM_F6)
-	SLOT_INTERFACE_INTERNAL("a26_f8",    A26_ROM_F8)
-	SLOT_INTERFACE_INTERNAL("a26_f8sw",  A26_ROM_F8_SW)
-	SLOT_INTERFACE_INTERNAL("a26_fa",    A26_ROM_FA)
-	SLOT_INTERFACE_INTERNAL("a26_fe",    A26_ROM_FE)
-	SLOT_INTERFACE_INTERNAL("a26_3e",    A26_ROM_3E)
-	SLOT_INTERFACE_INTERNAL("a26_3f",    A26_ROM_3F)
-	SLOT_INTERFACE_INTERNAL("a26_e0",    A26_ROM_E0)
-	SLOT_INTERFACE_INTERNAL("a26_e7",    A26_ROM_E7)
-	SLOT_INTERFACE_INTERNAL("a26_ua",    A26_ROM_UA)
-	SLOT_INTERFACE_INTERNAL("a26_cv",    A26_ROM_CV)
-	SLOT_INTERFACE_INTERNAL("a26_dc",    A26_ROM_DC)
-	SLOT_INTERFACE_INTERNAL("a26_fv",    A26_ROM_FV)
-	SLOT_INTERFACE_INTERNAL("a26_jvp",   A26_ROM_JVP)
-	SLOT_INTERFACE_INTERNAL("a26_cm",    A26_ROM_COMPUMATE)
-	SLOT_INTERFACE_INTERNAL("a26_ss",    A26_ROM_SUPERCHARGER)
-	SLOT_INTERFACE_INTERNAL("a26_dpc",   A26_ROM_DPC)
-	SLOT_INTERFACE_INTERNAL("a26_4in1",  A26_ROM_4IN1)
-	SLOT_INTERFACE_INTERNAL("a26_8in1",  A26_ROM_8IN1)
-	SLOT_INTERFACE_INTERNAL("a26_32in1", A26_ROM_32IN1)
-	SLOT_INTERFACE_INTERNAL("a26_x07",    A26_ROM_X07)
-	SLOT_INTERFACE_INTERNAL("a26_harmony",   A26_ROM_HARMONY)
-SLOT_INTERFACE_END
+static void a2600_cart(device_slot_interface &device)
+{
+	device.option_add_internal("a26_2k",    A26_ROM_2K);
+	device.option_add_internal("a26_4k",    A26_ROM_4K);
+	device.option_add_internal("a26_f4",    A26_ROM_F4);
+	device.option_add_internal("a26_f6",    A26_ROM_F6);
+	device.option_add_internal("a26_f8",    A26_ROM_F8);
+	device.option_add_internal("a26_f8sw",  A26_ROM_F8_SW);
+	device.option_add_internal("a26_fa",    A26_ROM_FA);
+	device.option_add_internal("a26_fe",    A26_ROM_FE);
+	device.option_add_internal("a26_3e",    A26_ROM_3E);
+	device.option_add_internal("a26_3f",    A26_ROM_3F);
+	device.option_add_internal("a26_e0",    A26_ROM_E0);
+	device.option_add_internal("a26_e7",    A26_ROM_E7);
+	device.option_add_internal("a26_ua",    A26_ROM_UA);
+	device.option_add_internal("a26_cv",    A26_ROM_CV);
+	device.option_add_internal("a26_dc",    A26_ROM_DC);
+	device.option_add_internal("a26_fv",    A26_ROM_FV);
+	device.option_add_internal("a26_jvp",   A26_ROM_JVP);
+	device.option_add_internal("a26_cm",    A26_ROM_COMPUMATE);
+	device.option_add_internal("a26_ss",    A26_ROM_SUPERCHARGER);
+	device.option_add_internal("a26_dpc",   A26_ROM_DPC);
+	device.option_add_internal("a26_4in1",  A26_ROM_4IN1);
+	device.option_add_internal("a26_8in1",  A26_ROM_8IN1);
+	device.option_add_internal("a26_32in1", A26_ROM_32IN1);
+	device.option_add_internal("a26_x07",   A26_ROM_X07);
+	device.option_add_internal("a26_harmony",   A26_ROM_HARMONY);
+}
 
 MACHINE_CONFIG_START(a2600_state::a2600_cartslot)
 	MCFG_VCS_CARTRIDGE_ADD("cartslot", a2600_cart, nullptr)

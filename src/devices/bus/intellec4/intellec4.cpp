@@ -26,16 +26,6 @@ univ_slot_device::univ_slot_device(machine_config const &mconfig, char const *ta
 
 
 /*----------------------------------
-  configuration helpers
-----------------------------------*/
-
-void univ_slot_device::set_bus_tag(device_t &device, char const *tag)
-{
-	downcast<univ_slot_device &>(device).m_bus.set_tag(tag);
-}
-
-
-/*----------------------------------
   device_t implementation
 ----------------------------------*/
 
@@ -84,46 +74,6 @@ univ_bus_device::univ_bus_device(machine_config const &mconfig, char const *tag,
 	, m_user_reset(0U)
 {
 	std::fill(std::begin(m_cards), std::end(m_cards), nullptr);
-}
-
-
-/*----------------------------------
-  address space configuration
-----------------------------------*/
-
-void univ_bus_device::set_rom_space(device_t &device, char const *tag, int space)
-{
-	univ_bus_device &bus(downcast<univ_bus_device &>(device));
-	bus.m_rom_device.set_tag(tag);
-	bus.m_rom_space = space;
-}
-
-void univ_bus_device::set_rom_ports_space(device_t &device, char const *tag, int space)
-{
-	univ_bus_device &bus(downcast<univ_bus_device &>(device));
-	bus.m_rom_ports_device.set_tag(tag);
-	bus.m_rom_ports_space = space;
-}
-
-void univ_bus_device::set_memory_space(device_t &device, char const *tag, int space)
-{
-	univ_bus_device &bus(downcast<univ_bus_device &>(device));
-	bus.m_memory_device.set_tag(tag);
-	bus.m_memory_space = space;
-}
-
-void univ_bus_device::set_status_space(device_t &device, char const *tag, int space)
-{
-	univ_bus_device &bus(downcast<univ_bus_device &>(device));
-	bus.m_status_device.set_tag(tag);
-	bus.m_status_space = space;
-}
-
-void univ_bus_device::set_ram_ports_space(device_t &device, char const *tag, int space)
-{
-	univ_bus_device &bus(downcast<univ_bus_device &>(device));
-	bus.m_ram_ports_device.set_tag(tag);
-	bus.m_ram_ports_space = space;
 }
 
 
@@ -340,8 +290,9 @@ void device_univ_card_interface::set_bus(univ_bus_device &bus)
 #include "prommemory.h"
 #include "tapereader.h"
 
-SLOT_INTERFACE_START(intellec4_univ_cards)
-	SLOT_INTERFACE("imm4_22", INTELLEC4_INST_DATA_STORAGE)
-	SLOT_INTERFACE("imm6_26", INTELLEC4_PROM_MEMORY)
-	SLOT_INTERFACE("imm4_90", INTELLEC4_TAPE_READER)
-SLOT_INTERFACE_END
+void intellec4_univ_cards(device_slot_interface &device)
+{
+	device.option_add("imm4_22", INTELLEC4_INST_DATA_STORAGE);
+	device.option_add("imm6_26", INTELLEC4_PROM_MEMORY);
+	device.option_add("imm4_90", INTELLEC4_TAPE_READER);
+}

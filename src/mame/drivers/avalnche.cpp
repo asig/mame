@@ -97,46 +97,33 @@ WRITE8_MEMBER(avalnche_state::catch_coin_counter_w)
 	machine().bookkeeping().coin_counter_w(1, data & 2);
 }
 
-WRITE_LINE_MEMBER(avalnche_state::credit_1_lamp_w)
+void avalnche_state::main_map(address_map &map)
 {
-	output().set_led_value(0, state);
+	map.global_mask(0x7fff);
+	map(0x0000, 0x1fff).ram().share("videoram");
+	map(0x2000, 0x2000).mirror(0x0ffc).portr("IN0");
+	map(0x2001, 0x2001).mirror(0x0ffc).portr("IN1");
+	map(0x2002, 0x2002).mirror(0x0ffc).portr("PADDLE");
+	map(0x2003, 0x2003).mirror(0x0ffc).nopr();
+	map(0x3000, 0x3000).mirror(0x0fff).w("watchdog", FUNC(watchdog_timer_device::reset_w));
+	map(0x4000, 0x4007).mirror(0x0ff8).w("latch", FUNC(f9334_device::write_d0));
+	map(0x5000, 0x5000).mirror(0x0fff).w(this, FUNC(avalnche_state::avalnche_noise_amplitude_w));
+	map(0x6000, 0x7fff).rom();
 }
 
-WRITE_LINE_MEMBER(avalnche_state::credit_2_lamp_w)
+void avalnche_state::catch_map(address_map &map)
 {
-	output().set_led_value(1, state);
+	map.global_mask(0x7fff);
+	map(0x0000, 0x1fff).ram().share("videoram");
+	map(0x2000, 0x2000).mirror(0x0ffc).portr("IN0");
+	map(0x2001, 0x2001).mirror(0x0ffc).portr("IN1");
+	map(0x2002, 0x2002).mirror(0x0ffc).portr("PADDLE");
+	map(0x2003, 0x2003).mirror(0x0ffc).nopr();
+	map(0x3000, 0x3000).mirror(0x0fff).w("watchdog", FUNC(watchdog_timer_device::reset_w));
+	map(0x4000, 0x4007).mirror(0x0ff8).w("latch", FUNC(f9334_device::write_d0));
+	map(0x6000, 0x6000).mirror(0x0fff).w(this, FUNC(avalnche_state::catch_coin_counter_w));
+	map(0x7000, 0x7fff).rom();
 }
-
-WRITE_LINE_MEMBER(avalnche_state::start_lamp_w)
-{
-	output().set_led_value(2, state);
-}
-
-ADDRESS_MAP_START(avalnche_state::main_map)
-	ADDRESS_MAP_GLOBAL_MASK(0x7fff)
-	AM_RANGE(0x0000, 0x1fff) AM_RAM AM_SHARE("videoram")
-	AM_RANGE(0x2000, 0x2000) AM_MIRROR(0x0ffc) AM_READ_PORT("IN0")
-	AM_RANGE(0x2001, 0x2001) AM_MIRROR(0x0ffc) AM_READ_PORT("IN1")
-	AM_RANGE(0x2002, 0x2002) AM_MIRROR(0x0ffc) AM_READ_PORT("PADDLE")
-	AM_RANGE(0x2003, 0x2003) AM_MIRROR(0x0ffc) AM_READNOP
-	AM_RANGE(0x3000, 0x3000) AM_MIRROR(0x0fff) AM_DEVWRITE("watchdog", watchdog_timer_device, reset_w)
-	AM_RANGE(0x4000, 0x4007) AM_MIRROR(0x0ff8) AM_DEVWRITE("latch", f9334_device, write_d0)
-	AM_RANGE(0x5000, 0x5000) AM_MIRROR(0x0fff) AM_WRITE(avalnche_noise_amplitude_w)
-	AM_RANGE(0x6000, 0x7fff) AM_ROM
-ADDRESS_MAP_END
-
-ADDRESS_MAP_START(avalnche_state::catch_map)
-	ADDRESS_MAP_GLOBAL_MASK(0x7fff)
-	AM_RANGE(0x0000, 0x1fff) AM_RAM AM_SHARE("videoram")
-	AM_RANGE(0x2000, 0x2000) AM_MIRROR(0x0ffc) AM_READ_PORT("IN0")
-	AM_RANGE(0x2001, 0x2001) AM_MIRROR(0x0ffc) AM_READ_PORT("IN1")
-	AM_RANGE(0x2002, 0x2002) AM_MIRROR(0x0ffc) AM_READ_PORT("PADDLE")
-	AM_RANGE(0x2003, 0x2003) AM_MIRROR(0x0ffc) AM_READNOP
-	AM_RANGE(0x3000, 0x3000) AM_MIRROR(0x0fff) AM_DEVWRITE("watchdog", watchdog_timer_device, reset_w)
-	AM_RANGE(0x4000, 0x4007) AM_MIRROR(0x0ff8) AM_DEVWRITE("latch", f9334_device, write_d0)
-	AM_RANGE(0x6000, 0x6000) AM_MIRROR(0x0fff) AM_WRITE(catch_coin_counter_w)
-	AM_RANGE(0x7000, 0x7fff) AM_ROM
-ADDRESS_MAP_END
 
 
 /*************************************
@@ -238,10 +225,10 @@ MACHINE_CONFIG_START(avalnche_state::avalnche_base)
 	MCFG_CPU_PERIODIC_INT_DRIVER(avalnche_state, nmi_line_pulse, 8*60)
 
 	MCFG_DEVICE_ADD("latch", F9334, 0) // F8
-	MCFG_ADDRESSABLE_LATCH_Q0_OUT_CB(WRITELINE(avalnche_state, credit_1_lamp_w))
+	MCFG_ADDRESSABLE_LATCH_Q0_OUT_CB(OUTPUT("led0")) // 1 CREDIT LAMP
 	MCFG_ADDRESSABLE_LATCH_Q2_OUT_CB(WRITELINE(avalnche_state, video_invert_w))
-	MCFG_ADDRESSABLE_LATCH_Q3_OUT_CB(WRITELINE(avalnche_state, credit_2_lamp_w))
-	MCFG_ADDRESSABLE_LATCH_Q7_OUT_CB(WRITELINE(avalnche_state, start_lamp_w))
+	MCFG_ADDRESSABLE_LATCH_Q3_OUT_CB(OUTPUT("led1")) // 2 CREDIT LAMP
+	MCFG_ADDRESSABLE_LATCH_Q7_OUT_CB(OUTPUT("led2")) // START LAMP
 	// Q1, Q4, Q5, Q6 are configured in audio/avalnche.cpp
 
 	MCFG_WATCHDOG_ADD("watchdog")

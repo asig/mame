@@ -435,13 +435,6 @@ WRITE8_MEMBER(mcr3_state::spyhunt_op4_w)
 }
 
 
-template<int n>
-WRITE_LINE_MEMBER(mcr3_state::spyhunt_lamp_w)
-{
-	m_spyhunt_lamp[n] = state;
-}
-
-
 
 /*************************************
  *
@@ -481,30 +474,32 @@ READ8_MEMBER(mcr3_state::turbotag_kludge_r)
  *************************************/
 
 /* address map verified from schematics */
-ADDRESS_MAP_START(mcr3_state::mcrmono_map)
-	ADDRESS_MAP_UNMAP_HIGH
-	AM_RANGE(0x0000, 0xdfff) AM_ROM
-	AM_RANGE(0xe000, 0xe7ff) AM_RAM AM_SHARE("nvram")
-	AM_RANGE(0xe800, 0xe9ff) AM_RAM AM_SHARE("spriteram")
-	AM_RANGE(0xea00, 0xebff) AM_RAM
-	AM_RANGE(0xec00, 0xec7f) AM_MIRROR(0x0380) AM_WRITE(mcr_paletteram9_w) AM_SHARE("paletteram")
-	AM_RANGE(0xf000, 0xf7ff) AM_RAM_WRITE(mcr3_videoram_w) AM_SHARE("videoram")
-	AM_RANGE(0xf800, 0xffff) AM_ROM     /* schematics show a 2716 @ 2B here, but nobody used it */
-ADDRESS_MAP_END
+void mcr3_state::mcrmono_map(address_map &map)
+{
+	map.unmap_value_high();
+	map(0x0000, 0xdfff).rom();
+	map(0xe000, 0xe7ff).ram().share("nvram");
+	map(0xe800, 0xe9ff).ram().share("spriteram");
+	map(0xea00, 0xebff).ram();
+	map(0xec00, 0xec7f).mirror(0x0380).w(this, FUNC(mcr3_state::mcr_paletteram9_w)).share("paletteram");
+	map(0xf000, 0xf7ff).ram().w(this, FUNC(mcr3_state::mcr3_videoram_w)).share("videoram");
+	map(0xf800, 0xffff).rom();     /* schematics show a 2716 @ 2B here, but nobody used it */
+}
 
 /* I/O map verified from schematics */
-ADDRESS_MAP_START(mcr3_state::mcrmono_portmap)
-	ADDRESS_MAP_UNMAP_HIGH
-	ADDRESS_MAP_GLOBAL_MASK(0xff)
-	AM_RANGE(0x00, 0x00) AM_MIRROR(0x78) AM_READ_PORT("MONO.IP0")
-	AM_RANGE(0x01, 0x01) AM_MIRROR(0x78) AM_READ_PORT("MONO.IP1")
-	AM_RANGE(0x02, 0x02) AM_MIRROR(0x78) AM_READ_PORT("MONO.IP2")
-	AM_RANGE(0x03, 0x03) AM_MIRROR(0x78) AM_READ_PORT("MONO.IP3")
-	AM_RANGE(0x04, 0x04) AM_MIRROR(0x78) AM_READ_PORT("MONO.IP4")
-	AM_RANGE(0x05, 0x05) AM_MIRROR(0x78) AM_WRITE(mcrmono_control_port_w)
-	AM_RANGE(0x07, 0x07) AM_MIRROR(0x78) AM_DEVWRITE("watchdog", watchdog_timer_device, reset_w)
-	AM_RANGE(0xf0, 0xf3) AM_MIRROR(0x0c) AM_DEVREADWRITE("ctc", z80ctc_device, read, write)
-ADDRESS_MAP_END
+void mcr3_state::mcrmono_portmap(address_map &map)
+{
+	map.unmap_value_high();
+	map.global_mask(0xff);
+	map(0x00, 0x00).mirror(0x78).portr("MONO.IP0");
+	map(0x01, 0x01).mirror(0x78).portr("MONO.IP1");
+	map(0x02, 0x02).mirror(0x78).portr("MONO.IP2");
+	map(0x03, 0x03).mirror(0x78).portr("MONO.IP3");
+	map(0x04, 0x04).mirror(0x78).portr("MONO.IP4");
+	map(0x05, 0x05).mirror(0x78).w(this, FUNC(mcr3_state::mcrmono_control_port_w));
+	map(0x07, 0x07).mirror(0x78).w("watchdog", FUNC(watchdog_timer_device::reset_w));
+	map(0xf0, 0xf3).mirror(0x0c).rw(m_ctc, FUNC(z80ctc_device::read), FUNC(z80ctc_device::write));
+}
 
 
 
@@ -515,26 +510,28 @@ ADDRESS_MAP_END
  *************************************/
 
 /* address map verified from schematics */
-ADDRESS_MAP_START(mcr3_state::spyhunt_map)
-	ADDRESS_MAP_UNMAP_HIGH
-	AM_RANGE(0x0000, 0xdfff) AM_ROM
-	AM_RANGE(0xe000, 0xe7ff) AM_RAM_WRITE(spyhunt_videoram_w) AM_SHARE("videoram")
-	AM_RANGE(0xe800, 0xebff) AM_MIRROR(0x0400) AM_RAM_WRITE(spyhunt_alpharam_w) AM_SHARE("spyhunt_alpha")
-	AM_RANGE(0xf000, 0xf7ff) AM_RAM AM_SHARE("nvram")
-	AM_RANGE(0xf800, 0xf9ff) AM_RAM AM_SHARE("spriteram")
-	AM_RANGE(0xfa00, 0xfa7f) AM_MIRROR(0x0180) AM_WRITE(mcr_paletteram9_w) AM_SHARE("paletteram")
-ADDRESS_MAP_END
+void mcr3_state::spyhunt_map(address_map &map)
+{
+	map.unmap_value_high();
+	map(0x0000, 0xdfff).rom();
+	map(0xe000, 0xe7ff).ram().w(this, FUNC(mcr3_state::spyhunt_videoram_w)).share("videoram");
+	map(0xe800, 0xebff).mirror(0x0400).ram().w(this, FUNC(mcr3_state::spyhunt_alpharam_w)).share("spyhunt_alpha");
+	map(0xf000, 0xf7ff).ram().share("nvram");
+	map(0xf800, 0xf9ff).ram().share("spriteram");
+	map(0xfa00, 0xfa7f).mirror(0x0180).w(this, FUNC(mcr3_state::mcr_paletteram9_w)).share("paletteram");
+}
 
 /* upper I/O map determined by PAL; only SSIO ports and scroll registers are verified from schematics */
-ADDRESS_MAP_START(mcr3_state::spyhunt_portmap)
-	ADDRESS_MAP_UNMAP_HIGH
-	ADDRESS_MAP_GLOBAL_MASK(0xff)
-	SSIO_INPUT_PORTS("ssio")
-	AM_RANGE(0x84, 0x86) AM_WRITE(spyhunt_scroll_value_w)
-	AM_RANGE(0xe0, 0xe0) AM_DEVWRITE("watchdog", watchdog_timer_device, reset_w)
-	AM_RANGE(0xe8, 0xe8) AM_WRITENOP
-	AM_RANGE(0xf0, 0xf3) AM_DEVREADWRITE("ctc", z80ctc_device, read, write)
-ADDRESS_MAP_END
+void mcr3_state::spyhunt_portmap(address_map &map)
+{
+	map.unmap_value_high();
+	map.global_mask(0xff);
+	m_ssio->ssio_input_ports(map, "ssio");
+	map(0x84, 0x86).w(this, FUNC(mcr3_state::spyhunt_scroll_value_w));
+	map(0xe0, 0xe0).w("watchdog", FUNC(watchdog_timer_device::reset_w));
+	map(0xe8, 0xe8).nopw();
+	map(0xf0, 0xf3).rw(m_ctc, FUNC(z80ctc_device::read), FUNC(z80ctc_device::write));
+}
 
 
 /*************************************
@@ -670,7 +667,7 @@ static INPUT_PORTS_START( maxrpm )
 	PORT_BIT( 0xff, 0x30, IPT_PEDAL ) PORT_MINMAX(0x30,0xff) PORT_SENSITIVITY(100) PORT_KEYDELTA(10) PORT_REVERSE PORT_PLAYER(2)
 
 	PORT_START("MONO.IP2")  /* J3 1-8 */
-	PORT_BIT( 0xff, IP_ACTIVE_LOW, IPT_SPECIAL )
+	PORT_BIT( 0xff, IP_ACTIVE_LOW, IPT_CUSTOM )
 
 	PORT_START("MONO.IP3")
 	PORT_DIPNAME( 0x08, 0x08, DEF_STR( Free_Play ) )
@@ -766,7 +763,7 @@ static INPUT_PORTS_START( rampage )
 	PORT_BIT( 0x10, IP_ACTIVE_LOW, IPT_BUTTON1 ) PORT_PLAYER(3)
 	PORT_BIT( 0x20, IP_ACTIVE_LOW, IPT_BUTTON2 ) PORT_PLAYER(3)
 	PORT_BIT( 0x40, IP_ACTIVE_LOW, IPT_UNUSED )
-	PORT_BIT( 0x80, IP_ACTIVE_HIGH, IPT_SPECIAL )   /* status from Sounds Good board */
+	PORT_BIT( 0x80, IP_ACTIVE_HIGH, IPT_CUSTOM )   /* status from Sounds Good board */
 INPUT_PORTS_END
 
 
@@ -798,7 +795,7 @@ static INPUT_PORTS_START( powerdrv )
 	PORT_BIT( 0x04, IP_ACTIVE_LOW, IPT_BUTTON1 ) PORT_PLAYER(3)
 	PORT_BIT( 0x08, IP_ACTIVE_LOW, IPT_BUTTON2 ) PORT_PLAYER(3)
 	PORT_BIT( 0x70, IP_ACTIVE_LOW, IPT_UNUSED )
-	PORT_BIT( 0x80, IP_ACTIVE_HIGH, IPT_SPECIAL )   /* status from Sounds Good board */
+	PORT_BIT( 0x80, IP_ACTIVE_HIGH, IPT_CUSTOM )   /* status from Sounds Good board */
 
 	PORT_START("MONO.IP3")
 	PORT_DIPNAME( 0x03, 0x03, DEF_STR( Coinage ) )
@@ -831,7 +828,7 @@ static INPUT_PORTS_START( stargrds )
 	PORT_BIT( 0x02, IP_ACTIVE_LOW, IPT_COIN2 )
 	PORT_BIT( 0x04, IP_ACTIVE_LOW, IPT_START1 )
 	PORT_BIT( 0x08, IP_ACTIVE_LOW, IPT_START2 )
-	PORT_BIT( 0x10, IP_ACTIVE_HIGH, IPT_SPECIAL )   /* status from Sounds Good board */
+	PORT_BIT( 0x10, IP_ACTIVE_HIGH, IPT_CUSTOM )   /* status from Sounds Good board */
 	PORT_BIT( 0x20, IP_ACTIVE_LOW, IPT_TILT )
 	PORT_BIT( 0x40, IP_ACTIVE_LOW, IPT_SERVICE1 )
 	PORT_SERVICE( 0x80, IP_ACTIVE_LOW )
@@ -909,7 +906,7 @@ static INPUT_PORTS_START( spyhunt )
 	PORT_BIT( 0x04, IP_ACTIVE_LOW, IPT_START1  ) PORT_NAME("Center Button / Weapons Van")
 	PORT_BIT( 0x08, IP_ACTIVE_LOW, IPT_BUTTON5 ) PORT_NAME("Right Button / Smoke Screen")
 	PORT_BIT( 0x10, IP_ACTIVE_LOW, IPT_BUTTON6 ) PORT_NAME("Right Trigger / Machine Guns")
-	PORT_BIT( 0x60, IP_ACTIVE_HIGH, IPT_SPECIAL )   /* status from CS deluxe, never read */
+	PORT_BIT( 0x60, IP_ACTIVE_HIGH, IPT_CUSTOM )   /* status from CS deluxe, never read */
 	PORT_BIT( 0x80, IP_ACTIVE_LOW, IPT_UNUSED )
 
 	PORT_START("ssio:IP2")  /* J5 1-8 */
@@ -989,7 +986,7 @@ static INPUT_PORTS_START( turbotag )
 	PORT_BIT( 0x04, IP_ACTIVE_LOW, IPT_BUTTON4 ) PORT_NAME("Center Button")
 	PORT_BIT( 0x08, IP_ACTIVE_LOW, IPT_START2  ) PORT_NAME("Right Button / 2 Player")
 	PORT_BIT( 0x10, IP_ACTIVE_LOW, IPT_BUTTON5 ) PORT_NAME("Right Trigger")
-	PORT_BIT( 0x60, IP_ACTIVE_HIGH, IPT_SPECIAL )   /* status from CS deluxe, never read */
+	PORT_BIT( 0x60, IP_ACTIVE_HIGH, IPT_CUSTOM )   /* status from CS deluxe, never read */
 	PORT_BIT( 0x80, IP_ACTIVE_LOW, IPT_UNUSED )
 
 	PORT_START("ssio:IP2")  /* J5 1-8 */
@@ -1191,14 +1188,14 @@ MACHINE_CONFIG_START(mcr3_state::mcrsc_csd)
 	MCFG_SOUND_ROUTE(ALL_OUTPUTS, "rspeaker", 1.0)
 
 	MCFG_DEVICE_ADD("lamplatch", CD4099, 0) // U1 on Lamp Driver Board
-	MCFG_ADDRESSABLE_LATCH_Q0_OUT_CB(WRITELINE(mcr3_state, spyhunt_lamp_w<0>))
-	MCFG_ADDRESSABLE_LATCH_Q1_OUT_CB(WRITELINE(mcr3_state, spyhunt_lamp_w<1>))
-	MCFG_ADDRESSABLE_LATCH_Q2_OUT_CB(WRITELINE(mcr3_state, spyhunt_lamp_w<2>))
-	MCFG_ADDRESSABLE_LATCH_Q3_OUT_CB(WRITELINE(mcr3_state, spyhunt_lamp_w<3>))
-	MCFG_ADDRESSABLE_LATCH_Q4_OUT_CB(WRITELINE(mcr3_state, spyhunt_lamp_w<4>))
-	MCFG_ADDRESSABLE_LATCH_Q5_OUT_CB(WRITELINE(mcr3_state, spyhunt_lamp_w<5>))
-	MCFG_ADDRESSABLE_LATCH_Q6_OUT_CB(WRITELINE(mcr3_state, spyhunt_lamp_w<6>))
-	MCFG_ADDRESSABLE_LATCH_Q7_OUT_CB(WRITELINE(mcr3_state, spyhunt_lamp_w<7>))
+	MCFG_ADDRESSABLE_LATCH_Q0_OUT_CB(OUTPUT("lamp0"))
+	MCFG_ADDRESSABLE_LATCH_Q1_OUT_CB(OUTPUT("lamp1"))
+	MCFG_ADDRESSABLE_LATCH_Q2_OUT_CB(OUTPUT("lamp2"))
+	MCFG_ADDRESSABLE_LATCH_Q3_OUT_CB(OUTPUT("lamp3"))
+	MCFG_ADDRESSABLE_LATCH_Q4_OUT_CB(OUTPUT("lamp4"))
+	MCFG_ADDRESSABLE_LATCH_Q5_OUT_CB(OUTPUT("lamp5"))
+	MCFG_ADDRESSABLE_LATCH_Q6_OUT_CB(OUTPUT("lamp6"))
+	MCFG_ADDRESSABLE_LATCH_Q7_OUT_CB(OUTPUT("lamp7"))
 MACHINE_CONFIG_END
 
 
@@ -1636,8 +1633,6 @@ DRIVER_INIT_MEMBER(mcr3_state,spyhunt)
 	m_ssio->set_custom_input(2, 0xff, read8_delegate(FUNC(mcr3_state::spyhunt_ip2_r),this));
 	m_ssio->set_custom_output(4, 0xff, write8_delegate(FUNC(mcr3_state::spyhunt_op4_w),this));
 
-	m_spyhunt_lamp.resolve();
-
 	m_spyhunt_sprite_color_mask = 0x00;
 	m_spyhunt_scroll_offset = 16;
 }
@@ -1659,8 +1654,6 @@ DRIVER_INIT_MEMBER(mcr3_state,turbotag)
 	m_ssio->set_custom_input(1, 0x60, read8_delegate(FUNC(mcr3_state::spyhunt_ip1_r),this));
 	m_ssio->set_custom_input(2, 0xff, read8_delegate(FUNC(mcr3_state::turbotag_ip2_r),this));
 	m_ssio->set_custom_output(4, 0xff, write8_delegate(FUNC(mcr3_state::spyhunt_op4_w),this));
-
-	m_spyhunt_lamp.resolve();
 
 	m_spyhunt_sprite_color_mask = 0x00;
 	m_spyhunt_scroll_offset = 88;

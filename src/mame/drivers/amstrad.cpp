@@ -123,23 +123,25 @@ Some bugs left :
 /* Memory is banked in 16k blocks. However, the multiface
 pages the memory in 8k blocks! The ROM can
 be paged into bank 0 and bank 3. */
-ADDRESS_MAP_START(amstrad_state::amstrad_mem)
-	AM_RANGE(0x00000, 0x01fff) AM_READ_BANK("bank1") AM_WRITE_BANK("bank9")
-	AM_RANGE(0x02000, 0x03fff) AM_READ_BANK("bank2") AM_WRITE_BANK("bank10")
-	AM_RANGE(0x04000, 0x05fff) AM_READ_BANK("bank3") AM_WRITE_BANK("bank11")
-	AM_RANGE(0x06000, 0x07fff) AM_READ_BANK("bank4") AM_WRITE_BANK("bank12")
-	AM_RANGE(0x08000, 0x09fff) AM_READ_BANK("bank5") AM_WRITE_BANK("bank13")
-	AM_RANGE(0x0a000, 0x0bfff) AM_READ_BANK("bank6") AM_WRITE_BANK("bank14")
-	AM_RANGE(0x0c000, 0x0dfff) AM_READ_BANK("bank7") AM_WRITE_BANK("bank15")
-	AM_RANGE(0x0e000, 0x0ffff) AM_READ_BANK("bank8") AM_WRITE_BANK("bank16")
-ADDRESS_MAP_END
+void amstrad_state::amstrad_mem(address_map &map)
+{
+	map(0x00000, 0x01fff).bankr("bank1").bankw("bank9");
+	map(0x02000, 0x03fff).bankr("bank2").bankw("bank10");
+	map(0x04000, 0x05fff).bankr("bank3").bankw("bank11");
+	map(0x06000, 0x07fff).bankr("bank4").bankw("bank12");
+	map(0x08000, 0x09fff).bankr("bank5").bankw("bank13");
+	map(0x0a000, 0x0bfff).bankr("bank6").bankw("bank14");
+	map(0x0c000, 0x0dfff).bankr("bank7").bankw("bank15");
+	map(0x0e000, 0x0ffff).bankr("bank8").bankw("bank16");
+}
 
 /* I've handled the I/O ports in this way, because the ports
 are not fully decoded by the CPC h/w. Doing it this way means
 I can decode it myself and a lot of  software should work */
-ADDRESS_MAP_START(amstrad_state::amstrad_io)
-	AM_RANGE(0x0000, 0xffff) AM_READWRITE(amstrad_cpc_io_r, amstrad_cpc_io_w )
-ADDRESS_MAP_END
+void amstrad_state::amstrad_io(address_map &map)
+{
+	map(0x0000, 0xffff).rw(this, FUNC(amstrad_state::amstrad_cpc_io_r), FUNC(amstrad_state::amstrad_cpc_io_w));
+}
 
 
 /*************************************
@@ -794,14 +796,16 @@ speed of 3.8 MHz */
  */
 
 
-static SLOT_INTERFACE_START( amstrad_floppies )
-	SLOT_INTERFACE( "3ssdd", FLOPPY_3_SSDD )
-	SLOT_INTERFACE( "35ssdd", FLOPPY_35_DD )
-SLOT_INTERFACE_END
+static void amstrad_floppies(device_slot_interface &device)
+{
+	device.option_add("3ssdd", FLOPPY_3_SSDD);
+	device.option_add("35ssdd", FLOPPY_35_DD);
+}
 
-static SLOT_INTERFACE_START( aleste_floppies )
-	SLOT_INTERFACE( "35dd", FLOPPY_35_DD )
-SLOT_INTERFACE_END
+static void aleste_floppies(device_slot_interface &device)
+{
+	device.option_add("35dd", FLOPPY_35_DD);
+}
 
 FLOPPY_FORMATS_MEMBER( amstrad_state::aleste_floppy_formats )
 	FLOPPY_MSX_FORMAT
@@ -816,87 +820,92 @@ MACHINE_CONFIG_START(amstrad_state::cpcplus_cartslot)
 	MCFG_SOFTWARE_LIST_ADD("cart_list", "gx4000")
 MACHINE_CONFIG_END
 
-SLOT_INTERFACE_START(cpc464_exp_cards)
-	SLOT_INTERFACE("ddi1", CPC_DDI1)
-	SLOT_INTERFACE("ssa1", CPC_SSA1)
-	SLOT_INTERFACE("dkspeech", CPC_DKSPEECH)
-	SLOT_INTERFACE("rom", CPC_ROM)
-	SLOT_INTERFACE("multiface2", CPC_MFACE2)
-	SLOT_INTERFACE("pds", CPC_PDS)
-	SLOT_INTERFACE("rs232", CPC_RS232)
-	SLOT_INTERFACE("amsrs232", CPC_RS232_AMS)
-	SLOT_INTERFACE("sf2", CPC_SYMBIFACE2)
-	SLOT_INTERFACE("amdrum", CPC_AMDRUM)
-	SLOT_INTERFACE("playcity", CPC_PLAYCITY)
-	SLOT_INTERFACE("smartwatch", CPC_SMARTWATCH)
-	SLOT_INTERFACE("brunword4", CPC_BRUNWORD_MK4)
-	SLOT_INTERFACE("hd20", CPC_HD20)
-	SLOT_INTERFACE("doubler", CPC_DOUBLER)
-	SLOT_INTERFACE("transtape", CPC_TRANSTAPE)
-SLOT_INTERFACE_END
+void cpc464_exp_cards(device_slot_interface &device)
+{
+	device.option_add("ddi1", CPC_DDI1);
+	device.option_add("ssa1", CPC_SSA1);
+	device.option_add("dkspeech", CPC_DKSPEECH);
+	device.option_add("rom", CPC_ROM);
+	device.option_add("multiface2", CPC_MFACE2);
+	device.option_add("pds", CPC_PDS);
+	device.option_add("rs232", CPC_RS232);
+	device.option_add("amsrs232", CPC_RS232_AMS);
+	device.option_add("sf2", CPC_SYMBIFACE2);
+	device.option_add("amdrum", CPC_AMDRUM);
+	device.option_add("playcity", CPC_PLAYCITY);
+	device.option_add("smartwatch", CPC_SMARTWATCH);
+	device.option_add("brunword4", CPC_BRUNWORD_MK4);
+	device.option_add("hd20", CPC_HD20);
+	device.option_add("doubler", CPC_DOUBLER);
+	device.option_add("transtape", CPC_TRANSTAPE);
+}
 
-SLOT_INTERFACE_START(cpc_exp_cards)
-	SLOT_INTERFACE("ssa1", CPC_SSA1)
-	SLOT_INTERFACE("dkspeech", CPC_DKSPEECH)
-	SLOT_INTERFACE("rom", CPC_ROM)
-	SLOT_INTERFACE("multiface2", CPC_MFACE2)
-	SLOT_INTERFACE("pds", CPC_PDS)
-	SLOT_INTERFACE("rs232", CPC_RS232)
-	SLOT_INTERFACE("amsrs232", CPC_RS232_AMS)
-	SLOT_INTERFACE("sf2", CPC_SYMBIFACE2)
-	SLOT_INTERFACE("amdrum", CPC_AMDRUM)
-	SLOT_INTERFACE("playcity", CPC_PLAYCITY)
-	SLOT_INTERFACE("smartwatch", CPC_SMARTWATCH)
-	SLOT_INTERFACE("brunword4", CPC_BRUNWORD_MK4)
-	SLOT_INTERFACE("hd20", CPC_HD20)
-	SLOT_INTERFACE("doubler", CPC_DOUBLER)
-	SLOT_INTERFACE("transtape", CPC_TRANSTAPE)
-SLOT_INTERFACE_END
+void cpc_exp_cards(device_slot_interface &device)
+{
+	device.option_add("ssa1", CPC_SSA1);
+	device.option_add("dkspeech", CPC_DKSPEECH);
+	device.option_add("rom", CPC_ROM);
+	device.option_add("multiface2", CPC_MFACE2);
+	device.option_add("pds", CPC_PDS);
+	device.option_add("rs232", CPC_RS232);
+	device.option_add("amsrs232", CPC_RS232_AMS);
+	device.option_add("sf2", CPC_SYMBIFACE2);
+	device.option_add("amdrum", CPC_AMDRUM);
+	device.option_add("playcity", CPC_PLAYCITY);
+	device.option_add("smartwatch", CPC_SMARTWATCH);
+	device.option_add("brunword4", CPC_BRUNWORD_MK4);
+	device.option_add("hd20", CPC_HD20);
+	device.option_add("doubler", CPC_DOUBLER);
+	device.option_add("transtape", CPC_TRANSTAPE);
+}
 
-SLOT_INTERFACE_START(cpcplus_exp_cards)
-	SLOT_INTERFACE("ssa1", CPC_SSA1)
-	SLOT_INTERFACE("dkspeech", CPC_DKSPEECH)
-	SLOT_INTERFACE("rom", CPC_ROM)
-	SLOT_INTERFACE("pds", CPC_PDS)
-	SLOT_INTERFACE("rs232", CPC_RS232)
-	SLOT_INTERFACE("amsrs232", CPC_RS232_AMS)
-	SLOT_INTERFACE("sf2", CPC_SYMBIFACE2)
-	SLOT_INTERFACE("amdrum", CPC_AMDRUM)
-	SLOT_INTERFACE("playcity", CPC_PLAYCITY)
-	SLOT_INTERFACE("smartwatch", CPC_SMARTWATCH)
-	SLOT_INTERFACE("hd20", CPC_HD20)
-	SLOT_INTERFACE("doubler", CPC_DOUBLER)
-	SLOT_INTERFACE("transtape", CPC_TRANSTAPE)  // Plus compatible?
-SLOT_INTERFACE_END
+void cpcplus_exp_cards(device_slot_interface &device)
+{
+	device.option_add("ssa1", CPC_SSA1);
+	device.option_add("dkspeech", CPC_DKSPEECH);
+	device.option_add("rom", CPC_ROM);
+	device.option_add("pds", CPC_PDS);
+	device.option_add("rs232", CPC_RS232);
+	device.option_add("amsrs232", CPC_RS232_AMS);
+	device.option_add("sf2", CPC_SYMBIFACE2);
+	device.option_add("amdrum", CPC_AMDRUM);
+	device.option_add("playcity", CPC_PLAYCITY);
+	device.option_add("smartwatch", CPC_SMARTWATCH);
+	device.option_add("hd20", CPC_HD20);
+	device.option_add("doubler", CPC_DOUBLER);
+	device.option_add("transtape", CPC_TRANSTAPE);  // Plus compatible?
+}
 
-SLOT_INTERFACE_START(aleste_exp_cards)
-	SLOT_INTERFACE("ssa1", CPC_SSA1)
-	SLOT_INTERFACE("dkspeech", CPC_DKSPEECH)
-	SLOT_INTERFACE("rom", CPC_ROM)
-	SLOT_INTERFACE("multiface2", CPC_MFACE2)
-	SLOT_INTERFACE("pds", CPC_PDS)
-	SLOT_INTERFACE("rs232", CPC_RS232)
-	SLOT_INTERFACE("amsrs232", CPC_RS232_AMS)
-	SLOT_INTERFACE("sf2", CPC_SYMBIFACE2)
-	SLOT_INTERFACE("amdrum", CPC_AMDRUM)
-	SLOT_INTERFACE("playcity", CPC_PLAYCITY)
-	SLOT_INTERFACE("smartwatch", CPC_SMARTWATCH)
-	SLOT_INTERFACE("brunword4", CPC_BRUNWORD_MK4)
-	SLOT_INTERFACE("hd20", CPC_HD20)
-	SLOT_INTERFACE("doubler", CPC_DOUBLER)
-	SLOT_INTERFACE("transtape", CPC_TRANSTAPE)
-	SLOT_INTERFACE("magicsound", AL_MAGICSOUND)
-SLOT_INTERFACE_END
+void aleste_exp_cards(device_slot_interface &device)
+{
+	device.option_add("ssa1", CPC_SSA1);
+	device.option_add("dkspeech", CPC_DKSPEECH);
+	device.option_add("rom", CPC_ROM);
+	device.option_add("multiface2", CPC_MFACE2);
+	device.option_add("pds", CPC_PDS);
+	device.option_add("rs232", CPC_RS232);
+	device.option_add("amsrs232", CPC_RS232_AMS);
+	device.option_add("sf2", CPC_SYMBIFACE2);
+	device.option_add("amdrum", CPC_AMDRUM);
+	device.option_add("playcity", CPC_PLAYCITY);
+	device.option_add("smartwatch", CPC_SMARTWATCH);
+	device.option_add("brunword4", CPC_BRUNWORD_MK4);
+	device.option_add("hd20", CPC_HD20);
+	device.option_add("doubler", CPC_DOUBLER);
+	device.option_add("transtape", CPC_TRANSTAPE);
+	device.option_add("magicsound", AL_MAGICSOUND);
+}
 
-SLOT_INTERFACE_START(amstrad_centronics_devices)
-	SLOT_INTERFACE("pl80", COMX_PL80)
-	SLOT_INTERFACE("ex800", EPSON_EX800)
-	SLOT_INTERFACE("lx800", EPSON_LX800)
-	SLOT_INTERFACE("lx810l", EPSON_LX810L)
-	SLOT_INTERFACE("ap2000", EPSON_AP2000)
-	SLOT_INTERFACE("printer", CENTRONICS_PRINTER)
-	SLOT_INTERFACE("digiblst", CENTRONICS_DIGIBLASTER)
-SLOT_INTERFACE_END
+void amstrad_centronics_devices(device_slot_interface &device)
+{
+	device.option_add("pl80", COMX_PL80);
+	device.option_add("ex800", EPSON_EX800);
+	device.option_add("lx800", EPSON_LX800);
+	device.option_add("lx810l", EPSON_LX810L);
+	device.option_add("ap2000", EPSON_AP2000);
+	device.option_add("printer", CENTRONICS_PRINTER);
+	device.option_add("digiblst", CENTRONICS_DIGIBLASTER);
+}
 
 MACHINE_CONFIG_START(amstrad_state::amstrad_base)
 	/* Machine hardware */

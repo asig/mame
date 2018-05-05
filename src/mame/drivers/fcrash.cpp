@@ -76,7 +76,9 @@ punipic3: same as punipic, and doors are missing.
 
 sf2m1: crowd is missing. Plane's tail comes off a bit. Patch used.
 
-sf2mdt, sf2mdta: ok
+sf2mdt, sf2mdtb: ok
+
+sf2mdta, sf2ceb: scroll 2X has strange 0x200 writes that cause missing fighters' portraits at the vs. screen and glitched backgrounds during fights. Masking them out seems a hack.
 
 sgyxz, wofabl: garbage left behind. A priority problem can be seen in 3rd demo where
        the fighters walk through the crowd instead of behind.
@@ -663,228 +665,243 @@ uint32_t cps_state::screen_update_fcrash(screen_device &screen, bitmap_ind16 &bi
 }
 
 
-ADDRESS_MAP_START(cps_state::knightsb_map)
-	AM_RANGE(0x000000, 0x3fffff) AM_ROM
-	AM_RANGE(0x800000, 0x800001) AM_READ_PORT("IN1")            /* Player input ports */
-	AM_RANGE(0x800002, 0x800003) AM_READ_PORT("IN2")            /* Player 3 controls */
-	AM_RANGE(0x800004, 0x800005) AM_WRITENOP // writes 0000 here
-	AM_RANGE(0x800006, 0x800007) AM_WRITE(fcrash_soundlatch_w)    /* Sound command */
-	AM_RANGE(0x800018, 0x80001f) AM_READ(cps1_dsw_r)            /* System input ports / Dip Switches */
-	AM_RANGE(0x800030, 0x800037) AM_WRITENOP //AM_WRITE(cps1_coinctrl_w) only writes bit 15
-	AM_RANGE(0x800100, 0x80013f) AM_RAM AM_SHARE("cps_a_regs")  /* CPS-A custom */
-	AM_RANGE(0x800140, 0x80017f) AM_RAM AM_SHARE("cps_b_regs")  /* CPS-B custom */
-	AM_RANGE(0x800180, 0x800181) AM_WRITENOP //AM_WRITE(cps1_soundlatch2_w)   /* Sound timer fade */
-	AM_RANGE(0x880000, 0x880001) AM_WRITENOP // unknown
-	AM_RANGE(0x900000, 0x93ffff) AM_RAM_WRITE(cps1_gfxram_w) AM_SHARE("gfxram")
-	AM_RANGE(0x980000, 0x98002f) AM_WRITE(knightsb_layer_w)
-	AM_RANGE(0x990000, 0x990001) AM_WRITENOP // same as 880000
-	AM_RANGE(0xff0000, 0xffffff) AM_RAM
-ADDRESS_MAP_END
+void cps_state::knightsb_map(address_map &map)
+{
+	map(0x000000, 0x3fffff).rom();
+	map(0x800000, 0x800001).portr("IN1");            /* Player input ports */
+	map(0x800002, 0x800003).portr("IN2");            /* Player 3 controls */
+	map(0x800004, 0x800005).nopw(); // writes 0000 here
+	map(0x800006, 0x800007).w(this, FUNC(cps_state::fcrash_soundlatch_w));    /* Sound command */
+	map(0x800018, 0x80001f).r(this, FUNC(cps_state::cps1_dsw_r));            /* System input ports / Dip Switches */
+	map(0x800030, 0x800037).nopw(); //AM_WRITE(cps1_coinctrl_w) only writes bit 15
+	map(0x800100, 0x80013f).ram().share("cps_a_regs");  /* CPS-A custom */
+	map(0x800140, 0x80017f).ram().share("cps_b_regs");  /* CPS-B custom */
+	map(0x800180, 0x800181).nopw(); //AM_WRITE(cps1_soundlatch2_w)   /* Sound timer fade */
+	map(0x880000, 0x880001).nopw(); // unknown
+	map(0x900000, 0x93ffff).ram().w(this, FUNC(cps_state::cps1_gfxram_w)).share("gfxram");
+	map(0x980000, 0x98002f).w(this, FUNC(cps_state::knightsb_layer_w));
+	map(0x990000, 0x990001).nopw(); // same as 880000
+	map(0xff0000, 0xffffff).ram();
+}
 
-ADDRESS_MAP_START(cps_state::dinopic_map)
-	AM_RANGE(0x000000, 0x3fffff) AM_ROM
-	AM_RANGE(0x800000, 0x800007) AM_READ_PORT("IN1")            /* Player input ports */
-	AM_RANGE(0x800006, 0x800007) AM_WRITE(cps1_soundlatch_w)    /* Sound command */
-	AM_RANGE(0x800018, 0x80001f) AM_READ(cps1_dsw_r)            /* System input ports / Dip Switches */
-	AM_RANGE(0x800030, 0x800037) AM_WRITE(cps1_coinctrl_w)
-	AM_RANGE(0x800100, 0x80013f) AM_WRITE(cps1_cps_a_w) AM_SHARE("cps_a_regs")  /* CPS-A custom */
-	AM_RANGE(0x800140, 0x80017f) AM_READWRITE(cps1_cps_b_r, cps1_cps_b_w) AM_SHARE("cps_b_regs")
-	AM_RANGE(0x800222, 0x800223) AM_WRITE(dinopic_layer2_w)
-	AM_RANGE(0x880000, 0x880001) AM_WRITENOP // always 0
-	AM_RANGE(0x900000, 0x92ffff) AM_RAM_WRITE(cps1_gfxram_w) AM_SHARE("gfxram")
-	AM_RANGE(0x980000, 0x98000b) AM_WRITE(dinopic_layer_w)
-	AM_RANGE(0xf18000, 0xf19fff) AM_RAM
-	AM_RANGE(0xf1c000, 0xf1c001) AM_READ_PORT("IN2")            /* Player 3 controls (later games) */
-	AM_RANGE(0xf1c004, 0xf1c005) AM_WRITE(cpsq_coinctrl2_w)     /* Coin control2 (later games) */
-	AM_RANGE(0xf1c006, 0xf1c007) AM_READ_PORT("EEPROMIN") AM_WRITE_PORT("EEPROMOUT")
-	AM_RANGE(0xff0000, 0xffffff) AM_RAM
-ADDRESS_MAP_END
+void cps_state::dinopic_map(address_map &map)
+{
+	map(0x000000, 0x3fffff).rom();
+	map(0x800000, 0x800007).portr("IN1");            /* Player input ports */
+	map(0x800006, 0x800007).w(this, FUNC(cps_state::cps1_soundlatch_w));    /* Sound command */
+	map(0x800018, 0x80001f).r(this, FUNC(cps_state::cps1_dsw_r));            /* System input ports / Dip Switches */
+	map(0x800030, 0x800037).w(this, FUNC(cps_state::cps1_coinctrl_w));
+	map(0x800100, 0x80013f).w(this, FUNC(cps_state::cps1_cps_a_w)).share("cps_a_regs");  /* CPS-A custom */
+	map(0x800140, 0x80017f).rw(this, FUNC(cps_state::cps1_cps_b_r), FUNC(cps_state::cps1_cps_b_w)).share("cps_b_regs");
+	map(0x800222, 0x800223).w(this, FUNC(cps_state::dinopic_layer2_w));
+	map(0x880000, 0x880001).nopw(); // always 0
+	map(0x900000, 0x92ffff).ram().w(this, FUNC(cps_state::cps1_gfxram_w)).share("gfxram");
+	map(0x980000, 0x98000b).w(this, FUNC(cps_state::dinopic_layer_w));
+	map(0xf18000, 0xf19fff).ram();
+	map(0xf1c000, 0xf1c001).portr("IN2");            /* Player 3 controls (later games) */
+	map(0xf1c004, 0xf1c005).w(this, FUNC(cps_state::cpsq_coinctrl2_w));     /* Coin control2 (later games) */
+	map(0xf1c006, 0xf1c007).portr("EEPROMIN").portw("EEPROMOUT");
+	map(0xff0000, 0xffffff).ram();
+}
 
-ADDRESS_MAP_START(cps_state::fcrash_map)
-	AM_RANGE(0x000000, 0x3fffff) AM_ROM
-	AM_RANGE(0x800030, 0x800031) AM_WRITE(cps1_coinctrl_w)
-	AM_RANGE(0x800100, 0x80013f) AM_RAM AM_SHARE("cps_a_regs")  /* CPS-A custom */
-	AM_RANGE(0x800140, 0x80017f) AM_RAM AM_SHARE("cps_b_regs")  /* CPS-B custom */
-	AM_RANGE(0x880000, 0x880001) AM_READ_PORT("IN1")                /* Player input ports */
-	AM_RANGE(0x880006, 0x880007) AM_WRITE(fcrash_soundlatch_w)       /* Sound command */
-	AM_RANGE(0x880008, 0x88000f) AM_READ(cps1_dsw_r)                /* System input ports / Dip Switches */
-	AM_RANGE(0x890000, 0x890001) AM_WRITENOP    // palette related?
-	AM_RANGE(0x900000, 0x92ffff) AM_RAM_WRITE(cps1_gfxram_w) AM_SHARE("gfxram")
-	AM_RANGE(0xff0000, 0xffffff) AM_RAM
-ADDRESS_MAP_END
+void cps_state::fcrash_map(address_map &map)
+{
+	map(0x000000, 0x3fffff).rom();
+	map(0x800030, 0x800031).w(this, FUNC(cps_state::cps1_coinctrl_w));
+	map(0x800100, 0x80013f).ram().share("cps_a_regs");  /* CPS-A custom */
+	map(0x800140, 0x80017f).ram().share("cps_b_regs");  /* CPS-B custom */
+	map(0x880000, 0x880001).portr("IN1");                /* Player input ports */
+	map(0x880006, 0x880007).w(this, FUNC(cps_state::fcrash_soundlatch_w));       /* Sound command */
+	map(0x880008, 0x88000f).r(this, FUNC(cps_state::cps1_dsw_r));                /* System input ports / Dip Switches */
+	map(0x890000, 0x890001).nopw();    // palette related?
+	map(0x900000, 0x92ffff).ram().w(this, FUNC(cps_state::cps1_gfxram_w)).share("gfxram");
+	map(0xff0000, 0xffffff).ram();
+}
 
-ADDRESS_MAP_START(cps_state::punipic_map)
-	AM_RANGE(0x000000, 0x3fffff) AM_ROM
-	AM_RANGE(0x800000, 0x800007) AM_READ_PORT("IN1")            /* Player input ports */
-	AM_RANGE(0x800006, 0x800007) AM_WRITE(cps1_soundlatch_w)    /* Sound command */
-	AM_RANGE(0x800018, 0x80001f) AM_READ(cps1_dsw_r)            /* System input ports / Dip Switches */
-	AM_RANGE(0x800030, 0x800037) AM_WRITE(cps1_coinctrl_w)
-	AM_RANGE(0x800100, 0x80013f) AM_WRITE(cps1_cps_a_w) AM_SHARE("cps_a_regs")  /* CPS-A custom */
-	AM_RANGE(0x800140, 0x80017f) AM_READWRITE(cps1_cps_b_r, cps1_cps_b_w) AM_SHARE("cps_b_regs")
-	AM_RANGE(0x880000, 0x880001) AM_WRITENOP // same as 98000C
-	AM_RANGE(0x900000, 0x92ffff) AM_RAM_WRITE(cps1_gfxram_w) AM_SHARE("gfxram")
-	AM_RANGE(0x980000, 0x98000f) AM_WRITE(punipic_layer_w)
-	AM_RANGE(0x990000, 0x990001) AM_WRITENOP // unknown
-	AM_RANGE(0x991000, 0x991017) AM_WRITENOP // unknown
-	AM_RANGE(0xf18000, 0xf19fff) AM_RAM
-	AM_RANGE(0xf1c006, 0xf1c007) AM_READ_PORT("EEPROMIN") AM_WRITE_PORT("EEPROMOUT")
-	AM_RANGE(0xff0000, 0xffffff) AM_RAM AM_SHARE("mainram")
-ADDRESS_MAP_END
+void cps_state::punipic_map(address_map &map)
+{
+	map(0x000000, 0x3fffff).rom();
+	map(0x800000, 0x800007).portr("IN1");            /* Player input ports */
+	map(0x800006, 0x800007).w(this, FUNC(cps_state::cps1_soundlatch_w));    /* Sound command */
+	map(0x800018, 0x80001f).r(this, FUNC(cps_state::cps1_dsw_r));            /* System input ports / Dip Switches */
+	map(0x800030, 0x800037).w(this, FUNC(cps_state::cps1_coinctrl_w));
+	map(0x800100, 0x80013f).w(this, FUNC(cps_state::cps1_cps_a_w)).share("cps_a_regs");  /* CPS-A custom */
+	map(0x800140, 0x80017f).rw(this, FUNC(cps_state::cps1_cps_b_r), FUNC(cps_state::cps1_cps_b_w)).share("cps_b_regs");
+	map(0x880000, 0x880001).nopw(); // same as 98000C
+	map(0x900000, 0x92ffff).ram().w(this, FUNC(cps_state::cps1_gfxram_w)).share("gfxram");
+	map(0x980000, 0x98000f).w(this, FUNC(cps_state::punipic_layer_w));
+	map(0x990000, 0x990001).nopw(); // unknown
+	map(0x991000, 0x991017).nopw(); // unknown
+	map(0xf18000, 0xf19fff).ram();
+	map(0xf1c006, 0xf1c007).portr("EEPROMIN").portw("EEPROMOUT");
+	map(0xff0000, 0xffffff).ram().share("mainram");
+}
 
-ADDRESS_MAP_START(cps_state::sf2m1_map)
-	AM_RANGE(0x000000, 0x3fffff) AM_ROM
-	AM_RANGE(0x800000, 0x800007) AM_READ_PORT("IN1")            /* Player input ports */
-	AM_RANGE(0x800006, 0x800007) AM_WRITE(cps1_soundlatch_w)    /* Sound command */
-	AM_RANGE(0x800012, 0x800013) AM_READ(cps1_in2_r)            /* Buttons 4,5,6 for both players */
-	AM_RANGE(0x800018, 0x80001f) AM_READ(cps1_dsw_r)            /* System input ports / Dip Switches */
-	AM_RANGE(0x800100, 0x80013f) AM_WRITE(cps1_cps_a_w) AM_SHARE("cps_a_regs")  /* CPS-A custom */
-	AM_RANGE(0x800140, 0x80017f) AM_READWRITE(cps1_cps_b_r, cps1_cps_b_w) AM_SHARE("cps_b_regs")
-	AM_RANGE(0x800180, 0x800181) AM_WRITENOP // only once at boot, for 80010c
-	AM_RANGE(0x800188, 0x80018f) AM_WRITE(cps1_soundlatch2_w)   /* Sound timer fade */
-	AM_RANGE(0x880000, 0x880001) AM_WRITENOP // unknown
-	AM_RANGE(0x900000, 0x93ffff) AM_RAM_WRITE(cps1_gfxram_w) AM_SHARE("gfxram")
-	AM_RANGE(0x980000, 0x9801ff) AM_WRITE(sf2m1_layer_w)
-	AM_RANGE(0x990000, 0x990001) AM_WRITENOP // same as 880000
-	AM_RANGE(0xff0000, 0xffffff) AM_RAM
-ADDRESS_MAP_END
+void cps_state::sf2m1_map(address_map &map)
+{
+	map(0x000000, 0x3fffff).rom();
+	map(0x800000, 0x800007).portr("IN1");            /* Player input ports */
+	map(0x800006, 0x800007).w(this, FUNC(cps_state::cps1_soundlatch_w));    /* Sound command */
+	map(0x800012, 0x800013).r(this, FUNC(cps_state::cps1_in2_r));            /* Buttons 4,5,6 for both players */
+	map(0x800018, 0x80001f).r(this, FUNC(cps_state::cps1_dsw_r));            /* System input ports / Dip Switches */
+	map(0x800100, 0x80013f).w(this, FUNC(cps_state::cps1_cps_a_w)).share("cps_a_regs");  /* CPS-A custom */
+	map(0x800140, 0x80017f).rw(this, FUNC(cps_state::cps1_cps_b_r), FUNC(cps_state::cps1_cps_b_w)).share("cps_b_regs");
+	map(0x800180, 0x800181).nopw(); // only once at boot, for 80010c
+	map(0x800188, 0x80018f).w(this, FUNC(cps_state::cps1_soundlatch2_w));   /* Sound timer fade */
+	map(0x880000, 0x880001).nopw(); // unknown
+	map(0x900000, 0x93ffff).ram().w(this, FUNC(cps_state::cps1_gfxram_w)).share("gfxram");
+	map(0x980000, 0x9801ff).w(this, FUNC(cps_state::sf2m1_layer_w));
+	map(0x990000, 0x990001).nopw(); // same as 880000
+	map(0xff0000, 0xffffff).ram();
+}
 
-ADDRESS_MAP_START(cps_state::sf2mdt_map)
-	AM_RANGE(0x000000, 0x3fffff) AM_ROM
-	AM_RANGE(0x708100, 0x7081ff) AM_WRITE(sf2mdta_layer_w)
-	AM_RANGE(0x70c000, 0x70c001) AM_READ_PORT("IN1")
-	AM_RANGE(0x70c008, 0x70c009) AM_READ_PORT("IN2")
-	AM_RANGE(0x70c018, 0x70c01f) AM_READ(cps1_hack_dsw_r)
-	AM_RANGE(0x70c106, 0x70c107) AM_WRITE(cawingbl_soundlatch_w)
-	AM_RANGE(0x70d000, 0x70d001) AM_WRITENOP // writes FFFF
+void cps_state::sf2mdt_map(address_map &map)
+{
+	map(0x000000, 0x3fffff).rom();
+	map(0x708100, 0x7081ff).w(this, FUNC(cps_state::sf2mdta_layer_w));
+	map(0x70c000, 0x70c001).portr("IN1");
+	map(0x70c008, 0x70c009).portr("IN2");
+	map(0x70c018, 0x70c01f).r(this, FUNC(cps_state::cps1_hack_dsw_r));
+	map(0x70c106, 0x70c107).w(this, FUNC(cps_state::cawingbl_soundlatch_w));
+	map(0x70d000, 0x70d001).nopw(); // writes FFFF
 	//AM_RANGE(0x800030, 0x800031) AM_WRITE(cps1_coinctrl_w)
-	AM_RANGE(0x800100, 0x80013f) AM_RAM AM_SHARE("cps_a_regs")  /* CPS-A custom */
-	AM_RANGE(0x800140, 0x80017f) AM_RAM AM_SHARE("cps_b_regs")  /* CPS-B custom */
-	AM_RANGE(0x900000, 0x92ffff) AM_RAM_WRITE(cps1_gfxram_w) AM_SHARE("gfxram")
-	AM_RANGE(0xff0000, 0xffffff) AM_RAM
-ADDRESS_MAP_END
+	map(0x800100, 0x80013f).ram().share("cps_a_regs");  /* CPS-A custom */
+	map(0x800140, 0x80017f).ram().share("cps_b_regs");  /* CPS-B custom */
+	map(0x900000, 0x92ffff).ram().w(this, FUNC(cps_state::cps1_gfxram_w)).share("gfxram");
+	map(0xff0000, 0xffffff).ram();
+}
 
-ADDRESS_MAP_START(cps_state::sf2b_map)
-	AM_RANGE(0x000000, 0x3fffff) AM_ROM
-	AM_RANGE(0x708100, 0x7081ff) AM_WRITE(sf2mdta_layer_w)
-	AM_RANGE(0x70c000, 0x70c001) AM_READ_PORT("IN1")
-	AM_RANGE(0x70c008, 0x70c009) AM_READ_PORT("IN2")
-	AM_RANGE(0x70c018, 0x70c01f) AM_READ(cps1_hack_dsw_r)
-	AM_RANGE(0x70c106, 0x70c107) AM_WRITE(cawingbl_soundlatch_w)
-	AM_RANGE(0x70d000, 0x70d001) AM_WRITENOP // writes FFFF
+void cps_state::sf2b_map(address_map &map)
+{
+	map(0x000000, 0x3fffff).rom();
+	map(0x708100, 0x7081ff).w(this, FUNC(cps_state::sf2mdta_layer_w));
+	map(0x70c000, 0x70c001).portr("IN1");
+	map(0x70c008, 0x70c009).portr("IN2");
+	map(0x70c018, 0x70c01f).r(this, FUNC(cps_state::cps1_hack_dsw_r));
+	map(0x70c106, 0x70c107).w(this, FUNC(cps_state::cawingbl_soundlatch_w));
+	map(0x70d000, 0x70d001).nopw(); // writes FFFF
 	//AM_RANGE(0x800030, 0x800031) AM_WRITE(cps1_coinctrl_w)
-	AM_RANGE(0x800100, 0x80013f) AM_RAM AM_SHARE("cps_a_regs")  /* CPS-A custom */
-	AM_RANGE(0x800140, 0x80017f) AM_READWRITE(cps1_cps_b_r, cps1_cps_b_w)  AM_SHARE("cps_b_regs")  /* CPS-B custom */
-	AM_RANGE(0x900000, 0x92ffff) AM_RAM_WRITE(cps1_gfxram_w) AM_SHARE("gfxram")
-	AM_RANGE(0xff0000, 0xffffff) AM_RAM
-ADDRESS_MAP_END
+	map(0x800100, 0x80013f).ram().share("cps_a_regs");  /* CPS-A custom */
+	map(0x800140, 0x80017f).rw(this, FUNC(cps_state::cps1_cps_b_r), FUNC(cps_state::cps1_cps_b_w)).share("cps_b_regs");  /* CPS-B custom */
+	map(0x900000, 0x92ffff).ram().w(this, FUNC(cps_state::cps1_gfxram_w)).share("gfxram");
+	map(0xff0000, 0xffffff).ram();
+}
 
-ADDRESS_MAP_START(cps_state::sgyxz_map)
-	AM_RANGE(0x000000, 0x3fffff) AM_ROM
-	AM_RANGE(0x800030, 0x800031) AM_WRITE(cps1_coinctrl_w)
-	AM_RANGE(0x800100, 0x80013f) AM_RAM AM_SHARE("cps_a_regs")  /* CPS-A custom */
-	AM_RANGE(0x800140, 0x80017f) AM_RAM AM_SHARE("cps_b_regs")  /* CPS-B custom */
-	AM_RANGE(0x880000, 0x880001) AM_READ_PORT("IN1")            /* Player input ports */
-	AM_RANGE(0x880006, 0x88000d) AM_READ(cps1_dsw_r)            /* System input ports / Dip Switches */
-	AM_RANGE(0x88000e, 0x88000f) AM_WRITE(cps1_soundlatch_w)
-	AM_RANGE(0x880e78, 0x880e79) AM_READ(cps1_in2_r)            /* Player 3 controls (later games) */
-	AM_RANGE(0x890000, 0x890001) AM_WRITE(cps1_soundlatch2_w)
-	AM_RANGE(0x900000, 0x92ffff) AM_RAM_WRITE(cps1_gfxram_w) AM_SHARE("gfxram")
-	AM_RANGE(0xf1c004, 0xf1c005) AM_WRITE(cpsq_coinctrl2_w)     /* Coin control2 (later games) */
-	AM_RANGE(0xf1c006, 0xf1c007) AM_READ_PORT("EEPROMIN") AM_WRITE_PORT("EEPROMOUT")
-	AM_RANGE(0xff0000, 0xffffff) AM_RAM
-ADDRESS_MAP_END
+void cps_state::sgyxz_map(address_map &map)
+{
+	map(0x000000, 0x3fffff).rom();
+	map(0x800030, 0x800031).w(this, FUNC(cps_state::cps1_coinctrl_w));
+	map(0x800100, 0x80013f).ram().share("cps_a_regs");  /* CPS-A custom */
+	map(0x800140, 0x80017f).ram().share("cps_b_regs");  /* CPS-B custom */
+	map(0x880000, 0x880001).portr("IN1");            /* Player input ports */
+	map(0x880006, 0x88000d).r(this, FUNC(cps_state::cps1_dsw_r));            /* System input ports / Dip Switches */
+	map(0x88000e, 0x88000f).w(this, FUNC(cps_state::cps1_soundlatch_w));
+	map(0x880e78, 0x880e79).r(this, FUNC(cps_state::cps1_in2_r));            /* Player 3 controls (later games) */
+	map(0x890000, 0x890001).w(this, FUNC(cps_state::cps1_soundlatch2_w));
+	map(0x900000, 0x92ffff).ram().w(this, FUNC(cps_state::cps1_gfxram_w)).share("gfxram");
+	map(0xf1c004, 0xf1c005).w(this, FUNC(cps_state::cpsq_coinctrl2_w));     /* Coin control2 (later games) */
+	map(0xf1c006, 0xf1c007).portr("EEPROMIN").portw("EEPROMOUT");
+	map(0xff0000, 0xffffff).ram();
+}
 
-ADDRESS_MAP_START(cps_state::wofabl_map)
-	AM_RANGE(0x000000, 0x1fffff) AM_ROM
-	AM_RANGE(0x800030, 0x800031) AM_WRITE(cps1_coinctrl_w)
-	AM_RANGE(0x800100, 0x80013f) AM_RAM AM_SHARE("cps_a_regs")  /* CPS-A custom */
-	AM_RANGE(0x800140, 0x80017f) AM_RAM AM_SHARE("cps_b_regs")  /* CPS-B custom */
-	AM_RANGE(0x880000, 0x880001) AM_READ_PORT("IN1")            /* Player input ports */
-	AM_RANGE(0x880006, 0x880007) AM_WRITE(cps1_soundlatch_w)
-	AM_RANGE(0x880008, 0x88000f) AM_READ(cps1_dsw_r)            /* System input ports / Dip Switches */
-	AM_RANGE(0x880e78, 0x880e79) AM_READ(cps1_in2_r)            /* Player 3 controls (later games) */
-	AM_RANGE(0x890000, 0x890001) AM_WRITE(cps1_soundlatch2_w)
-	AM_RANGE(0x900000, 0x92ffff) AM_RAM_WRITE(cps1_gfxram_w) AM_SHARE("gfxram")
-	AM_RANGE(0xf1c004, 0xf1c005) AM_WRITE(cpsq_coinctrl2_w)     /* Coin control2 (later games) */
-	AM_RANGE(0xf1c006, 0xf1c007) AM_READ_PORT("EEPROMIN") AM_WRITE_PORT("EEPROMOUT")
-	AM_RANGE(0xff0000, 0xffffff) AM_RAM
-ADDRESS_MAP_END
+void cps_state::wofabl_map(address_map &map)
+{
+	map(0x000000, 0x1fffff).rom();
+	map(0x800030, 0x800031).w(this, FUNC(cps_state::cps1_coinctrl_w));
+	map(0x800100, 0x80013f).ram().share("cps_a_regs");  /* CPS-A custom */
+	map(0x800140, 0x80017f).ram().share("cps_b_regs");  /* CPS-B custom */
+	map(0x880000, 0x880001).portr("IN1");            /* Player input ports */
+	map(0x880006, 0x880007).w(this, FUNC(cps_state::cps1_soundlatch_w));
+	map(0x880008, 0x88000f).r(this, FUNC(cps_state::cps1_dsw_r));            /* System input ports / Dip Switches */
+	map(0x880e78, 0x880e79).r(this, FUNC(cps_state::cps1_in2_r));            /* Player 3 controls (later games) */
+	map(0x890000, 0x890001).w(this, FUNC(cps_state::cps1_soundlatch2_w));
+	map(0x900000, 0x92ffff).ram().w(this, FUNC(cps_state::cps1_gfxram_w)).share("gfxram");
+	map(0xf1c004, 0xf1c005).w(this, FUNC(cps_state::cpsq_coinctrl2_w));     /* Coin control2 (later games) */
+	map(0xf1c006, 0xf1c007).portr("EEPROMIN").portw("EEPROMOUT");
+	map(0xff0000, 0xffffff).ram();
+}
 
-ADDRESS_MAP_START(cps_state::slampic_map)
-	AM_RANGE(0x000000, 0x3fffff) AM_ROM
-	AM_RANGE(0x800006, 0x800007) AM_WRITENOP //AM_WRITE(cps1_soundlatch2_w)
-	AM_RANGE(0x800000, 0x800007) AM_READ_PORT("IN1")            /* Player input ports */
-	AM_RANGE(0x800018, 0x80001f) AM_READ(cps1_dsw_r)            /* System input ports / Dip Switches */
-	AM_RANGE(0x800030, 0x800037) AM_WRITE(cps1_coinctrl_w)
-	AM_RANGE(0x800100, 0x80013f) AM_WRITE(cps1_cps_a_w) AM_SHARE("cps_a_regs")  /* CPS-A custom */
-	AM_RANGE(0x800140, 0x80017f) AM_READWRITE(cps1_cps_b_r, cps1_cps_b_w) AM_SHARE("cps_b_regs")
-	AM_RANGE(0x880000, 0x880001) AM_WRITENOP //AM_WRITE(cps1_soundlatch_w)    /* Sound command */
-	AM_RANGE(0x900000, 0x92ffff) AM_RAM_WRITE(cps1_gfxram_w) AM_SHARE("gfxram")
-	AM_RANGE(0x980000, 0x98000d) AM_WRITE(slampic_layer_w)
-	AM_RANGE(0xf00000, 0xf0ffff) AM_READ(qsound_rom_r)          /* Slammasters protection */
-	AM_RANGE(0xf18000, 0xf19fff) AM_RAM
-	AM_RANGE(0xf1c000, 0xf1c001) AM_READ_PORT("IN2")            /* Player 3 controls (later games) */
-	AM_RANGE(0xf1c004, 0xf1c005) AM_WRITE(cpsq_coinctrl2_w)     /* Coin control2 (later games) */
-	AM_RANGE(0xf1c006, 0xf1c007) AM_READ_PORT("EEPROMIN") AM_WRITE_PORT("EEPROMOUT")
-	AM_RANGE(0xf1f000, 0xf1ffff) AM_NOP // writes 0 to range, then reads F1F6EC
-	AM_RANGE(0xff0000, 0xffffff) AM_RAM
-ADDRESS_MAP_END
+void cps_state::slampic_map(address_map &map)
+{
+	map(0x000000, 0x3fffff).rom();
+	map(0x800006, 0x800007).nopw(); //AM_WRITE(cps1_soundlatch2_w)
+	map(0x800000, 0x800007).portr("IN1");            /* Player input ports */
+	map(0x800018, 0x80001f).r(this, FUNC(cps_state::cps1_dsw_r));            /* System input ports / Dip Switches */
+	map(0x800030, 0x800037).w(this, FUNC(cps_state::cps1_coinctrl_w));
+	map(0x800100, 0x80013f).w(this, FUNC(cps_state::cps1_cps_a_w)).share("cps_a_regs");  /* CPS-A custom */
+	map(0x800140, 0x80017f).rw(this, FUNC(cps_state::cps1_cps_b_r), FUNC(cps_state::cps1_cps_b_w)).share("cps_b_regs");
+	map(0x880000, 0x880001).nopw(); //AM_WRITE(cps1_soundlatch_w)    /* Sound command */
+	map(0x900000, 0x92ffff).ram().w(this, FUNC(cps_state::cps1_gfxram_w)).share("gfxram");
+	map(0x980000, 0x98000d).w(this, FUNC(cps_state::slampic_layer_w));
+	map(0xf00000, 0xf0ffff).r(this, FUNC(cps_state::qsound_rom_r));          /* Slammasters protection */
+	map(0xf18000, 0xf19fff).ram();
+	map(0xf1c000, 0xf1c001).portr("IN2");            /* Player 3 controls (later games) */
+	map(0xf1c004, 0xf1c005).w(this, FUNC(cps_state::cpsq_coinctrl2_w));     /* Coin control2 (later games) */
+	map(0xf1c006, 0xf1c007).portr("EEPROMIN").portw("EEPROMOUT");
+	map(0xf1f000, 0xf1ffff).noprw(); // writes 0 to range, then reads F1F6EC
+	map(0xff0000, 0xffffff).ram();
+}
 
-ADDRESS_MAP_START(cps_state::sound_map)
-	AM_RANGE(0x0000, 0x7fff) AM_ROM
-	AM_RANGE(0x8000, 0xbfff) AM_ROMBANK("bank1")
-	AM_RANGE(0xd000, 0xd7ff) AM_RAM
-	AM_RANGE(0xd800, 0xd801) AM_DEVREADWRITE("ym1", ym2203_device, read, write)
-	AM_RANGE(0xdc00, 0xdc01) AM_DEVREADWRITE("ym2", ym2203_device, read, write)
-	AM_RANGE(0xe000, 0xe000) AM_WRITE(fcrash_snd_bankswitch_w)
-	AM_RANGE(0xe400, 0xe400) AM_DEVREAD("soundlatch", generic_latch_8_device, read)
-	AM_RANGE(0xe800, 0xe800) AM_WRITE(fcrash_msm5205_0_data_w)
-	AM_RANGE(0xec00, 0xec00) AM_WRITE(fcrash_msm5205_1_data_w)
-ADDRESS_MAP_END
+void cps_state::sound_map(address_map &map)
+{
+	map(0x0000, 0x7fff).rom();
+	map(0x8000, 0xbfff).bankr("bank1");
+	map(0xd000, 0xd7ff).ram();
+	map(0xd800, 0xd801).rw("ym1", FUNC(ym2203_device::read), FUNC(ym2203_device::write));
+	map(0xdc00, 0xdc01).rw("ym2", FUNC(ym2203_device::read), FUNC(ym2203_device::write));
+	map(0xe000, 0xe000).w(this, FUNC(cps_state::fcrash_snd_bankswitch_w));
+	map(0xe400, 0xe400).r(m_soundlatch, FUNC(generic_latch_8_device::read));
+	map(0xe800, 0xe800).w(this, FUNC(cps_state::fcrash_msm5205_0_data_w));
+	map(0xec00, 0xec00).w(this, FUNC(cps_state::fcrash_msm5205_1_data_w));
+}
 
-ADDRESS_MAP_START(cps_state::kodb_sound_map)
-	AM_RANGE(0x0000, 0x7fff) AM_ROM
-	AM_RANGE(0x8000, 0xbfff) AM_ROMBANK("bank1")
-	AM_RANGE(0xd000, 0xd7ff) AM_RAM
-	AM_RANGE(0xe000, 0xe001) AM_DEVREADWRITE("2151", ym2151_device, read, write)
-	AM_RANGE(0xe400, 0xe400) AM_DEVREADWRITE("oki", okim6295_device, read, write)
-	AM_RANGE(0xe800, 0xe800) AM_DEVREAD("soundlatch", generic_latch_8_device, read)
-ADDRESS_MAP_END
+void cps_state::kodb_sound_map(address_map &map)
+{
+	map(0x0000, 0x7fff).rom();
+	map(0x8000, 0xbfff).bankr("bank1");
+	map(0xd000, 0xd7ff).ram();
+	map(0xe000, 0xe001).rw("2151", FUNC(ym2151_device::read), FUNC(ym2151_device::write));
+	map(0xe400, 0xe400).rw(m_oki, FUNC(okim6295_device::read), FUNC(okim6295_device::write));
+	map(0xe800, 0xe800).r(m_soundlatch, FUNC(generic_latch_8_device::read));
+}
 
-ADDRESS_MAP_START(cps_state::sf2mdt_z80map)
-	AM_RANGE(0x0000, 0x7fff) AM_ROM
-	AM_RANGE(0x8000, 0xbfff) AM_ROMBANK("bank1")
-	AM_RANGE(0xd000, 0xd7ff) AM_RAM
-	AM_RANGE(0xd800, 0xd801) AM_DEVREADWRITE("2151", ym2151_device, read, write)
-	AM_RANGE(0xdc00, 0xdc00) AM_DEVREAD("soundlatch", generic_latch_8_device, read)
-	AM_RANGE(0xe000, 0xe000) AM_WRITE(sf2mdt_snd_bankswitch_w)
-	AM_RANGE(0xe400, 0xe400) AM_WRITE(fcrash_msm5205_0_data_w)
-	AM_RANGE(0xe800, 0xe800) AM_WRITE(fcrash_msm5205_1_data_w)
-ADDRESS_MAP_END
+void cps_state::sf2mdt_z80map(address_map &map)
+{
+	map(0x0000, 0x7fff).rom();
+	map(0x8000, 0xbfff).bankr("bank1");
+	map(0xd000, 0xd7ff).ram();
+	map(0xd800, 0xd801).rw("2151", FUNC(ym2151_device::read), FUNC(ym2151_device::write));
+	map(0xdc00, 0xdc00).r(m_soundlatch, FUNC(generic_latch_8_device::read));
+	map(0xe000, 0xe000).w(this, FUNC(cps_state::sf2mdt_snd_bankswitch_w));
+	map(0xe400, 0xe400).w(this, FUNC(cps_state::fcrash_msm5205_0_data_w));
+	map(0xe800, 0xe800).w(this, FUNC(cps_state::fcrash_msm5205_1_data_w));
+}
 
-ADDRESS_MAP_START(cps_state::knightsb_z80map)
-	AM_RANGE(0x0000, 0x7fff) AM_ROM
-	AM_RANGE(0x8000, 0xbfff) AM_ROMBANK("bank1")
-	AM_RANGE(0xcffe, 0xcfff) AM_WRITENOP // writes lots of data
-	AM_RANGE(0xd000, 0xd7ff) AM_RAM
-	AM_RANGE(0xd800, 0xd801) AM_DEVREADWRITE("2151", ym2151_device, read, write)
-	AM_RANGE(0xdc00, 0xdc00) AM_DEVREAD("soundlatch", generic_latch_8_device, read)
-	AM_RANGE(0xe000, 0xe000) AM_WRITE(knightsb_snd_bankswitch_w)
-	AM_RANGE(0xe400, 0xe400) AM_WRITE(fcrash_msm5205_0_data_w)
-	AM_RANGE(0xe800, 0xe800) AM_WRITE(fcrash_msm5205_1_data_w)
-ADDRESS_MAP_END
+void cps_state::knightsb_z80map(address_map &map)
+{
+	map(0x0000, 0x7fff).rom();
+	map(0x8000, 0xbfff).bankr("bank1");
+	map(0xcffe, 0xcfff).nopw(); // writes lots of data
+	map(0xd000, 0xd7ff).ram();
+	map(0xd800, 0xd801).rw("2151", FUNC(ym2151_device::read), FUNC(ym2151_device::write));
+	map(0xdc00, 0xdc00).r(m_soundlatch, FUNC(generic_latch_8_device::read));
+	map(0xe000, 0xe000).w(this, FUNC(cps_state::knightsb_snd_bankswitch_w));
+	map(0xe400, 0xe400).w(this, FUNC(cps_state::fcrash_msm5205_0_data_w));
+	map(0xe800, 0xe800).w(this, FUNC(cps_state::fcrash_msm5205_1_data_w));
+}
 
-ADDRESS_MAP_START(cps_state::sgyxz_sound_map)
-	AM_RANGE(0x0000, 0x7fff) AM_ROM
-	AM_RANGE(0x8000, 0xbfff) AM_ROMBANK("bank1")
-	AM_RANGE(0xd000, 0xd7ff) AM_RAM
-	AM_RANGE(0xf000, 0xf001) AM_DEVREADWRITE("2151", ym2151_device, read, write)
-	AM_RANGE(0xf002, 0xf002) AM_DEVREADWRITE("oki", okim6295_device, read, write)
-	AM_RANGE(0xf004, 0xf004) AM_WRITE(cps1_snd_bankswitch_w)
-	AM_RANGE(0xf006, 0xf006) AM_WRITE(cps1_oki_pin7_w) /* controls pin 7 of OKI chip */
-	AM_RANGE(0xf008, 0xf008) AM_DEVREAD("soundlatch", generic_latch_8_device, read) /* Sound command */
-	AM_RANGE(0xf00a, 0xf00a) AM_DEVREAD("soundlatch2", generic_latch_8_device, read) /* Sound timer fade */
-ADDRESS_MAP_END
+void cps_state::sgyxz_sound_map(address_map &map)
+{
+	map(0x0000, 0x7fff).rom();
+	map(0x8000, 0xbfff).bankr("bank1");
+	map(0xd000, 0xd7ff).ram();
+	map(0xf000, 0xf001).rw("2151", FUNC(ym2151_device::read), FUNC(ym2151_device::write));
+	map(0xf002, 0xf002).rw(m_oki, FUNC(okim6295_device::read), FUNC(okim6295_device::write));
+	map(0xf004, 0xf004).w(this, FUNC(cps_state::cps1_snd_bankswitch_w));
+	map(0xf006, 0xf006).w(this, FUNC(cps_state::cps1_oki_pin7_w)); /* controls pin 7 of OKI chip */
+	map(0xf008, 0xf008).r(m_soundlatch, FUNC(generic_latch_8_device::read)); /* Sound command */
+	map(0xf00a, 0xf00a).r(m_soundlatch2, FUNC(generic_latch_8_device::read)); /* Sound timer fade */
+}
 
 
 #define CPS1_COINAGE_1 \
@@ -1433,7 +1450,7 @@ static INPUT_PORTS_START( sgyxz )
 	PORT_BIT( 0x80, IP_ACTIVE_LOW, IPT_START3 )
 
 	PORT_START( "EEPROMIN" )
-	PORT_BIT( 0x01, IP_ACTIVE_HIGH, IPT_SPECIAL ) PORT_READ_LINE_DEVICE_MEMBER("eeprom", eeprom_serial_93cxx_device, do_read)
+	PORT_BIT( 0x01, IP_ACTIVE_HIGH, IPT_CUSTOM ) PORT_READ_LINE_DEVICE_MEMBER("eeprom", eeprom_serial_93cxx_device, do_read)
 
 	PORT_START( "EEPROMOUT" )
 	PORT_BIT( 0x01, IP_ACTIVE_HIGH, IPT_OUTPUT ) PORT_WRITE_LINE_DEVICE_MEMBER("eeprom", eeprom_serial_93cxx_device, di_write)
@@ -2805,6 +2822,26 @@ ROM_START( sf2mdtb )
 	ROM_RELOAD(            0x10000, 0x20000 )
 ROM_END
 
+ROM_START( sf2ceb )
+	ROM_REGION( CODE_SIZE, "maincpu", 0 )      /* 68000 code */
+	ROM_LOAD16_BYTE( "3.ic171", 0x000000, 0x80000, CRC(a2355d90) SHA1(6c9e1294c55a5a9f244f6f1ce46224c51f910bb1) )
+	ROM_LOAD16_BYTE( "5.ic171", 0x000001, 0x80000, CRC(c6f86e84) SHA1(546841fe7d423fff05a7772aa57fa3274515c32b) )
+	ROM_LOAD16_BYTE( "2.ic171", 0x100000, 0x20000, CRC(74844192) SHA1(99cd546c78cce7f632007af454d8a55eddb6b19b) )
+	ROM_LOAD16_BYTE( "4.ic171", 0x100001, 0x20000, CRC(bd98ff15) SHA1(ed902d949b0b5c5beaaea78a4b418ffa6db9e1df) )
+
+	ROM_REGION( 0x600000, "gfx", 0 )
+	ROMX_LOAD( "pf4-sg072.ic90", 0x000000, 0x100000, CRC(446575c7) SHA1(2bd769674fbe280d304b389daf74202cf9e4ac22), ROM_GROUPWORD | ROM_SKIP(2) )
+	ROMX_LOAD( "pf7-sg103.ic88", 0x000002, 0x100000, CRC(fb78022e) SHA1(b8974387056dd52db96b01cc4648edc814398c7e), ROM_GROUPWORD | ROM_SKIP(2) )
+	ROMX_LOAD( "pf5-sg063.ic91", 0x200000, 0x100000, CRC(0a6be48b) SHA1(b7e72c94d4e3eb4a6bba6608d9b9a093c8901ad9), ROM_GROUPWORD | ROM_SKIP(2) )
+	ROMX_LOAD( "pf8-sg101.ic93", 0x200002, 0x100000, CRC(6258c7cf) SHA1(4cd7519245c0aa816934a43e6743160f715d7dc2), ROM_GROUPWORD | ROM_SKIP(2) )
+	ROMX_LOAD( "pf6-sg070.ic86", 0x400000, 0x100000, CRC(9b5b09d7) SHA1(698a6aab41e495bd0c37a19aee16a84f04d15797), ROM_GROUPWORD | ROM_SKIP(2) )
+	ROMX_LOAD( "pf9-sh001.ic84", 0x400002, 0x100000, CRC(9f25090e) SHA1(12ff0431ef6550db446985c8914ac7d78eec6b6d), ROM_GROUPWORD | ROM_SKIP(2) )
+
+	ROM_REGION( 0x30000, "audiocpu", 0 ) /* Sound program + samples  */
+	ROM_LOAD( "3.ic28",    0x00000, 0x20000, CRC(d5bee9cc) SHA1(e638cb5ce7a22c18b60296a7defe8b03418da56c) )
+	ROM_RELOAD(            0x10000, 0x20000 )
+ROM_END
+
 ROM_START( sf2b )
 	ROM_REGION( CODE_SIZE, "maincpu", 0 )      /* 68000 code */
 	ROM_LOAD16_WORD_SWAP( "pf1-2-sg076.bin",  0x000000, 0x100000, CRC(1d15bc7a) SHA1(834627545f191f39de6beb008c89623f2b88c13b) )
@@ -3077,19 +3114,20 @@ WRITE16_MEMBER(cps_state::varthb_layer_w)
 		m_cps_a_regs[0x06 / 2] = data;
 }
 
-ADDRESS_MAP_START(cps_state::varthb_map)
-	AM_RANGE(0x000000, 0x1fffff) AM_ROM
-	AM_RANGE(0x800000, 0x800001) AM_READ_PORT("IN1")
-	AM_RANGE(0x800006, 0x800007) AM_WRITE(cps1_soundlatch_w)
-	AM_RANGE(0x800018, 0x80001f) AM_READ(cps1_dsw_r)
-	AM_RANGE(0x800030, 0x800037) AM_WRITE(cps1_coinctrl_w)
-	AM_RANGE(0x800100, 0x80013f) AM_WRITE(cps1_cps_a_w) AM_SHARE("cps_a_regs")
-	AM_RANGE(0x800140, 0x80017f) AM_READWRITE(cps1_cps_b_r, cps1_cps_b_w) AM_SHARE("cps_b_regs")
-	AM_RANGE(0x800188, 0x800189) AM_WRITE(varthb_layer_w)
-	AM_RANGE(0x980000, 0x98000b) AM_WRITE(dinopic_layer_w)
-	AM_RANGE(0x900000, 0x92ffff) AM_RAM_WRITE(cps1_gfxram_w) AM_SHARE("gfxram")
-	AM_RANGE(0xff0000, 0xffffff) AM_RAM AM_SHARE("mainram")
-ADDRESS_MAP_END
+void cps_state::varthb_map(address_map &map)
+{
+	map(0x000000, 0x1fffff).rom();
+	map(0x800000, 0x800001).portr("IN1");
+	map(0x800006, 0x800007).w(this, FUNC(cps_state::cps1_soundlatch_w));
+	map(0x800018, 0x80001f).r(this, FUNC(cps_state::cps1_dsw_r));
+	map(0x800030, 0x800037).w(this, FUNC(cps_state::cps1_coinctrl_w));
+	map(0x800100, 0x80013f).w(this, FUNC(cps_state::cps1_cps_a_w)).share("cps_a_regs");
+	map(0x800140, 0x80017f).rw(this, FUNC(cps_state::cps1_cps_b_r), FUNC(cps_state::cps1_cps_b_w)).share("cps_b_regs");
+	map(0x800188, 0x800189).w(this, FUNC(cps_state::varthb_layer_w));
+	map(0x980000, 0x98000b).w(this, FUNC(cps_state::dinopic_layer_w));
+	map(0x900000, 0x92ffff).ram().w(this, FUNC(cps_state::cps1_gfxram_w)).share("gfxram");
+	map(0xff0000, 0xffffff).ram().share("mainram");
+}
 
 MACHINE_CONFIG_START(cps_state::varthb)
 
@@ -3191,8 +3229,9 @@ GAME( 1992, sf2m1,     sf2ce,    sf2m1,     sf2,      cps_state, sf2m1,    ROT0,
 GAME( 1992, sf2mdt,    sf2ce,    sf2mdt,    sf2mdt,   cps_state, sf2mdt,   ROT0,   "bootleg", "Street Fighter II': Magic Delta Turbo (bootleg, set 1)", MACHINE_IMPERFECT_GRAPHICS | MACHINE_SUPPORTS_SAVE )   // 920313 - based on (heavily modified) World version
 GAME( 1992, sf2mdta,   sf2ce,    sf2mdt,    sf2mdt,   cps_state, sf2mdta,  ROT0,   "bootleg", "Street Fighter II': Magic Delta Turbo (bootleg, set 2)", MACHINE_IMPERFECT_GRAPHICS | MACHINE_SUPPORTS_SAVE )   // 920313 - based on World version
 GAME( 1992, sf2mdtb,   sf2ce,    sf2mdt,    sf2mdtb,  cps_state, sf2mdtb,  ROT0,   "bootleg", "Street Fighter II': Magic Delta Turbo (bootleg, set 3)", MACHINE_IMPERFECT_GRAPHICS | MACHINE_SUPPORTS_SAVE )   // 920313 - based on World version
+GAME( 1992, sf2ceb,    sf2ce,    sf2mdt,    sf2mdt,   cps_state, sf2mdta,  ROT0,   "bootleg (Playmark)", "Street Fighter II': Champion Edition (Playmark bootleg)", MACHINE_IMPERFECT_GRAPHICS | MACHINE_SUPPORTS_SAVE )   // 920313 - based on World version
 
-GAME( 1992, sf2b,      sf2,      sf2b,      sf2mdt,   cps_state, sf2b,     ROT0,   "bootleg", "Street Fighter II: The World Warrior (bootleg)",  MACHINE_IMPERFECT_GRAPHICS | MACHINE_SUPPORTS_SAVE ) //910204 - based on World version
+GAME( 1992, sf2b,      sf2,      sf2b,      sf2mdt,   cps_state, sf2b,     ROT0,   "bootleg (Playmark)", "Street Fighter II: The World Warrior (bootleg)",  MACHINE_IMPERFECT_GRAPHICS | MACHINE_SUPPORTS_SAVE ) //910204 - based on World version
 GAME( 1992, sf2b2,     sf2,      sf2b,      sf2mdt,   cps_state, sf2mdtb,  ROT0,   "bootleg", "Street Fighter II: The World Warrior (bootleg, set 2)",  MACHINE_IMPERFECT_GRAPHICS | MACHINE_SUPPORTS_SAVE ) //910204 - based on World version
 
 GAME( 1992, sf2m9,     sf2ce,    sf2m1,     sf2,      cps_state, sf2m1,    ROT0,   "bootleg", "Street Fighter II': Champion Edition (M9, bootleg)",  MACHINE_IMPERFECT_GRAPHICS | MACHINE_SUPPORTS_SAVE ) // 920313 ETC

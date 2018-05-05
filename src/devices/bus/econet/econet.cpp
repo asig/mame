@@ -63,17 +63,6 @@ econet_slot_device::econet_slot_device(const machine_config &mconfig, const char
 
 
 //-------------------------------------------------
-//  static_set_slot -
-//-------------------------------------------------
-
-void econet_slot_device::static_set_slot(device_t &device, int address)
-{
-	econet_slot_device &econet_card = dynamic_cast<econet_slot_device &>(device);
-	econet_card.m_address = address;
-}
-
-
-//-------------------------------------------------
 //  device_start - device-specific startup
 //-------------------------------------------------
 
@@ -309,7 +298,8 @@ void econet_device::data_w(device_t *device, int state)
 // slot devices
 #include "e01.h"
 
-SLOT_INTERFACE_START( econet_devices )
-	SLOT_INTERFACE("e01",  ECONET_E01)
-	SLOT_INTERFACE("e01s", ECONET_E01S)
-SLOT_INTERFACE_END
+void econet_devices(device_slot_interface &device)
+{
+	device.option_add("e01",  ECONET_E01);
+	device.option_add("e01s", ECONET_E01S);
+}

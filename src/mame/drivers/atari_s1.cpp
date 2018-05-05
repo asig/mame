@@ -72,6 +72,7 @@ public:
 		, m_p_ram(*this, "ram")
 		, m_dac(*this, "dac")
 		, m_switch(*this, "SWITCH.%u", 0)
+		, m_digits(*this, "digit%u", 0U)
 	{ }
 
 	DECLARE_READ8_MEMBER(m1080_r);
@@ -108,51 +109,56 @@ private:
 	uint8_t m_t_c;
 	uint8_t *m_p_prom;
 	virtual void machine_reset() override;
+	virtual void machine_start() override { m_digits.resolve(); }
 	required_device<cpu_device> m_maincpu;
 	required_shared_ptr<uint8_t> m_p_ram;
 	required_device<dac_4bit_r2r_device> m_dac;
 	required_ioport_array<10> m_switch;
+	output_finder<78> m_digits;
 };
 
-ADDRESS_MAP_START(atari_s1_state::atari_s1_map)
-	ADDRESS_MAP_GLOBAL_MASK(0x7fff)
-	AM_RANGE(0x0000, 0x00ff) AM_RAM AM_SHARE("ram")
-	AM_RANGE(0x1080, 0x1083) AM_READWRITE(m1080_r,m1080_w)
-	AM_RANGE(0x1084, 0x1087) AM_READWRITE(m1084_r,m1084_w)
-	AM_RANGE(0x1088, 0x108b) AM_READWRITE(m1088_r,m1088_w)
-	AM_RANGE(0x108c, 0x108f) AM_READWRITE(m108c_r,m108c_w)
-	AM_RANGE(0x2000, 0x204f) AM_MIRROR(0x0F80) AM_READ(switch_r) AM_WRITENOP // aavenger ROL 200B causes a spurious write
-	AM_RANGE(0x3000, 0x3fff) AM_WRITE(audioen_w) // audio enable
-	AM_RANGE(0x4000, 0x4fff) AM_DEVWRITE("watchdog", watchdog_timer_device, reset_w)
-	AM_RANGE(0x5080, 0x508f) AM_WRITE(meter_w) // time2000 only
-	AM_RANGE(0x6000, 0x6fff) AM_WRITE(audiores_w) // audio reset
-	AM_RANGE(0x7000, 0x7fff) AM_ROM
-ADDRESS_MAP_END
+void atari_s1_state::atari_s1_map(address_map &map)
+{
+	map.global_mask(0x7fff);
+	map(0x0000, 0x00ff).ram().share("ram");
+	map(0x1080, 0x1083).rw(this, FUNC(atari_s1_state::m1080_r), FUNC(atari_s1_state::m1080_w));
+	map(0x1084, 0x1087).rw(this, FUNC(atari_s1_state::m1084_r), FUNC(atari_s1_state::m1084_w));
+	map(0x1088, 0x108b).rw(this, FUNC(atari_s1_state::m1088_r), FUNC(atari_s1_state::m1088_w));
+	map(0x108c, 0x108f).rw(this, FUNC(atari_s1_state::m108c_r), FUNC(atari_s1_state::m108c_w));
+	map(0x2000, 0x204f).mirror(0x0F80).r(this, FUNC(atari_s1_state::switch_r)).nopw(); // aavenger ROL 200B causes a spurious write
+	map(0x3000, 0x3fff).w(this, FUNC(atari_s1_state::audioen_w)); // audio enable
+	map(0x4000, 0x4fff).w("watchdog", FUNC(watchdog_timer_device::reset_w));
+	map(0x5080, 0x508f).w(this, FUNC(atari_s1_state::meter_w)); // time2000 only
+	map(0x6000, 0x6fff).w(this, FUNC(atari_s1_state::audiores_w)); // audio reset
+	map(0x7000, 0x7fff).rom();
+}
 
-ADDRESS_MAP_START(atari_s1_state::atarians_map) // more ram
-	ADDRESS_MAP_GLOBAL_MASK(0x7fff)
-	AM_RANGE(0x0000, 0x01ff) AM_RAM AM_SHARE("ram")
-	AM_RANGE(0x1080, 0x1083) AM_READWRITE(m1080_r,m1080_w)
-	AM_RANGE(0x1084, 0x1087) AM_READWRITE(m1084_r,m1084_w)
-	AM_RANGE(0x1088, 0x108b) AM_READWRITE(m1088_r,m1088_w)
-	AM_RANGE(0x108c, 0x108f) AM_READWRITE(m108c_r,m108c_w)
-	AM_RANGE(0x2000, 0x204f) AM_MIRROR(0x0F80) AM_READ(switch_r)
-	AM_RANGE(0x3000, 0x3fff) AM_WRITE(audioen_w) // audio enable
-	AM_RANGE(0x4000, 0x4fff) AM_DEVWRITE("watchdog", watchdog_timer_device, reset_w)
-	AM_RANGE(0x6000, 0x6fff) AM_WRITE(audiores_w) // audio reset
-	AM_RANGE(0x7000, 0x7fff) AM_ROM
-ADDRESS_MAP_END
+void atari_s1_state::atarians_map(address_map &map)
+{ // more ram
+	map.global_mask(0x7fff);
+	map(0x0000, 0x01ff).ram().share("ram");
+	map(0x1080, 0x1083).rw(this, FUNC(atari_s1_state::m1080_r), FUNC(atari_s1_state::m1080_w));
+	map(0x1084, 0x1087).rw(this, FUNC(atari_s1_state::m1084_r), FUNC(atari_s1_state::m1084_w));
+	map(0x1088, 0x108b).rw(this, FUNC(atari_s1_state::m1088_r), FUNC(atari_s1_state::m1088_w));
+	map(0x108c, 0x108f).rw(this, FUNC(atari_s1_state::m108c_r), FUNC(atari_s1_state::m108c_w));
+	map(0x2000, 0x204f).mirror(0x0F80).r(this, FUNC(atari_s1_state::switch_r));
+	map(0x3000, 0x3fff).w(this, FUNC(atari_s1_state::audioen_w)); // audio enable
+	map(0x4000, 0x4fff).w("watchdog", FUNC(watchdog_timer_device::reset_w));
+	map(0x6000, 0x6fff).w(this, FUNC(atari_s1_state::audiores_w)); // audio reset
+	map(0x7000, 0x7fff).rom();
+}
 
-ADDRESS_MAP_START(atari_s1_state::midearth_map)
-	ADDRESS_MAP_GLOBAL_MASK(0x7fff)
-	AM_RANGE(0x0000, 0x01ff) AM_RAM AM_SHARE("ram")
-	AM_RANGE(0x1000, 0x11ff) AM_WRITE(midearth_w)
-	AM_RANGE(0x2000, 0x204f) AM_MIRROR(0x0F80) AM_READ(switch_r)
-	AM_RANGE(0x3000, 0x3fff) AM_WRITE(audioen_w) // audio enable
-	AM_RANGE(0x4000, 0x4fff) AM_DEVWRITE("watchdog", watchdog_timer_device, reset_w)
-	AM_RANGE(0x6000, 0x6fff) AM_WRITE(audiores_w) // audio reset
-	AM_RANGE(0x7000, 0x7fff) AM_ROM AM_WRITENOP // writes to FFFF due to poor coding at 7FF5
-ADDRESS_MAP_END
+void atari_s1_state::midearth_map(address_map &map)
+{
+	map.global_mask(0x7fff);
+	map(0x0000, 0x01ff).ram().share("ram");
+	map(0x1000, 0x11ff).w(this, FUNC(atari_s1_state::midearth_w));
+	map(0x2000, 0x204f).mirror(0x0F80).r(this, FUNC(atari_s1_state::switch_r));
+	map(0x3000, 0x3fff).w(this, FUNC(atari_s1_state::audioen_w)); // audio enable
+	map(0x4000, 0x4fff).w("watchdog", FUNC(watchdog_timer_device::reset_w));
+	map(0x6000, 0x6fff).w(this, FUNC(atari_s1_state::audiores_w)); // audio reset
+	map(0x7000, 0x7fff).rom().nopw(); // writes to FFFF due to poor coding at 7FF5
+}
 
 static INPUT_PORTS_START( atari_s1 )
 	PORT_START("SWITCH.0") // 2000-2007
@@ -390,8 +396,8 @@ TIMER_DEVICE_CALLBACK_MEMBER( atari_s1_state::nmi )
 	else
 	{
 		// Digits
-		output().set_digit_value(m_out_offs << 1, patterns[m_p_ram[m_out_offs]>>4]);
-		output().set_digit_value((m_out_offs << 1)+1, patterns[m_p_ram[m_out_offs]&15]);
+		m_digits[m_out_offs << 1] = patterns[m_p_ram[m_out_offs]>>4];
+		m_digits[(m_out_offs << 1)+1] = patterns[m_p_ram[m_out_offs]&15];
 	}
 }
 
@@ -455,7 +461,7 @@ MACHINE_CONFIG_START(atari_s1_state::atari_s1)
 
 	MCFG_SOUND_ADD("dac", DAC_4BIT_R2R, 0) MCFG_SOUND_ROUTE(ALL_OUTPUTS, "speaker", 0.3) // unknown DAC
 	MCFG_DEVICE_ADD("vref", VOLTAGE_REGULATOR, 0) MCFG_VOLTAGE_REGULATOR_OUTPUT(5.0)
-	MCFG_SOUND_ROUTE_EX(0, "dac", 1.0, DAC_VREF_POS_INPUT) MCFG_SOUND_ROUTE_EX(0, "dac", -1.0, DAC_VREF_NEG_INPUT)
+	MCFG_SOUND_ROUTE(0, "dac", 1.0, DAC_VREF_POS_INPUT) MCFG_SOUND_ROUTE(0, "dac", -1.0, DAC_VREF_NEG_INPUT)
 
 	/* Video */
 	MCFG_DEFAULT_LAYOUT(layout_atari_s1)

@@ -33,9 +33,10 @@ DEFINE_DEVICE_TYPE(EF9364, ef9364_device, "ef9364", "Thomson EF9364")
 //-------------------------------------------------
 // default address map
 //-------------------------------------------------
-ADDRESS_MAP_START(ef9364_device::ef9364)
-	AM_RANGE(0x00000, ( ( ef9364_device::TXTPLANE_MAX_SIZE * ef9364_device::MAX_TXTPLANES ) - 1 ) ) AM_RAM
-ADDRESS_MAP_END
+void ef9364_device::ef9364(address_map &map)
+{
+	map(0x00000, ef9364_device::TXTPLANE_MAX_SIZE * ef9364_device::MAX_TXTPLANES - 1).ram();
+}
 
 //-------------------------------------------------
 //  memory_space_config - return a description of
@@ -70,28 +71,6 @@ ef9364_device::ef9364_device(const machine_config &mconfig, const char *tag, dev
 	m_palette(*this, finder_base::DUMMY_TAG)
 {
 	clock_freq = clock;
-}
-
-//-------------------------------------------------
-//  static_set_palette_tag: Set the tag of the
-//  palette device
-//-------------------------------------------------
-
-void ef9364_device::static_set_palette_tag(device_t &device, const char *tag)
-{
-	downcast<ef9364_device &>(device).m_palette.set_tag(tag);
-}
-
-//-------------------------------------------------
-//  static_set_nb_of_pages: Set the number of hardware pages
-//-------------------------------------------------
-
-void ef9364_device::static_set_nb_of_pages(device_t &device, int nb_of_pages )
-{
-	if( nb_of_pages > 0 && nb_of_pages <= 8 )
-	{
-		downcast<ef9364_device &>(device).nb_of_pages = nb_of_pages;
-	}
 }
 
 //-------------------------------------------------

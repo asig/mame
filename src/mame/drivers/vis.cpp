@@ -140,8 +140,8 @@ MACHINE_CONFIG_START(vis_audio_device::device_add_mconfig)
 	MCFG_SOUND_ADD("ldac", DAC_16BIT_R2R, 0) MCFG_SOUND_ROUTE(ALL_OUTPUTS, "lspeaker", 1.0) // unknown DAC
 	MCFG_SOUND_ADD("rdac", DAC_16BIT_R2R, 0) MCFG_SOUND_ROUTE(ALL_OUTPUTS, "rspeaker", 1.0) // unknown DAC
 	MCFG_DEVICE_ADD("vref", VOLTAGE_REGULATOR, 0) MCFG_VOLTAGE_REGULATOR_OUTPUT(5.0)
-	MCFG_SOUND_ROUTE_EX(0, "ldac", 1.0, DAC_VREF_POS_INPUT) MCFG_SOUND_ROUTE_EX(0, "ldac", -1.0, DAC_VREF_NEG_INPUT)
-	MCFG_SOUND_ROUTE_EX(0, "rdac", 1.0, DAC_VREF_POS_INPUT) MCFG_SOUND_ROUTE_EX(0, "rdac", -1.0, DAC_VREF_NEG_INPUT)
+	MCFG_SOUND_ROUTE(0, "ldac", 1.0, DAC_VREF_POS_INPUT) MCFG_SOUND_ROUTE(0, "ldac", -1.0, DAC_VREF_NEG_INPUT)
+	MCFG_SOUND_ROUTE(0, "rdac", 1.0, DAC_VREF_POS_INPUT) MCFG_SOUND_ROUTE(0, "rdac", -1.0, DAC_VREF_NEG_INPUT)
 MACHINE_CONFIG_END
 
 READ8_MEMBER(vis_audio_device::pcm_r)
@@ -249,19 +249,17 @@ private:
 
 DEFINE_DEVICE_TYPE(VIS_VGA, vis_vga_device, "vis_vga", "vis_vga")
 
-vis_vga_device::vis_vga_device(const machine_config &mconfig, const char *tag, device_t *owner, uint32_t clock)
-	: svga_device(mconfig, VIS_VGA, tag, owner, clock),
+vis_vga_device::vis_vga_device(const machine_config &mconfig, const char *tag, device_t *owner, uint32_t clock) :
+	svga_device(mconfig, VIS_VGA, tag, owner, clock),
 	device_isa16_card_interface(mconfig, *this)
 {
-	m_palette.set_tag("palette");
-	m_screen.set_tag("screen");
+	set_screen(*this, "screen");
 }
 
 MACHINE_CONFIG_START(vis_vga_device::device_add_mconfig)
 	MCFG_SCREEN_ADD("screen", RASTER)
 	MCFG_SCREEN_RAW_PARAMS(XTAL(25'174'800),900,0,640,526,0,480)
 	MCFG_SCREEN_UPDATE_DEVICE(DEVICE_SELF, vis_vga_device, screen_update)
-	MCFG_PALETTE_ADD("palette", 0x100)
 MACHINE_CONFIG_END
 
 void vis_vga_device::recompute_params()
@@ -287,9 +285,9 @@ void vis_vga_device::recompute_params()
 	pixel_clock = xtal.value() / (((vga.sequencer.data[1]&8) >> 3) + 1);
 
 	refresh  = HZ_TO_ATTOSECONDS(pixel_clock) * (hblank_period) * vblank_period;
-	machine().first_screen()->configure((hblank_period), (vblank_period), visarea, refresh );
+	screen().configure((hblank_period), (vblank_period), visarea, refresh );
 	//popmessage("%d %d\n",vga.crtc.horz_total * 8,vga.crtc.vert_total);
-	m_vblank_timer->adjust( machine().first_screen()->time_until_pos((vga.crtc.vert_blank_start + vga.crtc.vert_blank_end)) );
+	m_vblank_timer->adjust( screen().time_until_pos((vga.crtc.vert_blank_start + vga.crtc.vert_blank_end)) );
 }
 
 rgb_t vis_vga_device::yuv_to_rgb(int y, int u, int v) const
@@ -327,7 +325,7 @@ void vis_vga_device::vga_vh_yuv8(bitmap_rgb32 &bitmap, const rectangle &cliprect
 
 				for(int xi=0;xi<8;xi+=4)
 				{
-					if(!m_screen->visible_area().contains(col+xi, line + yi))
+					if(!screen().visible_area().contains(col+xi, line + yi))
 						continue;
 					uint8_t a = vga.memory[pos + xi], b = vga.memory[pos + xi + 1];
 					uint8_t c = vga.memory[pos + xi + 2], d = vga.memory[pos + xi + 3];
@@ -376,8 +374,6 @@ void vis_vga_device::vga_vh_yuv8(bitmap_rgb32 &bitmap, const rectangle &cliprect
 
 void vis_vga_device::device_start()
 {
-	if(!m_palette->started())
-		throw device_missing_dependencies();
 	set_isa_device();
 	m_isa->install_device(0x03b0, 0x03df, read8_delegate(FUNC(vis_vga_device::vga_r), this), write8_delegate(FUNC(vis_vga_device::vga_w), this));
 	m_isa->install_memory(0x0a0000, 0x0bffff, read8_delegate(FUNC(vis_vga_device::visvgamem_r), this), write8_delegate(FUNC(vis_vga_device::visvgamem_w), this));
@@ -832,37 +828,40 @@ WRITE8_MEMBER(vis_state::sysctl_w)
 	m_sysctl = data;
 }
 
-ADDRESS_MAP_START(vis_state::at16_map)
-	ADDRESS_MAP_UNMAP_HIGH
-	AM_RANGE(0x000000, 0x09ffff) AM_RAM
-	AM_RANGE(0x0d8000, 0x0fffff) AM_ROM AM_REGION("bios", 0xd8000)
-	AM_RANGE(0x100000, 0x15ffff) AM_RAM
-	AM_RANGE(0x300000, 0x3fffff) AM_ROM AM_REGION("bios", 0)
-	AM_RANGE(0xff0000, 0xffffff) AM_ROM AM_REGION("bios", 0xf0000)
-ADDRESS_MAP_END
+void vis_state::at16_map(address_map &map)
+{
+	map.unmap_value_high();
+	map(0x000000, 0x09ffff).ram();
+	map(0x0d8000, 0x0fffff).rom().region("bios", 0xd8000);
+	map(0x100000, 0x15ffff).ram();
+	map(0x300000, 0x3fffff).rom().region("bios", 0);
+	map(0xff0000, 0xffffff).rom().region("bios", 0xf0000);
+}
 
-ADDRESS_MAP_START(vis_state::at16_io)
-	ADDRESS_MAP_UNMAP_HIGH
-	AM_RANGE(0x0000, 0x001f) AM_DEVREADWRITE8("mb:dma8237_1", am9517a_device, read, write, 0xffff)
-	AM_RANGE(0x0020, 0x003f) AM_DEVREADWRITE8("mb:pic8259_master", pic8259_device, read, write, 0xffff)
-	AM_RANGE(0x0026, 0x0027) AM_READWRITE8(unk_r, unk_w, 0xffff)
-	AM_RANGE(0x0040, 0x005f) AM_DEVREADWRITE8("mb:pit8254", pit8254_device, read, write, 0xffff)
-	AM_RANGE(0x0060, 0x0065) AM_DEVREADWRITE8("kbdc", kbdc8042_device, data_r, data_w, 0xffff)
-	AM_RANGE(0x006a, 0x006b) AM_READ8(unk2_r, 0x00ff)
-	AM_RANGE(0x0080, 0x009f) AM_DEVREADWRITE8("mb", at_mb_device, page8_r, page8_w, 0xffff)
-	AM_RANGE(0x0092, 0x0093) AM_READWRITE8(sysctl_r, sysctl_w, 0x00ff)
-	AM_RANGE(0x00a0, 0x00bf) AM_DEVREADWRITE8("mb:pic8259_slave", pic8259_device, read, write, 0xffff)
-	AM_RANGE(0x00c0, 0x00df) AM_DEVREADWRITE8("mb:dma8237_2", am9517a_device, read, write, 0x00ff)
-	AM_RANGE(0x00e0, 0x00e1) AM_NOP
-	AM_RANGE(0x023c, 0x023f) AM_READWRITE8(unk1_r, unk1_w, 0xffff)
-	AM_RANGE(0x0268, 0x026f) AM_READWRITE(pad_r, pad_w)
-	AM_RANGE(0x031a, 0x031b) AM_READ8(unk3_r, 0x00ff)
-ADDRESS_MAP_END
+void vis_state::at16_io(address_map &map)
+{
+	map.unmap_value_high();
+	map(0x0000, 0x001f).rw("mb:dma8237_1", FUNC(am9517a_device::read), FUNC(am9517a_device::write));
+	map(0x0020, 0x003f).rw(m_pic1, FUNC(pic8259_device::read), FUNC(pic8259_device::write));
+	map(0x0026, 0x0027).rw(this, FUNC(vis_state::unk_r), FUNC(vis_state::unk_w));
+	map(0x0040, 0x005f).rw("mb:pit8254", FUNC(pit8254_device::read), FUNC(pit8254_device::write));
+	map(0x0060, 0x0065).rw("kbdc", FUNC(kbdc8042_device::data_r), FUNC(kbdc8042_device::data_w));
+	map(0x006a, 0x006a).r(this, FUNC(vis_state::unk2_r));
+	map(0x0080, 0x009f).rw("mb", FUNC(at_mb_device::page8_r), FUNC(at_mb_device::page8_w));
+	map(0x0092, 0x0092).rw(this, FUNC(vis_state::sysctl_r), FUNC(vis_state::sysctl_w));
+	map(0x00a0, 0x00bf).rw(m_pic2, FUNC(pic8259_device::read), FUNC(pic8259_device::write));
+	map(0x00c0, 0x00df).rw("mb:dma8237_2", FUNC(am9517a_device::read), FUNC(am9517a_device::write)).umask16(0x00ff);
+	map(0x00e0, 0x00e1).noprw();
+	map(0x023c, 0x023f).rw(this, FUNC(vis_state::unk1_r), FUNC(vis_state::unk1_w));
+	map(0x0268, 0x026f).rw(this, FUNC(vis_state::pad_r), FUNC(vis_state::pad_w));
+	map(0x031a, 0x031a).r(this, FUNC(vis_state::unk3_r));
+}
 
-static SLOT_INTERFACE_START(vis_cards)
-	SLOT_INTERFACE("visaudio", VIS_AUDIO)
-	SLOT_INTERFACE("visvga", VIS_VGA)
-SLOT_INTERFACE_END
+static void vis_cards(device_slot_interface &device)
+{
+	device.option_add("visaudio", VIS_AUDIO);
+	device.option_add("visvga", VIS_VGA);
+}
 
 // TODO: other buttons
 static INPUT_PORTS_START(vis)

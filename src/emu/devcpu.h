@@ -7,15 +7,14 @@
     CPU device definitions.
 
 ***************************************************************************/
+#ifndef MAME_EMU_DEVCPU_H
+#define MAME_EMU_DEVCPU_H
 
 #pragma once
 
-#ifndef __EMU_H__
-#error Dont include this file directly; include emu.h instead.
-#endif
+#include "didisasm.h"
+#include "diexec.h"
 
-#ifndef MAME_EMU_DEVCPU_H
-#define MAME_EMU_DEVCPU_H
 
 //**************************************************************************
 //  CPU DEVICE CONFIGURATION MACROS
@@ -45,7 +44,7 @@
 
 // recompilation parameters
 #define MCFG_CPU_FORCE_NO_DRC() \
-	cpu_device::static_set_force_no_drc(*device, true);
+		dynamic_cast<cpu_device &>(*device).set_force_no_drc(true);
 
 
 
@@ -62,19 +61,19 @@ class cpu_device :  public device_t,
 					public device_disasm_interface
 {
 public:
+	virtual ~cpu_device();
+
 	// configuration helpers
-	static void static_set_force_no_drc(device_t &device, bool value);
+	void set_force_no_drc(bool value) { m_force_no_drc = value; }
 	bool allow_drc() const;
 
 protected:
 	// construction/destruction
 	cpu_device(const machine_config &mconfig, device_type type, const char *tag, device_t *owner, u32 clock);
-	virtual ~cpu_device();
 
 private:
 	// configured state
 	bool                    m_force_no_drc;             // whether or not to force DRC off
 };
 
-
-#endif  /* MAME_EMU_DEVCPU_H */
+#endif // MAME_EMU_DEVCPU_H

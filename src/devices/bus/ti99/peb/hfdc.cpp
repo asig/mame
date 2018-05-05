@@ -110,7 +110,7 @@ SETADDRESS_DBIN_MEMBER( myarc_hfdc_device::setaddress_dbin )
 {
 	// Do not allow setaddress for the debugger. It will mess up the
 	// setaddress/memory access pairs when the CPU enters wait states.
-	if (machine().side_effect_disabled()) return;
+	if (machine().side_effects_disabled()) return;
 
 	// Selection login in the PAL and some circuits on the board
 
@@ -202,7 +202,7 @@ void myarc_hfdc_device::debug_write(offs_t offset, uint8_t data)
 */
 READ8Z_MEMBER(myarc_hfdc_device::readz)
 {
-	if (machine().side_effect_disabled())
+	if (machine().side_effects_disabled())
 	{
 		debug_read(offset, value);
 		return;
@@ -281,7 +281,7 @@ READ8Z_MEMBER(myarc_hfdc_device::readz)
 */
 WRITE8_MEMBER( myarc_hfdc_device::write )
 {
-	if (machine().side_effect_disabled())
+	if (machine().side_effects_disabled())
 	{
 		debug_write(offset, data);
 		return;
@@ -1051,19 +1051,21 @@ FLOPPY_FORMATS_MEMBER(myarc_hfdc_device::floppy_formats)
 	FLOPPY_TI99_TDF_FORMAT
 FLOPPY_FORMATS_END
 
-static SLOT_INTERFACE_START( hfdc_floppies )
-	SLOT_INTERFACE( "525dd", FLOPPY_525_DD )        // 40 tracks
-	SLOT_INTERFACE( "525qd", FLOPPY_525_QD )        // 80 tracks
-	SLOT_INTERFACE( "35dd", FLOPPY_35_DD )          // 80 tracks
-	SLOT_INTERFACE( "35hd", FLOPPY_35_HD )          // 80 tracks 1.4 MiB
-SLOT_INTERFACE_END
+static void hfdc_floppies(device_slot_interface &device)
+{
+	device.option_add("525dd", FLOPPY_525_DD);        // 40 tracks
+	device.option_add("525qd", FLOPPY_525_QD);        // 80 tracks
+	device.option_add("35dd", FLOPPY_35_DD);          // 80 tracks
+	device.option_add("35hd", FLOPPY_35_HD);          // 80 tracks 1.4 MiB
+}
 
-static SLOT_INTERFACE_START( hfdc_harddisks )
-	SLOT_INTERFACE( "generic", MFMHD_GENERIC )    // Generic hard disk (self-adapting to image)
-	SLOT_INTERFACE( "st213", MFMHD_ST213 )        // Seagate ST-213 (10 MB)
-	SLOT_INTERFACE( "st225", MFMHD_ST225 )        // Seagate ST-225 (20 MB)
-	SLOT_INTERFACE( "st251", MFMHD_ST251 )        // Seagate ST-251 (40 MB)
-SLOT_INTERFACE_END
+static void hfdc_harddisks(device_slot_interface &device)
+{
+	device.option_add("generic", MFMHD_GENERIC);      // Generic hard disk (self-adapting to image)
+	device.option_add("st213", MFMHD_ST213);          // Seagate ST-213 (10 MB)
+	device.option_add("st225", MFMHD_ST225);          // Seagate ST-225 (20 MB)
+	device.option_add("st251", MFMHD_ST251);          // Seagate ST-251 (40 MB)
+}
 
 ROM_START( ti99_hfdc )
 	ROM_REGION(0x4000, TI99_DSRROM, 0)

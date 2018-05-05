@@ -83,7 +83,7 @@ inline void craft_state::verboselog(int n_level, const char *s_fmt, ...)
 		va_start( v, s_fmt );
 		vsprintf( buf, s_fmt, v );
 		va_end( v );
-		logerror( "%08x: %s", m_maincpu->safe_pc(), buf );
+		logerror( "%s: %s", machine().describe_context(), buf );
 	}
 #endif
 }
@@ -185,17 +185,20 @@ void craft_state::video_update()
 * Address maps                                       *
 \****************************************************/
 
-ADDRESS_MAP_START(craft_state::craft_prg_map)
-	AM_RANGE(0x0000, 0x1fff) AM_ROM
-ADDRESS_MAP_END
+void craft_state::craft_prg_map(address_map &map)
+{
+	map(0x0000, 0x1fff).rom();
+}
 
-ADDRESS_MAP_START(craft_state::craft_data_map)
-	AM_RANGE(0x0100, 0x04ff) AM_RAM
-ADDRESS_MAP_END
+void craft_state::craft_data_map(address_map &map)
+{
+	map(0x0100, 0x04ff).ram();
+}
 
-ADDRESS_MAP_START(craft_state::craft_io_map)
-	AM_RANGE(AVR8_IO_PORTA, AVR8_IO_PORTD) AM_READWRITE( port_r, port_w )
-ADDRESS_MAP_END
+void craft_state::craft_io_map(address_map &map)
+{
+	map(AVR8_IO_PORTA, AVR8_IO_PORTD).rw(this, FUNC(craft_state::port_r), FUNC(craft_state::port_w));
+}
 
 /****************************************************\
 * Input ports                                        *
@@ -263,7 +266,7 @@ MACHINE_CONFIG_START(craft_state::craft)
 	MCFG_SPEAKER_STANDARD_MONO("avr8")
 	MCFG_SOUND_ADD("dac", DAC_6BIT_R2R, 0) MCFG_SOUND_ROUTE(0, "avr8", 0.25) // pd1/pd2/pd4/pd5/pd6/pd7 + 2k(x7) + 1k(x5)
 	MCFG_DEVICE_ADD("vref", VOLTAGE_REGULATOR, 0) MCFG_VOLTAGE_REGULATOR_OUTPUT(5.0)
-	MCFG_SOUND_ROUTE_EX(0, "dac", 1.0, DAC_VREF_POS_INPUT) MCFG_SOUND_ROUTE_EX(0, "dac", -1.0, DAC_VREF_NEG_INPUT)
+	MCFG_SOUND_ROUTE(0, "dac", 1.0, DAC_VREF_POS_INPUT) MCFG_SOUND_ROUTE(0, "dac", -1.0, DAC_VREF_NEG_INPUT)
 MACHINE_CONFIG_END
 
 ROM_START( craft )

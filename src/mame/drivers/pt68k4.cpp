@@ -156,9 +156,10 @@ FLOPPY_FORMATS_MEMBER( pt68k4_state::floppy_formats )
 	FLOPPY_IMD_FORMAT
 FLOPPY_FORMATS_END
 
-static SLOT_INTERFACE_START( pt68k_floppies )
-	SLOT_INTERFACE( "525dd", FLOPPY_525_DD )
-SLOT_INTERFACE_END
+static void pt68k_floppies(device_slot_interface &device)
+{
+	device.option_add("525dd", FLOPPY_525_DD);
+}
 
 // XT keyboard interface - done in TTL instead of an 804x
 WRITE_LINE_MEMBER(pt68k4_state::keyboard_clock_w)
@@ -250,34 +251,36 @@ WRITE8_MEMBER(pt68k4_state::fdc_select_w)
 	}
 }
 
-ADDRESS_MAP_START(pt68k4_state::pt68k2_mem)
-	ADDRESS_MAP_UNMAP_HIGH
-	AM_RANGE(0x000000, 0x0fffff) AM_RAM AM_SHARE("rambase") // 1MB RAM
-	AM_RANGE(0xf80000, 0xf8ffff) AM_ROM AM_REGION("roms", 0)
-	AM_RANGE(0xc00000, 0xdfffff) AM_DEVREADWRITE8(ISABUS_TAG, isa8_device, mem_r, mem_w, 0x00ff)
-	AM_RANGE(0xfa0000, 0xfbffff) AM_DEVREADWRITE8(ISABUS_TAG, isa8_device, io_r, io_w, 0x00ff)
-	AM_RANGE(0xfe0000, 0xfe001f) AM_DEVREADWRITE8(DUART1_TAG, mc68681_device, read, write, 0x00ff)
-	AM_RANGE(0xfe0040, 0xfe005f) AM_DEVREADWRITE8(DUART2_TAG, mc68681_device, read, write, 0x00ff)
-	AM_RANGE(0xfe0080, 0xfe00bf) AM_READ8(pia_stub_r, 0x00ff)
-	AM_RANGE(0xfe00c0, 0xfe00ff) AM_WRITE8(fdc_select_w, 0x00ff)
-	AM_RANGE(0xfe0100, 0xfe013f) AM_DEVREADWRITE8(WDFDC_TAG, wd1772_device, read, write, 0x00ff)
-	AM_RANGE(0xfe01c0, 0xfe01c3) AM_READWRITE8(keyboard_r, keyboard_w, 0x00ff)
-	AM_RANGE(0xff0000, 0xff0fff) AM_READWRITE8(hiram_r, hiram_w, 0xff00)
-	AM_RANGE(0xff0000, 0xff0fff) AM_DEVREADWRITE8(TIMEKEEPER_TAG, timekeeper_device, read, write, 0x00ff)
-ADDRESS_MAP_END
+void pt68k4_state::pt68k2_mem(address_map &map)
+{
+	map.unmap_value_high();
+	map(0x000000, 0x0fffff).ram().share("rambase"); // 1MB RAM
+	map(0xf80000, 0xf8ffff).rom().region("roms", 0);
+	map(0xc00000, 0xdfffff).rw(m_isa, FUNC(isa8_device::mem_r), FUNC(isa8_device::mem_w)).umask16(0x00ff);
+	map(0xfa0000, 0xfbffff).rw(m_isa, FUNC(isa8_device::io_r), FUNC(isa8_device::io_w)).umask16(0x00ff);
+	map(0xfe0000, 0xfe001f).rw(m_duart1, FUNC(mc68681_device::read), FUNC(mc68681_device::write)).umask16(0x00ff);
+	map(0xfe0040, 0xfe005f).rw(m_duart2, FUNC(mc68681_device::read), FUNC(mc68681_device::write)).umask16(0x00ff);
+	map(0xfe0080, 0xfe00bf).r(this, FUNC(pt68k4_state::pia_stub_r)).umask16(0x00ff);
+	map(0xfe00c0, 0xfe00ff).w(this, FUNC(pt68k4_state::fdc_select_w)).umask16(0x00ff);
+	map(0xfe0100, 0xfe013f).rw(m_wdfdc, FUNC(wd1772_device::read), FUNC(wd1772_device::write)).umask16(0x00ff);
+	map(0xfe01c0, 0xfe01c3).rw(this, FUNC(pt68k4_state::keyboard_r), FUNC(pt68k4_state::keyboard_w)).umask16(0x00ff);
+	map(0xff0000, 0xff0fff).rw(this, FUNC(pt68k4_state::hiram_r), FUNC(pt68k4_state::hiram_w)).umask16(0xff00);
+	map(0xff0000, 0xff0fff).rw(TIMEKEEPER_TAG, FUNC(timekeeper_device::read), FUNC(timekeeper_device::write)).umask16(0x00ff);
+}
 
-ADDRESS_MAP_START(pt68k4_state::pt68k4_mem)
-	ADDRESS_MAP_UNMAP_HIGH
-	AM_RANGE(0x000000, 0x0fffff) AM_RAM AM_SHARE("rambase") // 1MB RAM (OS9 needs more)
-	AM_RANGE(0xf80000, 0xf8ffff) AM_ROM AM_REGION("roms", 0)
-	AM_RANGE(0xc00000, 0xdfffff) AM_DEVREADWRITE8(ISABUS_TAG, isa8_device, mem_r, mem_w, 0x00ff)
-	AM_RANGE(0xfa0000, 0xfbffff) AM_DEVREADWRITE8(ISABUS_TAG, isa8_device, io_r, io_w, 0x00ff)
-	AM_RANGE(0xfe0000, 0xfe001f) AM_DEVREADWRITE8(DUART1_TAG, mc68681_device, read, write, 0x00ff)
-	AM_RANGE(0xfe0040, 0xfe005f) AM_DEVREADWRITE8(DUART2_TAG, mc68681_device, read, write, 0x00ff)
-	AM_RANGE(0xfe01c0, 0xfe01c3) AM_READWRITE8(keyboard_r, keyboard_w, 0x00ff)
-	AM_RANGE(0xff0000, 0xff0fff) AM_READWRITE8(hiram_r, hiram_w, 0xff00)
-	AM_RANGE(0xff0000, 0xff0fff) AM_DEVREADWRITE8(TIMEKEEPER_TAG, timekeeper_device, read, write, 0x00ff)
-ADDRESS_MAP_END
+void pt68k4_state::pt68k4_mem(address_map &map)
+{
+	map.unmap_value_high();
+	map(0x000000, 0x0fffff).ram().share("rambase"); // 1MB RAM (OS9 needs more)
+	map(0xf80000, 0xf8ffff).rom().region("roms", 0);
+	map(0xc00000, 0xdfffff).rw(m_isa, FUNC(isa8_device::mem_r), FUNC(isa8_device::mem_w)).umask16(0x00ff);
+	map(0xfa0000, 0xfbffff).rw(m_isa, FUNC(isa8_device::io_r), FUNC(isa8_device::io_w)).umask16(0x00ff);
+	map(0xfe0000, 0xfe001f).rw(m_duart1, FUNC(mc68681_device::read), FUNC(mc68681_device::write)).umask16(0x00ff);
+	map(0xfe0040, 0xfe005f).rw(m_duart2, FUNC(mc68681_device::read), FUNC(mc68681_device::write)).umask16(0x00ff);
+	map(0xfe01c0, 0xfe01c3).rw(this, FUNC(pt68k4_state::keyboard_r), FUNC(pt68k4_state::keyboard_w)).umask16(0x00ff);
+	map(0xff0000, 0xff0fff).rw(this, FUNC(pt68k4_state::hiram_r), FUNC(pt68k4_state::hiram_w)).umask16(0xff00);
+	map(0xff0000, 0xff0fff).rw(TIMEKEEPER_TAG, FUNC(timekeeper_device::read), FUNC(timekeeper_device::write)).umask16(0x00ff);
+}
 
 /* Input ports */
 static INPUT_PORTS_START( pt68k4 )
@@ -387,16 +390,17 @@ WRITE_LINE_MEMBER(pt68k4_state::duart2_irq)
 }
 
 // these are cards supported by the HUMBUG and Monk BIOSes
-SLOT_INTERFACE_START( pt68k4_isa8_cards )
-	SLOT_INTERFACE("mda", ISA8_MDA)
-	SLOT_INTERFACE("cga", ISA8_CGA)
-	SLOT_INTERFACE("ega", ISA8_EGA) // Monk only
-	SLOT_INTERFACE("vga", ISA8_VGA) // Monk only
-	SLOT_INTERFACE("fdc_at", ISA8_FDC_AT)
-	SLOT_INTERFACE("wdxt_gen", ISA8_WDXT_GEN)
-	SLOT_INTERFACE("lpt", ISA8_LPT)
-	SLOT_INTERFACE("xtide", ISA8_XTIDE) // Monk only
-SLOT_INTERFACE_END
+void pt68k4_isa8_cards(device_slot_interface &device)
+{
+	device.option_add("mda", ISA8_MDA);
+	device.option_add("cga", ISA8_CGA);
+	device.option_add("ega", ISA8_EGA); // Monk only
+	device.option_add("vga", ISA8_VGA); // Monk only
+	device.option_add("fdc_at", ISA8_FDC_AT);
+	device.option_add("wdxt_gen", ISA8_WDXT_GEN);
+	device.option_add("lpt", ISA8_LPT);
+	device.option_add("xtide", ISA8_XTIDE); // Monk only
+}
 
 MACHINE_CONFIG_START(pt68k4_state::pt68k2)
 	/* basic machine hardware */
@@ -421,7 +425,7 @@ MACHINE_CONFIG_START(pt68k4_state::pt68k2)
 	MCFG_FLOPPY_DRIVE_ADD(WDFDC_TAG":1", pt68k_floppies, "525dd", pt68k4_state::floppy_formats)
 
 	MCFG_DEVICE_ADD(ISABUS_TAG, ISA8, 0)
-	MCFG_ISA8_CPU(":" M68K_TAG)
+	MCFG_ISA8_CPU(M68K_TAG)
 	MCFG_ISA8_BUS_CUSTOM_SPACES()
 	MCFG_ISA_OUT_IRQ5_CB(WRITELINE(pt68k4_state, irq5_w))
 	MCFG_ISA8_SLOT_ADD(ISABUS_TAG, "isa1", pt68k4_isa8_cards, "cga", false)
@@ -458,7 +462,7 @@ MACHINE_CONFIG_START(pt68k4_state::pt68k4)
 	MCFG_M48T02_ADD(TIMEKEEPER_TAG)
 
 	MCFG_DEVICE_ADD(ISABUS_TAG, ISA8, 0)
-	MCFG_ISA8_CPU(":" M68K_TAG)
+	MCFG_ISA8_CPU(M68K_TAG)
 	MCFG_ISA8_BUS_CUSTOM_SPACES()
 	MCFG_ISA8_SLOT_ADD(ISABUS_TAG, "isa1", pt68k4_isa8_cards, "fdc_at", false)
 	MCFG_ISA8_SLOT_ADD(ISABUS_TAG, "isa2", pt68k4_isa8_cards, "cga", false)

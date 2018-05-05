@@ -264,9 +264,10 @@ WRITE8_MEMBER( mm1_state::ls259_w )
 //  ADDRESS_MAP( mm1_map )
 //-------------------------------------------------
 
-ADDRESS_MAP_START(mm1_state::mm1_map)
-	AM_RANGE(0x0000, 0xffff) AM_READWRITE(read, write)
-ADDRESS_MAP_END
+void mm1_state::mm1_map(address_map &map)
+{
+	map(0x0000, 0xffff).rw(this, FUNC(mm1_state::read), FUNC(mm1_state::write));
+}
 
 
 
@@ -406,9 +407,10 @@ FLOPPY_FORMATS_MEMBER( mm2_state::floppy_formats )
     FLOPPY_MM2_FORMAT
 FLOPPY_FORMATS_END
 */
-static SLOT_INTERFACE_START( mm1_floppies )
-	SLOT_INTERFACE( "525qd", FLOPPY_525_QD )
-SLOT_INTERFACE_END
+static void mm1_floppies(device_slot_interface &device)
+{
+	device.option_add("525qd", FLOPPY_525_QD);
+}
 
 
 //**************************************************************************

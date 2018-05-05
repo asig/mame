@@ -281,7 +281,7 @@ hp85_state::hp85_state(const machine_config &mconfig, device_type type, const ch
 
 void hp85_state::machine_start()
 {
-	machine().first_screen()->register_screen_bitmap(m_bitmap);
+	m_screen->register_screen_bitmap(m_bitmap);
 	m_video_mem.resize(VIDEO_MEM_SIZE);
 }
 
@@ -1299,32 +1299,34 @@ static INPUT_PORTS_START(hp85)
 
 INPUT_PORTS_END
 
-ADDRESS_MAP_START(hp85_state::cpu_mem_map)
-	ADDRESS_MAP_UNMAP_HIGH
-	AM_RANGE(0x0000 , 0x5fff) AM_ROM
-	AM_RANGE(0x6000 , 0x7fff) AM_DEVICE("rombank" , address_map_bank_device , amap8)
-	AM_RANGE(0x8000 , 0xbfff) AM_RAM
-	AM_RANGE(0xff00 , 0xff00) AM_WRITE(ginten_w)
-	AM_RANGE(0xff01 , 0xff01) AM_WRITE(gintdis_w)
-	AM_RANGE(0xff02 , 0xff02) AM_READWRITE(keysts_r , keysts_w)
-	AM_RANGE(0xff03 , 0xff03) AM_READWRITE(keycod_r , keycod_w)
-	AM_RANGE(0xff04 , 0xff07) AM_READWRITE(crtc_r , crtc_w)
-	AM_RANGE(0xff08 , 0xff09) AM_DEVREADWRITE("tape" , hp_1ma6_device , reg_r , reg_w)
-	AM_RANGE(0xff0a , 0xff0a) AM_READWRITE(clksts_r , clksts_w)
-	AM_RANGE(0xff0b , 0xff0b) AM_READWRITE(clkdat_r , clkdat_w)
-	AM_RANGE(0xff0c , 0xff0c) AM_WRITE(prtlen_w)
-	AM_RANGE(0xff0d , 0xff0d) AM_READWRITE(prchar_r , prchar_w)
-	AM_RANGE(0xff0e , 0xff0e) AM_READWRITE(prtsts_r , prtctl_w)
-	AM_RANGE(0xff0f , 0xff0f) AM_WRITE(prtdat_w)
-	AM_RANGE(0xff18 , 0xff18) AM_WRITE(rselec_w)
-	AM_RANGE(0xff40 , 0xff40) AM_READWRITE(intrsc_r , intrsc_w)
-ADDRESS_MAP_END
+void hp85_state::cpu_mem_map(address_map &map)
+{
+	map.unmap_value_high();
+	map(0x0000, 0x5fff).rom();
+	map(0x6000, 0x7fff).m(m_rombank, FUNC(address_map_bank_device::amap8));
+	map(0x8000, 0xbfff).ram();
+	map(0xff00, 0xff00).w(this, FUNC(hp85_state::ginten_w));
+	map(0xff01, 0xff01).w(this, FUNC(hp85_state::gintdis_w));
+	map(0xff02, 0xff02).rw(this, FUNC(hp85_state::keysts_r), FUNC(hp85_state::keysts_w));
+	map(0xff03, 0xff03).rw(this, FUNC(hp85_state::keycod_r), FUNC(hp85_state::keycod_w));
+	map(0xff04, 0xff07).rw(this, FUNC(hp85_state::crtc_r), FUNC(hp85_state::crtc_w));
+	map(0xff08, 0xff09).rw("tape", FUNC(hp_1ma6_device::reg_r), FUNC(hp_1ma6_device::reg_w));
+	map(0xff0a, 0xff0a).rw(this, FUNC(hp85_state::clksts_r), FUNC(hp85_state::clksts_w));
+	map(0xff0b, 0xff0b).rw(this, FUNC(hp85_state::clkdat_r), FUNC(hp85_state::clkdat_w));
+	map(0xff0c, 0xff0c).w(this, FUNC(hp85_state::prtlen_w));
+	map(0xff0d, 0xff0d).rw(this, FUNC(hp85_state::prchar_r), FUNC(hp85_state::prchar_w));
+	map(0xff0e, 0xff0e).rw(this, FUNC(hp85_state::prtsts_r), FUNC(hp85_state::prtctl_w));
+	map(0xff0f, 0xff0f).w(this, FUNC(hp85_state::prtdat_w));
+	map(0xff18, 0xff18).w(this, FUNC(hp85_state::rselec_w));
+	map(0xff40, 0xff40).rw(this, FUNC(hp85_state::intrsc_r), FUNC(hp85_state::intrsc_w));
+}
 
-ADDRESS_MAP_START(hp85_state::rombank_mem_map)
-	ADDRESS_MAP_UNMAP_HIGH
+void hp85_state::rombank_mem_map(address_map &map)
+{
+	map.unmap_value_high();
 	// ROM in bank 0 is always present (it's part of system ROMs)
-	AM_RANGE(0x0000 , 0x1fff) AM_ROM
-ADDRESS_MAP_END
+	map(0x0000, 0x1fff).rom();
+}
 
 MACHINE_CONFIG_START(hp85_state::hp85)
 	MCFG_CPU_ADD("cpu" , HP_CAPRICORN , MASTER_CLOCK / 16)
@@ -1359,7 +1361,7 @@ MACHINE_CONFIG_START(hp85_state::hp85)
 	MCFG_MIXER_ROUTE(ALL_OUTPUTS , "mono" , 0.5 , 0)
 	MCFG_DEVICE_ADD("vref", VOLTAGE_REGULATOR, 0)
 	MCFG_VOLTAGE_REGULATOR_OUTPUT(5.0)
-	MCFG_SOUND_ROUTE_EX(0, "dac", 1.0, DAC_VREF_POS_INPUT)
+	MCFG_SOUND_ROUTE(0, "dac", 1.0, DAC_VREF_POS_INPUT)
 	MCFG_SOUND_ADD("beeper" , BEEP , MASTER_CLOCK / 8192)
 	MCFG_MIXER_ROUTE(ALL_OUTPUTS , "mono" , 0.5 , 0)
 
@@ -1368,17 +1370,17 @@ MACHINE_CONFIG_START(hp85_state::hp85)
 
 	// Optional ROMs
 	MCFG_DEVICE_ADD("drawer1", HP80_OPTROM_SLOT, 0)
-	MCFG_DEVICE_SLOT_INTERFACE(hp80_optrom_slot_device, NULL, false)
+	MCFG_DEVICE_SLOT_INTERFACE(hp80_optrom_slot_devices, NULL, false)
 	MCFG_DEVICE_ADD("drawer2", HP80_OPTROM_SLOT, 0)
-	MCFG_DEVICE_SLOT_INTERFACE(hp80_optrom_slot_device, NULL, false)
+	MCFG_DEVICE_SLOT_INTERFACE(hp80_optrom_slot_devices, NULL, false)
 	MCFG_DEVICE_ADD("drawer3", HP80_OPTROM_SLOT, 0)
-	MCFG_DEVICE_SLOT_INTERFACE(hp80_optrom_slot_device, NULL, false)
+	MCFG_DEVICE_SLOT_INTERFACE(hp80_optrom_slot_devices, NULL, false)
 	MCFG_DEVICE_ADD("drawer4", HP80_OPTROM_SLOT, 0)
-	MCFG_DEVICE_SLOT_INTERFACE(hp80_optrom_slot_device, NULL, false)
+	MCFG_DEVICE_SLOT_INTERFACE(hp80_optrom_slot_devices, NULL, false)
 	MCFG_DEVICE_ADD("drawer5", HP80_OPTROM_SLOT, 0)
-	MCFG_DEVICE_SLOT_INTERFACE(hp80_optrom_slot_device, NULL, false)
+	MCFG_DEVICE_SLOT_INTERFACE(hp80_optrom_slot_devices, NULL, false)
 	MCFG_DEVICE_ADD("drawer6", HP80_OPTROM_SLOT, 0)
-	MCFG_DEVICE_SLOT_INTERFACE(hp80_optrom_slot_device, NULL, false)
+	MCFG_DEVICE_SLOT_INTERFACE(hp80_optrom_slot_devices, NULL, false)
 
 	// I/O slots
 	MCFG_HP80_IO_SLOT_ADD("slot1" , 0)

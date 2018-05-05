@@ -76,6 +76,7 @@ PROFILER =
 # USE_SYSTEM_LIB_UTF8PROC = 1
 # USE_SYSTEM_LIB_GLM = 1
 # USE_SYSTEM_LIB_RAPIDJSON = 1
+# USE_SYSTEM_LIB_PUGIXML = 1
 
 # MESA_INSTALL_ROOT = /opt/mesa
 # SDL_INSTALL_ROOT = /opt/sdl2
@@ -91,7 +92,7 @@ PROFILER =
 # OVERRIDE_CXX = c++
 # OVERRIDE_LD = ld
 
-# DEPRECATED = 1
+# DEPRECATED = 0
 # LTO = 1
 # SSE2 = 1
 # OPENMP = 1
@@ -486,6 +487,10 @@ endif
 
 ifdef USE_SYSTEM_LIB_RAPIDJSON
 PARAMS += --with-system-rapidjson='$(USE_SYSTEM_LIB_RAPIDJSON)'
+endif
+
+ifdef USE_SYSTEM_LIB_PUGIXML
+PARAMS += --with-system-pugixml='$(USE_SYSTEM_LIB_PUGIXML)'
 endif
 
 # reverse logic for this one
@@ -1574,14 +1579,14 @@ endif
 
 ifeq (posix,$(SHELLTYPE))
 $(GENDIR)/version.cpp: $(GENDIR)/git_desc | $(GEN_FOLDERS)
-	@echo '#define BARE_BUILD_VERSION "0.194"' > $@
+	@echo '#define BARE_BUILD_VERSION "0.197"' > $@
 	@echo 'extern const char bare_build_version[];' >> $@
 	@echo 'extern const char build_version[];' >> $@
 	@echo 'const char bare_build_version[] = BARE_BUILD_VERSION;' >> $@
 	@echo 'const char build_version[] = BARE_BUILD_VERSION " ($(NEW_GIT_VERSION))";' >> $@
 else
 $(GENDIR)/version.cpp: $(GENDIR)/git_desc
-	@echo #define BARE_BUILD_VERSION "0.194" > $@
+	@echo #define BARE_BUILD_VERSION "0.197" > $@
 	@echo extern const char bare_build_version[]; >> $@
 	@echo extern const char build_version[]; >> $@
 	@echo const char bare_build_version[] = BARE_BUILD_VERSION; >> $@

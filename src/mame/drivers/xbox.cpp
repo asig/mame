@@ -55,14 +55,16 @@ void xbox_state::video_start()
 {
 }
 
-ADDRESS_MAP_START(xbox_state::xbox_map)
-	AM_IMPORT_FROM(xbox_base_map)
-	AM_RANGE(0xff000000, 0xff0fffff) AM_ROM AM_REGION("bios", 0) AM_MIRROR(0x00f00000)
-ADDRESS_MAP_END
+void xbox_state::xbox_map(address_map &map)
+{
+	xbox_base_map(map);
+	map(0xff000000, 0xff0fffff).rom().region("bios", 0).mirror(0x00f00000);
+}
 
-ADDRESS_MAP_START(xbox_state::xbox_map_io)
-	AM_IMPORT_FROM(xbox_base_map_io)
-ADDRESS_MAP_END
+void xbox_state::xbox_map_io(address_map &map)
+{
+	xbox_base_map_io(map);
+}
 
 static INPUT_PORTS_START( xbox )
 	/* dummy active high structure */
@@ -156,14 +158,16 @@ void xbox_state::machine_reset()
 	id[88] |= (1 << 2); // ultra dma mode 2 supported
 }
 
-SLOT_INTERFACE_START(usb_xbox)
-	SLOT_INTERFACE("xbox_controller", OHCI_GAME_CONTROLLER)
-SLOT_INTERFACE_END
+void usb_xbox(device_slot_interface &device)
+{
+	device.option_add("xbox_controller", OHCI_GAME_CONTROLLER);
+}
 
-SLOT_INTERFACE_START(xbox_ata_devices)
-	SLOT_INTERFACE("hdd", IDE_HARDDISK)
-	SLOT_INTERFACE("cdrom", ATAPI_CDROM)
-SLOT_INTERFACE_END
+void xbox_ata_devices(device_slot_interface &device)
+{
+	device.option_add("hdd", IDE_HARDDISK);
+	device.option_add("cdrom", ATAPI_CDROM);
+}
 
 MACHINE_CONFIG_START(xbox_state::xbox)
 	xbox_base(config);

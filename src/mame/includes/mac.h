@@ -275,6 +275,9 @@ public:
 	// 60.15 Hz timer for RBV/V8/Sonora/Eagle/VASP/etc.
 	emu_timer *m_6015_timer;
 
+	// ADB refresh timer, independent of anything else going on
+	emu_timer *m_adbupdate_timer;
+
 	// RBV and friends (V8, etc)
 	uint8_t m_rbv_regs[256], m_rbv_ier, m_rbv_ifr, m_rbv_type, m_rbv_montype, m_rbv_vbltime;
 	uint32_t m_rbv_colors[3], m_rbv_count, m_rbv_clutoffs, m_rbv_immed10wr;
@@ -523,12 +526,13 @@ public:
 	uint32_t screen_update_macv8(screen_device &screen, bitmap_rgb32 &bitmap, const rectangle &cliprect);
 	uint32_t screen_update_macsonora(screen_device &screen, bitmap_rgb32 &bitmap, const rectangle &cliprect);
 	uint32_t screen_update_macpbwd(screen_device &screen, bitmap_rgb32 &bitmap, const rectangle &cliprect);
-	INTERRUPT_GEN_MEMBER(mac_rbv_vbl);
+	DECLARE_WRITE_LINE_MEMBER(mac_rbv_vbl);
 #ifndef MAC_USE_EMULATED_KBD
 	TIMER_CALLBACK_MEMBER(kbd_clock);
 	TIMER_CALLBACK_MEMBER(inquiry_timeout_func);
 #endif
 	TIMER_CALLBACK_MEMBER(mac_6015_tick);
+	TIMER_CALLBACK_MEMBER(mac_adbrefresh_tick);
 	TIMER_CALLBACK_MEMBER(mac_scanline_tick);
 	TIMER_CALLBACK_MEMBER(dafb_vbl_tick);
 	TIMER_CALLBACK_MEMBER(dafb_cursor_tick);
@@ -538,6 +542,7 @@ public:
 	DECLARE_WRITE_LINE_MEMBER(mac_adb_via_out_cb2);
 	DECLARE_READ8_MEMBER(mac_via_in_a);
 	DECLARE_READ8_MEMBER(mac_via_in_b);
+	DECLARE_READ8_MEMBER(mac_via_in_b_ii);
 	DECLARE_WRITE8_MEMBER(mac_via_out_a);
 	DECLARE_WRITE8_MEMBER(mac_via_out_b);
 	DECLARE_READ8_MEMBER(mac_via_in_a_pmu);

@@ -116,9 +116,10 @@ READ_LINE_MEMBER(fidelmcs48_state::sc6_input7_r)
 
 // SC6
 
-ADDRESS_MAP_START(fidelmcs48_state::sc6_map)
-	AM_RANGE(0x0000, 0x0fff) AM_ROM
-ADDRESS_MAP_END
+void fidelmcs48_state::sc6_map(address_map &map)
+{
+	map(0x0000, 0x0fff).rom();
+}
 
 
 
@@ -164,7 +165,7 @@ MACHINE_CONFIG_START(fidelmcs48_state::sc6)
 	MCFG_SPEAKER_STANDARD_MONO("speaker")
 	MCFG_SOUND_ADD("dac", DAC_1BIT, 0) MCFG_SOUND_ROUTE(ALL_OUTPUTS, "speaker", 0.25)
 	MCFG_DEVICE_ADD("vref", VOLTAGE_REGULATOR, 0) MCFG_VOLTAGE_REGULATOR_OUTPUT(5.0)
-	MCFG_SOUND_ROUTE_EX(0, "dac", 1.0, DAC_VREF_POS_INPUT)
+	MCFG_SOUND_ROUTE(0, "dac", 1.0, DAC_VREF_POS_INPUT)
 MACHINE_CONFIG_END
 
 

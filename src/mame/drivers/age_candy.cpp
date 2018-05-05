@@ -47,9 +47,10 @@ void age_candy_state::machine_reset()
 
 
 #ifdef UNUSED_DEFINITION
-ADDRESS_MAP_START(age_candy_state::age_candy_map)
-	AM_RANGE(0xc000, 0xffff) AM_ROM AM_REGION("maincpu", 0x4000)
-ADDRESS_MAP_END
+void age_candy_state::age_candy_map(address_map &map)
+{
+	map(0xc000, 0xffff).rom().region("maincpu", 0x4000);
+}
 #endif
 
 MACHINE_CONFIG_START(age_candy_state::age_candy)
@@ -67,7 +68,7 @@ MACHINE_CONFIG_END
 
 ROM_START( age_cand )
 	ROM_REGION( 0x8000, "maincpu", 0 )
-	ROM_LOAD( "AGEcandy.u3", 0x0000, 0x8000, CRC(c8cfc666) SHA1(a1c475ae105746e984741af0723a712f09d7b847) )
+	ROM_LOAD( "agecandy.u3", 0x0000, 0x8000, CRC(c8cfc666) SHA1(a1c475ae105746e984741af0723a712f09d7b847) )
 ROM_END
 
 GAME( 19??, age_cand,  0,    age_candy, age_candy, age_candy_state,  0, ROT0, "Advanced Game Engineering", "Candy Crane (AGE)", MACHINE_IS_SKELETON_MECHANICAL )

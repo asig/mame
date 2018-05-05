@@ -119,17 +119,19 @@ WRITE8_MEMBER( channelf_state::port_5_w )
 	m_row_reg = (data | 0xc0) ^ 0xff;
 }
 
-ADDRESS_MAP_START(channelf_state::channelf_map)
-	AM_RANGE(0x0000, 0x07ff) AM_ROM
-	AM_RANGE(0x0800, 0xffff) AM_DEVREAD("cartslot", channelf_cart_slot_device, read_rom)
-ADDRESS_MAP_END
+void channelf_state::channelf_map(address_map &map)
+{
+	map(0x0000, 0x07ff).rom();
+	map(0x0800, 0xffff).r(m_cart, FUNC(channelf_cart_slot_device::read_rom));
+}
 
-ADDRESS_MAP_START(channelf_state::channelf_io)
-	AM_RANGE(0x00, 0x00) AM_READWRITE(port_0_r, port_0_w) /* Front panel switches */
-	AM_RANGE(0x01, 0x01) AM_READWRITE(port_1_r, port_1_w) /* Right controller     */
-	AM_RANGE(0x04, 0x04) AM_READWRITE(port_4_r, port_4_w) /* Left controller      */
-	AM_RANGE(0x05, 0x05) AM_READWRITE(port_5_r, port_5_w)
-ADDRESS_MAP_END
+void channelf_state::channelf_io(address_map &map)
+{
+	map(0x00, 0x00).rw(this, FUNC(channelf_state::port_0_r), FUNC(channelf_state::port_0_w)); /* Front panel switches */
+	map(0x01, 0x01).rw(this, FUNC(channelf_state::port_1_r), FUNC(channelf_state::port_1_w)); /* Right controller     */
+	map(0x04, 0x04).rw(this, FUNC(channelf_state::port_4_r), FUNC(channelf_state::port_4_w)); /* Left controller      */
+	map(0x05, 0x05).rw(this, FUNC(channelf_state::port_5_r), FUNC(channelf_state::port_5_w));
+}
 
 
 
@@ -189,14 +191,15 @@ void channelf_state::machine_start()
 	}
 }
 
-static SLOT_INTERFACE_START(cf_cart)
-	SLOT_INTERFACE_INTERNAL("std",      CHANF_ROM_STD)
-	SLOT_INTERFACE_INTERNAL("maze",     CHANF_ROM_MAZE)
-	SLOT_INTERFACE_INTERNAL("hangman",  CHANF_ROM_HANGMAN)
-	SLOT_INTERFACE_INTERNAL("chess",    CHANF_ROM_CHESS)
-	SLOT_INTERFACE_INTERNAL("multi_old",CHANF_ROM_MULTI_OLD)
-	SLOT_INTERFACE_INTERNAL("multi",    CHANF_ROM_MULTI_FINAL)
-SLOT_INTERFACE_END
+static void cf_cart(device_slot_interface &device)
+{
+	device.option_add_internal("std",      CHANF_ROM_STD);
+	device.option_add_internal("maze",     CHANF_ROM_MAZE);
+	device.option_add_internal("hangman",  CHANF_ROM_HANGMAN);
+	device.option_add_internal("chess",    CHANF_ROM_CHESS);
+	device.option_add_internal("multi_old",CHANF_ROM_MULTI_OLD);
+	device.option_add_internal("multi",    CHANF_ROM_MULTI_FINAL);
+}
 
 
 MACHINE_CONFIG_START(channelf_state::channelf_cart)

@@ -41,6 +41,7 @@ public:
 		: driver_device(mconfig, type, tag)
 		, m_maincpu(*this, "maincpu")
 		, m_ppi8255(*this, "ppi8255")
+		, m_digits(*this, "digit%u", 0U)
 		{ }
 
 	DECLARE_READ8_MEMBER(savia84_8255_portc_r);
@@ -57,22 +58,26 @@ private:
 	uint8_t m_digit;
 	uint8_t m_digit_last;
 	virtual void machine_reset() override;
+	virtual void machine_start() override { m_digits.resolve(); }
 	required_device<cpu_device> m_maincpu;
 	required_device<i8255_device> m_ppi8255;
+	output_finder<9> m_digits;
 };
 
-ADDRESS_MAP_START(savia84_state::mem_map)
-	ADDRESS_MAP_UNMAP_HIGH
-	ADDRESS_MAP_GLOBAL_MASK(0x7fff) // A15 not connected at the CPU
-	AM_RANGE(0x0000, 0x07ff) AM_ROM
-	AM_RANGE(0x1800, 0x1fff) AM_RAM
-ADDRESS_MAP_END
+void savia84_state::mem_map(address_map &map)
+{
+	map.unmap_value_high();
+	map.global_mask(0x7fff); // A15 not connected at the CPU
+	map(0x0000, 0x07ff).rom();
+	map(0x1800, 0x1fff).ram();
+}
 
-ADDRESS_MAP_START(savia84_state::io_map)
-	ADDRESS_MAP_UNMAP_HIGH
-	ADDRESS_MAP_GLOBAL_MASK(0x07)
-	AM_RANGE(0x00, 0x03) AM_DEVREADWRITE("ppi8255", i8255_device, read, write) // ports F8-FB
-ADDRESS_MAP_END
+void savia84_state::io_map(address_map &map)
+{
+	map.unmap_value_high();
+	map.global_mask(0x07);
+	map(0x00, 0x03).rw(m_ppi8255, FUNC(i8255_device::read), FUNC(i8255_device::write)); // ports F8-FB
+}
 
 /* Input ports */
 static INPUT_PORTS_START( savia84 )
@@ -136,7 +141,8 @@ void savia84_state::machine_reset()
 WRITE8_MEMBER( savia84_state::savia84_8255_porta_w ) // OUT F8 - output segments on the selected digit
 {
 	m_segment = ~data & 0x7f;
-	if (m_digit && (m_digit != m_digit_last)) output().set_digit_value(m_digit, m_segment);
+	if (m_digit && (m_digit != m_digit_last))
+		m_digits[m_digit] = m_segment;
 	m_digit_last = m_digit;
 }
 

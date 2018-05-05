@@ -89,10 +89,11 @@ static const char *const v9938_modes[] = {
 Similar to the TMS9928, the V9938 has an own address space. It can handle
 at most 192 KiB RAM (128 KiB base, 64 KiB expansion).
 */
-ADDRESS_MAP_START(v99x8_device::memmap)
-	ADDRESS_MAP_GLOBAL_MASK(0x3ffff)
-	AM_RANGE(0x00000, 0x2ffff) AM_RAM
-ADDRESS_MAP_END
+void v99x8_device::memmap(address_map &map)
+{
+	map.global_mask(0x3ffff);
+	map(0x00000, 0x2ffff).ram();
+}
 
 
 // devices
@@ -563,11 +564,6 @@ void v99x8_device::register_w(uint8_t data)
 
 	if (!(m_cont_reg[17] & 0x80))
 		m_cont_reg[17] = (m_cont_reg[17] + 1) & 0x3f;
-}
-
-void v99x8_device::static_set_vram_size(device_t &device, uint32_t vram_size)
-{
-	downcast<v99x8_device &>(device).m_vram_size = vram_size;
 }
 
 /***************************************************************************

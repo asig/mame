@@ -268,12 +268,13 @@ READ8_MEMBER(cxgz80_state::ch2001_input_r)
 
 // Chess 2001
 
-ADDRESS_MAP_START(cxgz80_state::ch2001_map)
-	AM_RANGE(0x0000, 0x3fff) AM_ROM
-	AM_RANGE(0x4000, 0x47ff) AM_MIRROR(0x3800) AM_RAM
-	AM_RANGE(0x8000, 0x8000) AM_MIRROR(0x3fff) AM_READWRITE(ch2001_input_r, ch2001_leds_w)
-	AM_RANGE(0xc000, 0xc000) AM_MIRROR(0x3fff) AM_WRITE(ch2001_speaker_on_w)
-ADDRESS_MAP_END
+void cxgz80_state::ch2001_map(address_map &map)
+{
+	map(0x0000, 0x3fff).rom();
+	map(0x4000, 0x47ff).mirror(0x3800).ram();
+	map(0x8000, 0x8000).mirror(0x3fff).rw(this, FUNC(cxgz80_state::ch2001_input_r), FUNC(cxgz80_state::ch2001_leds_w));
+	map(0xc000, 0xc000).mirror(0x3fff).w(this, FUNC(cxgz80_state::ch2001_speaker_on_w));
+}
 
 
 
@@ -412,7 +413,7 @@ MACHINE_CONFIG_START(cxgz80_state::ch2001)
 	MCFG_SPEAKER_STANDARD_MONO("speaker")
 	MCFG_SOUND_ADD("dac", DAC_1BIT, 0) MCFG_SOUND_ROUTE(ALL_OUTPUTS, "speaker", 0.25)
 	MCFG_DEVICE_ADD("vref", VOLTAGE_REGULATOR, 0) MCFG_VOLTAGE_REGULATOR_OUTPUT(5.0)
-	MCFG_SOUND_ROUTE_EX(0, "dac", 1.0, DAC_VREF_POS_INPUT)
+	MCFG_SOUND_ROUTE(0, "dac", 1.0, DAC_VREF_POS_INPUT)
 MACHINE_CONFIG_END
 
 

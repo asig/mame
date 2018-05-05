@@ -161,23 +161,24 @@ WRITE16_MEMBER(littlerb_state::littlerb_r_sound_w)
 	//popmessage("%04x %04x",m_sound_index_l,m_sound_index_r);
 }
 
-ADDRESS_MAP_START(littlerb_state::littlerb_main)
-	AM_RANGE(0x000008, 0x000017) AM_WRITENOP
-	AM_RANGE(0x000020, 0x00002f) AM_WRITENOP
-	AM_RANGE(0x000070, 0x000073) AM_WRITENOP
-	AM_RANGE(0x060004, 0x060007) AM_WRITENOP
-	AM_RANGE(0x000000, 0x0fffff) AM_ROM
-	AM_RANGE(0x200000, 0x203fff) AM_RAM // main ram?
+void littlerb_state::littlerb_main(address_map &map)
+{
+	map(0x000008, 0x000017).nopw();
+	map(0x000020, 0x00002f).nopw();
+	map(0x000070, 0x000073).nopw();
+	map(0x060004, 0x060007).nopw();
+	map(0x000000, 0x0fffff).rom();
+	map(0x200000, 0x203fff).ram(); // main ram?
 
-	AM_RANGE(0x700000, 0x700007) AM_DEVREADWRITE("inder_vid:tms", tms34010_device, host_r, host_w)
+	map(0x700000, 0x700007).rw("inder_vid:tms", FUNC(tms34010_device::host_r), FUNC(tms34010_device::host_w));
 
-	AM_RANGE(0x740000, 0x740001) AM_WRITE(littlerb_l_sound_w)
-	AM_RANGE(0x760000, 0x760001) AM_WRITE(littlerb_r_sound_w)
-	AM_RANGE(0x780000, 0x780001) AM_WRITENOP // generic outputs
-	AM_RANGE(0x7c0000, 0x7c0001) AM_READ_PORT("DSW")
-	AM_RANGE(0x7e0000, 0x7e0001) AM_READ_PORT("P1")
-	AM_RANGE(0x7e0002, 0x7e0003) AM_READ_PORT("P2")
-ADDRESS_MAP_END
+	map(0x740000, 0x740001).w(this, FUNC(littlerb_state::littlerb_l_sound_w));
+	map(0x760000, 0x760001).w(this, FUNC(littlerb_state::littlerb_r_sound_w));
+	map(0x780000, 0x780001).nopw(); // generic outputs
+	map(0x7c0000, 0x7c0001).portr("DSW");
+	map(0x7e0000, 0x7e0001).portr("P1");
+	map(0x7e0002, 0x7e0003).portr("P2");
+}
 
 /* guess according to DASM code and checking the gameplay speed, could be different */
 CUSTOM_INPUT_MEMBER(littlerb_state::littlerb_frame_step_r)
@@ -250,7 +251,7 @@ static INPUT_PORTS_START( littlerb )
 	PORT_DIPNAME( 0x1000, 0x1000, "???"  )
 	PORT_DIPSETTING(      0x1000, DEF_STR( Off ) )
 	PORT_DIPSETTING(      0x0000, DEF_STR( On ) )
-	PORT_BIT( 0xe000, IP_ACTIVE_HIGH, IPT_SPECIAL ) PORT_CUSTOM_MEMBER(DEVICE_SELF, littlerb_state,littlerb_frame_step_r, nullptr)
+	PORT_BIT( 0xe000, IP_ACTIVE_HIGH, IPT_CUSTOM ) PORT_CUSTOM_MEMBER(DEVICE_SELF, littlerb_state,littlerb_frame_step_r, nullptr)
 
 	PORT_START("P2")    /* 16bit */
 	PORT_BIT( 0x0001, IP_ACTIVE_LOW, IPT_JOYSTICK_UP ) PORT_8WAY PORT_PLAYER(2)
@@ -297,8 +298,8 @@ MACHINE_CONFIG_START(littlerb_state::littlerb)
 	MCFG_SOUND_ADD("ldac", DAC_8BIT_R2R, 0) MCFG_SOUND_ROUTE(ALL_OUTPUTS, "lspeaker", 0.5) // unknown DAC
 	MCFG_SOUND_ADD("rdac", DAC_8BIT_R2R, 0) MCFG_SOUND_ROUTE(ALL_OUTPUTS, "rspeaker", 0.5) // unknown DAC
 	MCFG_DEVICE_ADD("vref", VOLTAGE_REGULATOR, 0) MCFG_VOLTAGE_REGULATOR_OUTPUT(5.0)
-	MCFG_SOUND_ROUTE_EX(0, "ldac", 1.0, DAC_VREF_POS_INPUT) MCFG_SOUND_ROUTE_EX(0, "ldac", -1.0, DAC_VREF_NEG_INPUT)
-	MCFG_SOUND_ROUTE_EX(0, "rdac", 1.0, DAC_VREF_POS_INPUT) MCFG_SOUND_ROUTE_EX(0, "rdac", -1.0, DAC_VREF_NEG_INPUT)
+	MCFG_SOUND_ROUTE(0, "ldac", 1.0, DAC_VREF_POS_INPUT) MCFG_SOUND_ROUTE(0, "ldac", -1.0, DAC_VREF_NEG_INPUT)
+	MCFG_SOUND_ROUTE(0, "rdac", 1.0, DAC_VREF_POS_INPUT) MCFG_SOUND_ROUTE(0, "rdac", -1.0, DAC_VREF_NEG_INPUT)
 MACHINE_CONFIG_END
 
 ROM_START( littlerb )

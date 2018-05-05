@@ -53,17 +53,19 @@ public:
  *
  *********************************************************************************/
 
-ADDRESS_MAP_START(astrocde_mess_state::astrocade_mem)
-	AM_RANGE(0x0000, 0x0fff) AM_ROM AM_WRITE(astrocade_funcgen_w)
-	AM_RANGE(0x1000, 0x3fff) AM_ROM /* Star Fortress writes in here?? */
-	AM_RANGE(0x4000, 0x4fff) AM_RAM AM_SHARE("videoram") /* ASG */
+void astrocde_mess_state::astrocade_mem(address_map &map)
+{
+	map(0x0000, 0x0fff).rom().w(this, FUNC(astrocde_mess_state::astrocade_funcgen_w));
+	map(0x1000, 0x3fff).rom(); /* Star Fortress writes in here?? */
+	map(0x4000, 0x4fff).ram().share("videoram"); /* ASG */
 	//AM_RANGE(0x5000, 0xffff) AM_DEVREADWRITE("exp", astrocade_exp_device, read, write)
-ADDRESS_MAP_END
+}
 
 
-ADDRESS_MAP_START(astrocde_mess_state::astrocade_io)
-	AM_RANGE(0x00, 0x1f) AM_SELECT(0xff00) AM_READWRITE(astrocade_data_chip_register_r, astrocade_data_chip_register_w)
-ADDRESS_MAP_END
+void astrocde_mess_state::astrocade_io(address_map &map)
+{
+	map(0x00, 0x1f).select(0xff00).rw(this, FUNC(astrocde_mess_state::astrocade_data_chip_register_r), FUNC(astrocde_mess_state::astrocade_data_chip_register_w));
+}
 
 /*************************************
  *
@@ -177,20 +179,22 @@ INPUT_PORTS_END
  *
  *************************************/
 
-static SLOT_INTERFACE_START(astrocade_cart)
-	SLOT_INTERFACE_INTERNAL("rom",       ASTROCADE_ROM_STD)
-	SLOT_INTERFACE_INTERNAL("rom_256k",  ASTROCADE_ROM_256K)
-	SLOT_INTERFACE_INTERNAL("rom_512k",  ASTROCADE_ROM_512K)
-SLOT_INTERFACE_END
+static void astrocade_cart(device_slot_interface &device)
+{
+	device.option_add_internal("rom",       ASTROCADE_ROM_STD);
+	device.option_add_internal("rom_256k",  ASTROCADE_ROM_256K);
+	device.option_add_internal("rom_512k",  ASTROCADE_ROM_512K);
+}
 
-static SLOT_INTERFACE_START(astrocade_exp)
-	SLOT_INTERFACE("blue_ram_4k",   ASTROCADE_BLUERAM_4K)
-	SLOT_INTERFACE("blue_ram_16k",  ASTROCADE_BLUERAM_16K)
-	SLOT_INTERFACE("blue_ram_32k",  ASTROCADE_BLUERAM_32K)
-	SLOT_INTERFACE("viper_sys1",    ASTROCADE_VIPER_SYS1)
-	SLOT_INTERFACE("lil_white_ram", ASTROCADE_WHITERAM)
-	SLOT_INTERFACE("rl64_ram",      ASTROCADE_RL64RAM)
-SLOT_INTERFACE_END
+static void astrocade_exp(device_slot_interface &device)
+{
+	device.option_add("blue_ram_4k",   ASTROCADE_BLUERAM_4K);
+	device.option_add("blue_ram_16k",  ASTROCADE_BLUERAM_16K);
+	device.option_add("blue_ram_32k",  ASTROCADE_BLUERAM_32K);
+	device.option_add("viper_sys1",    ASTROCADE_VIPER_SYS1);
+	device.option_add("lil_white_ram", ASTROCADE_WHITERAM);
+	device.option_add("rl64_ram",      ASTROCADE_RL64RAM);
+}
 
 
 MACHINE_CONFIG_START(astrocde_mess_state::astrocde)

@@ -42,22 +42,25 @@
 
 #include "wswan.lh"
 
-ADDRESS_MAP_START(wswan_state::wswan_mem)
-	AM_RANGE(0x00000, 0x03fff) AM_DEVREADWRITE("vdp", wswan_video_device, vram_r, vram_w)       // 16kb RAM / 4 colour tiles
-	AM_RANGE(0x04000, 0x0ffff) AM_NOP       // nothing
+void wswan_state::wswan_mem(address_map &map)
+{
+	map(0x00000, 0x03fff).rw(m_vdp, FUNC(wswan_video_device::vram_r), FUNC(wswan_video_device::vram_w));       // 16kb RAM / 4 colour tiles
+	map(0x04000, 0x0ffff).noprw();       // nothing
 	//AM_RANGE(0x10000, 0xeffff)    // cart range, setup at machine_start
-	AM_RANGE(0xf0000, 0xfffff) AM_READ(bios_r)
-ADDRESS_MAP_END
+	map(0xf0000, 0xfffff).r(this, FUNC(wswan_state::bios_r));
+}
 
-ADDRESS_MAP_START(wscolor_state::wscolor_mem)
-	AM_RANGE(0x00000, 0x0ffff) AM_DEVREADWRITE("vdp", wswan_video_device, vram_r, vram_w)       // 16kb RAM / 4 colour tiles, 16 colour tiles + palettes
+void wscolor_state::wscolor_mem(address_map &map)
+{
+	map(0x00000, 0x0ffff).rw("vdp", FUNC(wswan_video_device::vram_r), FUNC(wswan_video_device::vram_w));       // 16kb RAM / 4 colour tiles, 16 colour tiles + palettes
 	//AM_RANGE(0x10000, 0xeffff)    // cart range, setup at machine_start
-	AM_RANGE(0xf0000, 0xfffff) AM_READ(bios_r)
-ADDRESS_MAP_END
+	map(0xf0000, 0xfffff).r(this, FUNC(wscolor_state::bios_r));
+}
 
-ADDRESS_MAP_START(wswan_state::wswan_io)
-	AM_RANGE(0x00, 0xff) AM_READWRITE(port_r, port_w)   // I/O ports
-ADDRESS_MAP_END
+void wswan_state::wswan_io(address_map &map)
+{
+	map(0x00, 0xff).rw(this, FUNC(wswan_state::port_r), FUNC(wswan_state::port_w));   // I/O ports
+}
 
 static INPUT_PORTS_START( wswan )
 	PORT_START("CURSX")
@@ -102,11 +105,12 @@ PALETTE_INIT_MEMBER(wscolor_state, wscolor)
 	}
 }
 
-static SLOT_INTERFACE_START(wswan_cart)
-	SLOT_INTERFACE_INTERNAL("ws_rom",     WS_ROM_STD)
-	SLOT_INTERFACE_INTERNAL("ws_sram",    WS_ROM_SRAM)
-	SLOT_INTERFACE_INTERNAL("ws_eeprom",  WS_ROM_EEPROM)
-SLOT_INTERFACE_END
+static void wswan_cart(device_slot_interface &device)
+{
+	device.option_add_internal("ws_rom",     WS_ROM_STD);
+	device.option_add_internal("ws_sram",    WS_ROM_SRAM);
+	device.option_add_internal("ws_eeprom",  WS_ROM_EEPROM);
+}
 
 MACHINE_CONFIG_START(wswan_state::wswan)
 	/* Basic machine hardware */

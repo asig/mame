@@ -26,15 +26,16 @@ s11c_bg_device::s11c_bg_device(const machine_config &mconfig, const char *tag, d
 {
 }
 
-ADDRESS_MAP_START(s11c_bg_device::s11c_bg_map)
-	AM_RANGE(0x0000, 0x07ff) AM_RAM
-	AM_RANGE(0x2000, 0x2001) AM_MIRROR(0x1ffe) AM_DEVREADWRITE("ym2151", ym2151_device, read, write)
-	AM_RANGE(0x4000, 0x4003) AM_MIRROR(0x1ffc) AM_DEVREADWRITE("pia40", pia6821_device, read, write)
-	AM_RANGE(0x6000, 0x67ff) AM_WRITE(bg_speech_digit_w)
-	AM_RANGE(0x6800, 0x6fff) AM_WRITE(bg_speech_clock_w)
-	AM_RANGE(0x7800, 0x7fff) AM_WRITE(bgbank_w)
-	AM_RANGE(0x8000, 0xffff) AM_ROMBANK("bgbank")
-ADDRESS_MAP_END
+void s11c_bg_device::s11c_bg_map(address_map &map)
+{
+	map(0x0000, 0x07ff).ram();
+	map(0x2000, 0x2001).mirror(0x1ffe).rw("ym2151", FUNC(ym2151_device::read), FUNC(ym2151_device::write));
+	map(0x4000, 0x4003).mirror(0x1ffc).rw("pia40", FUNC(pia6821_device::read), FUNC(pia6821_device::write));
+	map(0x6000, 0x67ff).w(this, FUNC(s11c_bg_device::bg_speech_digit_w));
+	map(0x6800, 0x6fff).w(this, FUNC(s11c_bg_device::bg_speech_clock_w));
+	map(0x7800, 0x7fff).w(this, FUNC(s11c_bg_device::bgbank_w));
+	map(0x8000, 0xffff).bankr("bgbank");
+}
 
 WRITE_LINE_MEMBER( s11c_bg_device::pia40_cb2_w)
 {
@@ -63,14 +64,14 @@ MACHINE_CONFIG_START(s11c_bg_device::device_add_mconfig)
 
 	MCFG_YM2151_ADD("ym2151", XTAL(3'579'545)) // "3.58 MHz" on schematics and parts list
 	MCFG_YM2151_IRQ_HANDLER(WRITELINE(s11c_bg_device, ym2151_irq_w))
-	MCFG_SOUND_ROUTE(ALL_OUTPUTS, DEVICE_SELF_OWNER, 0.25)
+	MCFG_SOUND_ROUTE(ALL_OUTPUTS, *this, 0.25)
 
-	MCFG_SOUND_ADD("dac", MC1408, 0) MCFG_SOUND_ROUTE(ALL_OUTPUTS, DEVICE_SELF_OWNER, 0.25)
+	MCFG_SOUND_ADD("dac", MC1408, 0) MCFG_SOUND_ROUTE(ALL_OUTPUTS, *this, 0.25)
 	MCFG_DEVICE_ADD("vref", VOLTAGE_REGULATOR, 0) MCFG_VOLTAGE_REGULATOR_OUTPUT(5.0)
-	MCFG_SOUND_ROUTE_EX(0, "dac", 1.0, DAC_VREF_POS_INPUT) MCFG_SOUND_ROUTE_EX(0, "dac", -1.0, DAC_VREF_NEG_INPUT)
+	MCFG_SOUND_ROUTE(0, "dac", 1.0, DAC_VREF_POS_INPUT) MCFG_SOUND_ROUTE(0, "dac", -1.0, DAC_VREF_NEG_INPUT)
 
 	MCFG_SOUND_ADD("hc55516_bg", HC55516, 0)
-	MCFG_SOUND_ROUTE(ALL_OUTPUTS, DEVICE_SELF_OWNER, 0.5)
+	MCFG_SOUND_ROUTE(ALL_OUTPUTS, *this, 0.5)
 
 	MCFG_DEVICE_ADD("pia40", PIA6821, 0)
 	MCFG_PIA_WRITEPA_HANDLER(DEVWRITE8("dac", dac_byte_interface, write))

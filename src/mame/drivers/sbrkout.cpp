@@ -307,28 +307,6 @@ WRITE8_MEMBER(sbrkout_state::output_latch_w)
 }
 
 
-WRITE_LINE_MEMBER(sbrkout_state::start_1_led_w)
-{
-	output().set_led_value(0, state);
-}
-
-
-WRITE_LINE_MEMBER(sbrkout_state::start_2_led_w)
-{
-	output().set_led_value(1, state);
-}
-
-
-WRITE_LINE_MEMBER(sbrkout_state::serve_led_w)
-{
-	output().set_led_value(0, !state);
-}
-
-WRITE_LINE_MEMBER(sbrkout_state::serve_2_led_w)
-{
-	output().set_led_value(1, !state);
-}
-
 WRITE_LINE_MEMBER(sbrkout_state::coincount_w)
 {
 	machine().bookkeeping().coin_counter_w(0, state);
@@ -418,21 +396,22 @@ uint32_t sbrkout_state::screen_update_sbrkout(screen_device &screen, bitmap_ind1
  *************************************/
 
 /* full memory map derived from schematics */
-ADDRESS_MAP_START(sbrkout_state::main_map)
-	ADDRESS_MAP_GLOBAL_MASK(0x3fff)
-	AM_RANGE(0x0000, 0x007f) AM_MIRROR(0x380) AM_RAMBANK("bank1")
-	AM_RANGE(0x0400, 0x07ff) AM_RAM_WRITE(sbrkout_videoram_w) AM_SHARE("videoram")
-	AM_RANGE(0x0800, 0x083f) AM_READ(switches_r)
-	AM_RANGE(0x0840, 0x0840) AM_MIRROR(0x003f) AM_READ_PORT("COIN")
-	AM_RANGE(0x0880, 0x0880) AM_MIRROR(0x003f) AM_READ_PORT("START")
-	AM_RANGE(0x08c0, 0x08c0) AM_MIRROR(0x003f) AM_READ_PORT("SERVICE")
-	AM_RANGE(0x0c00, 0x0c00) AM_MIRROR(0x03ff) AM_READ(sync_r)
-	AM_RANGE(0x0c00, 0x0c7f) AM_WRITE(output_latch_w)
-	AM_RANGE(0x0c80, 0x0c80) AM_MIRROR(0x007f) AM_DEVWRITE("watchdog", watchdog_timer_device, reset_w)
-	AM_RANGE(0x0e00, 0x0e00) AM_MIRROR(0x007f) AM_WRITE(irq_ack_w)
-	AM_RANGE(0x1000, 0x1000) AM_MIRROR(0x03ff) AM_READ(sync2_r)
-	AM_RANGE(0x2800, 0x3fff) AM_ROM
-ADDRESS_MAP_END
+void sbrkout_state::main_map(address_map &map)
+{
+	map.global_mask(0x3fff);
+	map(0x0000, 0x007f).mirror(0x380).bankrw("bank1");
+	map(0x0400, 0x07ff).ram().w(this, FUNC(sbrkout_state::sbrkout_videoram_w)).share("videoram");
+	map(0x0800, 0x083f).r(this, FUNC(sbrkout_state::switches_r));
+	map(0x0840, 0x0840).mirror(0x003f).portr("COIN");
+	map(0x0880, 0x0880).mirror(0x003f).portr("START");
+	map(0x08c0, 0x08c0).mirror(0x003f).portr("SERVICE");
+	map(0x0c00, 0x0c00).mirror(0x03ff).r(this, FUNC(sbrkout_state::sync_r));
+	map(0x0c00, 0x0c7f).w(this, FUNC(sbrkout_state::output_latch_w));
+	map(0x0c80, 0x0c80).mirror(0x007f).w("watchdog", FUNC(watchdog_timer_device::reset_w));
+	map(0x0e00, 0x0e00).mirror(0x007f).w(this, FUNC(sbrkout_state::irq_ack_w));
+	map(0x1000, 0x1000).mirror(0x03ff).r(this, FUNC(sbrkout_state::sync2_r));
+	map(0x2800, 0x3fff).rom();
+}
 
 
 /*************************************
@@ -584,12 +563,15 @@ MACHINE_CONFIG_START(sbrkout_state::sbrkout)
 	MCFG_CPU_PROGRAM_MAP(main_map)
 
 	MCFG_DEVICE_ADD("outlatch", F9334, 0) // H8
-	MCFG_ADDRESSABLE_LATCH_Q1_OUT_CB(WRITELINE(sbrkout_state, serve_led_w))
-	MCFG_ADDRESSABLE_LATCH_Q3_OUT_CB(WRITELINE(sbrkout_state, start_1_led_w))
-	MCFG_ADDRESSABLE_LATCH_Q4_OUT_CB(WRITELINE(sbrkout_state, start_2_led_w))
+	MCFG_ADDRESSABLE_LATCH_Q1_OUT_CB(OUTPUT("led0")) MCFG_DEVCB_INVERT // SERV LED (active low)
+	MCFG_ADDRESSABLE_LATCH_Q3_OUT_CB(OUTPUT("lamp0")) // LAMP1
+	MCFG_ADDRESSABLE_LATCH_Q4_OUT_CB(OUTPUT("lamp1")) // LAMP2
 	MCFG_ADDRESSABLE_LATCH_Q5_OUT_CB(WRITELINE(sbrkout_state, pot_mask1_w))
 	MCFG_ADDRESSABLE_LATCH_Q6_OUT_CB(WRITELINE(sbrkout_state, pot_mask2_w))
 	MCFG_ADDRESSABLE_LATCH_Q7_OUT_CB(WRITELINE(sbrkout_state, coincount_w))
+	// Note that connecting pin 15 to a pullup, as shown on the schematics, may result in spurious
+	// coin counter activity as stated in Atari bulletin B-0054 (which recommends tying it to the
+	// CPU reset line instead).
 
 	MCFG_WATCHDOG_ADD("watchdog")
 	MCFG_WATCHDOG_VBLANK_INIT("screen", 8)
@@ -608,7 +590,7 @@ MACHINE_CONFIG_START(sbrkout_state::sbrkout)
 	MCFG_SPEAKER_STANDARD_MONO("speaker")
 	MCFG_SOUND_ADD("dac", DAC_1BIT, 0) MCFG_SOUND_ROUTE(ALL_OUTPUTS, "speaker", 0.99)
 	MCFG_DEVICE_ADD("vref", VOLTAGE_REGULATOR, 0) MCFG_VOLTAGE_REGULATOR_OUTPUT(5.0)
-	MCFG_SOUND_ROUTE_EX(0, "dac", 1.0, DAC_VREF_POS_INPUT)
+	MCFG_SOUND_ROUTE(0, "dac", 1.0, DAC_VREF_POS_INPUT)
 MACHINE_CONFIG_END
 
 
@@ -616,7 +598,7 @@ MACHINE_CONFIG_START(sbrkoutct_state::sbrkoutct)
 	sbrkout(config);
 
 	MCFG_DEVICE_MODIFY("outlatch")
-	MCFG_ADDRESSABLE_LATCH_Q2_OUT_CB(WRITELINE(sbrkoutct_state, serve_2_led_w))
+	MCFG_ADDRESSABLE_LATCH_Q2_OUT_CB(OUTPUT("led1")) MCFG_DEVCB_INVERT // 2nd serve LED
 MACHINE_CONFIG_END
 
 /*************************************

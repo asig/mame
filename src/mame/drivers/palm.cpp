@@ -165,10 +165,11 @@ PALETTE_INIT_MEMBER(palm_state, palm)
     ADDRESS MAPS
 ***************************************************************************/
 
-ADDRESS_MAP_START(palm_state::palm_map)
-	AM_RANGE(0xc00000, 0xe07fff) AM_ROM AM_REGION("bios", 0)
-	AM_RANGE(0xfff000, 0xffffff) AM_DEVREADWRITE(MC68328_TAG, mc68328_device, read, write)
-ADDRESS_MAP_END
+void palm_state::palm_map(address_map &map)
+{
+	map(0xc00000, 0xe07fff).rom().region("bios", 0);
+	map(0xfff000, 0xffffff).rw(m_lsi, FUNC(mc68328_device::read), FUNC(mc68328_device::write));
+}
 
 
 /***************************************************************************
@@ -201,7 +202,7 @@ MACHINE_CONFIG_START(palm_state::palm)
 	MCFG_SPEAKER_STANDARD_MONO("speaker")
 	MCFG_SOUND_ADD("dac", DAC_1BIT, 0) MCFG_SOUND_ROUTE(ALL_OUTPUTS, "speaker", 0.25)
 	MCFG_DEVICE_ADD("vref", VOLTAGE_REGULATOR, 0) MCFG_VOLTAGE_REGULATOR_OUTPUT(5.0)
-	MCFG_SOUND_ROUTE_EX(0, "dac", 1.0, DAC_VREF_POS_INPUT)
+	MCFG_SOUND_ROUTE(0, "dac", 1.0, DAC_VREF_POS_INPUT)
 
 	MCFG_DEVICE_ADD( MC68328_TAG, MC68328, 0 ) // lsi device
 	MCFG_MC68328_CPU("maincpu")

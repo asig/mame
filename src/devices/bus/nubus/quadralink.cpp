@@ -13,10 +13,11 @@
 #include "bus/rs232/null_modem.h"
 #include "screen.h"
 
-static SLOT_INTERFACE_START(isa_com)
-		SLOT_INTERFACE("terminal", SERIAL_TERMINAL)
-		SLOT_INTERFACE("null_modem", NULL_MODEM)
-SLOT_INTERFACE_END
+static void isa_com(device_slot_interface &device)
+{
+	device.option_add("terminal", SERIAL_TERMINAL);
+	device.option_add("null_modem", NULL_MODEM);
+}
 
 #define QUADRALINK_ROM_REGION  "qdlink_rom"
 
@@ -104,13 +105,11 @@ void nubus_quadralink_device::device_start()
 {
 	uint32_t slotspace;
 
-	// set_nubus_device makes m_slot valid
-	set_nubus_device();
 	install_declaration_rom(this, QUADRALINK_ROM_REGION);
 
 	slotspace = get_slotspace();
 
-	m_nubus->install_device(slotspace, slotspace+0xefffff, read32_delegate(FUNC(nubus_quadralink_device::dev_r), this), write32_delegate(FUNC(nubus_quadralink_device::dev_w), this));
+	nubus().install_device(slotspace, slotspace+0xefffff, read32_delegate(FUNC(nubus_quadralink_device::dev_r), this), write32_delegate(FUNC(nubus_quadralink_device::dev_w), this));
 }
 
 //-------------------------------------------------

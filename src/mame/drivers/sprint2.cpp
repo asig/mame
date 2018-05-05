@@ -222,49 +222,30 @@ WRITE8_MEMBER(sprint2_state::sprint2_noise_reset_w)
 }
 
 
-WRITE_LINE_MEMBER(sprint2_state::lamp1_w)
+void sprint2_state::sprint2_map(address_map &map)
 {
-	output().set_led_value(0, state);
+	map.global_mask(0x3fff);
+	map(0x0000, 0x03ff).rw(this, FUNC(sprint2_state::sprint2_wram_r), FUNC(sprint2_state::sprint2_wram_w));
+	map(0x0400, 0x07ff).ram().w(this, FUNC(sprint2_state::sprint2_video_ram_w)).share("video_ram");
+	map(0x0818, 0x081f).r(this, FUNC(sprint2_state::sprint2_input_A_r));
+	map(0x0828, 0x082f).r(this, FUNC(sprint2_state::sprint2_input_B_r));
+	map(0x0830, 0x0837).r(this, FUNC(sprint2_state::sprint2_dip_r));
+	map(0x0840, 0x087f).portr("COIN");
+	map(0x0880, 0x08bf).r(this, FUNC(sprint2_state::sprint2_steering1_r));
+	map(0x08c0, 0x08ff).r(this, FUNC(sprint2_state::sprint2_steering2_r));
+	map(0x0c00, 0x0fff).r(this, FUNC(sprint2_state::sprint2_sync_r));
+	map(0x0c00, 0x0c7f).w(this, FUNC(sprint2_state::output_latch_w));
+	map(0x0c80, 0x0cff).w(m_watchdog, FUNC(watchdog_timer_device::reset_w));
+	map(0x0d00, 0x0d7f).w(this, FUNC(sprint2_state::sprint2_collision_reset1_w));
+	map(0x0d80, 0x0dff).w(this, FUNC(sprint2_state::sprint2_collision_reset2_w));
+	map(0x0e00, 0x0e7f).w(this, FUNC(sprint2_state::sprint2_steering_reset1_w));
+	map(0x0e80, 0x0eff).w(this, FUNC(sprint2_state::sprint2_steering_reset2_w));
+	map(0x0f00, 0x0f7f).w(this, FUNC(sprint2_state::sprint2_noise_reset_w));
+	map(0x1000, 0x13ff).r(this, FUNC(sprint2_state::sprint2_collision1_r));
+	map(0x1400, 0x17ff).r(this, FUNC(sprint2_state::sprint2_collision2_r));
+	map(0x1800, 0x1800).nopr();  /* debugger ROM location? */
+	map(0x2000, 0x3fff).rom();
 }
-
-WRITE_LINE_MEMBER(sprint2_state::lamp2_w)
-{
-	output().set_led_value(1, state);
-}
-
-WRITE_LINE_MEMBER(sprint2_state::lamp3_w)
-{
-	output().set_led_value(2, state);
-}
-
-WRITE_LINE_MEMBER(sprint2_state::lamp4_w)
-{
-	output().set_led_value(3, state);
-}
-
-ADDRESS_MAP_START(sprint2_state::sprint2_map)
-	ADDRESS_MAP_GLOBAL_MASK(0x3fff)
-	AM_RANGE(0x0000, 0x03ff) AM_READWRITE(sprint2_wram_r,sprint2_wram_w)
-	AM_RANGE(0x0400, 0x07ff) AM_RAM_WRITE(sprint2_video_ram_w) AM_SHARE("video_ram")
-	AM_RANGE(0x0818, 0x081f) AM_READ(sprint2_input_A_r)
-	AM_RANGE(0x0828, 0x082f) AM_READ(sprint2_input_B_r)
-	AM_RANGE(0x0830, 0x0837) AM_READ(sprint2_dip_r)
-	AM_RANGE(0x0840, 0x087f) AM_READ_PORT("COIN")
-	AM_RANGE(0x0880, 0x08bf) AM_READ(sprint2_steering1_r)
-	AM_RANGE(0x08c0, 0x08ff) AM_READ(sprint2_steering2_r)
-	AM_RANGE(0x0c00, 0x0fff) AM_READ(sprint2_sync_r)
-	AM_RANGE(0x0c00, 0x0c7f) AM_WRITE(output_latch_w)
-	AM_RANGE(0x0c80, 0x0cff) AM_DEVWRITE("watchdog", watchdog_timer_device, reset_w)
-	AM_RANGE(0x0d00, 0x0d7f) AM_WRITE(sprint2_collision_reset1_w)
-	AM_RANGE(0x0d80, 0x0dff) AM_WRITE(sprint2_collision_reset2_w)
-	AM_RANGE(0x0e00, 0x0e7f) AM_WRITE(sprint2_steering_reset1_w)
-	AM_RANGE(0x0e80, 0x0eff) AM_WRITE(sprint2_steering_reset2_w)
-	AM_RANGE(0x0f00, 0x0f7f) AM_WRITE(sprint2_noise_reset_w)
-	AM_RANGE(0x1000, 0x13ff) AM_READ(sprint2_collision1_r)
-	AM_RANGE(0x1400, 0x17ff) AM_READ(sprint2_collision2_r)
-	AM_RANGE(0x1800, 0x1800) AM_READNOP  /* debugger ROM location? */
-	AM_RANGE(0x2000, 0x3fff) AM_ROM
-ADDRESS_MAP_END
 
 
 static INPUT_PORTS_START( sprint2 )
@@ -540,8 +521,8 @@ MACHINE_CONFIG_START(sprint2_state::sprint2)
 	MCFG_ADDRESSABLE_LATCH_Q0_OUT_CB(DEVWRITELINE("discrete", discrete_device, write_line<SPRINT2_ATTRACT_EN>)) // also DOMINOS_ATTRACT_EN
 	MCFG_ADDRESSABLE_LATCH_Q1_OUT_CB(DEVWRITELINE("discrete", discrete_device, write_line<SPRINT2_SKIDSND1_EN>)) // also DOMINOS_TUMBLE_EN
 	MCFG_ADDRESSABLE_LATCH_Q2_OUT_CB(DEVWRITELINE("discrete", discrete_device, write_line<SPRINT2_SKIDSND2_EN>))
-	MCFG_ADDRESSABLE_LATCH_Q3_OUT_CB(WRITELINE(sprint2_state, lamp1_w))
-	MCFG_ADDRESSABLE_LATCH_Q4_OUT_CB(WRITELINE(sprint2_state, lamp2_w))
+	MCFG_ADDRESSABLE_LATCH_Q3_OUT_CB(OUTPUT("led0")) // START LAMP1
+	MCFG_ADDRESSABLE_LATCH_Q4_OUT_CB(OUTPUT("led1")) // START LAMP2
 	//MCFG_ADDRESSABLE_LATCH_Q6_OUT_CB(WRITELINE(sprint2_state, sprint2_spare_w))
 
 	MCFG_SOUND_ADD("discrete", DISCRETE, 0)
@@ -585,8 +566,8 @@ MACHINE_CONFIG_END
 MACHINE_CONFIG_START(sprint2_state::dominos4)
 	dominos(config);
 	MCFG_DEVICE_MODIFY("outlatch")
-	MCFG_ADDRESSABLE_LATCH_Q5_OUT_CB(WRITELINE(sprint2_state, lamp3_w))
-	MCFG_ADDRESSABLE_LATCH_Q6_OUT_CB(WRITELINE(sprint2_state, lamp4_w))
+	MCFG_ADDRESSABLE_LATCH_Q5_OUT_CB(OUTPUT("led2")) // START LAMP3
+	MCFG_ADDRESSABLE_LATCH_Q6_OUT_CB(OUTPUT("led3")) // START LAMP4
 MACHINE_CONFIG_END
 
 ROM_START( sprint1 )

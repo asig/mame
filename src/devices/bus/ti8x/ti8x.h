@@ -47,10 +47,10 @@ DECLARE_DEVICE_TYPE(TI8X_LINK_PORT, ti8x_link_port_device)
 	MCFG_DEVICE_SLOT_INTERFACE(slot_intf, def_slot, false)
 
 #define MCFG_TI8X_LINK_TIP_HANDLER(cb) \
-	devcb = &ti8x_link_port_device::set_tip_handler(*device, DEVCB_##cb);
+	devcb = &downcast<ti8x_link_port_device &>(*device).set_tip_handler(DEVCB_##cb);
 
 #define MCFG_TI8X_LINK_RING_HANDLER(cb) \
-	devcb = &ti8x_link_port_device::set_ring_handler(*device, DEVCB_##cb);
+	devcb = &downcast<ti8x_link_port_device &>(*device).set_ring_handler(DEVCB_##cb);
 
 
 class device_ti8x_link_port_interface;
@@ -62,10 +62,8 @@ public:
 	ti8x_link_port_device(machine_config const &mconfig, char const *tag, device_t *owner, u32 clock);
 
 	// static configuration helpers
-	template <class Object> static devcb_base &set_tip_handler(device_t &device, Object &&cb)
-	{ return downcast<ti8x_link_port_device &>(device).m_tip_handler.set_callback(std::forward<Object>(cb)); }
-	template <class Object> static devcb_base &set_ring_handler(device_t &device, Object &&cb)
-	{ return downcast<ti8x_link_port_device &>(device).m_ring_handler.set_callback(std::forward<Object>(cb)); }
+	template <class Object> devcb_base &set_tip_handler(Object &&cb) { return m_tip_handler.set_callback(std::forward<Object>(cb)); }
+	template <class Object> devcb_base &set_ring_handler(Object &&cb) { return m_ring_handler.set_callback(std::forward<Object>(cb)); }
 
 	DECLARE_WRITE_LINE_MEMBER(tip_w);
 	DECLARE_WRITE_LINE_MEMBER(ring_w);
@@ -202,6 +200,6 @@ private:
 };
 
 
-SLOT_INTERFACE_EXTERN( default_ti8x_link_devices );
+void default_ti8x_link_devices(device_slot_interface &device);
 
 #endif // MAME_DEVICES_BUS_TI8X_TI8X_H

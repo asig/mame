@@ -188,14 +188,15 @@ void aa310_state::machine_reset()
 	archimedes_reset();
 }
 
-ADDRESS_MAP_START(aa310_state::aa310_mem)
-	AM_RANGE(0x00000000, 0x01ffffff) AM_READWRITE(archimedes_memc_logical_r, archimedes_memc_logical_w)
-	AM_RANGE(0x02000000, 0x02ffffff) AM_RAM AM_SHARE("physicalram") /* physical RAM - 16 MB for now, should be 512k for the A310 */
-	AM_RANGE(0x03000000, 0x033fffff) AM_READWRITE(archimedes_ioc_r, archimedes_ioc_w)
-	AM_RANGE(0x03400000, 0x035fffff) AM_ROM AM_REGION("extension", 0x000000) AM_WRITE(archimedes_vidc_w)
-	AM_RANGE(0x03600000, 0x037fffff) AM_ROM AM_REGION("extension", 0x200000) AM_WRITE(archimedes_memc_w)
-	AM_RANGE(0x03800000, 0x03ffffff) AM_ROM AM_REGION("maincpu", 0) AM_WRITE(archimedes_memc_page_w)
-ADDRESS_MAP_END
+void aa310_state::aa310_mem(address_map &map)
+{
+	map(0x00000000, 0x01ffffff).rw(this, FUNC(aa310_state::archimedes_memc_logical_r), FUNC(aa310_state::archimedes_memc_logical_w));
+	map(0x02000000, 0x02ffffff).ram().share("physicalram"); /* physical RAM - 16 MB for now, should be 512k for the A310 */
+	map(0x03000000, 0x033fffff).rw(this, FUNC(aa310_state::archimedes_ioc_r), FUNC(aa310_state::archimedes_ioc_w));
+	map(0x03400000, 0x035fffff).rom().region("extension", 0x000000).w(this, FUNC(aa310_state::archimedes_vidc_w));
+	map(0x03600000, 0x037fffff).rom().region("extension", 0x200000).w(this, FUNC(aa310_state::archimedes_memc_w));
+	map(0x03800000, 0x03ffffff).rom().region("maincpu", 0).w(this, FUNC(aa310_state::archimedes_memc_page_w));
+}
 
 
 INPUT_CHANGED_MEMBER(aa310_state::key_stroke)
@@ -377,10 +378,11 @@ FLOPPY_FORMATS_MEMBER( aa310_state::floppy_formats )
 	FLOPPY_PC_FORMAT
 FLOPPY_FORMATS_END
 
-static SLOT_INTERFACE_START( aa310_floppies )
-	SLOT_INTERFACE( "35dd", FLOPPY_35_DD )
-	SLOT_INTERFACE( "35hd", FLOPPY_35_HD )
-SLOT_INTERFACE_END
+static void aa310_floppies(device_slot_interface &device)
+{
+	device.option_add("35dd", FLOPPY_35_DD);
+	device.option_add("35hd", FLOPPY_35_HD);
+}
 
 WRITE_LINE_MEMBER( archimedes_state::a310_kart_tx_w )
 {
@@ -442,14 +444,14 @@ MACHINE_CONFIG_START(aa310_state::aa310)
 	MCFG_SOUND_ADD("dac6", DAC_16BIT_R2R_TWOS_COMPLEMENT, 0) MCFG_SOUND_ROUTE(0, "speaker", 0.1) // unknown DAC
 	MCFG_SOUND_ADD("dac7", DAC_16BIT_R2R_TWOS_COMPLEMENT, 0) MCFG_SOUND_ROUTE(0, "speaker", 0.1) // unknown DAC
 	MCFG_DEVICE_ADD("vref", VOLTAGE_REGULATOR, 0) MCFG_VOLTAGE_REGULATOR_OUTPUT(5.0)
-	MCFG_SOUND_ROUTE_EX(0, "dac0", 1.0, DAC_VREF_POS_INPUT) MCFG_SOUND_ROUTE_EX(0, "dac0", -1.0, DAC_VREF_NEG_INPUT)
-	MCFG_SOUND_ROUTE_EX(0, "dac1", 1.0, DAC_VREF_POS_INPUT) MCFG_SOUND_ROUTE_EX(0, "dac1", -1.0, DAC_VREF_NEG_INPUT)
-	MCFG_SOUND_ROUTE_EX(0, "dac2", 1.0, DAC_VREF_POS_INPUT) MCFG_SOUND_ROUTE_EX(0, "dac2", -1.0, DAC_VREF_NEG_INPUT)
-	MCFG_SOUND_ROUTE_EX(0, "dac3", 1.0, DAC_VREF_POS_INPUT) MCFG_SOUND_ROUTE_EX(0, "dac3", -1.0, DAC_VREF_NEG_INPUT)
-	MCFG_SOUND_ROUTE_EX(0, "dac4", 1.0, DAC_VREF_POS_INPUT) MCFG_SOUND_ROUTE_EX(0, "dac4", -1.0, DAC_VREF_NEG_INPUT)
-	MCFG_SOUND_ROUTE_EX(0, "dac5", 1.0, DAC_VREF_POS_INPUT) MCFG_SOUND_ROUTE_EX(0, "dac5", -1.0, DAC_VREF_NEG_INPUT)
-	MCFG_SOUND_ROUTE_EX(0, "dac6", 1.0, DAC_VREF_POS_INPUT) MCFG_SOUND_ROUTE_EX(0, "dac6", -1.0, DAC_VREF_NEG_INPUT)
-	MCFG_SOUND_ROUTE_EX(0, "dac7", 1.0, DAC_VREF_POS_INPUT) MCFG_SOUND_ROUTE_EX(0, "dac7", -1.0, DAC_VREF_NEG_INPUT)
+	MCFG_SOUND_ROUTE(0, "dac0", 1.0, DAC_VREF_POS_INPUT) MCFG_SOUND_ROUTE(0, "dac0", -1.0, DAC_VREF_NEG_INPUT)
+	MCFG_SOUND_ROUTE(0, "dac1", 1.0, DAC_VREF_POS_INPUT) MCFG_SOUND_ROUTE(0, "dac1", -1.0, DAC_VREF_NEG_INPUT)
+	MCFG_SOUND_ROUTE(0, "dac2", 1.0, DAC_VREF_POS_INPUT) MCFG_SOUND_ROUTE(0, "dac2", -1.0, DAC_VREF_NEG_INPUT)
+	MCFG_SOUND_ROUTE(0, "dac3", 1.0, DAC_VREF_POS_INPUT) MCFG_SOUND_ROUTE(0, "dac3", -1.0, DAC_VREF_NEG_INPUT)
+	MCFG_SOUND_ROUTE(0, "dac4", 1.0, DAC_VREF_POS_INPUT) MCFG_SOUND_ROUTE(0, "dac4", -1.0, DAC_VREF_NEG_INPUT)
+	MCFG_SOUND_ROUTE(0, "dac5", 1.0, DAC_VREF_POS_INPUT) MCFG_SOUND_ROUTE(0, "dac5", -1.0, DAC_VREF_NEG_INPUT)
+	MCFG_SOUND_ROUTE(0, "dac6", 1.0, DAC_VREF_POS_INPUT) MCFG_SOUND_ROUTE(0, "dac6", -1.0, DAC_VREF_NEG_INPUT)
+	MCFG_SOUND_ROUTE(0, "dac7", 1.0, DAC_VREF_POS_INPUT) MCFG_SOUND_ROUTE(0, "dac7", -1.0, DAC_VREF_NEG_INPUT)
 
 	/* Expansion slots - 2-card backplane */
 MACHINE_CONFIG_END

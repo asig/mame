@@ -172,22 +172,25 @@ static INPUT_PORTS_START(compc)
 	PORT_INCLUDE(pc_keyboard)
 INPUT_PORTS_END
 
-ADDRESS_MAP_START(compc_state::compc_map)
-	ADDRESS_MAP_UNMAP_HIGH
-	AM_RANGE(0xf0000, 0xfffff) AM_ROM AM_REGION("bios", 0)
-ADDRESS_MAP_END
+void compc_state::compc_map(address_map &map)
+{
+	map.unmap_value_high();
+	map(0xf0000, 0xfffff).rom().region("bios", 0);
+}
 
-ADDRESS_MAP_START(compc_state::compc_io)
-	ADDRESS_MAP_UNMAP_HIGH
-	AM_RANGE(0x0000, 0x00ff) AM_DEVICE("mb", pc_noppi_mb_device, map)
-	AM_RANGE(0x0060, 0x0063) AM_READWRITE(pio_r, pio_w)
-ADDRESS_MAP_END
+void compc_state::compc_io(address_map &map)
+{
+	map.unmap_value_high();
+	map(0x0000, 0x00ff).m(m_mb, FUNC(pc_noppi_mb_device::map));
+	map(0x0060, 0x0063).rw(this, FUNC(compc_state::pio_r), FUNC(compc_state::pio_w));
+}
 
-ADDRESS_MAP_START(compc_state::compciii_io)
-	ADDRESS_MAP_UNMAP_HIGH
-	AM_RANGE(0x0000, 0x00ff) AM_DEVICE("mb", pc_noppi_mb_device, map)
-	AM_RANGE(0x0060, 0x0063) AM_READWRITE(pioiii_r, pioiii_w)
-ADDRESS_MAP_END
+void compc_state::compciii_io(address_map &map)
+{
+	map.unmap_value_high();
+	map(0x0000, 0x00ff).m(m_mb, FUNC(pc_noppi_mb_device::map));
+	map(0x0060, 0x0063).rw(this, FUNC(compc_state::pioiii_r), FUNC(compc_state::pioiii_w));
+}
 
 MACHINE_CONFIG_START(compc_state::compc)
 	MCFG_CPU_ADD("maincpu", I8088, 4772720*2)
@@ -199,11 +202,11 @@ MACHINE_CONFIG_START(compc_state::compc)
 	MCFG_DEVICE_REMOVE("mb:pit8253")
 	MCFG_DEVICE_ADD("mb:pit8253", FE2010_PIT, 0)
 	MCFG_PIT8253_CLK0(XTAL(14'318'181)/12.0) /* heartbeat IRQ */
-	MCFG_PIT8253_OUT0_HANDLER(DEVWRITELINE("pic8259", pic8259_device, ir0_w))
+	MCFG_PIT8253_OUT0_HANDLER(DEVWRITELINE("mb:pic8259", pic8259_device, ir0_w))
 	MCFG_PIT8253_CLK1(XTAL(14'318'181)/12.0) /* dram refresh */
-	MCFG_PIT8253_OUT1_HANDLER(WRITELINE(ibm5160_mb_device, pc_pit8253_out1_changed))
+	MCFG_PIT8253_OUT1_HANDLER(DEVWRITELINE("mb", ibm5160_mb_device, pc_pit8253_out1_changed))
 	MCFG_PIT8253_CLK2(XTAL(14'318'181)/12.0) /* pio port c pin 4, and speaker polling enough */
-	MCFG_PIT8253_OUT2_HANDLER(WRITELINE(ibm5160_mb_device, pc_pit8253_out2_changed))
+	MCFG_PIT8253_OUT2_HANDLER(DEVWRITELINE("mb", ibm5160_mb_device, pc_pit8253_out2_changed))
 
 	MCFG_ISA8_SLOT_ADD("mb:isa", "isa1", pc_isa8_cards, "mda", false)
 	MCFG_ISA8_SLOT_ADD("mb:isa", "isa2", pc_isa8_cards, "lpt", false)

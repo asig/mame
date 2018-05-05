@@ -51,20 +51,21 @@ PALETTE_INIT_MEMBER(subs_state, subs)
  *
  *************************************/
 
-ADDRESS_MAP_START(subs_state::main_map)
-	ADDRESS_MAP_GLOBAL_MASK(0x3fff)
-	AM_RANGE(0x0000, 0x01ff) AM_RAM
-	AM_RANGE(0x0000, 0x0000) AM_WRITE(noise_reset_w)
-	AM_RANGE(0x0000, 0x0007) AM_READ(control_r)
-	AM_RANGE(0x0020, 0x0020) AM_WRITE(steer_reset_w)
-	AM_RANGE(0x0020, 0x0027) AM_READ(coin_r)
+void subs_state::main_map(address_map &map)
+{
+	map.global_mask(0x3fff);
+	map(0x0000, 0x01ff).ram();
+	map(0x0000, 0x0000).w(this, FUNC(subs_state::noise_reset_w));
+	map(0x0000, 0x0007).r(this, FUNC(subs_state::control_r));
+	map(0x0020, 0x0020).w(this, FUNC(subs_state::steer_reset_w));
+	map(0x0020, 0x0027).r(this, FUNC(subs_state::coin_r));
 //  AM_RANGE(0x0040, 0x0040) AM_WRITE(timer_reset_w)
-	AM_RANGE(0x0060, 0x0063) AM_READ(options_r)
-	AM_RANGE(0x0060, 0x006f) AM_DEVWRITE("latch", ls259_device, write_a0)
-	AM_RANGE(0x0090, 0x009f) AM_SHARE("spriteram")
-	AM_RANGE(0x0800, 0x0bff) AM_RAM AM_SHARE("videoram")
-	AM_RANGE(0x2000, 0x3fff) AM_ROM
-ADDRESS_MAP_END
+	map(0x0060, 0x0063).r(this, FUNC(subs_state::options_r));
+	map(0x0060, 0x006f).w("latch", FUNC(ls259_device::write_a0));
+	map(0x0090, 0x009f).share("spriteram");
+	map(0x0800, 0x0bff).ram().share("videoram");
+	map(0x2000, 0x3fff).rom();
+}
 
 
 
@@ -214,8 +215,8 @@ MACHINE_CONFIG_START(subs_state::subs)
 	MCFG_SOUND_ROUTE(1, "rspeaker", 1.0)
 
 	MCFG_DEVICE_ADD("latch", LS259, 0) // C9
-	MCFG_ADDRESSABLE_LATCH_Q0_OUT_CB(WRITELINE(subs_state, lamp1_w))
-	MCFG_ADDRESSABLE_LATCH_Q1_OUT_CB(WRITELINE(subs_state, lamp2_w))
+	MCFG_ADDRESSABLE_LATCH_Q0_OUT_CB(OUTPUT("led0")) MCFG_DEVCB_INVERT // START LAMP 1
+	MCFG_ADDRESSABLE_LATCH_Q1_OUT_CB(OUTPUT("led1")) MCFG_DEVCB_INVERT // START LAMP 2
 	MCFG_ADDRESSABLE_LATCH_Q2_OUT_CB(DEVWRITELINE("discrete", discrete_device, write_line<SUBS_SONAR2_EN>))
 	MCFG_ADDRESSABLE_LATCH_Q3_OUT_CB(DEVWRITELINE("discrete", discrete_device, write_line<SUBS_SONAR1_EN>))
 	// Schematics show crash and explode reversed.  But this is proper.

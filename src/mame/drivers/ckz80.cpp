@@ -278,11 +278,12 @@ DRIVER_INIT_MEMBER(ckz80_state, master)
 
 // Master
 
-ADDRESS_MAP_START(ckz80_state::master_map)
-	AM_RANGE(0x0000, 0x1fff) AM_MIRROR(0x6000) AM_ROM AM_REGION("maincpu", 0) // _A15
-	AM_RANGE(0xa000, 0xa000) AM_MIRROR(0x1fff) AM_READWRITE(master_input_r, master_control_w) // A13
-	AM_RANGE(0xc000, 0xc7ff) AM_MIRROR(0x3800) AM_RAM // A14
-ADDRESS_MAP_END
+void ckz80_state::master_map(address_map &map)
+{
+	map(0x0000, 0x1fff).mirror(0x6000).rom().region("maincpu", 0); // _A15
+	map(0xa000, 0xa000).mirror(0x1fff).rw(this, FUNC(ckz80_state::master_input_r), FUNC(ckz80_state::master_control_w)); // A13
+	map(0xc000, 0xc7ff).mirror(0x3800).ram(); // A14
+}
 
 // PCB design is prone to bus conflicts, but should be fine if software obeys
 WRITE8_MEMBER(ckz80_state::master_trampoline_w)
@@ -306,9 +307,10 @@ READ8_MEMBER(ckz80_state::master_trampoline_r)
 	return data;
 }
 
-ADDRESS_MAP_START(ckz80_state::master_trampoline)
-	AM_RANGE(0x0000, 0xffff) AM_READWRITE(master_trampoline_r, master_trampoline_w)
-ADDRESS_MAP_END
+void ckz80_state::master_trampoline(address_map &map)
+{
+	map(0x0000, 0xffff).rw(this, FUNC(ckz80_state::master_trampoline_r), FUNC(ckz80_state::master_trampoline_w));
+}
 
 
 
@@ -451,7 +453,7 @@ MACHINE_CONFIG_START(ckz80_state::master)
 	MCFG_SPEAKER_STANDARD_MONO("speaker")
 	MCFG_SOUND_ADD("dac", DAC_2BIT_BINARY_WEIGHTED_ONES_COMPLEMENT, 0) MCFG_SOUND_ROUTE(ALL_OUTPUTS, "speaker", 0.25)
 	MCFG_DEVICE_ADD("vref", VOLTAGE_REGULATOR, 0) MCFG_VOLTAGE_REGULATOR_OUTPUT(5.0)
-	MCFG_SOUND_ROUTE_EX(0, "dac", 1.0, DAC_VREF_POS_INPUT) MCFG_SOUND_ROUTE_EX(0, "dac", -1.0, DAC_VREF_NEG_INPUT)
+	MCFG_SOUND_ROUTE(0, "dac", 1.0, DAC_VREF_POS_INPUT) MCFG_SOUND_ROUTE(0, "dac", -1.0, DAC_VREF_NEG_INPUT)
 MACHINE_CONFIG_END
 
 

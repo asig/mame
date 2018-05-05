@@ -28,17 +28,17 @@
 /* seems to be defined on mingw-gcc */
 #undef i386
 
-DEFINE_DEVICE_TYPE(I386,        i386_device,        "i386",        "I386")
-DEFINE_DEVICE_TYPE(I386SX,      i386sx_device,      "i386sx",      "I386SX")
-DEFINE_DEVICE_TYPE(I486,        i486_device,        "i486",        "I486")
-DEFINE_DEVICE_TYPE(I486DX4,     i486dx4_device,     "i486dx4",     "I486DX4")
-DEFINE_DEVICE_TYPE(PENTIUM,     pentium_device,     "pentium",     "Pentium")
+DEFINE_DEVICE_TYPE(I386,        i386_device,        "i386",        "Intel I386")
+DEFINE_DEVICE_TYPE(I386SX,      i386sx_device,      "i386sx",      "Intel I386SX")
+DEFINE_DEVICE_TYPE(I486,        i486_device,        "i486",        "Intel I486")
+DEFINE_DEVICE_TYPE(I486DX4,     i486dx4_device,     "i486dx4",     "Intel I486DX4")
+DEFINE_DEVICE_TYPE(PENTIUM,     pentium_device,     "pentium",     "Intel Pentium")
 DEFINE_DEVICE_TYPE(MEDIAGX,     mediagx_device,     "mediagx",     "Cyrix MediaGX")
-DEFINE_DEVICE_TYPE(PENTIUM_PRO, pentium_pro_device, "pentium_pro", "Pentium Pro")
-DEFINE_DEVICE_TYPE(PENTIUM_MMX, pentium_mmx_device, "pentium_mmx", "Pentium MMX")
-DEFINE_DEVICE_TYPE(PENTIUM2,    pentium2_device,    "pentium2",    "Pentium II")
-DEFINE_DEVICE_TYPE(PENTIUM3,    pentium3_device,    "pentium3",    "Pentium III")
-DEFINE_DEVICE_TYPE(PENTIUM4,    pentium4_device,    "pentium4",    "Pentium 4")
+DEFINE_DEVICE_TYPE(PENTIUM_PRO, pentium_pro_device, "pentium_pro", "Intel Pentium Pro")
+DEFINE_DEVICE_TYPE(PENTIUM_MMX, pentium_mmx_device, "pentium_mmx", "Intel Pentium MMX")
+DEFINE_DEVICE_TYPE(PENTIUM2,    pentium2_device,    "pentium2",    "Intel Pentium II")
+DEFINE_DEVICE_TYPE(PENTIUM3,    pentium3_device,    "pentium3",    "Intel Pentium III")
+DEFINE_DEVICE_TYPE(PENTIUM4,    pentium4_device,    "pentium4",    "Intel Pentium 4")
 
 
 i386_device::i386_device(const machine_config &mconfig, const char *tag, device_t *owner, uint32_t clock)
@@ -1720,7 +1720,8 @@ void i386_device::i386_protected_mode_call(uint16_t seg, uint32_t off, int indir
 		}
 		if (operand32 != 0)  // if 32-bit
 		{
-			if(i386_limit_check(SS, REG32(ESP) - 8))
+			uint32_t offset = (STACK_32BIT ? REG32(ESP) - 8 : (REG16(SP) - 8) & 0xffff);
+			if(i386_limit_check(SS, offset))
 			{
 				logerror("CALL (%08x): Stack has no room for return address.\n",m_pc);
 				FAULT(FAULT_SS,0)  // #SS(0)
@@ -1728,7 +1729,8 @@ void i386_device::i386_protected_mode_call(uint16_t seg, uint32_t off, int indir
 		}
 		else
 		{
-			if(i386_limit_check(SS, (REG16(SP) - 4) & 0xffff))
+			uint32_t offset = (STACK_32BIT ? REG32(ESP) - 4 : (REG16(SP) - 4) & 0xffff);
+			if(i386_limit_check(SS, offset))
 			{
 				logerror("CALL (%08x): Stack has no room for return address.\n",m_pc);
 				FAULT(FAULT_SS,0)  // #SS(0)
@@ -1978,7 +1980,8 @@ void i386_device::i386_protected_mode_call(uint16_t seg, uint32_t off, int indir
 					/* same privilege */
 					if (operand32 != 0)  // if 32-bit
 					{
-						if(i386_limit_check(SS, REG32(ESP) - 8))
+						uint32_t stkoff = (STACK_32BIT ? REG32(ESP) - 8 : (REG16(SP) - 8) & 0xffff);
+						if(i386_limit_check(SS, stkoff))
 						{
 							logerror("CALL: Stack has no room for return address.\n");
 							FAULT(FAULT_SS,0) // #SS(0)
@@ -1988,7 +1991,8 @@ void i386_device::i386_protected_mode_call(uint16_t seg, uint32_t off, int indir
 					}
 					else
 					{
-						if(i386_limit_check(SS, (REG16(SP) - 4) & 0xffff))
+						uint32_t stkoff = (STACK_32BIT ? REG32(ESP) - 4 : (REG16(SP) - 4) & 0xffff);
+						if(i386_limit_check(SS, stkoff))
 						{
 							logerror("CALL: Stack has no room for return address.\n");
 							FAULT(FAULT_SS,0) // #SS(0)
@@ -3329,7 +3333,7 @@ void i386_device::i386_common_init()
 	m_ferr_handler.resolve_safe();
 	m_ferr_handler(0);
 
-	m_icountptr = &m_cycles;
+	set_icountptr(m_cycles);
 }
 
 void i386_device::device_start()
@@ -3964,7 +3968,7 @@ void i386_device::execute_run()
 		m_segment_prefix = 0;
 		m_prev_eip = m_eip;
 
-		debugger_instruction_hook(this, m_pc);
+		debugger_instruction_hook(m_pc);
 
 		if(m_delayed_interrupt_enable != 0)
 		{
@@ -4012,9 +4016,9 @@ int i386_device::get_mode() const
 	return m_sreg[CS].d ? 32 : 16;
 }
 
-util::disasm_interface *i386_device::create_disassembler()
+std::unique_ptr<util::disasm_interface> i386_device::create_disassembler()
 {
-	return new i386_disassembler(this);
+	return std::make_unique<i386_disassembler>(this);
 }
 
 /*****************************************************************************/

@@ -87,11 +87,12 @@ DEFINE_DEVICE_TYPE(PPU_2C05_04, ppu2c05_04_device, "ppu2c05_04", "2C05_04 PPU")
 
 
 // default address map
-ADDRESS_MAP_START(ppu2c0x_device::ppu2c0x)
-	AM_RANGE(0x0000, 0x3eff) AM_RAM
-	AM_RANGE(0x3f00, 0x3fff) AM_READWRITE(palette_read, palette_write)
+void ppu2c0x_device::ppu2c0x(address_map &map)
+{
+	map(0x0000, 0x3eff).ram();
+	map(0x3f00, 0x3fff).rw(this, FUNC(ppu2c0x_device::palette_read), FUNC(ppu2c0x_device::palette_write));
 //  AM_RANGE(0x0000, 0x3fff) AM_RAM
-ADDRESS_MAP_END
+}
 
 //-------------------------------------------------
 //  memory_space_config - return a description of
@@ -106,12 +107,6 @@ device_memory_interface::space_config_vector ppu2c0x_device::memory_space_config
 }
 
 
-// static
-void ppu2c0x_device::set_nmi_delegate(device_t &device, nmi_delegate &&cb)
-{
-	ppu2c0x_device &dev = downcast<ppu2c0x_device &>(device);
-	dev.m_nmi_callback_proc = std::move(cb);
-}
 //-------------------------------------------------
 //  ppu2c0x_device - constructor
 //-------------------------------------------------

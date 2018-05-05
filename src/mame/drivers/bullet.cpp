@@ -607,58 +607,62 @@ READ8_MEMBER( bulletf_state::hwsts_r )
 //  ADDRESS_MAP( bullet_mem )
 //-------------------------------------------------
 
-ADDRESS_MAP_START(bullet_state::bullet_mem)
-	AM_RANGE(0x0000, 0xffff) AM_READWRITE(mreq_r, mreq_w)
-ADDRESS_MAP_END
+void bullet_state::bullet_mem(address_map &map)
+{
+	map(0x0000, 0xffff).rw(this, FUNC(bullet_state::mreq_r), FUNC(bullet_state::mreq_w));
+}
 
 
 //-------------------------------------------------
 //  ADDRESS_MAP( bullet_io )
 //-------------------------------------------------
 
-ADDRESS_MAP_START(bullet_state::bullet_io)
-	ADDRESS_MAP_GLOBAL_MASK(0x1f)
-	AM_RANGE(0x00, 0x03) AM_DEVREADWRITE(Z80DART_TAG, z80dart_device, ba_cd_r, ba_cd_w)
-	AM_RANGE(0x04, 0x07) AM_DEVREADWRITE(Z80PIO_TAG, z80pio_device, read, write)
-	AM_RANGE(0x08, 0x0b) AM_DEVREADWRITE(Z80CTC_TAG, z80ctc_device, read, write)
-	AM_RANGE(0x0c, 0x0c) AM_MIRROR(0x03) AM_READWRITE(win_r, wstrobe_w)
-	AM_RANGE(0x10, 0x13) AM_DEVREADWRITE(MB8877_TAG, mb8877_device, read, write)
-	AM_RANGE(0x14, 0x14) AM_DEVREADWRITE(Z80DMA_TAG, z80dma_device, read, write)
-	AM_RANGE(0x15, 0x15) AM_READWRITE(brom_r, brom_w)
-	AM_RANGE(0x16, 0x16) AM_WRITE(exdsk_w)
-	AM_RANGE(0x17, 0x17) AM_WRITE(exdma_w)
-	AM_RANGE(0x18, 0x18) AM_WRITE(hdcon_w)
-	AM_RANGE(0x19, 0x19) AM_READ(info_r)
-	AM_RANGE(0x1a, 0x1a) AM_WRITE(segst_w)
-ADDRESS_MAP_END
+void bullet_state::bullet_io(address_map &map)
+{
+	map.global_mask(0x1f);
+	map(0x00, 0x03).rw(m_dart, FUNC(z80dart_device::ba_cd_r), FUNC(z80dart_device::ba_cd_w));
+	map(0x04, 0x07).rw(Z80PIO_TAG, FUNC(z80pio_device::read), FUNC(z80pio_device::write));
+	map(0x08, 0x0b).rw(m_ctc, FUNC(z80ctc_device::read), FUNC(z80ctc_device::write));
+	map(0x0c, 0x0c).mirror(0x03).rw(this, FUNC(bullet_state::win_r), FUNC(bullet_state::wstrobe_w));
+	map(0x10, 0x13).rw(m_fdc, FUNC(mb8877_device::read), FUNC(mb8877_device::write));
+	map(0x14, 0x14).rw(m_dmac, FUNC(z80dma_device::read), FUNC(z80dma_device::write));
+	map(0x15, 0x15).rw(this, FUNC(bullet_state::brom_r), FUNC(bullet_state::brom_w));
+	map(0x16, 0x16).w(this, FUNC(bullet_state::exdsk_w));
+	map(0x17, 0x17).w(this, FUNC(bullet_state::exdma_w));
+	map(0x18, 0x18).w(this, FUNC(bullet_state::hdcon_w));
+	map(0x19, 0x19).r(this, FUNC(bullet_state::info_r));
+	map(0x1a, 0x1a).w(this, FUNC(bullet_state::segst_w));
+}
 
 
 //-------------------------------------------------
 //  ADDRESS_MAP( bulletf_mem )
 //-------------------------------------------------
 
-ADDRESS_MAP_START(bulletf_state::bulletf_mem)
-	AM_RANGE(0x0000, 0xffff) AM_READWRITE(mreq_r, mreq_w)
-ADDRESS_MAP_END
+void bulletf_state::bulletf_mem(address_map &map)
+{
+	map(0x0000, 0xffff).rw(this, FUNC(bulletf_state::mreq_r), FUNC(bulletf_state::mreq_w));
+}
 
 
 //-------------------------------------------------
 //  ADDRESS_MAP( bulletf_io )
 //-------------------------------------------------
 
-ADDRESS_MAP_START(bulletf_state::bulletf_io)
-	ADDRESS_MAP_GLOBAL_MASK(0x3f)
-	AM_RANGE(0x00, 0x03) AM_DEVREADWRITE(Z80DART_TAG, z80dart_device, ba_cd_r, ba_cd_w)
-	AM_RANGE(0x04, 0x07) AM_DEVREADWRITE(Z80PIO_TAG, z80pio_device, read, write)
-	AM_RANGE(0x08, 0x0b) AM_DEVREADWRITE(Z80CTC_TAG, z80ctc_device, read, write)
-	AM_RANGE(0x10, 0x13) AM_DEVREADWRITE(MB8877_TAG, mb8877_device, read, write)
-	AM_RANGE(0x14, 0x14) AM_WRITE(xdma0_w)
-	AM_RANGE(0x16, 0x16) AM_WRITE(xfdc_w)
-	AM_RANGE(0x17, 0x17) AM_WRITE(mbank_w)
-	AM_RANGE(0x19, 0x19) AM_READWRITE(scsi_r, scsi_w)
-	AM_RANGE(0x1a, 0x1a) AM_DEVREADWRITE(Z80DMA_TAG, z80dma_device, read, write)
-	AM_RANGE(0x1b, 0x1b) AM_READ(hwsts_r)
-ADDRESS_MAP_END
+void bulletf_state::bulletf_io(address_map &map)
+{
+	map.global_mask(0x3f);
+	map(0x00, 0x03).rw(m_dart, FUNC(z80dart_device::ba_cd_r), FUNC(z80dart_device::ba_cd_w));
+	map(0x04, 0x07).rw(Z80PIO_TAG, FUNC(z80pio_device::read), FUNC(z80pio_device::write));
+	map(0x08, 0x0b).rw(m_ctc, FUNC(z80ctc_device::read), FUNC(z80ctc_device::write));
+	map(0x10, 0x13).rw(m_fdc, FUNC(mb8877_device::read), FUNC(mb8877_device::write));
+	map(0x14, 0x14).w(this, FUNC(bulletf_state::xdma0_w));
+	map(0x16, 0x16).w(this, FUNC(bulletf_state::xfdc_w));
+	map(0x17, 0x17).w(this, FUNC(bulletf_state::mbank_w));
+	map(0x19, 0x19).rw(this, FUNC(bulletf_state::scsi_r), FUNC(bulletf_state::scsi_w));
+	map(0x1a, 0x1a).rw(m_dmac, FUNC(z80dma_device::read), FUNC(z80dma_device::write));
+	map(0x1b, 0x1b).r(this, FUNC(bulletf_state::hwsts_r));
+}
 
 
 
@@ -930,20 +934,23 @@ WRITE_LINE_MEMBER( bulletf_state::cstrb_w )
 	m_centronics->write_strobe(!state);
 }
 
-static SLOT_INTERFACE_START( bullet_525_floppies )
-	SLOT_INTERFACE( "525sd", FLOPPY_525_SD )
-	SLOT_INTERFACE( "525dd", FLOPPY_525_DD )
-	SLOT_INTERFACE( "525qd", FLOPPY_525_QD )
-SLOT_INTERFACE_END
+static void bullet_525_floppies(device_slot_interface &device)
+{
+	device.option_add("525sd", FLOPPY_525_SD);
+	device.option_add("525dd", FLOPPY_525_DD);
+	device.option_add("525qd", FLOPPY_525_QD);
+}
 
-static SLOT_INTERFACE_START( bullet_8_floppies )
-	SLOT_INTERFACE( "8dssd", FLOPPY_8_DSSD )
-	SLOT_INTERFACE( "8dsdd", FLOPPY_8_DSDD )
-SLOT_INTERFACE_END
+static void bullet_8_floppies(device_slot_interface &device)
+{
+	device.option_add("8dssd", FLOPPY_8_DSSD);
+	device.option_add("8dsdd", FLOPPY_8_DSDD);
+}
 
-static SLOT_INTERFACE_START( bullet_35_floppies )
-	SLOT_INTERFACE( "35dd", FLOPPY_35_DD )
-SLOT_INTERFACE_END
+static void bullet_35_floppies(device_slot_interface &device)
+{
+	device.option_add("35dd", FLOPPY_35_DD);
+}
 
 WRITE_LINE_MEMBER( bullet_state::fdc_drq_w )
 {
@@ -1161,7 +1168,7 @@ MACHINE_CONFIG_START(bullet_state::bullet)
 
 	MCFG_RS232_PORT_ADD(RS232_A_TAG, default_rs232_devices, "terminal")
 	MCFG_RS232_RXD_HANDLER(DEVWRITELINE(Z80DART_TAG, z80dart_device, rxa_w))
-	MCFG_DEVICE_CARD_DEVICE_INPUT_DEFAULTS("terminal", terminal)
+	MCFG_SLOT_OPTION_DEVICE_INPUT_DEFAULTS("terminal", terminal)
 
 	MCFG_RS232_PORT_ADD(RS232_B_TAG, default_rs232_devices, nullptr)
 	MCFG_RS232_RXD_HANDLER(DEVWRITELINE(Z80DART_TAG, z80dart_device, rxb_w))
@@ -1242,7 +1249,7 @@ MACHINE_CONFIG_START(bulletf_state::bulletf)
 
 	MCFG_RS232_PORT_ADD(RS232_A_TAG, default_rs232_devices, "terminal")
 	MCFG_RS232_RXD_HANDLER(DEVWRITELINE(Z80DART_TAG, z80dart_device, rxa_w))
-	MCFG_DEVICE_CARD_DEVICE_INPUT_DEFAULTS("terminal", terminal)
+	MCFG_SLOT_OPTION_DEVICE_INPUT_DEFAULTS("terminal", terminal)
 
 	MCFG_RS232_PORT_ADD(RS232_B_TAG, default_rs232_devices, nullptr)
 	MCFG_RS232_RXD_HANDLER(DEVWRITELINE(Z80DART_TAG, z80dart_device, rxb_w))

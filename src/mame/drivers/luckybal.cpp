@@ -322,17 +322,19 @@ public:
 *             Memory Map              *
 **************************************/
 
-ADDRESS_MAP_START(luckybal_state::main_map)
-	AM_RANGE(0x0000, 0x57ff) AM_ROM
-	AM_RANGE(0xe000, 0xffff) AM_RAM  // 6264 SRAM
-ADDRESS_MAP_END
+void luckybal_state::main_map(address_map &map)
+{
+	map(0x0000, 0x57ff).rom();
+	map(0xe000, 0xffff).ram();  // 6264 SRAM
+}
 
-ADDRESS_MAP_START(luckybal_state::main_io)
-	ADDRESS_MAP_GLOBAL_MASK(0xff)
-	AM_RANGE(0x90, 0x90) AM_WRITE(port90_bitswap_w)
-	AM_RANGE(0xc0, 0xc3) AM_READWRITE(ppi_bitswap_r, ppi_bitswap_w)
-	AM_RANGE(0xe0, 0xe3) AM_DEVREADWRITE("v9938", v9938_device, read, write)
-ADDRESS_MAP_END
+void luckybal_state::main_io(address_map &map)
+{
+	map.global_mask(0xff);
+	map(0x90, 0x90).w(this, FUNC(luckybal_state::port90_bitswap_w));
+	map(0xc0, 0xc3).rw(this, FUNC(luckybal_state::ppi_bitswap_r), FUNC(luckybal_state::ppi_bitswap_w));
+	map(0xe0, 0xe3).rw(m_v9938, FUNC(v9938_device::read), FUNC(v9938_device::write));
+}
 /*
 [:maincpu] ':maincpu' (00006): unmapped io memory write to 0010 = 00 & FF
 [:maincpu] ':maincpu' (00009): unmapped io memory read from 0018 & FF
@@ -548,7 +550,7 @@ MACHINE_CONFIG_START(luckybal_state::luckybal)
 	MCFG_SPEAKER_STANDARD_MONO("speaker")
 	MCFG_SOUND_ADD("dac", DAC08, 0) MCFG_SOUND_ROUTE(ALL_OUTPUTS, "speaker", 0.5) // DAC 08
 	MCFG_DEVICE_ADD("vref", VOLTAGE_REGULATOR, 0) MCFG_VOLTAGE_REGULATOR_OUTPUT(5.0)
-	MCFG_SOUND_ROUTE_EX(0, "dac", 1.0, DAC_VREF_POS_INPUT) MCFG_SOUND_ROUTE_EX(0, "dac", -1.0, DAC_VREF_NEG_INPUT)
+	MCFG_SOUND_ROUTE(0, "dac", 1.0, DAC_VREF_POS_INPUT) MCFG_SOUND_ROUTE(0, "dac", -1.0, DAC_VREF_NEG_INPUT)
 
 MACHINE_CONFIG_END
 

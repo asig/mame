@@ -95,12 +95,14 @@ WRITE_LINE_MEMBER( ct486_state::cs4031_hold )
 //  ADDRESS MAPS
 //**************************************************************************
 
-ADDRESS_MAP_START(ct486_state::ct486_map)
-ADDRESS_MAP_END
+void ct486_state::ct486_map(address_map &map)
+{
+}
 
-ADDRESS_MAP_START(ct486_state::ct486_io)
-	ADDRESS_MAP_UNMAP_HIGH
-ADDRESS_MAP_END
+void ct486_state::ct486_io(address_map &map)
+{
+	map.unmap_value_high();
+}
 
 
 //**************************************************************************
@@ -143,7 +145,7 @@ MACHINE_CONFIG_START(ct486_state::ct486)
 	MCFG_PC_KBDC_SLOT_ADD("pc_kbdc", "kbd", pc_at_keyboards, STR_KBD_MICROSOFT_NATURAL)
 
 	MCFG_DEVICE_ADD("isabus", ISA16, 0)
-	MCFG_ISA16_CPU(":maincpu")
+	MCFG_ISA16_CPU("maincpu")
 	MCFG_ISA_BUS_IOCHCK(DEVWRITELINE("cs4031", cs4031_device, iochck_w))
 	MCFG_ISA_OUT_IRQ2_CB(DEVWRITELINE("cs4031", cs4031_device, irq09_w))
 	MCFG_ISA_OUT_IRQ3_CB(DEVWRITELINE("cs4031", cs4031_device, irq03_w))

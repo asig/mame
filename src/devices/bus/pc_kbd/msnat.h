@@ -54,12 +54,10 @@ private:
 	DECLARE_WRITE8_MEMBER(p2_write);
 	DECLARE_READ8_MEMBER(p3_read);
 	DECLARE_WRITE8_MEMBER(p3_write);
-
-	void microsoft_natural_io(address_map &map);
 };
 
 
 // device type definition
-extern const device_type PC_KBD_MICROSOFT_NATURAL;
+DECLARE_DEVICE_TYPE(PC_KBD_MICROSOFT_NATURAL, pc_kbd_microsoft_natural_device)
 
 #endif // MAME_BUS_PC_KB_MSNAT_H

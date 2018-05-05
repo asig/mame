@@ -40,6 +40,7 @@ public:
 	DECLARE_DRIVER_INIT(touchgo);
 	DECLARE_DRIVER_INIT(snowboar);
 	DECLARE_DRIVER_INIT(alighunt);
+	DECLARE_DRIVER_INIT(wrally2);
 	TILE_GET_INFO_MEMBER(get_tile_info_gaelco2_screen0);
 	TILE_GET_INFO_MEMBER(get_tile_info_gaelco2_screen1);
 	TILE_GET_INFO_MEMBER(get_tile_info_gaelco2_screen0_dual);
@@ -71,7 +72,6 @@ public:
 protected:
 	required_device<m68000_device> m_maincpu;
 
-private:
 	uint32_t snowboard_latch;
 
 	uint16_t *m_videoram;

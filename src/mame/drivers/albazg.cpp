@@ -216,28 +216,30 @@ WRITE8_MEMBER(albazg_state::yumefuda_output_w)
 
 /***************************************************************************************/
 
-ADDRESS_MAP_START(albazg_state::main_map)
-	AM_RANGE(0x0000, 0x7fff) AM_ROM
-	AM_RANGE(0x8000, 0x9fff) AM_ROMBANK("bank1")
-	AM_RANGE(0xa7fc, 0xa7fc) AM_WRITE(prot_lock_w)
-	AM_RANGE(0xa7ff, 0xa7ff) AM_WRITE_PORT("EEPROMOUT")
-	AM_RANGE(0xaf80, 0xafff) AM_READWRITE(custom_ram_r, custom_ram_w) AM_SHARE("cus_ram")
-	AM_RANGE(0xb000, 0xb07f) AM_RAM_DEVWRITE("palette", palette_device, write8) AM_SHARE("palette")
-	AM_RANGE(0xb080, 0xb0ff) AM_RAM_DEVWRITE("palette", palette_device, write8_ext) AM_SHARE("palette_ext")
-	AM_RANGE(0xc000, 0xc3ff) AM_RAM_WRITE(yumefuda_vram_w) AM_SHARE("videoram")
-	AM_RANGE(0xd000, 0xd3ff) AM_RAM_WRITE(yumefuda_cram_w) AM_SHARE("colorram")
-	AM_RANGE(0xe000, 0xffff) AM_RAM
-ADDRESS_MAP_END
+void albazg_state::main_map(address_map &map)
+{
+	map(0x0000, 0x7fff).rom();
+	map(0x8000, 0x9fff).bankr("bank1");
+	map(0xa7fc, 0xa7fc).w(this, FUNC(albazg_state::prot_lock_w));
+	map(0xa7ff, 0xa7ff).portw("EEPROMOUT");
+	map(0xaf80, 0xafff).rw(this, FUNC(albazg_state::custom_ram_r), FUNC(albazg_state::custom_ram_w)).share("cus_ram");
+	map(0xb000, 0xb07f).ram().w("palette", FUNC(palette_device::write8)).share("palette");
+	map(0xb080, 0xb0ff).ram().w("palette", FUNC(palette_device::write8_ext)).share("palette_ext");
+	map(0xc000, 0xc3ff).ram().w(this, FUNC(albazg_state::yumefuda_vram_w)).share("videoram");
+	map(0xd000, 0xd3ff).ram().w(this, FUNC(albazg_state::yumefuda_cram_w)).share("colorram");
+	map(0xe000, 0xffff).ram();
+}
 
-ADDRESS_MAP_START(albazg_state::port_map)
-	ADDRESS_MAP_GLOBAL_MASK(0xff)
-	AM_RANGE(0x00, 0x00) AM_DEVWRITE("crtc", mc6845_device, address_w)
-	AM_RANGE(0x01, 0x01) AM_DEVWRITE("crtc", mc6845_device, register_w)
-	AM_RANGE(0x40, 0x40) AM_DEVREAD("aysnd", ay8910_device, data_r)
-	AM_RANGE(0x40, 0x41) AM_DEVWRITE("aysnd", ay8910_device, address_data_w)
-	AM_RANGE(0x80, 0x83) AM_DEVREADWRITE("ppi8255_0", i8255_device, read, write)
-	AM_RANGE(0xc0, 0xc0) AM_DEVWRITE("watchdog", watchdog_timer_device, reset_w)
-ADDRESS_MAP_END
+void albazg_state::port_map(address_map &map)
+{
+	map.global_mask(0xff);
+	map(0x00, 0x00).w("crtc", FUNC(mc6845_device::address_w));
+	map(0x01, 0x01).w("crtc", FUNC(mc6845_device::register_w));
+	map(0x40, 0x40).r("aysnd", FUNC(ay8910_device::data_r));
+	map(0x40, 0x41).w("aysnd", FUNC(ay8910_device::address_data_w));
+	map(0x80, 0x83).rw("ppi8255_0", FUNC(i8255_device::read), FUNC(i8255_device::write));
+	map(0xc0, 0xc0).w("watchdog", FUNC(watchdog_timer_device::reset_w));
+}
 
 /***************************************************************************************/
 
@@ -249,7 +251,7 @@ static INPUT_PORTS_START( yumefuda )
 	PORT_BIT( 0x08, IP_ACTIVE_LOW, IPT_OTHER ) PORT_NAME("Coin Out")
 	PORT_BIT( 0x10, IP_ACTIVE_LOW, IPT_OTHER ) PORT_NAME("Pay Out")
 	PORT_BIT( 0x20, IP_ACTIVE_LOW, IPT_SERVICE3 ) PORT_NAME("Init SW")
-	PORT_BIT( 0x40, IP_ACTIVE_LOW, IPT_SPECIAL ) PORT_READ_LINE_DEVICE_MEMBER("eeprom", eeprom_serial_93cxx_device, do_read)
+	PORT_BIT( 0x40, IP_ACTIVE_LOW, IPT_CUSTOM ) PORT_READ_LINE_DEVICE_MEMBER("eeprom", eeprom_serial_93cxx_device, do_read)
 	PORT_BIT( 0x80, IP_ACTIVE_LOW, IPT_UNUSED )
 
 	PORT_START("IN0")

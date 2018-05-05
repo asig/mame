@@ -38,6 +38,7 @@ public:
 		, m_maincpu(*this, "maincpu")
 		, m_r0_sound(*this, "r0sound")
 		, m_r1_sound(*this, "r1sound")
+		, m_digits(*this, "digit%u", 0U)
 	{ }
 
 	DECLARE_DRIVER_INIT(gts80);
@@ -59,22 +60,25 @@ private:
 	uint8_t m_lamprow;
 	uint8_t m_swrow;
 	virtual void machine_reset() override;
+	virtual void machine_start() override { m_digits.resolve(); }
 	required_device<cpu_device> m_maincpu;
 	optional_device<gottlieb_sound_r0_device> m_r0_sound;
 	optional_device<gottlieb_sound_r1_device> m_r1_sound;
+	output_finder<56> m_digits;
 };
 
-ADDRESS_MAP_START(gts80_state::gts80_map)
-	ADDRESS_MAP_GLOBAL_MASK(0x3fff)
-	AM_RANGE(0x0000, 0x017f) AM_RAM
-	AM_RANGE(0x0200, 0x027f) AM_DEVREADWRITE("riot1", riot6532_device, read, write)
-	AM_RANGE(0x0280, 0x02ff) AM_DEVREADWRITE("riot2", riot6532_device, read, write)
-	AM_RANGE(0x0300, 0x037f) AM_DEVREADWRITE("riot3", riot6532_device, read, write)
-	AM_RANGE(0x1000, 0x17ff) AM_ROM
-	AM_RANGE(0x1800, 0x18ff) AM_RAM AM_SHARE("nvram") // 5101L-1 256x4
-	AM_RANGE(0x2000, 0x2fff) AM_ROM
-	AM_RANGE(0x3000, 0x3fff) AM_ROM
-ADDRESS_MAP_END
+void gts80_state::gts80_map(address_map &map)
+{
+	map.global_mask(0x3fff);
+	map(0x0000, 0x017f).ram();
+	map(0x0200, 0x027f).rw("riot1", FUNC(riot6532_device::read), FUNC(riot6532_device::write));
+	map(0x0280, 0x02ff).rw("riot2", FUNC(riot6532_device::read), FUNC(riot6532_device::write));
+	map(0x0300, 0x037f).rw("riot3", FUNC(riot6532_device::read), FUNC(riot6532_device::write));
+	map(0x1000, 0x17ff).rom();
+	map(0x1800, 0x18ff).ram().share("nvram"); // 5101L-1 256x4
+	map(0x2000, 0x2fff).rom();
+	map(0x3000, 0x3fff).rom();
+}
 
 static INPUT_PORTS_START( gts80 )
 	PORT_START("DSW.0")
@@ -305,15 +309,15 @@ WRITE8_MEMBER( gts80_state::port2a_w )
 	{
 		case 0x10: // player 1&2
 			if (!BIT(m_segment, 7)) seg2 |= 0x300; // put '1' in the middle
-			output().set_digit_value(data & 15, seg2);
+			m_digits[data & 15] = seg2;
 			break;
 		case 0x20: // player 3&4
 			if (!BIT(m_segment, 7)) seg2 |= 0x300; // put '1' in the middle
-			output().set_digit_value((data & 15)+20, seg2);
+			m_digits[(data & 15)+20] = seg2;
 			break;
 		case 0x40: // credits & balls
 			if (!BIT(m_segment, 7)) m_segment = 1; // turn '1' back to normal
-			output().set_digit_value((data & 15)+40, patterns[m_segment & 15]);
+			m_digits[(data & 15)+40] = patterns[m_segment & 15];
 			break;
 	}
 }
@@ -321,7 +325,7 @@ WRITE8_MEMBER( gts80_state::port2a_w )
 //d0-3 bcd data; d4-6 = centre segment; d7 = dipsw enable
 WRITE8_MEMBER( gts80_state::port2b_w )
 {
-	m_segment = data;//printf("%s:%X ",machine().describe_context(),data);
+	m_segment = data;//printf("%s:%X ",machine().describe_context().c_str(),data);
 }
 
 // solenoids

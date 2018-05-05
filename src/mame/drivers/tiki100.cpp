@@ -293,15 +293,17 @@ WRITE8_MEMBER( tiki100_state::system_w )
 
 /* Memory Maps */
 
-ADDRESS_MAP_START(tiki100_state::tiki100_mem)
-	ADDRESS_MAP_UNMAP_HIGH
-	AM_RANGE(0x0000, 0xffff) AM_READWRITE(mrq_r, mrq_w)
-ADDRESS_MAP_END
+void tiki100_state::tiki100_mem(address_map &map)
+{
+	map.unmap_value_high();
+	map(0x0000, 0xffff).rw(this, FUNC(tiki100_state::mrq_r), FUNC(tiki100_state::mrq_w));
+}
 
-ADDRESS_MAP_START(tiki100_state::tiki100_io)
-	ADDRESS_MAP_UNMAP_HIGH
-	AM_RANGE(0x0000, 0xffff) AM_READWRITE(iorq_r, iorq_w)
-ADDRESS_MAP_END
+void tiki100_state::tiki100_io(address_map &map)
+{
+	map.unmap_value_high();
+	map(0x0000, 0xffff).rw(this, FUNC(tiki100_state::iorq_r), FUNC(tiki100_state::iorq_w));
+}
 
 /* Input Ports */
 
@@ -626,11 +628,12 @@ FLOPPY_FORMATS_MEMBER( tiki100_state::floppy_formats )
 	FLOPPY_TIKI100_FORMAT
 FLOPPY_FORMATS_END
 
-static SLOT_INTERFACE_START( tiki100_floppies )
-	SLOT_INTERFACE( "525ssdd", FLOPPY_525_SSDD )
-	SLOT_INTERFACE( "525dd", FLOPPY_525_DD ) // Tead FD-55A
-	SLOT_INTERFACE( "525qd", FLOPPY_525_QD ) // Teac FD-55F
-SLOT_INTERFACE_END
+static void tiki100_floppies(device_slot_interface &device)
+{
+	device.option_add("525ssdd", FLOPPY_525_SSDD);
+	device.option_add("525dd", FLOPPY_525_DD); // Tead FD-55A
+	device.option_add("525qd", FLOPPY_525_QD); // Teac FD-55F
+}
 
 /* AY-3-8912 Interface */
 

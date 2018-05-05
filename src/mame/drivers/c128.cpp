@@ -670,54 +670,60 @@ READ8_MEMBER( c128_state::vic_colorram_r )
 //  ADDRESS_MAP( z80_mem )
 //-------------------------------------------------
 
-ADDRESS_MAP_START(c128_state::z80_mem)
-	AM_RANGE(0x0000, 0xffff) AM_READWRITE(z80_r, z80_w)
-ADDRESS_MAP_END
+void c128_state::z80_mem(address_map &map)
+{
+	map(0x0000, 0xffff).rw(this, FUNC(c128_state::z80_r), FUNC(c128_state::z80_w));
+}
 
 
 //-------------------------------------------------
 //  ADDRESS_MAP( z80_io )
 //-------------------------------------------------
 
-ADDRESS_MAP_START(c128_state::z80_io)
-	AM_RANGE(0x0000, 0xffff) AM_READWRITE(z80_io_r, z80_io_w)
-ADDRESS_MAP_END
+void c128_state::z80_io(address_map &map)
+{
+	map(0x0000, 0xffff).rw(this, FUNC(c128_state::z80_io_r), FUNC(c128_state::z80_io_w));
+}
 
 
 //-------------------------------------------------
 //  ADDRESS_MAP( m8502_mem )
 //-------------------------------------------------
 
-ADDRESS_MAP_START(c128_state::m8502_mem)
-	AM_RANGE(0x0000, 0xffff) AM_READWRITE(read, write)
-ADDRESS_MAP_END
+void c128_state::m8502_mem(address_map &map)
+{
+	map(0x0000, 0xffff).rw(this, FUNC(c128_state::read), FUNC(c128_state::write));
+}
 
 
 //-------------------------------------------------
 //  ADDRESS_MAP( vic_videoram_map )
 //-------------------------------------------------
 
-ADDRESS_MAP_START(c128_state::vic_videoram_map)
-	AM_RANGE(0x0000, 0x3fff) AM_READ(vic_videoram_r)
-ADDRESS_MAP_END
+void c128_state::vic_videoram_map(address_map &map)
+{
+	map(0x0000, 0x3fff).r(this, FUNC(c128_state::vic_videoram_r));
+}
 
 
 //-------------------------------------------------
 //  ADDRESS_MAP( vic_colorram_map )
 //-------------------------------------------------
 
-ADDRESS_MAP_START(c128_state::vic_colorram_map)
-	AM_RANGE(0x000, 0x3ff) AM_READ(vic_colorram_r)
-ADDRESS_MAP_END
+void c128_state::vic_colorram_map(address_map &map)
+{
+	map(0x000, 0x3ff).r(this, FUNC(c128_state::vic_colorram_r));
+}
 
 
 //-------------------------------------------------
 //  ADDRESS_MAP( vdc_videoram_map )
 //-------------------------------------------------
 
-ADDRESS_MAP_START(c128_state::vdc_videoram_map)
-	AM_RANGE(0x0000, 0xffff) AM_RAM
-ADDRESS_MAP_END
+void c128_state::vdc_videoram_map(address_map &map)
+{
+	map(0x0000, 0xffff).ram();
+}
 
 
 
@@ -1593,19 +1599,21 @@ WRITE_LINE_MEMBER( c128_state::exp_reset_w )
 //  SLOT_INTERFACE( c128dcr_iec_devices )
 //-------------------------------------------------
 
-SLOT_INTERFACE_START( c128dcr_iec_devices )
-	SLOT_INTERFACE("c1571", C1571)
-	SLOT_INTERFACE("c1571cr", C1571CR)
-SLOT_INTERFACE_END
+void c128dcr_iec_devices(device_slot_interface &device)
+{
+	device.option_add("c1571", C1571);
+	device.option_add("c1571cr", C1571CR);
+}
 
 
 //-------------------------------------------------
 //  SLOT_INTERFACE( c128d81_iec_devices )
 //-------------------------------------------------
 
-SLOT_INTERFACE_START( c128d81_iec_devices )
-	SLOT_INTERFACE("c1563", C1563)
-SLOT_INTERFACE_END
+void c128d81_iec_devices(device_slot_interface &device)
+{
+	device.option_add("c1563", C1563);
+}
 
 
 

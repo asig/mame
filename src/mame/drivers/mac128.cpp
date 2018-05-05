@@ -725,11 +725,8 @@ READ8_MEMBER(mac128_state::mac_via_in_b)
 {
 	int val = 0;
 	/* video beam in display (! VBLANK && ! HBLANK basically) */
-	if (machine().first_screen())
-	{
-		if (machine().first_screen()->vpos() >= MAC_V_VIS)
-			val |= 0x40;
-	}
+	if (m_screen->vpos() >= MAC_V_VIS)
+		val |= 0x40;
 
 	if (m_mouse_bit_y)  /* Mouse Y2 */
 		val |= 0x20;
@@ -740,7 +737,7 @@ READ8_MEMBER(mac128_state::mac_via_in_b)
 
 	val |= m_rtc->data_r();
 
-//  printf("VIA1 IN_B = %02x (PC %x)\n", val, m_maincpu->safe_pc());
+//  printf("%s VIA1 IN_B = %02x\n", machine().describe_context().c_str(), val);
 
 	return val;
 }
@@ -748,7 +745,7 @@ READ8_MEMBER(mac128_state::mac_via_in_b)
 WRITE8_MEMBER(mac128_state::mac_via_out_a)
 {
 	device_t *fdc = machine().device("fdc");
-//  printf("VIA1 OUT A: %02x (PC %x)\n", data, m_maincpu->safe_pc());
+//  printf("%s VIA1 OUT A: %02x (PC %x)\n", machine().describe_context().c_str(), data);
 
 	//set_scc_waitrequest((data & 0x80) >> 7);
 	m_screen_buffer = (data & 0x40) >> 6;
@@ -770,7 +767,7 @@ WRITE8_MEMBER(mac128_state::mac_via_out_a)
 
 WRITE8_MEMBER(mac128_state::mac_via_out_b)
 {
-//  printf("VIA1 OUT B: %02x (PC %x)\n", data, m_maincpu->safe_pc());
+//  printf("%s VIA1 OUT B: %02x\n", machine().describe_context().c_str(), data);
 
 	m_snd_enable = ((data & 0x80) == 0) ? true : false;
 	update_volume();
@@ -1278,27 +1275,29 @@ MAC_DRIVER_INIT(macplus, MODEL_MAC_PLUS)
     ADDRESS MAPS
 ***************************************************************************/
 
-ADDRESS_MAP_START(mac128_state::mac512ke_map)
-	AM_RANGE(0x000000, 0x3fffff) AM_READWRITE(ram_r, ram_w)
-	AM_RANGE(0x400000, 0x4fffff) AM_ROM AM_REGION("bootrom", 0) AM_MIRROR(0x100000)
-	AM_RANGE(0x600000, 0x6fffff) AM_READWRITE(ram_600000_r, ram_600000_w)
-	AM_RANGE(0x800000, 0x9fffff) AM_DEVREAD8(SCC_TAG, z80scc_device, cd_ab_r, 0xff00)
-	AM_RANGE(0xa00000, 0xbfffff) AM_DEVWRITE8(SCC_TAG, z80scc_device, cd_ab_w, 0x00ff)
-	AM_RANGE(0xc00000, 0xdfffff) AM_READWRITE(mac_iwm_r, mac_iwm_w)
-	AM_RANGE(0xe80000, 0xefffff) AM_READWRITE(mac_via_r, mac_via_w)
-	AM_RANGE(0xfffff0, 0xffffff) AM_READWRITE(mac_autovector_r, mac_autovector_w)
-ADDRESS_MAP_END
+void mac128_state::mac512ke_map(address_map &map)
+{
+	map(0x000000, 0x3fffff).rw(this, FUNC(mac128_state::ram_r), FUNC(mac128_state::ram_w));
+	map(0x400000, 0x4fffff).rom().region("bootrom", 0).mirror(0x100000);
+	map(0x600000, 0x6fffff).rw(this, FUNC(mac128_state::ram_600000_r), FUNC(mac128_state::ram_600000_w));
+	map(0x800000, 0x9fffff).r(m_scc, FUNC(z80scc_device::cd_ab_r)).umask16(0xff00);
+	map(0xa00000, 0xbfffff).w(m_scc, FUNC(z80scc_device::cd_ab_w)).umask16(0x00ff);
+	map(0xc00000, 0xdfffff).rw(this, FUNC(mac128_state::mac_iwm_r), FUNC(mac128_state::mac_iwm_w));
+	map(0xe80000, 0xefffff).rw(this, FUNC(mac128_state::mac_via_r), FUNC(mac128_state::mac_via_w));
+	map(0xfffff0, 0xffffff).rw(this, FUNC(mac128_state::mac_autovector_r), FUNC(mac128_state::mac_autovector_w));
+}
 
-ADDRESS_MAP_START(mac128_state::macplus_map)
-	AM_RANGE(0x000000, 0x3fffff) AM_READWRITE(ram_r, ram_w)
-	AM_RANGE(0x400000, 0x4fffff) AM_ROM AM_REGION("bootrom", 0)
-	AM_RANGE(0x580000, 0x5fffff) AM_READWRITE(macplus_scsi_r, macplus_scsi_w)
-	AM_RANGE(0x800000, 0x9fffff) AM_DEVREAD8(SCC_TAG, z80scc_device, cd_ab_r, 0xff00)
-	AM_RANGE(0xa00000, 0xbfffff) AM_DEVWRITE8(SCC_TAG, z80scc_device, cd_ab_w, 0x00ff)
-	AM_RANGE(0xc00000, 0xdfffff) AM_READWRITE(mac_iwm_r, mac_iwm_w)
-	AM_RANGE(0xe80000, 0xefffff) AM_READWRITE(mac_via_r, mac_via_w)
-	AM_RANGE(0xfffff0, 0xffffff) AM_READWRITE(mac_autovector_r, mac_autovector_w)
-ADDRESS_MAP_END
+void mac128_state::macplus_map(address_map &map)
+{
+	map(0x000000, 0x3fffff).rw(this, FUNC(mac128_state::ram_r), FUNC(mac128_state::ram_w));
+	map(0x400000, 0x4fffff).rom().region("bootrom", 0);
+	map(0x580000, 0x5fffff).rw(this, FUNC(mac128_state::macplus_scsi_r), FUNC(mac128_state::macplus_scsi_w));
+	map(0x800000, 0x9fffff).r(m_scc, FUNC(z80scc_device::cd_ab_r)).umask16(0xff00);
+	map(0xa00000, 0xbfffff).w(m_scc, FUNC(z80scc_device::cd_ab_w)).umask16(0x00ff);
+	map(0xc00000, 0xdfffff).rw(this, FUNC(mac128_state::mac_iwm_r), FUNC(mac128_state::mac_iwm_w));
+	map(0xe80000, 0xefffff).rw(this, FUNC(mac128_state::mac_via_r), FUNC(mac128_state::mac_via_w));
+	map(0xfffff0, 0xffffff).rw(this, FUNC(mac128_state::mac_autovector_r), FUNC(mac128_state::mac_autovector_w));
+}
 
 /***************************************************************************
     DEVICE CONFIG
@@ -1348,7 +1347,7 @@ MACHINE_CONFIG_START(mac128_state::mac512ke)
 	MCFG_SPEAKER_STANDARD_MONO("speaker")
 	MCFG_SOUND_ADD(DAC_TAG, DAC_8BIT_PWM, 0) MCFG_SOUND_ROUTE(ALL_OUTPUTS, "speaker", 0.25) // 2 x ls161
 	MCFG_DEVICE_ADD("vref", VOLTAGE_REGULATOR, 0) MCFG_VOLTAGE_REGULATOR_OUTPUT(5.0)
-	MCFG_SOUND_ROUTE_EX(0, DAC_TAG, 1.0, DAC_VREF_POS_INPUT) MCFG_SOUND_ROUTE_EX(0, DAC_TAG, -1.0, DAC_VREF_NEG_INPUT)
+	MCFG_SOUND_ROUTE(0, DAC_TAG, 1.0, DAC_VREF_POS_INPUT) MCFG_SOUND_ROUTE(0, DAC_TAG, -1.0, DAC_VREF_NEG_INPUT)
 
 	/* devices */
 	MCFG_RTC3430042_ADD("rtc", XTAL(32'768))

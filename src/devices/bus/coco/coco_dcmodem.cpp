@@ -11,7 +11,6 @@
 #include "emu.h"
 #include "coco_dcmodem.h"
 
-#include "cococart.h"
 #include "machine/mos6551.h"
 #include "bus/rs232/rs232.h"
 
@@ -98,10 +97,12 @@ MACHINE_CONFIG_END
 
 ROM_START(coco_dcmodem)
 	ROM_REGION(0x2000, "eprom", ROMREGION_ERASE00)
-	ROM_LOAD("Direct Connect Modem Pak (1985) (26-2228) (Tandy).rom", 0x0000, 0x2000, CRC(667bc55d) SHA1(703fe0aba4a603591078cb675ffd26a67c02df88))
+	ROM_LOAD("direct connect modem pak,1985,26-2228,tandy.rom", 0x0000, 0x2000, CRC(667bc55d) SHA1(703fe0aba4a603591078cb675ffd26a67c02df88))
 ROM_END
 
-DEFINE_DEVICE_TYPE(COCO_DCMODEM, coco_dc_modem_device, "coco_dcmodem", "CoCo Direct Connect Modem PAK")
+DEFINE_DEVICE_TYPE_PRIVATE(COCO_DCMODEM, device_cococart_interface, coco_dc_modem_device, "coco_dcmodem", "CoCo Direct Connect Modem PAK")
+template class device_finder<device_cococart_interface, false>;
+template class device_finder<device_cococart_interface, true>;
 
 
 //-------------------------------------------------

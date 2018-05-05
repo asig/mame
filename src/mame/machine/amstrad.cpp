@@ -2550,8 +2550,12 @@ void amstrad_state::update_psg()
 		break;
 	case 3:
 		{/* b6 and b7 = 1 ? : The register will now be selected and the user can read from or write to it.  The register will remain selected until another is chosen.*/
-			m_ay->address_w(space, 0, m_ppi_port_outputs[amstrad_ppi_PortA]);
-			m_prev_reg = m_ppi_port_outputs[amstrad_ppi_PortA];
+			/* ignore if an invalid PSG register is selected, usually when the PPI port directions are changed after selecting the PSG register */
+			if(m_ppi_port_outputs[amstrad_ppi_PortA] <= 15)
+			{
+				m_ay->address_w(space, 0, m_ppi_port_outputs[amstrad_ppi_PortA]);
+				m_prev_reg = m_ppi_port_outputs[amstrad_ppi_PortA];
+			}
 		}
 		break;
 	default:
@@ -2932,7 +2936,14 @@ void amstrad_state::enumerate_roms()
 	if (m_system_type == SYSTEM_PLUS || m_system_type == SYSTEM_GX4000)
 	{
 		uint8_t *crt = m_region_cart->base();
-		int bank_mask = (m_cart->get_rom_size() / 0x4000) - 1;
+		int bank_mask = 0x7ffff;
+
+		if (m_cart->get_rom_size() <= 0x20000)
+			bank_mask = 0x1ffff;
+		else if (m_cart->get_rom_size() <= 0x40000)
+			bank_mask = 0x3ffff;
+		else if (m_cart->get_rom_size() <= 0x80000)
+			bank_mask = 0x7ffff;
 
 		/* ROMs are stored on the inserted cartridge in the Plus/GX4000 */
 		for (int i = 0; i < 128; i++) // fill ROM table

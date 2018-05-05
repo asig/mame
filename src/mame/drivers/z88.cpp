@@ -148,17 +148,19 @@ UPD65031_MEMORY_UPDATE(z88_state::bankswitch_update)
 }
 
 
-ADDRESS_MAP_START(z88_state::z88_mem)
-	AM_RANGE(0x0000, 0x1fff) AM_READWRITE_BANK("bank1")
-	AM_RANGE(0x2000, 0x3fff) AM_READWRITE_BANK("bank2")
-	AM_RANGE(0x4000, 0x7fff) AM_READWRITE_BANK("bank3")
-	AM_RANGE(0x8000, 0xbfff) AM_READWRITE_BANK("bank4")
-	AM_RANGE(0xc000, 0xffff) AM_READWRITE_BANK("bank5")
-ADDRESS_MAP_END
+void z88_state::z88_mem(address_map &map)
+{
+	map(0x0000, 0x1fff).bankrw("bank1");
+	map(0x2000, 0x3fff).bankrw("bank2");
+	map(0x4000, 0x7fff).bankrw("bank3");
+	map(0x8000, 0xbfff).bankrw("bank4");
+	map(0xc000, 0xffff).bankrw("bank5");
+}
 
-ADDRESS_MAP_START(z88_state::z88_io)
-	AM_RANGE(0x0000, 0xffff)    AM_DEVREADWRITE("blink", upd65031_device, read, write)
-ADDRESS_MAP_END
+void z88_state::z88_io(address_map &map)
+{
+	map(0x0000, 0xffff).rw("blink", FUNC(upd65031_device::read), FUNC(upd65031_device::write));
+}
 
 
 
@@ -610,16 +612,17 @@ READ8_MEMBER(z88_state::kb_r)
 	return data;
 }
 
-static SLOT_INTERFACE_START(z88_cart)
-	SLOT_INTERFACE("32krom",     Z88_32K_ROM)        // 32KB ROM cart
-	SLOT_INTERFACE("128krom",    Z88_128K_ROM)       // 128KB ROM cart
-	SLOT_INTERFACE("256krom",    Z88_256K_ROM)       // 256KB ROM cart
-	SLOT_INTERFACE("32kram",     Z88_32K_RAM)        // 32KB RAM cart
-	SLOT_INTERFACE("128kram",    Z88_128K_RAM)       // 128KB RAM cart
-	SLOT_INTERFACE("512kram",    Z88_512K_RAM)       // 512KB RAM cart
-	SLOT_INTERFACE("1024kram",   Z88_1024K_RAM)      // 1024KB RAM cart
-	SLOT_INTERFACE("1024kflash", Z88_1024K_FLASH)    // 1024KB Flash cart
-SLOT_INTERFACE_END
+static void z88_cart(device_slot_interface &device)
+{
+	device.option_add("32krom",     Z88_32K_ROM);       // 32KB ROM cart
+	device.option_add("128krom",    Z88_128K_ROM);      // 128KB ROM cart
+	device.option_add("256krom",    Z88_256K_ROM);      // 256KB ROM cart
+	device.option_add("32kram",     Z88_32K_RAM);       // 32KB RAM cart
+	device.option_add("128kram",    Z88_128K_RAM);      // 128KB RAM cart
+	device.option_add("512kram",    Z88_512K_RAM);      // 512KB RAM cart
+	device.option_add("1024kram",   Z88_1024K_RAM);     // 1024KB RAM cart
+	device.option_add("1024kflash", Z88_1024K_FLASH);   // 1024KB Flash cart
+}
 
 MACHINE_CONFIG_START(z88_state::z88)
 	/* basic machine hardware */

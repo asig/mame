@@ -6,7 +6,7 @@
     Williams System 4
 
     Phoenix and Pokerino are listed as System 4 systems, but use System 3 roms.
-    They have been moved to s3.c, and are working there.
+    They have been moved to s3.cpp, and are working there.
 
     The "Shuffle" games consist of a flat board with an air-driven puck and 10
     bowling pins. You must push the puck as if it was a bowling ball, and score
@@ -56,6 +56,7 @@ public:
 		, m_pia28(*this, "pia28")
 		, m_pia30(*this, "pia30")
 		, m_pias(*this, "pias")
+		, m_digits(*this, "digit%u", 0U)
 	{ }
 
 	DECLARE_READ8_MEMBER(sound_r);
@@ -94,6 +95,7 @@ private:
 	uint8_t m_kbdrow;
 	bool m_data_ok;
 	bool m_chimes;
+	virtual void machine_start() override { m_digits.resolve(); }
 	required_device<cpu_device> m_maincpu;
 	optional_device<cpu_device> m_audiocpu;
 	required_device<pia6821_device> m_pia22;
@@ -101,25 +103,28 @@ private:
 	required_device<pia6821_device> m_pia28;
 	required_device<pia6821_device> m_pia30;
 	optional_device<pia6821_device> m_pias;
+	output_finder<32> m_digits;
 };
 
-ADDRESS_MAP_START(s4_state::s4_main_map)
-	ADDRESS_MAP_GLOBAL_MASK(0x7fff)
-	AM_RANGE(0x0000, 0x00ff) AM_RAM
-	AM_RANGE(0x0100, 0x01ff) AM_RAM AM_SHARE("nvram")
-	AM_RANGE(0x2200, 0x2203) AM_DEVREADWRITE("pia22", pia6821_device, read, write) // solenoids
-	AM_RANGE(0x2400, 0x2403) AM_DEVREADWRITE("pia24", pia6821_device, read, write) // lamps
-	AM_RANGE(0x2800, 0x2803) AM_DEVREADWRITE("pia28", pia6821_device, read, write) // display
-	AM_RANGE(0x3000, 0x3003) AM_DEVREADWRITE("pia30", pia6821_device, read, write) // inputs
-	AM_RANGE(0x6000, 0x7fff) AM_ROM AM_REGION("roms", 0)
-ADDRESS_MAP_END
+void s4_state::s4_main_map(address_map &map)
+{
+	map.global_mask(0x7fff);
+	map(0x0000, 0x00ff).ram();
+	map(0x0100, 0x01ff).ram().share("nvram");
+	map(0x2200, 0x2203).rw(m_pia22, FUNC(pia6821_device::read), FUNC(pia6821_device::write)); // solenoids
+	map(0x2400, 0x2403).rw(m_pia24, FUNC(pia6821_device::read), FUNC(pia6821_device::write)); // lamps
+	map(0x2800, 0x2803).rw(m_pia28, FUNC(pia6821_device::read), FUNC(pia6821_device::write)); // display
+	map(0x3000, 0x3003).rw(m_pia30, FUNC(pia6821_device::read), FUNC(pia6821_device::write)); // inputs
+	map(0x6000, 0x7fff).rom().region("roms", 0);
+}
 
-ADDRESS_MAP_START(s4_state::s4_audio_map)
-	ADDRESS_MAP_GLOBAL_MASK(0x0fff)
-	AM_RANGE(0x0000, 0x00ff) AM_RAM
-	AM_RANGE(0x0400, 0x0403) AM_DEVREADWRITE("pias", pia6821_device, read, write) // sounds
-	AM_RANGE(0x0800, 0x0fff) AM_ROM AM_REGION("audioroms", 0)
-ADDRESS_MAP_END
+void s4_state::s4_audio_map(address_map &map)
+{
+	map.global_mask(0x0fff);
+	map(0x0000, 0x00ff).ram();
+	map(0x0400, 0x0403).rw(m_pias, FUNC(pia6821_device::read), FUNC(pia6821_device::write)); // sounds
+	map(0x0800, 0x0fff).rom().region("audioroms", 0);
+}
 
 static INPUT_PORTS_START( s4 )
 	PORT_START("X0")
@@ -391,8 +396,8 @@ WRITE8_MEMBER( s4_state::dig1_w )
 	static const uint8_t patterns[16] = { 0x3f, 0x06, 0x5b, 0x4f, 0x66, 0x6d, 0x7c, 0x07, 0x7f, 0x67, 0, 0, 0, 0, 0, 0 }; // MC14558
 	if (m_data_ok)
 	{
-		output().set_digit_value(m_strobe+16, patterns[data&15]);
-		output().set_digit_value(m_strobe, patterns[data>>4]);
+		m_digits[m_strobe+16] = patterns[data&15];
+		m_digits[m_strobe] = patterns[data>>4];
 	}
 	m_data_ok = false;
 }
@@ -484,7 +489,7 @@ MACHINE_CONFIG_START(s4_state::s4a)
 	MCFG_SPEAKER_STANDARD_MONO("speaker")
 	MCFG_SOUND_ADD("dac", MC1408, 0) MCFG_SOUND_ROUTE(ALL_OUTPUTS, "speaker", 0.5)
 	MCFG_DEVICE_ADD("vref", VOLTAGE_REGULATOR, 0) MCFG_VOLTAGE_REGULATOR_OUTPUT(5.0)
-	MCFG_SOUND_ROUTE_EX(0, "dac", 1.0, DAC_VREF_POS_INPUT) MCFG_SOUND_ROUTE_EX(0, "dac", -1.0, DAC_VREF_NEG_INPUT)
+	MCFG_SOUND_ROUTE(0, "dac", 1.0, DAC_VREF_POS_INPUT) MCFG_SOUND_ROUTE(0, "dac", -1.0, DAC_VREF_NEG_INPUT)
 
 	MCFG_DEVICE_ADD("pias", PIA6821, 0)
 	MCFG_PIA_READPB_HANDLER(READ8(s4_state, sound_r))

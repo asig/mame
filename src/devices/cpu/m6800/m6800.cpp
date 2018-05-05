@@ -153,13 +153,13 @@ TODO:
 
 /* operate one instruction for */
 #define ONE_MORE_INSN() {       \
-	uint8_t ireg;                             \
+	uint8_t ireg;                           \
 	pPPC = pPC;                             \
-	debugger_instruction_hook(this, PCD);                       \
+	debugger_instruction_hook(PCD);         \
 	ireg=M_RDOP(PCD);                       \
 	PC++;                                   \
-	(this->*m_insn[ireg])();               \
-	increment_counter(m_cycles[ireg]);    \
+	(this->*m_insn[ireg])();                \
+	increment_counter(m_cycles[ireg]);      \
 }
 
 /* CC masks                       HI NZVC
@@ -322,9 +322,9 @@ const uint8_t m6800_cpu_device::cycles_nsc8105[256] =
 #undef XX // /invalid opcode unknown cc
 
 
-DEFINE_DEVICE_TYPE(M6800, m6800_cpu_device, "m6800", "M6800")
-DEFINE_DEVICE_TYPE(M6802, m6802_cpu_device, "m6802", "M6802")
-DEFINE_DEVICE_TYPE(M6808, m6808_cpu_device, "m6808", "M6808")
+DEFINE_DEVICE_TYPE(M6800, m6800_cpu_device, "m6800", "Motorola M6800")
+DEFINE_DEVICE_TYPE(M6802, m6802_cpu_device, "m6802", "Motorola M6802")
+DEFINE_DEVICE_TYPE(M6808, m6808_cpu_device, "m6808", "Motorola M6808")
 DEFINE_DEVICE_TYPE(NSC8105, nsc8105_cpu_device, "nsc8105", "NSC8105")
 
 
@@ -499,7 +499,7 @@ void m6800_cpu_device::device_start()
 	state_add( STATE_GENPCBASE, "CURPC", m_pc.w.l).noshow();
 	state_add( STATE_GENFLAGS, "GENFLAGS", m_cc).formatstr("%8s").noshow();
 
-	m_icountptr = &m_icount;
+	set_icountptr(m_icount);
 }
 
 void m6800_cpu_device::state_string_export(const device_state_entry &entry, std::string &str) const
@@ -570,7 +570,7 @@ void m6800_cpu_device::execute_run()
 		else
 		{
 			pPPC = pPC;
-			debugger_instruction_hook(this, PCD);
+			debugger_instruction_hook(PCD);
 			ireg=M_RDOP(PCD);
 			PC++;
 			(this->*m_insn[ireg])();
@@ -579,22 +579,22 @@ void m6800_cpu_device::execute_run()
 	} while( m_icount>0 );
 }
 
-util::disasm_interface *m6800_cpu_device::create_disassembler()
+std::unique_ptr<util::disasm_interface> m6800_cpu_device::create_disassembler()
 {
-	return new m680x_disassembler(6800);
+	return std::make_unique<m680x_disassembler>(6800);
 }
 
-util::disasm_interface *m6802_cpu_device::create_disassembler()
+std::unique_ptr<util::disasm_interface> m6802_cpu_device::create_disassembler()
 {
-	return new m680x_disassembler(6802);
+	return std::make_unique<m680x_disassembler>(6802);
 }
 
-util::disasm_interface *m6808_cpu_device::create_disassembler()
+std::unique_ptr<util::disasm_interface> m6808_cpu_device::create_disassembler()
 {
-	return new m680x_disassembler(6808);
+	return std::make_unique<m680x_disassembler>(6808);
 }
 
-util::disasm_interface *nsc8105_cpu_device::create_disassembler()
+std::unique_ptr<util::disasm_interface> nsc8105_cpu_device::create_disassembler()
 {
-	return new m680x_disassembler(8105);
+	return std::make_unique<m680x_disassembler>(8105);
 }

@@ -151,6 +151,8 @@ public:
 	DECLARE_DRIVER_INIT(rp36);
 	DECLARE_DRIVER_INIT(rp36c3);
 	DECLARE_DRIVER_INIT(rp96sub);
+	DECLARE_DRIVER_INIT(tcl);
+	DECLARE_DRIVER_INIT(super7);
 
 	uint32_t screen_update_amcoe1a(screen_device &screen, bitmap_ind16 &bitmap, const rectangle &cliprect);
 
@@ -215,7 +217,7 @@ public:
 	uint32_t screen_update_magical(screen_device &screen, bitmap_ind16 &bitmap, const rectangle &cliprect);
 	uint32_t screen_update_mbstar(screen_device &screen, bitmap_ind16 &bitmap, const rectangle &cliprect);
 
-	INTERRUPT_GEN_MEMBER(masked_irq);
+	DECLARE_WRITE_LINE_MEMBER(masked_irq);
 
 	void bingowng(machine_config &config);
 	void flaming7(machine_config &config);
@@ -341,7 +343,7 @@ public:
 	DECLARE_VIDEO_START(unkch);
 	uint32_t screen_update_unkch(screen_device &screen, bitmap_ind16 &bitmap, const rectangle &cliprect);
 
-	INTERRUPT_GEN_MEMBER(vblank_irq);
+	DECLARE_WRITE_LINE_MEMBER(vblank_irq);
 
 	void megaline(machine_config &config);
 	void unkch(machine_config &config);

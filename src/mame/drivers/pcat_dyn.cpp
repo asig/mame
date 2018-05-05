@@ -97,29 +97,31 @@ WRITE8_MEMBER(pcat_dyn_state::bank2_w)
 	m_nvram_bank->set_entry(data & 1);
 }
 
-ADDRESS_MAP_START(pcat_dyn_state::pcat_map)
-	AM_RANGE(0x00000000, 0x0009ffff) AM_RAM
-	AM_RANGE(0x000a0000, 0x000bffff) AM_DEVREADWRITE8("vga", trident_vga_device, mem_r, mem_w, 0xffffffff)
-	AM_RANGE(0x000c0000, 0x000c7fff) AM_ROM AM_REGION("video_bios", 0)
-	AM_RANGE(0x000d0000, 0x000d0fff) AM_ROM AM_REGION("game_prg", 0x0000) AM_WRITE8(bank1_w, 0xffffffff)
-	AM_RANGE(0x000d1000, 0x000d1fff) AM_ROM AM_REGION("game_prg", 0x1000) AM_WRITE8(bank2_w, 0xffffffff)
-	AM_RANGE(0x000d2000, 0x000d2fff) AM_ROMBANK("prgbank")
-	AM_RANGE(0x000d3000, 0x000d3fff) AM_RAMBANK("nvram_bank")
-	AM_RANGE(0x000df400, 0x000df8ff) AM_RAM //I/O board?
-	AM_RANGE(0x000f0000, 0x000fffff) AM_ROM AM_REGION("bios", 0 )
-	AM_RANGE(0x00100000, 0x001fffff) AM_RAM
-	AM_RANGE(0xffff0000, 0xffffffff) AM_ROM AM_REGION("bios", 0 )
-ADDRESS_MAP_END
+void pcat_dyn_state::pcat_map(address_map &map)
+{
+	map(0x00000000, 0x0009ffff).ram();
+	map(0x000a0000, 0x000bffff).rw("vga", FUNC(trident_vga_device::mem_r), FUNC(trident_vga_device::mem_w));
+	map(0x000c0000, 0x000c7fff).rom().region("video_bios", 0);
+	map(0x000d0000, 0x000d0fff).rom().region("game_prg", 0x0000).w(this, FUNC(pcat_dyn_state::bank1_w));
+	map(0x000d1000, 0x000d1fff).rom().region("game_prg", 0x1000).w(this, FUNC(pcat_dyn_state::bank2_w));
+	map(0x000d2000, 0x000d2fff).bankr("prgbank");
+	map(0x000d3000, 0x000d3fff).bankrw("nvram_bank");
+	map(0x000df400, 0x000df8ff).ram(); //I/O board?
+	map(0x000f0000, 0x000fffff).rom().region("bios", 0);
+	map(0x00100000, 0x001fffff).ram();
+	map(0xffff0000, 0xffffffff).rom().region("bios", 0);
+}
 
-ADDRESS_MAP_START(pcat_dyn_state::pcat_io)
-	AM_IMPORT_FROM(pcat32_io_common)
-	AM_RANGE(0x03b0, 0x03bf) AM_DEVREADWRITE8("vga", trident_vga_device, port_03b0_r, port_03b0_w, 0xffffffff)
-	AM_RANGE(0x03c0, 0x03cf) AM_DEVREADWRITE8("vga", trident_vga_device, port_03c0_r, port_03c0_w, 0xffffffff)
-	AM_RANGE(0x03d0, 0x03df) AM_DEVREADWRITE8("vga", trident_vga_device, port_03d0_r, port_03d0_w, 0xffffffff)
-	AM_RANGE(0x03f8, 0x03ff) AM_DEVREADWRITE8("ns16550", ns16550_device, ins8250_r, ins8250_w, 0xffffffff)
-	AM_RANGE(0x0530, 0x0533) AM_READ8(audio_r, 0xffffffff)
-	AM_RANGE(0x0534, 0x0537) AM_DEVREADWRITE8("ad1848", ad1848_device, read, write, 0xffffffff)
-ADDRESS_MAP_END
+void pcat_dyn_state::pcat_io(address_map &map)
+{
+	pcat32_io_common(map);
+	map(0x03b0, 0x03bf).rw("vga", FUNC(trident_vga_device::port_03b0_r), FUNC(trident_vga_device::port_03b0_w));
+	map(0x03c0, 0x03cf).rw("vga", FUNC(trident_vga_device::port_03c0_r), FUNC(trident_vga_device::port_03c0_w));
+	map(0x03d0, 0x03df).rw("vga", FUNC(trident_vga_device::port_03d0_r), FUNC(trident_vga_device::port_03d0_w));
+	map(0x03f8, 0x03ff).rw("ns16550", FUNC(ns16550_device::ins8250_r), FUNC(ns16550_device::ins8250_w));
+	map(0x0530, 0x0533).r(this, FUNC(pcat_dyn_state::audio_r));
+	map(0x0534, 0x0537).rw("ad1848", FUNC(ad1848_device::read), FUNC(ad1848_device::write));
+}
 
 //TODO: use atmb device
 WRITE8_MEMBER( pcat_dyn_state::dma8237_1_dack_w ){ m_isabus->dack_w(1, data); }
@@ -139,13 +141,15 @@ static INPUT_PORTS_START( pcat_dyn )
 	PORT_BIT(0x0040, IP_ACTIVE_HIGH, IPT_COIN1)
 INPUT_PORTS_END
 
-static SLOT_INTERFACE_START(pcat_dyn_com)
-	SLOT_INTERFACE("msmouse", MSYSTEM_SERIAL_MOUSE)
-SLOT_INTERFACE_END
+static void pcat_dyn_com(device_slot_interface &device)
+{
+	device.option_add("msmouse", MSYSTEM_SERIAL_MOUSE);
+}
 
-static SLOT_INTERFACE_START( pcat_dyn_isa8_cards )
-	SLOT_INTERFACE("sb15",  ISA8_SOUND_BLASTER_1_5)
-SLOT_INTERFACE_END
+static void pcat_dyn_isa8_cards(device_slot_interface &device)
+{
+	device.option_add("sb15",  ISA8_SOUND_BLASTER_1_5);
+}
 
 static DEVICE_INPUT_DEFAULTS_START( pcat_dyn_sb_def )
 	DEVICE_INPUT_DEFAULTS("CONFIG", 0x03, 0x01)
@@ -201,7 +205,7 @@ MACHINE_CONFIG_START(pcat_dyn_state::pcat_dyn)
 	MCFG_RS232_CTS_HANDLER(DEVWRITELINE("ns16550", ins8250_uart_device, cts_w))
 
 	MCFG_DEVICE_ADD("isa", ISA8, 0)
-	MCFG_ISA8_CPU(":maincpu")
+	MCFG_ISA8_CPU("maincpu")
 	MCFG_ISA_OUT_IRQ2_CB(DEVWRITELINE("pic8259_2", pic8259_device, ir2_w))
 	MCFG_ISA_OUT_IRQ3_CB(DEVWRITELINE("pic8259_1", pic8259_device, ir3_w))
 	//MCFG_ISA_OUT_IRQ4_CB(DEVWRITELINE("pic8259_1", pic8259_device, ir4_w))
@@ -213,8 +217,8 @@ MACHINE_CONFIG_START(pcat_dyn_state::pcat_dyn)
 	MCFG_ISA_OUT_DRQ3_CB(DEVWRITELINE("dma8237_1", am9517a_device, dreq3_w))
 
 	MCFG_ISA8_SLOT_ADD("isa", "isa1", pcat_dyn_isa8_cards, "sb15", true)
-	MCFG_DEVICE_CARD_DEVICE_INPUT_DEFAULTS("sb15", pcat_dyn_sb_def)
-	MCFG_DEVICE_CARD_MACHINE_CONFIG("sb15", pcat_dyn_sb_conf)
+	MCFG_SLOT_OPTION_DEVICE_INPUT_DEFAULTS("sb15", pcat_dyn_sb_def)
+	MCFG_SLOT_OPTION_MACHINE_CONFIG("sb15", pcat_dyn_sb_conf)
 MACHINE_CONFIG_END
 
 /***************************************

@@ -190,7 +190,7 @@ READ8_MEMBER( xor100_state::fdc_wait_r )
 
 	*/
 
-	if (!machine().side_effect_disabled())
+	if (!machine().side_effects_disabled())
 	{
 		if (!m_fdc_irq && !m_fdc_drq)
 		{
@@ -262,28 +262,30 @@ WRITE8_MEMBER( xor100_state::fdc_dsel_w )
 
 /* Memory Maps */
 
-ADDRESS_MAP_START(xor100_state::xor100_mem)
-	AM_RANGE(0x0000, 0xffff) AM_WRITE_BANK("bank1")
-	AM_RANGE(0x0000, 0xf7ff) AM_READ_BANK("bank2")
-	AM_RANGE(0xf800, 0xffff) AM_READ_BANK("bank3")
-ADDRESS_MAP_END
+void xor100_state::xor100_mem(address_map &map)
+{
+	map(0x0000, 0xffff).bankw("bank1");
+	map(0x0000, 0xf7ff).bankr("bank2");
+	map(0xf800, 0xffff).bankr("bank3");
+}
 
-ADDRESS_MAP_START(xor100_state::xor100_io)
-	ADDRESS_MAP_GLOBAL_MASK(0xff)
-	AM_RANGE(0x00, 0x00) AM_DEVREADWRITE(I8251_A_TAG, i8251_device, data_r, data_w)
-	AM_RANGE(0x01, 0x01) AM_DEVREADWRITE(I8251_A_TAG, i8251_device, status_r, control_w)
-	AM_RANGE(0x02, 0x02) AM_DEVREADWRITE(I8251_B_TAG, i8251_device, data_r, data_w)
-	AM_RANGE(0x03, 0x03) AM_DEVREADWRITE(I8251_B_TAG, i8251_device, status_r, control_w)
-	AM_RANGE(0x04, 0x07) AM_DEVREADWRITE(I8255A_TAG, i8255_device, read, write)
-	AM_RANGE(0x08, 0x08) AM_WRITE(mmu_w)
-	AM_RANGE(0x09, 0x09) AM_WRITE(prom_toggle_w)
-	AM_RANGE(0x0a, 0x0a) AM_READ(prom_disable_r)
-	AM_RANGE(0x0b, 0x0b) AM_READ_PORT("DSW0") AM_WRITE(baud_w)
-	AM_RANGE(0x0c, 0x0f) AM_DEVREADWRITE(Z80CTC_TAG, z80ctc_device, read, write)
-	AM_RANGE(0xf8, 0xfb) AM_READWRITE(fdc_r, fdc_w)
-	AM_RANGE(0xfc, 0xfc) AM_READWRITE(fdc_wait_r, fdc_dcont_w)
-	AM_RANGE(0xfd, 0xfd) AM_WRITE(fdc_dsel_w)
-ADDRESS_MAP_END
+void xor100_state::xor100_io(address_map &map)
+{
+	map.global_mask(0xff);
+	map(0x00, 0x00).rw(m_uart_a, FUNC(i8251_device::data_r), FUNC(i8251_device::data_w));
+	map(0x01, 0x01).rw(m_uart_a, FUNC(i8251_device::status_r), FUNC(i8251_device::control_w));
+	map(0x02, 0x02).rw(m_uart_b, FUNC(i8251_device::data_r), FUNC(i8251_device::data_w));
+	map(0x03, 0x03).rw(m_uart_b, FUNC(i8251_device::status_r), FUNC(i8251_device::control_w));
+	map(0x04, 0x07).rw(I8255A_TAG, FUNC(i8255_device::read), FUNC(i8255_device::write));
+	map(0x08, 0x08).w(this, FUNC(xor100_state::mmu_w));
+	map(0x09, 0x09).w(this, FUNC(xor100_state::prom_toggle_w));
+	map(0x0a, 0x0a).r(this, FUNC(xor100_state::prom_disable_r));
+	map(0x0b, 0x0b).portr("DSW0").w(this, FUNC(xor100_state::baud_w));
+	map(0x0c, 0x0f).rw(m_ctc, FUNC(z80ctc_device::read), FUNC(z80ctc_device::write));
+	map(0xf8, 0xfb).rw(this, FUNC(xor100_state::fdc_r), FUNC(xor100_state::fdc_w));
+	map(0xfc, 0xfc).rw(this, FUNC(xor100_state::fdc_wait_r), FUNC(xor100_state::fdc_dcont_w));
+	map(0xfd, 0xfd).w(this, FUNC(xor100_state::fdc_dsel_w));
+}
 
 /* Input Ports */
 
@@ -422,9 +424,10 @@ WRITE_LINE_MEMBER( xor100_state::ctc_z2_w )
 
 /* WD1795-02 Interface */
 
-static SLOT_INTERFACE_START( xor100_floppies )
-	SLOT_INTERFACE( "8ssdd", FLOPPY_8_SSDD ) // Shugart SA-100
-SLOT_INTERFACE_END
+static void xor100_floppies(device_slot_interface &device)
+{
+	device.option_add("8ssdd", FLOPPY_8_SSDD); // Shugart SA-100
+}
 
 void xor100_state::fdc_intrq_w(bool state)
 {
@@ -459,8 +462,9 @@ static DEVICE_INPUT_DEFAULTS_START( terminal )
 	DEVICE_INPUT_DEFAULTS( "RS232_STOPBITS", 0xff, RS232_STOPBITS_1 )
 DEVICE_INPUT_DEFAULTS_END
 
-static SLOT_INTERFACE_START( xor100_s100_cards )
-SLOT_INTERFACE_END
+static void xor100_s100_cards(device_slot_interface &device)
+{
+}
 
 /* Machine Initialization */
 
@@ -528,7 +532,7 @@ MACHINE_CONFIG_START(xor100_state::xor100)
 	MCFG_RS232_RXD_HANDLER(DEVWRITELINE(I8251_B_TAG, i8251_device, write_rxd))
 	MCFG_RS232_DSR_HANDLER(DEVWRITELINE(I8251_B_TAG, i8251_device, write_dsr))
 	MCFG_RS232_CTS_HANDLER(DEVWRITELINE(I8251_B_TAG, i8251_device, write_cts))
-	MCFG_DEVICE_CARD_DEVICE_INPUT_DEFAULTS("terminal", terminal)
+	MCFG_SLOT_OPTION_DEVICE_INPUT_DEFAULTS("terminal", terminal)
 
 	MCFG_DEVICE_ADD(COM5016_TAG, COM8116, XTAL(5'068'800))
 	MCFG_COM8116_FR_HANDLER(DEVWRITELINE(I8251_A_TAG, i8251_device, write_txc))
