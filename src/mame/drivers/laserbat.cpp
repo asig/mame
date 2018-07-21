@@ -180,20 +180,20 @@ void laserbat_state_base::laserbat_map(address_map &map)
 	map(0x1500, 0x15ff).mirror(0x6000).rw(m_pvi1, FUNC(s2636_device::read_data), FUNC(s2636_device::write_data));
 	map(0x1600, 0x16ff).mirror(0x6000).rw(m_pvi2, FUNC(s2636_device::read_data), FUNC(s2636_device::write_data));
 	map(0x1700, 0x17ff).mirror(0x6000).rw(m_pvi3, FUNC(s2636_device::read_data), FUNC(s2636_device::write_data));
-	map(0x1800, 0x1bff).mirror(0x6000).w(this, FUNC(laserbat_state_base::videoram_w));
+	map(0x1800, 0x1bff).mirror(0x6000).w(FUNC(laserbat_state_base::videoram_w));
 	map(0x1c00, 0x1fff).mirror(0x6000).ram();
 }
 
 void laserbat_state_base::laserbat_io_map(address_map &map)
 {
-	map(0x00, 0x00).r(this, FUNC(laserbat_state_base::rhsc_r)).w(this, FUNC(laserbat_state_base::cnt_eff_w));
-	map(0x01, 0x01) /* RBALL */ .w(this, FUNC(laserbat_state_base::cnt_nav_w));
-	map(0x02, 0x02).r(this, FUNC(laserbat_state_base::rrowx_r)).w(this, FUNC(laserbat_state_base::csound1_w));
-	map(0x03, 0x03).w(this, FUNC(laserbat_state_base::whsc_w));
-	map(0x04, 0x04).w(this, FUNC(laserbat_state_base::wcoh_w));
-	map(0x05, 0x05).w(this, FUNC(laserbat_state_base::wcov_w));
-	map(0x06, 0x06).w(this, FUNC(laserbat_state_base::ct_io_w));
-	map(0x07, 0x07).w(this, FUNC(laserbat_state_base::csound2_w));
+	map(0x00, 0x00).r(FUNC(laserbat_state_base::rhsc_r)).w(FUNC(laserbat_state_base::cnt_eff_w));
+	map(0x01, 0x01) /* RBALL */ .w(FUNC(laserbat_state_base::cnt_nav_w));
+	map(0x02, 0x02).r(FUNC(laserbat_state_base::rrowx_r)).w(FUNC(laserbat_state_base::csound1_w));
+	map(0x03, 0x03).w(FUNC(laserbat_state_base::whsc_w));
+	map(0x04, 0x04).w(FUNC(laserbat_state_base::wcoh_w));
+	map(0x05, 0x05).w(FUNC(laserbat_state_base::wcov_w));
+	map(0x06, 0x06).w(FUNC(laserbat_state_base::ct_io_w));
+	map(0x07, 0x07).w(FUNC(laserbat_state_base::csound2_w));
 }
 
 
@@ -402,9 +402,9 @@ static const gfx_layout sprites_layout =
 	32*32*2
 };
 
-static GFXDECODE_START( laserbat )
-	GFXDECODE_ENTRY( "gfx1", 0x0000, charlayout,       0, 256 ) /* Rom chars */
-	GFXDECODE_ENTRY( "gfx2", 0x0000, sprites_layout,   0,   8 ) /* Sprites   */
+static GFXDECODE_START( gfx_laserbat )
+	GFXDECODE_ENTRY( "gfx1", 0x0000, charlayout,       0, 256 ) // ROM chars
+	GFXDECODE_ENTRY( "gfx2", 0x0000, sprites_layout,   0,   8 ) // sprites
 GFXDECODE_END
 
 
@@ -413,7 +413,7 @@ INTERRUPT_GEN_MEMBER(laserbat_state_base::laserbat_interrupt)
 	device.execute().set_input_line_and_vector(0, HOLD_LINE, 0x0a);
 }
 
-DRIVER_INIT_MEMBER(laserbat_state_base, laserbat)
+void laserbat_state_base::init_laserbat()
 {
 	m_scanline_timer = timer_alloc(TIMER_SCANLINE);
 
@@ -466,11 +466,11 @@ void laserbat_state_base::device_timer(emu_timer &timer, device_timer_id id, int
 MACHINE_CONFIG_START(laserbat_state_base::laserbat_base)
 
 	// basic machine hardware
-	MCFG_CPU_ADD(m_maincpu, S2650, XTAL(14'318'181)/4)
-	MCFG_CPU_PROGRAM_MAP(laserbat_map)
-	MCFG_CPU_IO_MAP(laserbat_io_map)
-	MCFG_CPU_VBLANK_INT_DRIVER("screen", laserbat_state_base, laserbat_interrupt)
-	MCFG_S2650_SENSE_INPUT(DEVREADLINE(m_screen, screen_device, vblank))
+	MCFG_DEVICE_ADD(m_maincpu, S2650, XTAL(14'318'181)/4)
+	MCFG_DEVICE_PROGRAM_MAP(laserbat_map)
+	MCFG_DEVICE_IO_MAP(laserbat_io_map)
+	MCFG_DEVICE_VBLANK_INT_DRIVER("screen", laserbat_state_base, laserbat_interrupt)
+	MCFG_S2650_SENSE_INPUT(READLINE(m_screen, screen_device, vblank))
 
 	// video hardware
 	MCFG_SCREEN_ADD(m_screen, RASTER)
@@ -492,7 +492,7 @@ MACHINE_CONFIG_START(laserbat_state_base::laserbat_base)
 	MCFG_S2636_OFFSETS(-8, -16)
 	MCFG_S2636_DIVIDER(3)
 
-	MCFG_GFXDECODE_ADD(m_gfxdecode, "palette", laserbat)
+	MCFG_DEVICE_ADD(m_gfxdecode, GFXDECODE, "palette", gfx_laserbat)
 
 MACHINE_CONFIG_END
 
@@ -504,9 +504,9 @@ MACHINE_CONFIG_START(laserbat_state::laserbat)
 	MCFG_PALETTE_INIT_OWNER(laserbat_state, laserbat)
 
 	// sound board devices
-	MCFG_SPEAKER_STANDARD_MONO("speaker")
+	SPEAKER(config, "speaker").front_center();
 
-	MCFG_SOUND_ADD(m_csg, SN76477, 0) // audio output not used
+	MCFG_DEVICE_ADD(m_csg, SN76477) // audio output not used
 	MCFG_SN76477_NOISE_PARAMS(RES_K(47), RES_K(270), CAP_P(1000)) // R21, switchable R30/R23/R24/R25/R29/R28/R27/R26, C21
 	MCFG_SN76477_DECAY_RES(RES_INF)                 // NC
 	MCFG_SN76477_ATTACK_PARAMS(0, RES_INF)          // NC, NC
@@ -537,8 +537,8 @@ MACHINE_CONFIG_START(catnmous_state::catnmous)
 	MCFG_PALETTE_INIT_OWNER(catnmous_state, catnmous)
 
 	// sound board devices
-	MCFG_SPEAKER_STANDARD_MONO("speaker")
-	MCFG_SOUND_ADD(m_audiopcb, ZACCARIA_1B11107, 0)
+	SPEAKER(config, "speaker").front_center();
+	MCFG_DEVICE_ADD(m_audiopcb, ZACCARIA_1B11107)
 	MCFG_SOUND_ROUTE(ALL_OUTPUTS, "speaker", 1.0)
 
 MACHINE_CONFIG_END
@@ -728,7 +728,7 @@ ROM_START( catnmousa )
 ROM_END
 
 
-GAME( 1981, laserbat,  0,        laserbat, laserbat, laserbat_state, laserbat, ROT0,  "Zaccaria", "Laser Battle",                    MACHINE_IMPERFECT_SOUND | MACHINE_SUPPORTS_SAVE )
-GAME( 1981, lazarian,  laserbat, laserbat, lazarian, laserbat_state, laserbat, ROT0,  "Zaccaria (Bally Midway license)", "Lazarian", MACHINE_IMPERFECT_SOUND | MACHINE_SUPPORTS_SAVE )
-GAME( 1982, catnmous,  0,        catnmous, catnmous, catnmous_state, laserbat, ROT90, "Zaccaria", "Cat and Mouse (set 1)",           MACHINE_IMPERFECT_SOUND | MACHINE_SUPPORTS_SAVE )
-GAME( 1982, catnmousa, catnmous, catnmous, catnmous, catnmous_state, laserbat, ROT90, "Zaccaria", "Cat and Mouse (set 2)",           MACHINE_NOT_WORKING | MACHINE_IMPERFECT_SOUND | MACHINE_SUPPORTS_SAVE )
+GAME( 1981, laserbat,  0,        laserbat, laserbat, laserbat_state, init_laserbat, ROT0,  "Zaccaria", "Laser Battle",                    MACHINE_IMPERFECT_SOUND | MACHINE_SUPPORTS_SAVE )
+GAME( 1981, lazarian,  laserbat, laserbat, lazarian, laserbat_state, init_laserbat, ROT0,  "Zaccaria (Bally Midway license)", "Lazarian", MACHINE_IMPERFECT_SOUND | MACHINE_SUPPORTS_SAVE )
+GAME( 1982, catnmous,  0,        catnmous, catnmous, catnmous_state, init_laserbat, ROT90, "Zaccaria", "Cat and Mouse (set 1)",           MACHINE_IMPERFECT_SOUND | MACHINE_SUPPORTS_SAVE )
+GAME( 1982, catnmousa, catnmous, catnmous, catnmous, catnmous_state, init_laserbat, ROT90, "Zaccaria", "Cat and Mouse (set 2)",           MACHINE_NOT_WORKING | MACHINE_IMPERFECT_SOUND | MACHINE_SUPPORTS_SAVE )

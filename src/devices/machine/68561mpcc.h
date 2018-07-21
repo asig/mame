@@ -38,6 +38,7 @@
 #ifndef MAME_MACHINE_68561MPCC_H
 #define MAME_MACHINE_68561MPCC_H
 
+#include "diserial.h"
 
 /* Variant ADD macros - use the right one to enable the right feature set! */
 #define MCFG_MPCC68560_ADD(_tag, _clock, _rx, _tx) \
@@ -67,22 +68,22 @@
 
 /* Callbacks to be called by us for signals driven by the MPCC */
 #define MCFG_MPCC_OUT_TXD_CB(_devcb) \
-	devcb = &downcast<mpcc_device &>(*device).set_out_txd_callback(DEVCB_##_devcb);
+	downcast<mpcc_device &>(*device).set_out_txd_callback(DEVCB_##_devcb);
 
 #define MCFG_MPCC_OUT_DTR_CB(_devcb) \
-	devcb = &downcast<mpcc_device &>(*device).set_out_dtr_callback(DEVCB_##_devcb);
+	downcast<mpcc_device &>(*device).set_out_dtr_callback(DEVCB_##_devcb);
 
 #define MCFG_MPCC_OUT_RTS_CB(_devcb) \
-	devcb = &downcast<mpcc_device &>(*device).set_out_rts_callback(DEVCB_##_devcb);
+	downcast<mpcc_device &>(*device).set_out_rts_callback(DEVCB_##_devcb);
 
 #define MCFG_MPCC_OUT_TRXC_CB(_devcb) \
-	devcb = &downcast<mpcc_device &>(*device).set_out_trxc_callback(DEVCB_##_devcb);
+	downcast<mpcc_device &>(*device).set_out_trxc_callback(DEVCB_##_devcb);
 
 #define MCFG_MPCC_OUT_RTXC_CB(_devcb) \
-	devcb = &downcast<mpcc_device &>(*device).set_out_rtxc_callback(DEVCB_##_devcb);
+	downcast<mpcc_device &>(*device).set_out_rtxc_callback(DEVCB_##_devcb);
 
 #define MCFG_MPCC_OUT_INT_CB(_devcb) \
-	devcb = &downcast<mpcc_device &>(*device).set_out_int_callback(DEVCB_##_devcb);
+	downcast<mpcc_device &>(*device).set_out_int_callback(DEVCB_##_devcb);
 
 
 

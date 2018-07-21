@@ -33,6 +33,9 @@ public:
 			m_maincpu(*this, "maincpu")
 	{ }
 
+	void fontwriter(machine_config &config);
+
+private:
 	virtual void machine_reset() override;
 	virtual void machine_start() override;
 
@@ -43,10 +46,8 @@ public:
 		m_vbl ^= 0xff;
 		return m_vbl;
 	}
-	void fontwriter(machine_config &config);
 	void io_map(address_map &map);
 	void main_map(address_map &map);
-protected:
 
 	// devices
 	required_device<m37720s1_device> m_maincpu;
@@ -85,16 +86,16 @@ void fontwriter_state::main_map(address_map &map)
 
 void fontwriter_state::io_map(address_map &map)
 {
-	map(M37710_PORT6, M37710_PORT6).r(this, FUNC(fontwriter_state::vbl_r));
+	map(M37710_PORT6, M37710_PORT6).r(FUNC(fontwriter_state::vbl_r));
 }
 
 static INPUT_PORTS_START( fontwriter )
 INPUT_PORTS_END
 
 MACHINE_CONFIG_START(fontwriter_state::fontwriter)
-	MCFG_CPU_ADD("maincpu", M37720S1, XTAL(16'000'000)) /* M37720S1 @ 16MHz - main CPU */
-	MCFG_CPU_PROGRAM_MAP(main_map)
-	MCFG_CPU_IO_MAP(io_map)
+	MCFG_DEVICE_ADD("maincpu", M37720S1, XTAL(16'000'000)) /* M37720S1 @ 16MHz - main CPU */
+	MCFG_DEVICE_PROGRAM_MAP(main_map)
+	MCFG_DEVICE_IO_MAP(io_map)
 
 	MCFG_SCREEN_ADD("screen", RASTER)
 	MCFG_SCREEN_REFRESH_RATE(60)
@@ -109,4 +110,4 @@ ROM_START(fw700ger)
 	ROM_LOAD( "lh5370pd.ic7", 0x000000, 0x200000, CRC(29083e13) SHA1(7e1605f91b53580e75f638f9e6b0917305c35f84) )
 ROM_END
 
-SYST( 1994, fw700ger, 0, 0, fontwriter, fontwriter, fontwriter_state, 0, "Sharp", "FontWriter FW-700 (German)", MACHINE_NOT_WORKING|MACHINE_NO_SOUND )
+SYST( 1994, fw700ger, 0, 0, fontwriter, fontwriter, fontwriter_state, empty_init, "Sharp", "FontWriter FW-700 (German)", MACHINE_NOT_WORKING|MACHINE_NO_SOUND )

@@ -44,15 +44,17 @@ public:
 		, m_digits(*this, "digit%u", 0U)
 		{ }
 
+	void savia84(machine_config &config);
+
+private:
 	DECLARE_READ8_MEMBER(savia84_8255_portc_r);
 	DECLARE_WRITE8_MEMBER(savia84_8255_porta_w);
 	DECLARE_WRITE8_MEMBER(savia84_8255_portb_w);
 	DECLARE_WRITE8_MEMBER(savia84_8255_portc_w);
 
-	void savia84(machine_config &config);
 	void io_map(address_map &map);
 	void mem_map(address_map &map);
-private:
+
 	uint8_t m_kbd;
 	uint8_t m_segment;
 	uint8_t m_digit;
@@ -181,19 +183,19 @@ READ8_MEMBER( savia84_state::savia84_8255_portc_r ) // IN FA - read keyboard
 
 MACHINE_CONFIG_START(savia84_state::savia84)
 	/* basic machine hardware */
-	MCFG_CPU_ADD("maincpu",Z80, XTAL(4'000'000) / 2)
-	MCFG_CPU_PROGRAM_MAP(mem_map)
-	MCFG_CPU_IO_MAP(io_map)
+	MCFG_DEVICE_ADD("maincpu",Z80, XTAL(4'000'000) / 2)
+	MCFG_DEVICE_PROGRAM_MAP(mem_map)
+	MCFG_DEVICE_IO_MAP(io_map)
 
 	/* video hardware */
-	MCFG_DEFAULT_LAYOUT(layout_savia84)
+	config.set_default_layout(layout_savia84);
 
 	/* Devices */
 	MCFG_DEVICE_ADD("ppi8255", I8255, 0)
-	MCFG_I8255_OUT_PORTA_CB(WRITE8(savia84_state, savia84_8255_porta_w))
-	MCFG_I8255_OUT_PORTB_CB(WRITE8(savia84_state, savia84_8255_portb_w))
-	MCFG_I8255_IN_PORTC_CB(READ8(savia84_state, savia84_8255_portc_r))
-	MCFG_I8255_OUT_PORTC_CB(WRITE8(savia84_state, savia84_8255_portc_w))
+	MCFG_I8255_OUT_PORTA_CB(WRITE8(*this, savia84_state, savia84_8255_porta_w))
+	MCFG_I8255_OUT_PORTB_CB(WRITE8(*this, savia84_state, savia84_8255_portb_w))
+	MCFG_I8255_IN_PORTC_CB(READ8(*this, savia84_state, savia84_8255_portc_r))
+	MCFG_I8255_OUT_PORTC_CB(WRITE8(*this, savia84_state, savia84_8255_portc_w))
 MACHINE_CONFIG_END
 
 /* ROM definition */
@@ -207,5 +209,5 @@ ROM_END
 
 /* Driver */
 
-//    YEAR  NAME     PARENT  COMPAT  MACHINE  INPUT    STATE          INIT  COMPANY    FULLNAME    FLAGS
-COMP( 1984, savia84, 0,      0,      savia84, savia84, savia84_state, 0,    "JT Hyan", "Savia 84", MACHINE_NO_SOUND_HW)
+//    YEAR  NAME     PARENT  COMPAT  MACHINE  INPUT    CLASS          INIT        COMPANY    FULLNAME    FLAGS
+COMP( 1984, savia84, 0,      0,      savia84, savia84, savia84_state, empty_init, "JT Hyan", "Savia 84", MACHINE_NO_SOUND_HW)

@@ -68,6 +68,7 @@ Dumping Notes:
 #include "emu.h"
 #include "cpu/z80/z80.h"
 #include "machine/ldv1000.h"
+#include "emupal.h"
 #include "render.h"
 #include "speaker.h"
 
@@ -84,12 +85,16 @@ public:
 		m_gfxdecode(*this, "gfxdecode"),
 		m_palette(*this, "palette") { }
 
+	void lgp(machine_config &config);
+
+	void init_lgp();
+
+private:
 	required_device<pioneer_ldv1000_device> m_laserdisc;
 	required_shared_ptr<uint8_t> m_tile_ram;
 	required_shared_ptr<uint8_t> m_tile_control_ram;
 	DECLARE_READ8_MEMBER(ldp_read);
 	DECLARE_WRITE8_MEMBER(ldp_write);
-	DECLARE_DRIVER_INIT(lgp);
 	virtual void machine_start() override;
 	uint32_t screen_update_lgp(screen_device &screen, bitmap_rgb32 &bitmap, const rectangle &cliprect);
 	INTERRUPT_GEN_MEMBER(vblank_callback_lgp);
@@ -98,7 +103,6 @@ public:
 	required_device<cpu_device> m_maincpu;
 	required_device<gfxdecode_device> m_gfxdecode;
 	required_device<palette_device> m_palette;
-	void lgp(machine_config &config);
 	void main_io_map(address_map &map);
 	void main_program_map(address_map &map);
 	void sound_io_map(address_map &map);
@@ -166,7 +170,7 @@ void lgp_state::main_program_map(address_map &map)
 	map(0xe400, 0xe7ff).ram().share("tile_ctrl_ram");
 
 //  AM_RANGE(0xef00,0xef00) AM_READ_PORT("IN_TEST")
-	map(0xef80, 0xef80).rw(this, FUNC(lgp_state::ldp_read), FUNC(lgp_state::ldp_write));
+	map(0xef80, 0xef80).rw(FUNC(lgp_state::ldp_read), FUNC(lgp_state::ldp_write));
 	map(0xefb8, 0xefb8).nopr(); // watchdog
 	map(0xefc0, 0xefc0).portr("DSWA");    /* Not tested */
 	map(0xefc8, 0xefc8).portr("DSWB");
@@ -346,7 +350,7 @@ static const gfx_layout lgp_gfx_layout_16x32 =
 	32*128
 };
 
-static GFXDECODE_START( lgp )
+static GFXDECODE_START( gfx_lgp )
 	GFXDECODE_ENTRY("gfx1", 0, lgp_gfx_layout, 0x0, 0x100)
 	GFXDECODE_ENTRY("gfx4", 0, lgp_gfx_layout_16x32, 0x0, 0x100)
 GFXDECODE_END
@@ -354,7 +358,7 @@ GFXDECODE_END
 INTERRUPT_GEN_MEMBER(lgp_state::vblank_callback_lgp)
 {
 	// NMI
-	//device.execute().set_input_line(INPUT_LINE_NMI, PULSE_LINE);
+	//device.execute().pulse_input_line(INPUT_LINE_NMI, attotime::zero);
 
 	// IRQ
 	device.execute().set_input_line(0, HOLD_LINE);
@@ -408,19 +412,19 @@ PALETTE_INIT_MEMBER(lgp_state, lgp)
 /* DRIVER */
 MACHINE_CONFIG_START(lgp_state::lgp)
 	/* main cpu */
-	MCFG_CPU_ADD("maincpu", Z80, CPU_PCB_CLOCK)
-	MCFG_CPU_PROGRAM_MAP(main_program_map)
-	MCFG_CPU_IO_MAP(main_io_map)
-	MCFG_CPU_VBLANK_INT_DRIVER("screen", lgp_state,  vblank_callback_lgp)
+	MCFG_DEVICE_ADD("maincpu", Z80, CPU_PCB_CLOCK)
+	MCFG_DEVICE_PROGRAM_MAP(main_program_map)
+	MCFG_DEVICE_IO_MAP(main_io_map)
+	MCFG_DEVICE_VBLANK_INT_DRIVER("screen", lgp_state,  vblank_callback_lgp)
 
 	/* sound cpu */
-	MCFG_CPU_ADD("audiocpu", Z80, SOUND_PCB_CLOCK)
-	MCFG_CPU_PROGRAM_MAP(sound_program_map)
-	MCFG_CPU_IO_MAP(sound_io_map)
+	MCFG_DEVICE_ADD("audiocpu", Z80, SOUND_PCB_CLOCK)
+	MCFG_DEVICE_PROGRAM_MAP(sound_program_map)
+	MCFG_DEVICE_IO_MAP(sound_io_map)
 
 
 	MCFG_LASERDISC_LDV1000_ADD("laserdisc")
-	MCFG_LASERDISC_LDV1000_COMMAND_STROBE_CB(WRITELINE(lgp_state, ld_command_strobe_cb))
+	MCFG_LASERDISC_LDV1000_COMMAND_STROBE_CB(WRITELINE(*this, lgp_state, ld_command_strobe_cb))
 	MCFG_LASERDISC_OVERLAY_DRIVER(256, 256, lgp_state, screen_update_lgp)
 	MCFG_LASERDISC_OVERLAY_PALETTE("palette")
 
@@ -430,12 +434,13 @@ MACHINE_CONFIG_START(lgp_state::lgp)
 	MCFG_PALETTE_ADD("palette", 256)
 	MCFG_PALETTE_INIT_OWNER(lgp_state,lgp)
 
-	MCFG_GFXDECODE_ADD("gfxdecode", "palette", lgp)
+	MCFG_DEVICE_ADD("gfxdecode", GFXDECODE, "palette", gfx_lgp)
 
 	/* sound hardware */
-	MCFG_SPEAKER_STANDARD_STEREO("lspeaker", "rspeaker")
+	SPEAKER(config, "lspeaker").front_left();
+	SPEAKER(config, "rspeaker").front_right();
 
-	MCFG_SOUND_MODIFY("laserdisc")
+	MCFG_DEVICE_MODIFY("laserdisc")
 	MCFG_SOUND_ROUTE(0, "lspeaker", 1.0)
 	MCFG_SOUND_ROUTE(1, "rspeaker", 1.0)
 MACHINE_CONFIG_END
@@ -614,10 +619,10 @@ ROM_START( lgpalt )
 	DISK_IMAGE_READONLY( "lgp", 0, NO_DUMP )
 ROM_END
 
-DRIVER_INIT_MEMBER(lgp_state,lgp)
+void lgp_state::init_lgp()
 {
 }
 
-/*    YEAR  NAME PARENT   MACHINE INPUT STATE       INIT MONITOR  COMPANY   FULLNAME                         FLAGS) */
-GAME( 1983, lgp, 0,       lgp,    lgp,  lgp_state,  lgp, ROT0,    "Taito",  "Laser Grand Prix",              MACHINE_NOT_WORKING|MACHINE_NO_SOUND)
-GAME( 1983, lgpalt, lgp,  lgp,    lgp,  lgp_state,  lgp, ROT0,    "Taito",  "Laser Grand Prix (alternate)",  MACHINE_NOT_WORKING|MACHINE_NO_SOUND)
+/*    YEAR  NAME PARENT   MACHINE INPUT STATE      INIT      MONITOR  COMPANY   FULLNAME                         FLAGS) */
+GAME( 1983, lgp, 0,       lgp,    lgp,  lgp_state, init_lgp, ROT0,    "Taito",  "Laser Grand Prix",              MACHINE_NOT_WORKING|MACHINE_NO_SOUND)
+GAME( 1983, lgpalt, lgp,  lgp,    lgp,  lgp_state, init_lgp, ROT0,    "Taito",  "Laser Grand Prix (alternate)",  MACHINE_NOT_WORKING|MACHINE_NO_SOUND)

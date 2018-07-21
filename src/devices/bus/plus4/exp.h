@@ -60,23 +60,23 @@
 
 #define MCFG_PLUS4_PASSTHRU_EXPANSION_SLOT_ADD() \
 	MCFG_PLUS4_EXPANSION_SLOT_ADD(PLUS4_EXPANSION_SLOT_TAG, 0, plus4_expansion_cards, nullptr) \
-	MCFG_PLUS4_EXPANSION_SLOT_IRQ_CALLBACK(DEVWRITELINE(DEVICE_SELF_OWNER, plus4_expansion_slot_device, irq_w)) \
-	MCFG_PLUS4_EXPANSION_SLOT_CD_INPUT_CALLBACK(DEVREAD8(DEVICE_SELF_OWNER, plus4_expansion_slot_device, dma_cd_r)) \
-	MCFG_PLUS4_EXPANSION_SLOT_CD_OUTPUT_CALLBACK(DEVWRITE8(DEVICE_SELF_OWNER, plus4_expansion_slot_device, dma_cd_w)) \
-	MCFG_PLUS4_EXPANSION_SLOT_AEC_CALLBACK(DEVWRITELINE(DEVICE_SELF_OWNER, plus4_expansion_slot_device, aec_w))
+	MCFG_PLUS4_EXPANSION_SLOT_IRQ_CALLBACK(WRITELINE(DEVICE_SELF_OWNER, plus4_expansion_slot_device, irq_w)) \
+	MCFG_PLUS4_EXPANSION_SLOT_CD_INPUT_CALLBACK(READ8(DEVICE_SELF_OWNER, plus4_expansion_slot_device, dma_cd_r)) \
+	MCFG_PLUS4_EXPANSION_SLOT_CD_OUTPUT_CALLBACK(WRITE8(DEVICE_SELF_OWNER, plus4_expansion_slot_device, dma_cd_w)) \
+	MCFG_PLUS4_EXPANSION_SLOT_AEC_CALLBACK(WRITELINE(DEVICE_SELF_OWNER, plus4_expansion_slot_device, aec_w))
 
 
 #define MCFG_PLUS4_EXPANSION_SLOT_IRQ_CALLBACK(_write) \
-	devcb = &downcast<plus4_expansion_slot_device &>(*device).set_irq_wr_callback(DEVCB_##_write);
+	downcast<plus4_expansion_slot_device &>(*device).set_irq_wr_callback(DEVCB_##_write);
 
 #define MCFG_PLUS4_EXPANSION_SLOT_CD_INPUT_CALLBACK(_read) \
-	devcb = &downcast<plus4_expansion_slot_device &>(*device).set_cd_rd_callback(DEVCB_##_read);
+	downcast<plus4_expansion_slot_device &>(*device).set_cd_rd_callback(DEVCB_##_read);
 
 #define MCFG_PLUS4_EXPANSION_SLOT_CD_OUTPUT_CALLBACK(_write) \
-	devcb = &downcast<plus4_expansion_slot_device &>(*device).set_cd_wr_callback(DEVCB_##_write);
+	downcast<plus4_expansion_slot_device &>(*device).set_cd_wr_callback(DEVCB_##_write);
 
 #define MCFG_PLUS4_EXPANSION_SLOT_AEC_CALLBACK(_write) \
-	devcb = &downcast<plus4_expansion_slot_device &>(*device).set_aec_wr_callback(DEVCB_##_write);
+	downcast<plus4_expansion_slot_device &>(*device).set_aec_wr_callback(DEVCB_##_write);
 
 
 

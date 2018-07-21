@@ -51,6 +51,7 @@
 #include "machine/nvram.h"
 #include "machine/timer.h"
 #include "machine/watchdog.h"
+#include "emupal.h"
 #include "screen.h"
 #include "speaker.h"
 
@@ -72,14 +73,13 @@ public:
 
 	void dblcrown(machine_config &config);
 
-protected:
+private:
 	// driver_device overrides
 	virtual void machine_start() override;
 	virtual void machine_reset() override;
 
 	virtual void video_start() override;
 
-private:
 	// screen updates
 	uint32_t screen_update(screen_device &screen, bitmap_ind16 &bitmap, const rectangle &cliprect);
 
@@ -126,7 +126,7 @@ void dblcrown_state::video_start()
 	m_pal_ram = std::make_unique<uint8_t[]>(0x200 * 2);
 	m_vram = std::make_unique<uint8_t[]>(0x1000 * 0x10);
 
-	save_pointer(NAME(m_vram.get()), 0x1000 * 0x10);
+	save_pointer(NAME(m_vram), 0x1000 * 0x10);
 }
 
 uint32_t dblcrown_state::screen_update( screen_device &screen, bitmap_ind16 &bitmap, const rectangle &cliprect )
@@ -346,12 +346,12 @@ void dblcrown_state::dblcrown_map(address_map &map)
 	map(0x8000, 0x9fff).bankr("rom_bank");
 	map(0xa000, 0xb7ff).ram(); // work ram
 	map(0xb800, 0xbfff).ram().share("nvram");
-	map(0xc000, 0xdfff).rw(this, FUNC(dblcrown_state::vram_r), FUNC(dblcrown_state::vram_w));
-	map(0xf000, 0xf1ff).rw(this, FUNC(dblcrown_state::palette_r), FUNC(dblcrown_state::palette_w));
+	map(0xc000, 0xdfff).rw(FUNC(dblcrown_state::vram_r), FUNC(dblcrown_state::vram_w));
+	map(0xf000, 0xf1ff).rw(FUNC(dblcrown_state::palette_r), FUNC(dblcrown_state::palette_w));
 	map(0xfe00, 0xfeff).ram(); // ???
 	map(0xff00, 0xffff).ram(); // ???, intentional fall-through
-	map(0xff00, 0xff01).rw(this, FUNC(dblcrown_state::vram_bank_r), FUNC(dblcrown_state::vram_bank_w));
-	map(0xff04, 0xff04).rw(this, FUNC(dblcrown_state::irq_source_r), FUNC(dblcrown_state::irq_source_w));
+	map(0xff00, 0xff01).rw(FUNC(dblcrown_state::vram_bank_r), FUNC(dblcrown_state::vram_bank_w));
+	map(0xff04, 0xff04).rw(FUNC(dblcrown_state::irq_source_r), FUNC(dblcrown_state::irq_source_w));
 
 }
 
@@ -363,12 +363,12 @@ void dblcrown_state::dblcrown_io(address_map &map)
 	map(0x01, 0x01).portr("DSWB");
 	map(0x02, 0x02).portr("DSWC");
 	map(0x03, 0x03).portr("DSWD");
-	map(0x04, 0x04).r(this, FUNC(dblcrown_state::in_mux_r));
-	map(0x05, 0x05).r(this, FUNC(dblcrown_state::in_mux_type_r));
+	map(0x04, 0x04).r(FUNC(dblcrown_state::in_mux_r));
+	map(0x05, 0x05).r(FUNC(dblcrown_state::in_mux_type_r));
 	map(0x10, 0x13).rw("ppi", FUNC(i8255_device::read), FUNC(i8255_device::write));
 	map(0x20, 0x21).w("ymz", FUNC(ymz284_device::address_data_w));
-	map(0x30, 0x30).w(this, FUNC(dblcrown_state::watchdog_w));
-	map(0x40, 0x40).w(this, FUNC(dblcrown_state::output_w));
+	map(0x30, 0x30).w(FUNC(dblcrown_state::watchdog_w));
+	map(0x40, 0x40).w(FUNC(dblcrown_state::output_w));
 }
 
 static INPUT_PORTS_START( dblcrown )
@@ -530,7 +530,7 @@ static const gfx_layout char_16x16_layout =
 };
 
 
-static GFXDECODE_START( dblcrown )
+static GFXDECODE_START( gfx_dblcrown )
 #ifdef DEBUG_VRAM
 	GFXDECODE_ENTRY( "vram", 0, char_8x8_layout, 0, 0x10 )
 #endif
@@ -602,9 +602,9 @@ It needs at least 64 instances because 0xa05b will be eventually nuked by the vb
 MACHINE_CONFIG_START(dblcrown_state::dblcrown)
 
 	/* basic machine hardware */
-	MCFG_CPU_ADD("maincpu", Z80, CPU_CLOCK)
-	MCFG_CPU_PROGRAM_MAP(dblcrown_map)
-	MCFG_CPU_IO_MAP(dblcrown_io)
+	MCFG_DEVICE_ADD("maincpu", Z80, CPU_CLOCK)
+	MCFG_DEVICE_PROGRAM_MAP(dblcrown_map)
+	MCFG_DEVICE_IO_MAP(dblcrown_io)
 	MCFG_TIMER_DRIVER_ADD_SCANLINE("scantimer", dblcrown_state, dblcrown_irq_scanline, "screen", 0, 1)
 
 	MCFG_WATCHDOG_ADD("watchdog")
@@ -619,7 +619,7 @@ MACHINE_CONFIG_START(dblcrown_state::dblcrown)
 	MCFG_SCREEN_VISIBLE_AREA(0*8, 40*8-1, 2*8, 30*8-1)
 	MCFG_SCREEN_PALETTE("palette")
 
-	MCFG_GFXDECODE_ADD("gfxdecode", "palette", dblcrown)
+	MCFG_DEVICE_ADD("gfxdecode", GFXDECODE, "palette", gfx_dblcrown)
 
 	MCFG_PALETTE_ADD("palette", 0x100)
 	MCFG_PALETTE_INIT_OWNER(dblcrown_state, dblcrown)
@@ -627,13 +627,13 @@ MACHINE_CONFIG_START(dblcrown_state::dblcrown)
 	MCFG_NVRAM_ADD_0FILL("nvram")
 
 	MCFG_DEVICE_ADD("ppi", I8255, 0)
-	MCFG_I8255_OUT_PORTA_CB(WRITE8(dblcrown_state, lamps_w))
-	MCFG_I8255_OUT_PORTB_CB(WRITE8(dblcrown_state, bank_w))
-	MCFG_I8255_OUT_PORTC_CB(WRITE8(dblcrown_state, mux_w))
+	MCFG_I8255_OUT_PORTA_CB(WRITE8(*this, dblcrown_state, lamps_w))
+	MCFG_I8255_OUT_PORTB_CB(WRITE8(*this, dblcrown_state, bank_w))
+	MCFG_I8255_OUT_PORTC_CB(WRITE8(*this, dblcrown_state, mux_w))
 
 	/* sound hardware */
-	MCFG_SPEAKER_STANDARD_MONO("mono")
-	MCFG_SOUND_ADD("ymz", YMZ284, SND_CLOCK)
+	SPEAKER(config, "mono").front_center();
+	MCFG_DEVICE_ADD("ymz", YMZ284, SND_CLOCK)
 	MCFG_SOUND_ROUTE(ALL_OUTPUTS, "mono", 0.75)
 MACHINE_CONFIG_END
 
@@ -661,5 +661,5 @@ ROM_START( dblcrown )
 ROM_END
 
 
-/*     YEAR  NAME      PARENT    MACHINE   INPUT     STATE           INIT   ROT    COMPANY                FULLNAME                FLAGS                    LAYOUT  */
-GAMEL( 1997, dblcrown, 0,        dblcrown, dblcrown, dblcrown_state, 0,     ROT0, "Cadence Technology",  "Double Crown (v1.0.3)", MACHINE_IMPERFECT_GRAPHICS, layout_dblcrown ) // 1997 DYNA copyright in tile GFX
+/*     YEAR  NAME      PARENT  MACHINE   INPUT     CLASS           INIT        ROT    COMPANY                FULLNAME                FLAGS                    LAYOUT  */
+GAMEL( 1997, dblcrown, 0,      dblcrown, dblcrown, dblcrown_state, empty_init, ROT0, "Cadence Technology",  "Double Crown (v1.0.3)", MACHINE_IMPERFECT_GRAPHICS, layout_dblcrown ) // 1997 DYNA copyright in tile GFX

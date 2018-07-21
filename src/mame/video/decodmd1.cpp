@@ -45,7 +45,7 @@ WRITE8_MEMBER( decodmd_type1_device::ctrl_w )
 		m_blank = 0;
 		m_frameswap = false;
 		m_status = 0;
-		m_cpu->set_input_line(INPUT_LINE_RESET,PULSE_LINE);
+		m_cpu->pulse_input_line(INPUT_LINE_RESET, attotime::zero);
 	}
 	m_ctrl = data;
 }
@@ -58,11 +58,6 @@ READ8_MEMBER( decodmd_type1_device::ctrl_r )
 READ8_MEMBER( decodmd_type1_device::status_r )
 {
 	return (m_busy & 0x01) | (m_status << 1);
-}
-
-WRITE8_MEMBER( decodmd_type1_device::status_w )
-{
-	m_status = data;
 }
 
 // Z80 I/O ports not fully decoded.
@@ -185,7 +180,7 @@ void decodmd_type1_device::set_busy(uint8_t input, uint8_t val)
 
 TIMER_DEVICE_CALLBACK_MEMBER(decodmd_type1_device::dmd_nmi)
 {
-	m_cpu->set_input_line(INPUT_LINE_NMI, PULSE_LINE);
+	m_cpu->pulse_input_line(INPUT_LINE_NMI, attotime::zero);
 }
 
 void decodmd_type1_device::decodmd1_map(address_map &map)
@@ -198,20 +193,20 @@ void decodmd_type1_device::decodmd1_map(address_map &map)
 void decodmd_type1_device::decodmd1_io_map(address_map &map)
 {
 	map.global_mask(0xff);
-	map(0x00, 0xff).rw(this, FUNC(decodmd_type1_device::dmd_port_r), FUNC(decodmd_type1_device::dmd_port_w));
+	map(0x00, 0xff).rw(FUNC(decodmd_type1_device::dmd_port_r), FUNC(decodmd_type1_device::dmd_port_w));
 }
 
 MACHINE_CONFIG_START(decodmd_type1_device::device_add_mconfig)
 	/* basic machine hardware */
-	MCFG_CPU_ADD("dmdcpu", Z80, XTAL(8'000'000) / 2)
-	MCFG_CPU_PROGRAM_MAP(decodmd1_map)
-	MCFG_CPU_IO_MAP(decodmd1_io_map)
+	MCFG_DEVICE_ADD("dmdcpu", Z80, XTAL(8'000'000) / 2)
+	MCFG_DEVICE_PROGRAM_MAP(decodmd1_map)
+	MCFG_DEVICE_IO_MAP(decodmd1_io_map)
 
 	MCFG_QUANTUM_TIME(attotime::from_hz(50))
 
 	MCFG_TIMER_DRIVER_ADD_PERIODIC("nmi_timer", decodmd_type1_device, dmd_nmi, attotime::from_hz(2000))  // seems a lot
 
-	MCFG_DEFAULT_LAYOUT(layout_lcd)
+	config.set_default_layout(layout_lcd);
 
 	MCFG_SCREEN_ADD("dmd",LCD)
 	MCFG_SCREEN_SIZE(128, 16)
@@ -222,23 +217,23 @@ MACHINE_CONFIG_START(decodmd_type1_device::device_add_mconfig)
 	MCFG_RAM_ADD(RAM_TAG)
 	MCFG_RAM_DEFAULT_SIZE("8K")
 
-	MCFG_DEVICE_ADD("bitlatch", HC259, 0) // U4
-	MCFG_ADDRESSABLE_LATCH_PARALLEL_OUT_CB(MEMBANK("dmdbank1")) MCFG_DEVCB_MASK(0x07) MCFG_DEVCB_INVERT
-	MCFG_ADDRESSABLE_LATCH_Q3_OUT_CB(WRITELINE(decodmd_type1_device, blank_w))
-	MCFG_ADDRESSABLE_LATCH_Q4_OUT_CB(WRITELINE(decodmd_type1_device, status_w))
-	MCFG_ADDRESSABLE_LATCH_Q5_OUT_CB(WRITELINE(decodmd_type1_device, rowdata_w))
-	MCFG_ADDRESSABLE_LATCH_Q6_OUT_CB(WRITELINE(decodmd_type1_device, rowclock_w))
-	MCFG_ADDRESSABLE_LATCH_Q7_OUT_CB(WRITELINE(decodmd_type1_device, test_w))
+	HC259(config, m_bitlatch); // U4
+	m_bitlatch->parallel_out_cb().set_membank(m_rombank1).mask(0x07).invert();
+	m_bitlatch->q_out_cb<3>().set(FUNC(decodmd_type1_device::blank_w));
+	m_bitlatch->q_out_cb<4>().set(FUNC(decodmd_type1_device::status_w));
+	m_bitlatch->q_out_cb<5>().set(FUNC(decodmd_type1_device::rowdata_w));
+	m_bitlatch->q_out_cb<6>().set(FUNC(decodmd_type1_device::rowclock_w));
+	m_bitlatch->q_out_cb<7>().set(FUNC(decodmd_type1_device::test_w));
 MACHINE_CONFIG_END
 
 
 decodmd_type1_device::decodmd_type1_device(const machine_config &mconfig, const char *tag, device_t *owner, uint32_t clock)
-	: device_t(mconfig, DECODMD1, tag, owner, clock),
-		m_cpu(*this, "dmdcpu"),
-		m_rombank1(*this, "dmdbank1"),
-		m_rombank2(*this, "dmdbank2"),
-		m_ram(*this, RAM_TAG),
-		m_bitlatch(*this, "bitlatch")
+	: device_t(mconfig, DECODMD1, tag, owner, clock)
+	, m_cpu(*this, "dmdcpu")
+	, m_rombank1(*this, "dmdbank1")
+	, m_rombank2(*this, "dmdbank2")
+	, m_ram(*this, RAM_TAG)
+	, m_bitlatch(*this, "bitlatch")
 {}
 
 void decodmd_type1_device::device_start()

@@ -13,6 +13,7 @@
 #include "machine/74259.h"
 #include "machine/watchdog.h"
 #include "sound/discrete.h"
+#include "emupal.h"
 
 /* Discrete Sound Input Nodes */
 #define CANYON_MOTOR1_DATA      NODE_01
@@ -75,6 +76,6 @@ private:
 
 
 /*----------- defined in audio/canyon.c -----------*/
-DISCRETE_SOUND_EXTERN( canyon );
+DISCRETE_SOUND_EXTERN( canyon_discrete );
 
 #endif // MAME_INCLUDES_CANYON_H

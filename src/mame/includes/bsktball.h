@@ -12,6 +12,7 @@
 
 #include "machine/timer.h"
 #include "sound/discrete.h"
+#include "emupal.h"
 
 /* Discrete Sound Input Nodes */
 #define BSKTBALL_NOTE_DATA      NODE_01
@@ -87,6 +88,6 @@ private:
 
 /*----------- defined in audio/bsktball.c -----------*/
 
-DISCRETE_SOUND_EXTERN( bsktball );
+DISCRETE_SOUND_EXTERN( bsktball_discrete );
 
 #endif // MAME_INCLUDES_BSKTBALL_H

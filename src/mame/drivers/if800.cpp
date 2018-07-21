@@ -11,6 +11,7 @@
 #include "cpu/i86/i86.h"
 #include "machine/pic8259.h"
 #include "video/upd7220.h"
+#include "emupal.h"
 #include "screen.h"
 
 
@@ -24,6 +25,9 @@ public:
 		m_maincpu(*this, "maincpu"),
 		m_palette(*this, "palette") { }
 
+	void if800(machine_config &config);
+
+private:
 	required_device<upd7220_device> m_hgdc;
 
 	required_shared_ptr<uint16_t> m_video_ram;
@@ -32,7 +36,6 @@ public:
 	required_device<cpu_device> m_maincpu;
 	required_device<palette_device> m_palette;
 	UPD7220_DISPLAY_PIXELS_MEMBER( hgdc_display_pixels );
-	void if800(machine_config &config);
 	void if800_io(address_map &map);
 	void if800_map(address_map &map);
 	void upd7220_map(address_map &map);
@@ -89,9 +92,9 @@ void if800_state::upd7220_map(address_map &map)
 
 MACHINE_CONFIG_START(if800_state::if800)
 	/* basic machine hardware */
-	MCFG_CPU_ADD("maincpu", I8086, 8000000)
-	MCFG_CPU_PROGRAM_MAP(if800_map)
-	MCFG_CPU_IO_MAP(if800_io)
+	MCFG_DEVICE_ADD("maincpu", I8086, 8000000)
+	MCFG_DEVICE_PROGRAM_MAP(if800_map)
+	MCFG_DEVICE_IO_MAP(if800_io)
 
 
 //  MCFG_PIC8259_ADD( "pic8259", if800_pic8259_config )
@@ -121,5 +124,5 @@ ROM_END
 
 /* Driver */
 
-//    YEAR  NAME    PARENT  COMPAT   MACHINE    INPUT  STATE        INIT   COMPANY           FULLNAME          FLAGS
-COMP( 1985, if800,  0,      0,       if800,     if800, if800_state, 0,     "Oki Electric",   "if800 model 60", MACHINE_NOT_WORKING | MACHINE_NO_SOUND)
+//    YEAR  NAME   PARENT  COMPAT  MACHINE  INPUT  CLASS        INIT        COMPANY         FULLNAME          FLAGS
+COMP( 1985, if800, 0,      0,      if800,   if800, if800_state, empty_init, "Oki Electric", "if800 model 60", MACHINE_NOT_WORKING | MACHINE_NO_SOUND)

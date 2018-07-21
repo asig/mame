@@ -21,12 +21,24 @@
 void lynx_state::lynx_mem(address_map &map)
 {
 	map(0x0000, 0xfbff).ram().share("mem_0000");
-	map(0xfc00, 0xfcff).ram().share("mem_fc00");
-	map(0xfd00, 0xfdff).ram().share("mem_fd00");
-	map(0xfe00, 0xfff7).bankr("bank3").writeonly().share("mem_fe00");
+	map(0xfc00, 0xfcff).m(m_bank_fc00, FUNC(address_map_bank_device::amap8));
+	map(0xfd00, 0xfdff).m(m_bank_fd00, FUNC(address_map_bank_device::amap8));
+	map(0xfe00, 0xfff7).bankr("bank_fe00").writeonly().share("mem_fe00");
 	map(0xfff8, 0xfff8).ram();
-	map(0xfff9, 0xfff9).rw(this, FUNC(lynx_state::lynx_memory_config_r), FUNC(lynx_state::lynx_memory_config_w));
-	map(0xfffa, 0xffff).bankr("bank4").writeonly().share("mem_fffa");
+	map(0xfff9, 0xfff9).rw(FUNC(lynx_state::lynx_memory_config_r), FUNC(lynx_state::lynx_memory_config_w));
+	map(0xfffa, 0xffff).bankr("bank_fffa").writeonly().share("mem_fffa");
+}
+
+void lynx_state::lynx_fc00_mem(address_map &map)
+{
+	map(0x000, 0x0ff).rw(FUNC(lynx_state::suzy_read), FUNC(lynx_state::suzy_write));
+	map(0x100, 0x1ff).ram().share("mem_fc00");
+}
+
+void lynx_state::lynx_fd00_mem(address_map &map)
+{
+	map(0x000, 0x0ff).rw(FUNC(lynx_state::mikey_read), FUNC(lynx_state::mikey_write));
+	map(0x100, 0x1ff).ram().share("mem_fd00");
 }
 
 static INPUT_PORTS_START( lynx )
@@ -45,25 +57,12 @@ static INPUT_PORTS_START( lynx )
 	// power on and power off buttons
 INPUT_PORTS_END
 
-PALETTE_INIT_MEMBER(lynx_state, lynx)
-{
-	int i;
-
-	for (i=0; i< 0x1000; i++)
-	{
-		palette.set_pen_color(i,
-			((i >> 0) & 0x0f) * 0x11,
-			((i >> 4) & 0x0f) * 0x11,
-			((i >> 8) & 0x0f) * 0x11);
-	}
-}
-
 void lynx_state::video_start()
 {
 	m_screen->register_screen_bitmap(m_bitmap);
 }
 
-uint32_t lynx_state::screen_update(screen_device &screen, bitmap_ind16 &bitmap, const rectangle &cliprect)
+uint32_t lynx_state::screen_update(screen_device &screen, bitmap_rgb32 &bitmap, const rectangle &cliprect)
 {
 	copybitmap(bitmap, m_bitmap, 0, 0, 0, 0, cliprect);
 	return 0;
@@ -77,9 +76,23 @@ void lynx_state::sound_cb()
 
 MACHINE_CONFIG_START(lynx_state::lynx)
 	/* basic machine hardware */
-	MCFG_CPU_ADD("maincpu", M65SC02, 4000000)        /* vti core, integrated in vlsi, stz, but not bbr bbs */
-	MCFG_CPU_PROGRAM_MAP(lynx_mem)
+	MCFG_DEVICE_ADD("maincpu", M65SC02, 4000000)        /* vti core, integrated in vlsi, stz, but not bbr bbs */
+	MCFG_DEVICE_PROGRAM_MAP(lynx_mem)
 	MCFG_QUANTUM_TIME(attotime::from_hz(60))
+
+	MCFG_DEVICE_ADD("bank_fc00", ADDRESS_MAP_BANK, 0)
+	MCFG_DEVICE_PROGRAM_MAP(lynx_fc00_mem)
+	MCFG_ADDRESS_MAP_BANK_ENDIANNESS(ENDIANNESS_LITTLE)
+	MCFG_ADDRESS_MAP_BANK_DATA_WIDTH(8)
+	MCFG_ADDRESS_MAP_BANK_ADDR_WIDTH(9)
+	MCFG_ADDRESS_MAP_BANK_STRIDE(0x100)
+
+	MCFG_DEVICE_ADD("bank_fd00", ADDRESS_MAP_BANK, 0)
+	MCFG_DEVICE_PROGRAM_MAP(lynx_fd00_mem)
+	MCFG_ADDRESS_MAP_BANK_ENDIANNESS(ENDIANNESS_LITTLE)
+	MCFG_ADDRESS_MAP_BANK_DATA_WIDTH(8)
+	MCFG_ADDRESS_MAP_BANK_ADDR_WIDTH(9)
+	MCFG_ADDRESS_MAP_BANK_STRIDE(0x100)
 
 	/* video hardware */
 	MCFG_SCREEN_ADD("screen", LCD)
@@ -88,15 +101,13 @@ MACHINE_CONFIG_START(lynx_state::lynx)
 	MCFG_SCREEN_UPDATE_DRIVER(lynx_state, screen_update)
 	MCFG_SCREEN_SIZE(160, 102)
 	MCFG_SCREEN_VISIBLE_AREA(0, 160-1, 0, 102-1)
-	MCFG_SCREEN_PALETTE("palette")
-	MCFG_DEFAULT_LAYOUT(layout_lynx)
+	config.set_default_layout(layout_lynx);
 
-	MCFG_PALETTE_ADD("palette", 0x1000)
-	MCFG_PALETTE_INIT_OWNER(lynx_state, lynx)
+	MCFG_PALETTE_ADD("palette", 0x10)
 
 	/* sound hardware */
-	MCFG_SPEAKER_STANDARD_MONO("mono")
-	MCFG_SOUND_ADD("custom", LYNX_SND, 0)
+	SPEAKER(config, "mono").front_center();
+	MCFG_DEVICE_ADD("custom", LYNX_SND, 0)
 	MCFG_LYNX_SND_SET_TIMER(lynx_state, sound_cb)
 	MCFG_SOUND_ROUTE(ALL_OUTPUTS, "mono", 0.50)
 
@@ -118,9 +129,10 @@ static MACHINE_CONFIG_START( lynx2 )
 
 	/* sound hardware */
 	MCFG_DEVICE_REMOVE("mono")
-	MCFG_SPEAKER_STANDARD_STEREO("lspeaker", "rspeaker")
+	SPEAKER(config, "lspeaker").front_left();
+	SPEAKER(config, "rspeaker").front_right();
 	MCFG_DEVICE_REMOVE("lynx")
-	MCFG_SOUND_ADD("custom", LYNX2_SND, 0)
+	MCFG_DEVICE_ADD("custom", LYNX2_SND, 0)
 	MCFG_LYNX_SND_SET_TIMER(lynx_state, sound_cb)
 	MCFG_SOUND_ROUTE(0, "lspeaker", 0.50)
 	MCFG_SOUND_ROUTE(1, "rspeaker", 0.50)
@@ -136,9 +148,9 @@ MACHINE_CONFIG_END
 ROM_START(lynx)
 	ROM_REGION(0x200,"maincpu", 0)
 	ROM_SYSTEM_BIOS( 0, "default",   "rom save" )
-	ROMX_LOAD( "lynx.bin",  0x00000, 0x200, BAD_DUMP CRC(e1ffecb6) SHA1(de60f2263851bbe10e5801ef8f6c357a4bc077e6), ROM_BIOS(1))
+	ROMX_LOAD("lynx.bin",  0x00000, 0x200, BAD_DUMP CRC(e1ffecb6) SHA1(de60f2263851bbe10e5801ef8f6c357a4bc077e6), ROM_BIOS(0))
 	ROM_SYSTEM_BIOS( 1, "a", "alternate rom save" )
-	ROMX_LOAD( "lynxa.bin", 0x00000, 0x200, BAD_DUMP CRC(0d973c9d) SHA1(e4ed47fae31693e016b081c6bda48da5b70d7ccb), ROM_BIOS(2))
+	ROMX_LOAD("lynxa.bin", 0x00000, 0x200, BAD_DUMP CRC(0d973c9d) SHA1(e4ed47fae31693e016b081c6bda48da5b70d7ccb), ROM_BIOS(1))
 
 	ROM_REGION(0x100,"gfx1", ROMREGION_ERASE00)
 ROM_END
@@ -199,6 +211,6 @@ QUICKLOAD_LOAD_MEMBER( lynx_state, lynx )
 
 ***************************************************************************/
 
-/*    YEAR  NAME    PARENT  COMPAT  MACHINE INPUT STATE         INIT    COMPANY   FULLNAME      FLAGS */
-CONS( 1989, lynx,   0,      0,      lynx,   lynx, lynx_state,   0,      "Atari",  "Lynx",       MACHINE_SUPPORTS_SAVE )
-// CONS( 1991, lynx2,  lynx,  0,      lynx2,  lynx, lynx_state,   0,      "Atari",  "Lynx II",    MACHINE_NOT_WORKING | MACHINE_IMPERFECT_SOUND )
+/*    YEAR  NAME  PARENT  COMPAT  MACHINE  INPUT  CLASS       INIT        COMPANY  FULLNAME  FLAGS */
+CONS( 1989, lynx, 0,      0,      lynx,    lynx,  lynx_state, empty_init, "Atari", "Lynx",   MACHINE_SUPPORTS_SAVE )
+// CONS( 1991, lynx2,  lynx,  0,      lynx2,  lynx, lynx_state, empty_init, "Atari",  "Lynx II",    MACHINE_NOT_WORKING | MACHINE_IMPERFECT_SOUND )

@@ -11,6 +11,7 @@
 #include "emu.h"
 #include "cpu/z180/z180.h"
 #include "machine/upd765.h"
+#include "emupal.h"
 #include "screen.h"
 
 #define FDC9266_TAG "u43"
@@ -27,6 +28,9 @@ public:
 			m_floppy2(*this, FDC9266_TAG ":2:35dd"),
 			m_floppy3(*this, FDC9266_TAG ":3:35dd") { }
 
+	void tim011(machine_config &config);
+
+private:
 	virtual void machine_reset() override;
 	virtual void video_start() override;
 	uint32_t screen_update_tim011(screen_device &screen, bitmap_ind16 &bitmap, const rectangle &cliprect);
@@ -43,7 +47,6 @@ public:
 	required_device<floppy_image_device> m_floppy1;
 	required_device<floppy_image_device> m_floppy2;
 	required_device<floppy_image_device> m_floppy3;
-	void tim011(machine_config &config);
 	void tim011_io(address_map &map);
 	void tim011_mem(address_map &map);
 };
@@ -129,12 +132,12 @@ static const floppy_format_type tim011_floppy_formats[] = {
 
 MACHINE_CONFIG_START(tim011_state::tim011)
 	/* basic machine hardware */
-	MCFG_CPU_ADD("maincpu",Z180, XTAL(12'288'000) / 2) // location U17 HD64180
-	MCFG_CPU_PROGRAM_MAP(tim011_mem)
-	MCFG_CPU_IO_MAP(tim011_io)
-	MCFG_CPU_VBLANK_INT_DRIVER("screen", tim011_state, irq0_line_hold)
+	MCFG_DEVICE_ADD("maincpu",Z180, XTAL(12'288'000) / 2) // location U17 HD64180
+	MCFG_DEVICE_PROGRAM_MAP(tim011_mem)
+	MCFG_DEVICE_IO_MAP(tim011_io)
+	MCFG_DEVICE_VBLANK_INT_DRIVER("screen", tim011_state, irq0_line_hold)
 
-//  MCFG_CPU_ADD("keyboard",CDP1802, XTAL(1'750'000)) // CDP1802, unknown clock
+//  MCFG_DEVICE_ADD("keyboard",CDP1802, XTAL(1'750'000)) // CDP1802, unknown clock
 
 	// FDC9266 location U43 XTAL(8'000'000)
 	MCFG_UPD765A_ADD(FDC9266_TAG, true, true)
@@ -168,5 +171,5 @@ ROM_END
 
 /* Driver */
 
-/*    YEAR  NAME    PARENT  COMPAT   MACHINE    INPUT   STATE          INIT  COMPANY                    FULLNAME   FLAGS */
-COMP( 1987, tim011, 0,      0,       tim011,    tim011, tim011_state,  0,    "Mihajlo Pupin Institute", "TIM-011", MACHINE_NOT_WORKING | MACHINE_NO_SOUND)
+/*    YEAR  NAME    PARENT  COMPAT  MACHINE  INPUT   CLASS         INIT        COMPANY                    FULLNAME   FLAGS */
+COMP( 1987, tim011, 0,      0,      tim011,  tim011, tim011_state, empty_init, "Mihajlo Pupin Institute", "TIM-011", MACHINE_NOT_WORKING | MACHINE_NO_SOUND)

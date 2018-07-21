@@ -44,14 +44,14 @@ ROM_START( cumana1 )
 	ROM_REGION(0x4000, "dfs_rom", 0)
 	ROM_DEFAULT_BIOS("qfs102")
 	ROM_SYSTEM_BIOS(0, "qfs102", "QFS 1.02")
-	ROMX_LOAD("qfs102.rom", 0x0000, 0x4000, CRC(083a9285) SHA1(4bf31a420a9d752285b088ee4f08a64563527662), ROM_BIOS(1))
+	ROMX_LOAD("qfs102.rom", 0x0000, 0x4000, CRC(083a9285) SHA1(4bf31a420a9d752285b088ee4f08a64563527662), ROM_BIOS(0))
 ROM_END
 
 ROM_START( cumana2 )
 	ROM_REGION(0x4000, "dfs_rom", 0)
 	ROM_DEFAULT_BIOS("qfs200")
 	ROM_SYSTEM_BIOS(0, "qfs200", "QFS 2.00")
-	ROMX_LOAD("qfs200.rom", 0x0000, 0x4000, CRC(5863962a) SHA1(0dced741482321938842746ee47090ae443d7ad5), ROM_BIOS(1))
+	ROMX_LOAD("qfs200.rom", 0x0000, 0x4000, CRC(5863962a) SHA1(0dced741482321938842746ee47090ae443d7ad5), ROM_BIOS(0))
 ROM_END
 
 
@@ -60,10 +60,10 @@ ROM_END
 //-------------------------------------------------
 
 MACHINE_CONFIG_START(bbc_cumana1_device::device_add_mconfig)
-	MCFG_MB8877_ADD("mb8877a", XTAL(16'000'000) / 16)
-	MCFG_WD_FDC_INTRQ_CALLBACK(WRITELINE(bbc_cumanafdc_device, fdc_intrq_w))
-	MCFG_WD_FDC_DRQ_CALLBACK(WRITELINE(bbc_cumanafdc_device, fdc_drq_w))
-	MCFG_WD_FDC_HLD_CALLBACK(WRITELINE(bbc_cumanafdc_device, motor_w))
+	MCFG_DEVICE_ADD("mb8877a", MB8877, 16_MHz_XTAL / 16)
+	MCFG_WD_FDC_INTRQ_CALLBACK(WRITELINE(*this, bbc_cumanafdc_device, fdc_intrq_w))
+	MCFG_WD_FDC_DRQ_CALLBACK(WRITELINE(*this, bbc_cumanafdc_device, fdc_drq_w))
+	MCFG_WD_FDC_HLD_CALLBACK(WRITELINE(*this, bbc_cumanafdc_device, motor_w))
 	MCFG_FLOPPY_DRIVE_ADD("mb8877a:0", bbc_floppies_525, "525qd", floppy_formats)
 	MCFG_FLOPPY_DRIVE_SOUND(true)
 	MCFG_FLOPPY_DRIVE_ADD("mb8877a:1", bbc_floppies_525, "525qd", floppy_formats)
@@ -71,10 +71,10 @@ MACHINE_CONFIG_START(bbc_cumana1_device::device_add_mconfig)
 MACHINE_CONFIG_END
 
 MACHINE_CONFIG_START(bbc_cumana2_device::device_add_mconfig)
-	MCFG_MB8877_ADD("mb8877a", XTAL(16'000'000) / 16)
-	MCFG_WD_FDC_INTRQ_CALLBACK(WRITELINE(bbc_cumanafdc_device, fdc_intrq_w))
-	MCFG_WD_FDC_DRQ_CALLBACK(WRITELINE(bbc_cumanafdc_device, fdc_drq_w))
-	MCFG_WD_FDC_HLD_CALLBACK(WRITELINE(bbc_cumanafdc_device, motor_w))
+	MCFG_DEVICE_ADD("mb8877a", MB8877, 16_MHz_XTAL / 16)
+	MCFG_WD_FDC_INTRQ_CALLBACK(WRITELINE(*this, bbc_cumanafdc_device, fdc_intrq_w))
+	MCFG_WD_FDC_DRQ_CALLBACK(WRITELINE(*this, bbc_cumanafdc_device, fdc_drq_w))
+	MCFG_WD_FDC_HLD_CALLBACK(WRITELINE(*this, bbc_cumanafdc_device, motor_w))
 	MCFG_FLOPPY_DRIVE_ADD("mb8877a:0", bbc_floppies_525, "525qd", floppy_formats)
 	MCFG_FLOPPY_DRIVE_SOUND(true)
 	MCFG_FLOPPY_DRIVE_ADD("mb8877a:1", bbc_floppies_525, "525qd", floppy_formats)

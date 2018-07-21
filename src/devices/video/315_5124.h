@@ -13,6 +13,7 @@
 
 #pragma once
 
+#include "emupal.h"
 #include "screen.h"
 
 
@@ -219,13 +220,13 @@ private:
 	downcast<sega315_5124_device &>(*device).set_signal_type(_bool);
 
 #define MCFG_SEGA315_5124_INT_CB(_devcb) \
-	devcb = &downcast<sega315_5124_device &>(*device).set_int_callback(DEVCB_##_devcb);
+	downcast<sega315_5124_device &>(*device).set_int_callback(DEVCB_##_devcb);
 
 #define MCFG_SEGA315_5124_CSYNC_CB(_devcb) \
-	devcb = &downcast<sega315_5124_device &>(*device).set_csync_callback(DEVCB_##_devcb);
+	downcast<sega315_5124_device &>(*device).set_csync_callback(DEVCB_##_devcb);
 
 #define MCFG_SEGA315_5124_PAUSE_CB(_devcb) \
-	devcb = &downcast<sega315_5124_device &>(*device).set_pause_callback(DEVCB_##_devcb);
+	downcast<sega315_5124_device &>(*device).set_pause_callback(DEVCB_##_devcb);
 
 
 #define MCFG_SEGA315_5246_SET_SCREEN MCFG_VIDEO_SET_SCREEN
@@ -234,13 +235,13 @@ private:
 	downcast<sega315_5246_device &>(*device).set_signal_type(_bool);
 
 #define MCFG_SEGA315_5246_INT_CB(_devcb) \
-	devcb = &downcast<sega315_5246_device &>(*device).set_int_callback(DEVCB_##_devcb);
+	downcast<sega315_5246_device &>(*device).set_int_callback(DEVCB_##_devcb);
 
 #define MCFG_SEGA315_5246_CSYNC_CB(_devcb) \
-	devcb = &downcast<sega315_5246_device &>(*device).set_csync_callback(DEVCB_##_devcb);
+	downcast<sega315_5246_device &>(*device).set_csync_callback(DEVCB_##_devcb);
 
 #define MCFG_SEGA315_5246_PAUSE_CB(_devcb) \
-	devcb = &downcast<sega315_5246_device &>(*device).set_pause_callback(DEVCB_##_devcb);
+	downcast<sega315_5246_device &>(*device).set_pause_callback(DEVCB_##_devcb);
 
 
 #define MCFG_SEGA315_5378_SET_SCREEN MCFG_VIDEO_SET_SCREEN
@@ -249,13 +250,13 @@ private:
 	downcast<sega315_5378_device &>(*device).set_signal_type(_bool);
 
 #define MCFG_SEGA315_5378_INT_CB(_devcb) \
-	devcb = &downcast<sega315_5378_device &>(*device).set_int_callback(DEVCB_##_devcb);
+	downcast<sega315_5378_device &>(*device).set_int_callback(DEVCB_##_devcb);
 
 #define MCFG_SEGA315_5378_CSYNC_CB(_devcb) \
-	devcb = &downcast<sega315_5378_device &>(*device).set_csync_callback(DEVCB_##_devcb);
+	downcast<sega315_5378_device &>(*device).set_csync_callback(DEVCB_##_devcb);
 
 #define MCFG_SEGA315_5378_PAUSE_CB(_devcb) \
-	devcb = &downcast<sega315_5378_device &>(*device).set_pause_callback(DEVCB_##_devcb);
+	downcast<sega315_5378_device &>(*device).set_pause_callback(DEVCB_##_devcb);
 
 
 #endif // MAME_VIDEO_315_5124_H

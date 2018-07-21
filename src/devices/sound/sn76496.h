@@ -19,7 +19,7 @@ DECLARE_DEVICE_TYPE(SEGAPSG,  segapsg_device)
 
 
 #define MCFG_SN76496_READY_HANDLER(cb) \
-	devcb = &downcast<sn76496_base_device &>(*device).set_ready_handler((DEVCB_##cb));
+	downcast<sn76496_base_device &>(*device).set_ready_handler((DEVCB_##cb));
 
 class sn76496_base_device : public device_t, public device_sound_interface
 {
@@ -29,7 +29,7 @@ public:
 
 	DECLARE_WRITE8_MEMBER( stereo_w );
 	void write(uint8_t data);
-	DECLARE_WRITE8_MEMBER( write );
+	DECLARE_WRITE8_MEMBER( command_w ) { write(data); }
 	DECLARE_READ_LINE_MEMBER( ready_r ) { return m_ready_state ? 1 : 0; }
 
 protected:

@@ -236,6 +236,7 @@
 #include "machine/6850acia.h"
 #include "machine/mc68681.h"
 #include "sound/ay8910.h"
+#include "emupal.h"
 #include "screen.h"
 #include "speaker.h"
 
@@ -246,9 +247,6 @@
 
 class goldngam_state : public driver_device
 {
-	static constexpr int MOVIECRD_DUART1_IRQ = M68K_IRQ_2;
-	static constexpr int MOVIECRD_DUART2_IRQ = M68K_IRQ_4;
-
 public:
 	goldngam_state(const machine_config &mconfig, device_type type, const char *tag)
 		: driver_device(mconfig, type, tag),
@@ -259,6 +257,9 @@ public:
 	void swisspkr(machine_config &config);
 	void moviecrd(machine_config &config);
 private:
+	static constexpr int MOVIECRD_DUART1_IRQ = M68K_IRQ_2;
+	static constexpr int MOVIECRD_DUART2_IRQ = M68K_IRQ_4;
+
 	DECLARE_READ8_MEMBER(unk_r);
 	virtual void video_start() override;
 	DECLARE_PALETTE_INIT(goldngam);
@@ -335,7 +336,7 @@ void goldngam_state::swisspkr_map(address_map &map)
 	map(0x500208, 0x500209).nopr(); //?
 	map(0x50020c, 0x50020d).nopr(); //?
 	map(0x500300, 0x500301).nopr(); //?
-	map(0x50030f, 0x50030f).r(this, FUNC(goldngam_state::unk_r));
+	map(0x50030f, 0x50030f).r(FUNC(goldngam_state::unk_r));
 	map(0x501500, 0x501501).nopw(); //?
 	map(0x503000, 0x503001).ram(); //int ack ?
 	map(0x503002, 0x503003).ram(); //int ack ?
@@ -582,7 +583,7 @@ static const gfx_layout charlayout =
 * Graphics Decode Information *
 ******************************/
 
-static GFXDECODE_START( goldngam )
+static GFXDECODE_START( gfx_goldngam )
 	GFXDECODE_ENTRY( "maincpu", 0, charlayout, 0, 16 )
 GFXDECODE_END
 
@@ -595,8 +596,8 @@ GFXDECODE_END
 MACHINE_CONFIG_START(goldngam_state::swisspkr)
 
 	/* basic machine hardware */
-	MCFG_CPU_ADD("maincpu", M68000, MASTER_CLOCK)
-	MCFG_CPU_PROGRAM_MAP(swisspkr_map)
+	MCFG_DEVICE_ADD("maincpu", M68000, MASTER_CLOCK)
+	MCFG_DEVICE_PROGRAM_MAP(swisspkr_map)
 
 	MCFG_DEVICE_ADD("ptm", PTM6840, 2'000'000)
 	MCFG_PTM6840_IRQ_CB(INPUTLINE("maincpu", M68K_IRQ_2))
@@ -613,15 +614,15 @@ MACHINE_CONFIG_START(goldngam_state::swisspkr)
 	MCFG_SCREEN_UPDATE_DRIVER(goldngam_state, screen_update_goldngam)
 	MCFG_SCREEN_PALETTE("palette")
 
-	MCFG_GFXDECODE_ADD("gfxdecode", "palette", goldngam)
+	MCFG_DEVICE_ADD("gfxdecode", GFXDECODE, "palette", gfx_goldngam)
 
 	MCFG_PALETTE_ADD("palette", 512)
 	MCFG_PALETTE_INIT_OWNER(goldngam_state, goldngam)
 
 	/* sound hardware */
-	MCFG_SPEAKER_STANDARD_MONO("mono")
+	SPEAKER(config, "mono").front_center();
 
-	MCFG_SOUND_ADD("aysnd", AY8912, MASTER_CLOCK/4)
+	MCFG_DEVICE_ADD("aysnd", AY8912, MASTER_CLOCK/4)
 	MCFG_SOUND_ROUTE(ALL_OUTPUTS, "mono", 1.00)
 MACHINE_CONFIG_END
 
@@ -630,9 +631,9 @@ MACHINE_CONFIG_START(goldngam_state::moviecrd)
 	swisspkr(config);
 
 	/* basic machine hardware */
-	MCFG_CPU_MODIFY("maincpu")
-	MCFG_CPU_PROGRAM_MAP(moviecrd_map)
-	MCFG_CPU_IRQ_ACKNOWLEDGE_DRIVER(goldngam_state, moviecrd_irq_ack)
+	MCFG_DEVICE_MODIFY("maincpu")
+	MCFG_DEVICE_PROGRAM_MAP(moviecrd_map)
+	MCFG_DEVICE_IRQ_ACKNOWLEDGE_DRIVER(goldngam_state, moviecrd_irq_ack)
 
 	MCFG_DEVICE_MODIFY("ptm")
 	MCFG_PTM6840_IRQ_CB(INPUTLINE("maincpu", M68K_IRQ_1))
@@ -645,7 +646,7 @@ MACHINE_CONFIG_START(goldngam_state::moviecrd)
 	MCFG_DEVICE_ADD("duart2", MC68681, 3'686'400)
 	MCFG_MC68681_IRQ_CALLBACK(INPUTLINE("maincpu", MOVIECRD_DUART2_IRQ))
 
-	MCFG_SOUND_REPLACE("aysnd", YM2149, MASTER_CLOCK/4)
+	MCFG_DEVICE_REPLACE("aysnd", YM2149, MASTER_CLOCK/4)
 	MCFG_SOUND_ROUTE(ALL_OUTPUTS, "mono", 1.00)
 MACHINE_CONFIG_END
 
@@ -681,6 +682,6 @@ ROM_END
 *      Game Drivers      *
 *************************/
 
-//    YEAR  NAME      PARENT    MACHINE    INPUT     STATE            INIT  ROT   COMPANY                           FULLNAME                           FLAGS
-GAME( 1990, swisspkr, 0,        swisspkr,  goldngam, goldngam_state,  0,    ROT0, "Golden Games / C+M Technics AG", "Swiss Poker ('50 SG-.10', V2.5)", MACHINE_NO_SOUND | MACHINE_NOT_WORKING )
-GAME( 1998, moviecrd, 0,        moviecrd,  goldngam, goldngam_state,  0,    ROT0, "Golden Games / C+M Technics AG", "Movie Card",                      MACHINE_NO_SOUND | MACHINE_NOT_WORKING )
+//    YEAR  NAME      PARENT    MACHINE    INPUT     STATE           INIT        ROT   COMPANY                           FULLNAME                           FLAGS
+GAME( 1990, swisspkr, 0,        swisspkr,  goldngam, goldngam_state, empty_init, ROT0, "Golden Games / C+M Technics AG", "Swiss Poker ('50 SG-.10', V2.5)", MACHINE_NO_SOUND | MACHINE_NOT_WORKING )
+GAME( 1998, moviecrd, 0,        moviecrd,  goldngam, goldngam_state, empty_init, ROT0, "Golden Games / C+M Technics AG", "Movie Card",                      MACHINE_NO_SOUND | MACHINE_NOT_WORKING )

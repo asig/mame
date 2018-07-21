@@ -96,7 +96,6 @@ II Plus: RAM options reduced to 16/32/48 KB.
 
 #define A2_CPU_TAG "maincpu"
 #define A2_KBDC_TAG "ay3600"
-#define A2_BUS_TAG "a2bus"
 #define A2_SPEAKER_TAG "speaker"
 #define A2_CASSETTE_TAG "tape"
 #define A2_UPPERBANK_TAG "inhbank"
@@ -112,7 +111,7 @@ public:
 		m_ram(*this, RAM_TAG),
 		m_ay3600(*this, A2_KBDC_TAG),
 		m_video(*this, A2_VIDEO_TAG),
-		m_a2bus(*this, A2_BUS_TAG),
+		m_a2bus(*this, "a2bus"),
 		m_joy1x(*this, "joystick_1_x"),
 		m_joy1y(*this, "joystick_1_y"),
 		m_joy2x(*this, "joystick_2_x"),
@@ -875,7 +874,7 @@ uint8_t napple2_state::read_floatingbus()
 
 	// calculate vertical scanning state
 	//
-	v_line  = i / kHClocks; // which vertical scanning line
+	v_line  = (i / kHClocks) + 188; // which vertical scanning line
 	v_state = kVLine0State + v_line; // V state bits
 	if ((v_line >= kVPresetLine)) // check for previous vertical state preset
 	{
@@ -961,25 +960,25 @@ WRITE8_MEMBER(napple2_state::ram_w)
 
 void napple2_state::apple2_map(address_map &map)
 {
-	map(0x0000, 0xbfff).rw(this, FUNC(napple2_state::ram_r), FUNC(napple2_state::ram_w));
-	map(0xc000, 0xc000).mirror(0xf).r(this, FUNC(napple2_state::keyb_data_r)).nopw();
-	map(0xc010, 0xc010).mirror(0xf).rw(this, FUNC(napple2_state::keyb_strobe_r), FUNC(napple2_state::keyb_strobe_w));
-	map(0xc020, 0xc020).mirror(0xf).rw(this, FUNC(napple2_state::cassette_toggle_r), FUNC(napple2_state::cassette_toggle_w));
-	map(0xc030, 0xc030).mirror(0xf).rw(this, FUNC(napple2_state::speaker_toggle_r), FUNC(napple2_state::speaker_toggle_w));
-	map(0xc040, 0xc040).mirror(0xf).rw(this, FUNC(napple2_state::utility_strobe_r), FUNC(napple2_state::utility_strobe_w));
-	map(0xc050, 0xc05f).r(this, FUNC(napple2_state::switches_r)).w(m_softlatch, FUNC(addressable_latch_device::write_a0));
-	map(0xc060, 0xc067).mirror(0x8).r(this, FUNC(napple2_state::flags_r)).nopw(); // includes IIgs STATE register, which ProDOS touches
-	map(0xc070, 0xc070).mirror(0xf).rw(this, FUNC(napple2_state::controller_strobe_r), FUNC(napple2_state::controller_strobe_w));
-	map(0xc080, 0xc0ff).rw(this, FUNC(napple2_state::c080_r), FUNC(napple2_state::c080_w));
-	map(0xc100, 0xc7ff).rw(this, FUNC(napple2_state::c100_r), FUNC(napple2_state::c100_w));
-	map(0xc800, 0xcfff).rw(this, FUNC(napple2_state::c800_r), FUNC(napple2_state::c800_w));
+	map(0x0000, 0xbfff).rw(FUNC(napple2_state::ram_r), FUNC(napple2_state::ram_w));
+	map(0xc000, 0xc000).mirror(0xf).r(FUNC(napple2_state::keyb_data_r)).nopw();
+	map(0xc010, 0xc010).mirror(0xf).rw(FUNC(napple2_state::keyb_strobe_r), FUNC(napple2_state::keyb_strobe_w));
+	map(0xc020, 0xc020).mirror(0xf).rw(FUNC(napple2_state::cassette_toggle_r), FUNC(napple2_state::cassette_toggle_w));
+	map(0xc030, 0xc030).mirror(0xf).rw(FUNC(napple2_state::speaker_toggle_r), FUNC(napple2_state::speaker_toggle_w));
+	map(0xc040, 0xc040).mirror(0xf).rw(FUNC(napple2_state::utility_strobe_r), FUNC(napple2_state::utility_strobe_w));
+	map(0xc050, 0xc05f).r(FUNC(napple2_state::switches_r)).w(m_softlatch, FUNC(addressable_latch_device::write_a0));
+	map(0xc060, 0xc067).mirror(0x8).r(FUNC(napple2_state::flags_r)).nopw(); // includes IIgs STATE register, which ProDOS touches
+	map(0xc070, 0xc070).mirror(0xf).rw(FUNC(napple2_state::controller_strobe_r), FUNC(napple2_state::controller_strobe_w));
+	map(0xc080, 0xc0ff).rw(FUNC(napple2_state::c080_r), FUNC(napple2_state::c080_w));
+	map(0xc100, 0xc7ff).rw(FUNC(napple2_state::c100_r), FUNC(napple2_state::c100_w));
+	map(0xc800, 0xcfff).rw(FUNC(napple2_state::c800_r), FUNC(napple2_state::c800_w));
 	map(0xd000, 0xffff).m(m_upperbank, FUNC(address_map_bank_device::amap8));
 }
 
 void napple2_state::inhbank_map(address_map &map)
 {
-	map(0x0000, 0x2fff).rom().region("maincpu", 0x1000).w(this, FUNC(napple2_state::inh_w));
-	map(0x3000, 0x5fff).rw(this, FUNC(napple2_state::inh_r), FUNC(napple2_state::inh_w));
+	map(0x0000, 0x2fff).rom().region("maincpu", 0x1000).w(FUNC(napple2_state::inh_w));
+	map(0x3000, 0x5fff).rw(FUNC(napple2_state::inh_r), FUNC(napple2_state::inh_w));
 }
 
 /***************************************************************************
@@ -1376,8 +1375,8 @@ static void apple2_cards(device_slot_interface &device)
 
 MACHINE_CONFIG_START(napple2_state::apple2_common)
 	/* basic machine hardware */
-	MCFG_CPU_ADD(A2_CPU_TAG, M6502, 1021800)     /* close to actual CPU frequency of 1.020484 MHz */
-	MCFG_CPU_PROGRAM_MAP(apple2_map)
+	MCFG_DEVICE_ADD(A2_CPU_TAG, M6502, 1021800)     /* close to actual CPU frequency of 1.020484 MHz */
+	MCFG_DEVICE_PROGRAM_MAP(apple2_map)
 	MCFG_TIMER_DRIVER_ADD_SCANLINE("scantimer", napple2_state, apple2_interrupt, "screen", 0, 1)
 	MCFG_QUANTUM_TIME(attotime::from_hz(60))
 
@@ -1392,8 +1391,8 @@ MACHINE_CONFIG_START(napple2_state::apple2_common)
 	MCFG_PALETTE_INIT_OWNER(napple2_state, apple2)
 
 	/* sound hardware */
-	MCFG_SPEAKER_STANDARD_MONO("mono")
-	MCFG_SOUND_ADD(A2_SPEAKER_TAG, SPEAKER_SOUND, 0)
+	SPEAKER(config, "mono").front_center();
+	MCFG_DEVICE_ADD(A2_SPEAKER_TAG, SPEAKER_SOUND)
 	MCFG_SOUND_ROUTE(ALL_OUTPUTS, "mono", 1.00)
 
 	/* /INH banking */
@@ -1405,14 +1404,14 @@ MACHINE_CONFIG_START(napple2_state::apple2_common)
 
 	/* soft switches */
 	MCFG_DEVICE_ADD("softlatch", F9334, 0) // F14 (labeled 74LS259 on some boards and in the Apple ][ Reference Manual)
-	MCFG_ADDRESSABLE_LATCH_Q0_OUT_CB(WRITELINE(napple2_state, txt_w))
-	MCFG_ADDRESSABLE_LATCH_Q1_OUT_CB(WRITELINE(napple2_state, mix_w))
-	MCFG_ADDRESSABLE_LATCH_Q2_OUT_CB(WRITELINE(napple2_state, scr_w))
-	MCFG_ADDRESSABLE_LATCH_Q3_OUT_CB(WRITELINE(napple2_state, res_w))
-	MCFG_ADDRESSABLE_LATCH_Q4_OUT_CB(WRITELINE(napple2_state, an0_w))
-	MCFG_ADDRESSABLE_LATCH_Q5_OUT_CB(WRITELINE(napple2_state, an1_w))
-	MCFG_ADDRESSABLE_LATCH_Q6_OUT_CB(WRITELINE(napple2_state, an2_w))
-	MCFG_ADDRESSABLE_LATCH_Q7_OUT_CB(WRITELINE(napple2_state, an3_w))
+	MCFG_ADDRESSABLE_LATCH_Q0_OUT_CB(WRITELINE(*this, napple2_state, txt_w))
+	MCFG_ADDRESSABLE_LATCH_Q1_OUT_CB(WRITELINE(*this, napple2_state, mix_w))
+	MCFG_ADDRESSABLE_LATCH_Q2_OUT_CB(WRITELINE(*this, napple2_state, scr_w))
+	MCFG_ADDRESSABLE_LATCH_Q3_OUT_CB(WRITELINE(*this, napple2_state, res_w))
+	MCFG_ADDRESSABLE_LATCH_Q4_OUT_CB(WRITELINE(*this, napple2_state, an0_w))
+	MCFG_ADDRESSABLE_LATCH_Q5_OUT_CB(WRITELINE(*this, napple2_state, an1_w))
+	MCFG_ADDRESSABLE_LATCH_Q6_OUT_CB(WRITELINE(*this, napple2_state, an2_w))
+	MCFG_ADDRESSABLE_LATCH_Q7_OUT_CB(WRITELINE(*this, napple2_state, an3_w))
 
 	/* keyboard controller */
 	MCFG_DEVICE_ADD(A2_KBDC_TAG, AY3600, 0)
@@ -1425,28 +1424,28 @@ MACHINE_CONFIG_START(napple2_state::apple2_common)
 	MCFG_AY3600_MATRIX_X6(IOPORT("X6"))
 	MCFG_AY3600_MATRIX_X7(IOPORT("X7"))
 	MCFG_AY3600_MATRIX_X8(IOPORT("X8"))
-	MCFG_AY3600_SHIFT_CB(READLINE(napple2_state, ay3600_shift_r))
-	MCFG_AY3600_CONTROL_CB(READLINE(napple2_state, ay3600_control_r))
-	MCFG_AY3600_DATA_READY_CB(WRITELINE(napple2_state, ay3600_data_ready_w))
-	MCFG_AY3600_AKO_CB(WRITELINE(napple2_state, ay3600_ako_w))
+	MCFG_AY3600_SHIFT_CB(READLINE(*this, napple2_state, ay3600_shift_r))
+	MCFG_AY3600_CONTROL_CB(READLINE(*this, napple2_state, ay3600_control_r))
+	MCFG_AY3600_DATA_READY_CB(WRITELINE(*this, napple2_state, ay3600_data_ready_w))
+	MCFG_AY3600_AKO_CB(WRITELINE(*this, napple2_state, ay3600_ako_w))
 
 	/* repeat timer.  15 Hz from page 90 of "The Apple II Circuit Description */
 	MCFG_TIMER_DRIVER_ADD_PERIODIC("repttmr", napple2_state, ay3600_repeat, attotime::from_hz(15))
 
 	/* slot devices */
-	MCFG_DEVICE_ADD(A2_BUS_TAG, A2BUS, 0)
+	MCFG_DEVICE_ADD(m_a2bus, A2BUS, 0)
 	MCFG_A2BUS_CPU(A2_CPU_TAG)
-	MCFG_A2BUS_OUT_IRQ_CB(WRITELINE(napple2_state, a2bus_irq_w))
-	MCFG_A2BUS_OUT_NMI_CB(WRITELINE(napple2_state, a2bus_nmi_w))
-	MCFG_A2BUS_OUT_INH_CB(WRITELINE(napple2_state, a2bus_inh_w))
-	MCFG_A2BUS_SLOT_ADD(A2_BUS_TAG, "sl0", apple2_slot0_cards, "lang")
-	MCFG_A2BUS_SLOT_ADD(A2_BUS_TAG, "sl1", apple2_cards, nullptr)
-	MCFG_A2BUS_SLOT_ADD(A2_BUS_TAG, "sl2", apple2_cards, nullptr)
-	MCFG_A2BUS_SLOT_ADD(A2_BUS_TAG, "sl3", apple2_cards, nullptr)
-	MCFG_A2BUS_SLOT_ADD(A2_BUS_TAG, "sl4", apple2_cards, "mockingboard")
-	MCFG_A2BUS_SLOT_ADD(A2_BUS_TAG, "sl5", apple2_cards, nullptr)
-	MCFG_A2BUS_SLOT_ADD(A2_BUS_TAG, "sl6", apple2_cards, "diskiing")
-	MCFG_A2BUS_SLOT_ADD(A2_BUS_TAG, "sl7", apple2_cards, nullptr)
+	MCFG_A2BUS_OUT_IRQ_CB(WRITELINE(*this, napple2_state, a2bus_irq_w))
+	MCFG_A2BUS_OUT_NMI_CB(WRITELINE(*this, napple2_state, a2bus_nmi_w))
+	MCFG_A2BUS_OUT_INH_CB(WRITELINE(*this, napple2_state, a2bus_inh_w))
+	A2BUS_SLOT(config, "sl0", m_a2bus, apple2_slot0_cards, "lang");
+	A2BUS_SLOT(config, "sl1", m_a2bus, apple2_cards, nullptr);
+	A2BUS_SLOT(config, "sl2", m_a2bus, apple2_cards, nullptr);
+	A2BUS_SLOT(config, "sl3", m_a2bus, apple2_cards, nullptr);
+	A2BUS_SLOT(config, "sl4", m_a2bus, apple2_cards, "mockingboard");
+	A2BUS_SLOT(config, "sl5", m_a2bus, apple2_cards, nullptr);
+	A2BUS_SLOT(config, "sl6", m_a2bus, apple2_cards, "diskiing");
+	A2BUS_SLOT(config, "sl7", m_a2bus, apple2_cards, nullptr);
 
 	MCFG_SOFTWARE_LIST_ADD("flop525_list","apple2")
 	MCFG_SOFTWARE_LIST_ADD("cass_list", "apple2_cass")
@@ -1489,12 +1488,12 @@ static MACHINE_CONFIG_START( laba2p )
 	apple2p(config);
 	MCFG_MACHINE_START_OVERRIDE(napple2_state,laba2p)
 
-	MCFG_A2BUS_SLOT_REMOVE("sl0")
-	MCFG_A2BUS_SLOT_REMOVE("sl3")
-	MCFG_A2BUS_SLOT_REMOVE("sl6")
+	MCFG_DEVICE_REMOVE("sl0")
+	MCFG_DEVICE_REMOVE("sl3")
+	MCFG_DEVICE_REMOVE("sl6")
 
-//  MCFG_A2BUS_ONBOARD_ADD("a2bus", "sl3", A2BUS_LAB_80COL, NOOP)
-	MCFG_A2BUS_ONBOARD_ADD("a2bus", "sl6", A2BUS_IWM_FDC, NOOP)
+//  A2BUS_LAB_80COL("sl3", A2BUS_LAB_80COL).set_onboard(m_a2bus);
+	A2BUS_IWM_FDC("sl6", A2BUS_IWM_FDC).set_onboard(m_a2bus);
 
 MACHINE_CONFIG_END
 #endif
@@ -1706,6 +1705,18 @@ ROM_START(ivelultr)
 	ROM_LOAD( "ultra4.bin", 0x0000, 0x0800, CRC(3dce51ac) SHA1(676b6e775d5159049cae5b6143398ec7b2bf437a) )
 ROM_END
 
+ROM_START(laser2c)
+	ROM_REGION(0x2000,"gfx1",0)
+	ROM_LOAD( "g1.bin",       0x000000, 0x001000, BAD_DUMP CRC(7ad15cc4) SHA1(88c60ec0b008eccdbece09d18fe905380ddc070f) )
+
+	ROM_REGION( 0x1000, "keyboard", ROMREGION_ERASE00 )
+	ROM_LOAD( "g2.bin",       0x000000, 0x001000, CRC(f1d92f9c) SHA1(a54d55201f04af4c24bf94450d2cd1fa87c2c259) )
+
+	ROM_REGION(0x10000,"maincpu",0)
+	ROM_LOAD( "laser.bin",    0x001000, 0x002000, CRC(8b975094) SHA1(eea53530b4a3777afa00d2979abedf84fac62e08) )
+	ROM_LOAD( "mon.bin",      0x003000, 0x001000, CRC(978c083f) SHA1(14e87cb717780b19db75c313004ba4d6ef20bc26) )
+ROM_END
+
 #if 0
 ROM_START(laba2p) /* II Plus clone with on-board Disk II controller and Videx-compatible 80-column card, supposedly from lab equipment */
 	ROM_REGION(0x1000,"gfx1",0)
@@ -1729,22 +1740,23 @@ ROM_START(laba2p) /* II Plus clone with on-board Disk II controller and Videx-co
 ROM_END
 #endif
 
-//    YEAR  NAME      PARENT    COMPAT    MACHINE      INPUT    STATE           INIT      COMPANY                FULLNAME
-COMP( 1977, apple2,   0,        0,        apple2,      apple2,  napple2_state,  0,        "Apple Computer",      "Apple ][", MACHINE_SUPPORTS_SAVE )
-COMP( 1979, apple2p,  apple2,   0,        apple2p,     apple2p, napple2_state,  0,        "Apple Computer",      "Apple ][+", MACHINE_SUPPORTS_SAVE )
-COMP( 1980, apple2jp, apple2,   0,        apple2jp,    apple2p, napple2_state,  0,        "Apple Computer",      "Apple ][ J-Plus", MACHINE_SUPPORTS_SAVE )
-COMP( 198?, elppa,    apple2,   0,        apple2p,     apple2p, napple2_state,  0,        "Victor do Brasil",    "Elppa II+", MACHINE_SUPPORTS_SAVE )
-COMP( 1982, microeng, apple2,   0,        apple2p,     apple2p, napple2_state,  0,        "Spectrum Eletronica (SCOPUS)", "Micro Engenho", MACHINE_SUPPORTS_SAVE )
-COMP( 1982, maxxi,    apple2,   0,        apple2p,     apple2p, napple2_state,  0,        "Polymax",             "Maxxi", MACHINE_SUPPORTS_SAVE )
-COMP( 1982, prav82,   apple2,   0,        apple2p,     apple2p, napple2_state,  0,        "Pravetz",             "Pravetz 82", MACHINE_SUPPORTS_SAVE )
-COMP( 1982, ace100,   apple2,   0,        apple2,      apple2p, napple2_state,  0,        "Franklin Computer",   "Franklin Ace 100", MACHINE_SUPPORTS_SAVE )
-COMP( 1982, uniap2en, apple2,   0,        apple2p,     apple2p, napple2_state,  0,        "Unitron Eletronica",  "Unitron AP II (in English)", MACHINE_SUPPORTS_SAVE )
-COMP( 1982, uniap2pt, apple2,   0,        apple2p,     apple2p, napple2_state,  0,        "Unitron Eletronica",  "Unitron AP II (in Brazilian Portuguese)", MACHINE_SUPPORTS_SAVE )
-COMP( 1984, uniap2ti, apple2,   0,        apple2p,     apple2p, napple2_state,  0,        "Unitron Eletronica",  "Unitron AP II+ (Teclado Inteligente)", MACHINE_SUPPORTS_SAVE )
-COMP( 1982, craft2p,  apple2,   0,        apple2p,     apple2p, napple2_state,  0,        "Craft",               "Craft II+", MACHINE_SUPPORTS_SAVE )
+//    YEAR  NAME      PARENT  COMPAT  MACHINE   INPUT    CLASS          INIT        COMPANY                FULLNAME
+COMP( 1977, apple2,   0,      0,      apple2,   apple2,  napple2_state, empty_init, "Apple Computer",      "Apple ][", MACHINE_SUPPORTS_SAVE )
+COMP( 1979, apple2p,  apple2, 0,      apple2p,  apple2p, napple2_state, empty_init, "Apple Computer",      "Apple ][+", MACHINE_SUPPORTS_SAVE )
+COMP( 1980, apple2jp, apple2, 0,      apple2jp, apple2p, napple2_state, empty_init, "Apple Computer",      "Apple ][ J-Plus", MACHINE_SUPPORTS_SAVE )
+COMP( 198?, elppa,    apple2, 0,      apple2p,  apple2p, napple2_state, empty_init, "Victor do Brasil",    "Elppa II+", MACHINE_SUPPORTS_SAVE )
+COMP( 1982, microeng, apple2, 0,      apple2p,  apple2p, napple2_state, empty_init, "Spectrum Eletronica (SCOPUS)", "Micro Engenho", MACHINE_SUPPORTS_SAVE )
+COMP( 1982, maxxi,    apple2, 0,      apple2p,  apple2p, napple2_state, empty_init, "Polymax",             "Maxxi", MACHINE_SUPPORTS_SAVE )
+COMP( 1982, prav82,   apple2, 0,      apple2p,  apple2p, napple2_state, empty_init, "Pravetz",             "Pravetz 82", MACHINE_SUPPORTS_SAVE )
+COMP( 1982, ace100,   apple2, 0,      apple2,   apple2p, napple2_state, empty_init, "Franklin Computer",   "Franklin Ace 100", MACHINE_SUPPORTS_SAVE )
+COMP( 1982, uniap2en, apple2, 0,      apple2p,  apple2p, napple2_state, empty_init, "Unitron Eletronica",  "Unitron AP II (in English)", MACHINE_SUPPORTS_SAVE )
+COMP( 1982, uniap2pt, apple2, 0,      apple2p,  apple2p, napple2_state, empty_init, "Unitron Eletronica",  "Unitron AP II (in Brazilian Portuguese)", MACHINE_SUPPORTS_SAVE )
+COMP( 1984, uniap2ti, apple2, 0,      apple2p,  apple2p, napple2_state, empty_init, "Unitron Eletronica",  "Unitron AP II+ (Teclado Inteligente)", MACHINE_SUPPORTS_SAVE )
+COMP( 1982, craft2p,  apple2, 0,      apple2p,  apple2p, napple2_state, empty_init, "Craft",               "Craft II+", MACHINE_SUPPORTS_SAVE )
 // reverse font direction -\/
-COMP( 1984, ivelultr, apple2,   0,        apple2p,     apple2p, napple2_state,  0,        "Ivasim",              "Ivel Ultra", MACHINE_SUPPORTS_SAVE )
-COMP( 1985, prav8m,   apple2,   0,        apple2p,     apple2p, napple2_state,  0,        "Pravetz",             "Pravetz 8M", MACHINE_SUPPORTS_SAVE )
-COMP( 1985, space84,  apple2,   0,        space84,     apple2p, napple2_state,  0,        "ComputerTechnik/IBS", "Space 84",   MACHINE_NOT_WORKING )
-COMP( 1985, am64,     apple2,   0,        space84,     apple2p, napple2_state,  0,        "ASEM",                "AM 64", MACHINE_SUPPORTS_SAVE )
-//COMP( 19??, laba2p,   apple2,   0,        laba2p,      apple2p, napple2_state,  0,        "<unknown>",           "Lab equipment Apple II Plus clone", MACHINE_SUPPORTS_SAVE )
+COMP( 1984, ivelultr, apple2, 0,      apple2p,  apple2p, napple2_state, empty_init, "Ivasim",              "Ivel Ultra", MACHINE_SUPPORTS_SAVE )
+COMP( 1985, prav8m,   apple2, 0,      apple2p,  apple2p, napple2_state, empty_init, "Pravetz",             "Pravetz 8M", MACHINE_SUPPORTS_SAVE )
+COMP( 1985, space84,  apple2, 0,      space84,  apple2p, napple2_state, empty_init, "ComputerTechnik/IBS", "Space 84",   MACHINE_NOT_WORKING )
+COMP( 1985, am64,     apple2, 0,      space84,  apple2p, napple2_state, empty_init, "ASEM",                "AM 64", MACHINE_SUPPORTS_SAVE )
+//COMP( 19??, laba2p,   apple2, 0,      laba2p,   apple2p, napple2_state, empty_init, "<unknown>",           "Lab equipment Apple II Plus clone", MACHINE_SUPPORTS_SAVE )
+COMP( 1985, laser2c,  apple2, 0,      space84,  apple2p, napple2_state, empty_init, "Milmar",               "Laser //c", MACHINE_SUPPORTS_SAVE )

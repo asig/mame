@@ -111,6 +111,7 @@
 #include "cpu/m68000/m68000.h"
 #include "sound/okim6295.h"
 #include "machine/nvram.h"
+#include "emupal.h"
 #include "screen.h"
 #include "speaker.h"
 
@@ -151,7 +152,7 @@ private:
 	required_device<cpu_device> m_maincpu;
 	required_device<gfxdecode_device> m_gfxdecode;
 	output_finder<7> m_lamps;
-	
+
 	tilemap_t *m_sc0_tilemap;
 	tilemap_t *m_sc1_tilemap;
 	tilemap_t *m_sc2_tilemap;
@@ -444,15 +445,15 @@ WRITE16_MEMBER(mil4000_state::unk_w)
 void mil4000_state::mil4000_map(address_map &map)
 {
 	map(0x000000, 0x03ffff).rom();
-	map(0x500000, 0x503fff).ram().w(this, FUNC(mil4000_state::sc0_vram_w)).share("sc0_vram");  // CY62256L-70, U77
-	map(0x504000, 0x507fff).ram().w(this, FUNC(mil4000_state::sc1_vram_w)).share("sc1_vram");  // CY62256L-70, U77
-	map(0x508000, 0x50bfff).ram().w(this, FUNC(mil4000_state::sc2_vram_w)).share("sc2_vram");  // CY62256L-70, U78
-	map(0x50c000, 0x50ffff).ram().w(this, FUNC(mil4000_state::sc3_vram_w)).share("sc3_vram");  // CY62256L-70, U78
+	map(0x500000, 0x503fff).ram().w(FUNC(mil4000_state::sc0_vram_w)).share("sc0_vram");  // CY62256L-70, U77
+	map(0x504000, 0x507fff).ram().w(FUNC(mil4000_state::sc1_vram_w)).share("sc1_vram");  // CY62256L-70, U77
+	map(0x508000, 0x50bfff).ram().w(FUNC(mil4000_state::sc2_vram_w)).share("sc2_vram");  // CY62256L-70, U78
+	map(0x50c000, 0x50ffff).ram().w(FUNC(mil4000_state::sc3_vram_w)).share("sc3_vram");  // CY62256L-70, U78
 	map(0x708000, 0x708001).portr("IN0");
 	map(0x708002, 0x708003).portr("IN1");
-	map(0x708004, 0x708005).r(this, FUNC(mil4000_state::hvretrace_r));
+	map(0x708004, 0x708005).r(FUNC(mil4000_state::hvretrace_r));
 	map(0x708006, 0x708007).portr("IN2");
-	map(0x708008, 0x708009).w(this, FUNC(mil4000_state::output_w));
+	map(0x708008, 0x708009).w(FUNC(mil4000_state::output_w));
 	map(0x708010, 0x708011).noprw(); //touch screen
 	map(0x70801f, 0x70801f).rw("oki", FUNC(okim6295_device::read), FUNC(okim6295_device::write));
 
@@ -464,20 +465,20 @@ void mil4000_state::mil4000_map(address_map &map)
 void mil4000_state::chewheel_map(address_map &map)
 {
 	map(0x000000, 0x03ffff).rom();
-	map(0x500000, 0x503fff).ram().w(this, FUNC(mil4000_state::sc0_vram_w)).share("sc0_vram");  // V62C518256L-35P (U7).
-	map(0x504000, 0x507fff).ram().w(this, FUNC(mil4000_state::sc1_vram_w)).share("sc1_vram");  // V62C518256L-35P (U7).
-	map(0x508000, 0x50bfff).ram().w(this, FUNC(mil4000_state::sc2_vram_w)).share("sc2_vram");  // V62C518256L-35P (U8).
-	map(0x50c000, 0x50ffff).ram().w(this, FUNC(mil4000_state::sc3_vram_w)).share("sc3_vram");  // V62C518256L-35P (U8).
+	map(0x500000, 0x503fff).ram().w(FUNC(mil4000_state::sc0_vram_w)).share("sc0_vram");  // V62C518256L-35P (U7).
+	map(0x504000, 0x507fff).ram().w(FUNC(mil4000_state::sc1_vram_w)).share("sc1_vram");  // V62C518256L-35P (U7).
+	map(0x508000, 0x50bfff).ram().w(FUNC(mil4000_state::sc2_vram_w)).share("sc2_vram");  // V62C518256L-35P (U8).
+	map(0x50c000, 0x50ffff).ram().w(FUNC(mil4000_state::sc3_vram_w)).share("sc3_vram");  // V62C518256L-35P (U8).
 
-	map(0x51000c, 0x51000f).r(this, FUNC(mil4000_state::unk_r));     // no idea what's mapped here.
-	map(0x510000, 0x51000f).w(this, FUNC(mil4000_state::unk_w));    // no idea what's mapped here.
+	map(0x51000c, 0x51000f).r(FUNC(mil4000_state::unk_r));     // no idea what's mapped here.
+	map(0x510000, 0x51000f).w(FUNC(mil4000_state::unk_w));    // no idea what's mapped here.
 
 	map(0x708000, 0x708001).portr("IN0");
 	map(0x708002, 0x708003).portr("IN1");
-	map(0x708004, 0x708005).r(this, FUNC(mil4000_state::hvretrace_r));
+	map(0x708004, 0x708005).r(FUNC(mil4000_state::hvretrace_r));
 	map(0x708006, 0x708007).portr("IN2");
-	map(0x708008, 0x708009).w(this, FUNC(mil4000_state::output_w));
-	map(0x708010, 0x708011).rw(this, FUNC(mil4000_state::chewheel_mcu_r), FUNC(mil4000_state::chewheel_mcu_w));
+	map(0x708008, 0x708009).w(FUNC(mil4000_state::output_w));
+	map(0x708010, 0x708011).rw(FUNC(mil4000_state::chewheel_mcu_r), FUNC(mil4000_state::chewheel_mcu_w));
 	map(0x70801f, 0x70801f).rw("oki", FUNC(okim6295_device::read), FUNC(okim6295_device::write));
 
 	map(0x780000, 0x780fff).ram().w("palette", FUNC(palette_device::write16)).share("palette");
@@ -554,16 +555,16 @@ static const gfx_layout tilelayout =
 };
 
 
-static GFXDECODE_START( mil4000 )
+static GFXDECODE_START( gfx_mil4000 )
 	GFXDECODE_ENTRY( "gfx1", 0, tilelayout,     0, 0x800/32 )
 GFXDECODE_END
 
 
 MACHINE_CONFIG_START(mil4000_state::mil4000)
-	MCFG_CPU_ADD("maincpu", M68000, CPU_CLOCK)
-	MCFG_CPU_PROGRAM_MAP(mil4000_map)
+	MCFG_DEVICE_ADD("maincpu", M68000, CPU_CLOCK)
+	MCFG_DEVICE_PROGRAM_MAP(mil4000_map)
 	// irq 2/4/5 point to the same place, others invalid
-	MCFG_CPU_VBLANK_INT_DRIVER("screen", mil4000_state,  irq5_line_hold)
+	MCFG_DEVICE_VBLANK_INT_DRIVER("screen", mil4000_state,  irq5_line_hold)
 
 	MCFG_NVRAM_ADD_0FILL("nvram")
 
@@ -578,19 +579,19 @@ MACHINE_CONFIG_START(mil4000_state::mil4000)
 	MCFG_PALETTE_ADD_INIT_BLACK("palette", 0x800)
 	MCFG_PALETTE_FORMAT(RRRRRGGGGGBBBBBx)
 
-	MCFG_GFXDECODE_ADD("gfxdecode", "palette", mil4000)
+	MCFG_DEVICE_ADD("gfxdecode", GFXDECODE, "palette", gfx_mil4000)
 
-	MCFG_SPEAKER_STANDARD_MONO("mono")
-	MCFG_OKIM6295_ADD("oki", 1000000, PIN7_HIGH) // frequency from 1000 kHz resonator. pin 7 high not verified.
+	SPEAKER(config, "mono").front_center();
+	MCFG_DEVICE_ADD("oki", OKIM6295, 1000000, okim6295_device::PIN7_HIGH) // frequency from 1000 kHz resonator. pin 7 high not verified.
 	MCFG_SOUND_ROUTE(ALL_OUTPUTS, "mono", 1.0)
 MACHINE_CONFIG_END
 
 
 MACHINE_CONFIG_START(mil4000_state::chewheel)
 	mil4000(config);
-	MCFG_CPU_REPLACE("maincpu", M68000, CPU_CLOCK) /* 2MHz */
-	MCFG_CPU_PROGRAM_MAP(chewheel_map)
-	MCFG_CPU_VBLANK_INT_DRIVER("screen", mil4000_state,  irq5_line_hold)
+	MCFG_DEVICE_REPLACE("maincpu", M68000, CPU_CLOCK) /* 2MHz */
+	MCFG_DEVICE_PROGRAM_MAP(chewheel_map)
+	MCFG_DEVICE_VBLANK_INT_DRIVER("screen", mil4000_state,  irq5_line_hold)
 MACHINE_CONFIG_END
 
 
@@ -771,10 +772,10 @@ ROM_START( chewheel )
 ROM_END
 
 
-//     YEAR  NAME      PARENT    MACHINE   INPUT    STATE          INIT    ROT     COMPANY              FULLNAME                              FLAGS                          LAYOUT
-GAMEL( 2000, mil4000,  0,        mil4000,  mil4000, mil4000_state, 0,      ROT0,  "Sure Milano",       "Millennium Nuovo 4000 (Version 2.0)", 0,                             layout_mil4000 )
-GAMEL( 2000, mil4000a, mil4000,  mil4000,  mil4000, mil4000_state, 0,      ROT0,  "Sure Milano",       "Millennium Nuovo 4000 (Version 1.8)", 0,                             layout_mil4000 )
-GAMEL( 2000, mil4000b, mil4000,  mil4000,  mil4000, mil4000_state, 0,      ROT0,  "Sure Milano",       "Millennium Nuovo 4000 (Version 1.5)", 0,                             layout_mil4000 )
-GAMEL( 2000, mil4000c, mil4000,  mil4000,  mil4000, mil4000_state, 0,      ROT0,  "Sure Milano",       "Millennium Nuovo 4000 (Version 1.6)", 0,                             layout_mil4000 )
-GAMEL( 200?, top21,    0,        mil4000,  mil4000, mil4000_state, 0,      ROT0,  "Assogiochi Assago", "Top XXI (Version 1.2)",               0,                             layout_mil4000 )
-GAMEL( 200?, chewheel, 0,        chewheel, mil4000, mil4000_state, 0,      ROT0,  "Assogiochi Assago", "Cherry Wheel (Version 1.7)",          MACHINE_UNEMULATED_PROTECTION, layout_mil4000 )
+//     YEAR  NAME      PARENT   MACHINE   INPUT    STATE          INIT        ROT   COMPANY              FULLNAME                               FLAGS                          LAYOUT
+GAMEL( 2000, mil4000,  0,       mil4000,  mil4000, mil4000_state, empty_init, ROT0, "Sure Milano",       "Millennium Nuovo 4000 (Version 2.0)", 0,                             layout_mil4000 )
+GAMEL( 2000, mil4000a, mil4000, mil4000,  mil4000, mil4000_state, empty_init, ROT0, "Sure Milano",       "Millennium Nuovo 4000 (Version 1.8)", 0,                             layout_mil4000 )
+GAMEL( 2000, mil4000b, mil4000, mil4000,  mil4000, mil4000_state, empty_init, ROT0, "Sure Milano",       "Millennium Nuovo 4000 (Version 1.5)", 0,                             layout_mil4000 )
+GAMEL( 2000, mil4000c, mil4000, mil4000,  mil4000, mil4000_state, empty_init, ROT0, "Sure Milano",       "Millennium Nuovo 4000 (Version 1.6)", 0,                             layout_mil4000 )
+GAMEL( 200?, top21,    0,       mil4000,  mil4000, mil4000_state, empty_init, ROT0, "Assogiochi Assago", "Top XXI (Version 1.2)",               0,                             layout_mil4000 )
+GAMEL( 200?, chewheel, 0,       chewheel, mil4000, mil4000_state, empty_init, ROT0, "Assogiochi Assago", "Cherry Wheel (Version 1.7)",          MACHINE_UNEMULATED_PROTECTION, layout_mil4000 )

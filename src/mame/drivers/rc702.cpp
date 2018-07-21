@@ -22,7 +22,7 @@ Issues:
 
 #include "bus/rs232/rs232.h"
 #include "cpu/z80/z80.h"
-#include "cpu/z80/z80daisy.h"
+#include "machine/z80daisy.h"
 #include "machine/7474.h"
 #include "machine/am9517a.h"
 #include "machine/clock.h"
@@ -34,6 +34,7 @@ Issues:
 #include "sound/beep.h"
 #include "video/i8275.h"
 
+#include "emupal.h"
 #include "screen.h"
 #include "speaker.h"
 
@@ -57,8 +58,12 @@ public:
 	{
 	}
 
-	DECLARE_DRIVER_INIT(rc702);
-	DECLARE_MACHINE_RESET(rc702);
+	void rc702(machine_config &config);
+
+	void init_rc702();
+
+private:
+	virtual void machine_reset() override;
 	DECLARE_READ8_MEMBER(memory_read_byte);
 	DECLARE_WRITE8_MEMBER(memory_write_byte);
 	DECLARE_WRITE8_MEMBER(port14_w);
@@ -74,10 +79,9 @@ public:
 	I8275_DRAW_CHARACTER_MEMBER(display_pixels);
 	void kbd_put(u8 data);
 
-	void rc702(machine_config &config);
 	void rc702_io(address_map &map);
 	void rc702_mem(address_map &map);
-private:
+
 	bool m_q_state;
 	bool m_qbar_state;
 	bool m_drq_state;
@@ -112,9 +116,9 @@ void rc702_state::rc702_io(address_map &map)
 	map(0x08, 0x0b).rw("sio1", FUNC(z80dart_device::cd_ba_r), FUNC(z80dart_device::cd_ba_w)); // boot sequence doesn't program this
 	map(0x0c, 0x0f).rw(m_ctc1, FUNC(z80ctc_device::read), FUNC(z80ctc_device::write));
 	map(0x10, 0x13).rw(m_pio, FUNC(z80pio_device::read), FUNC(z80pio_device::write));
-	map(0x14, 0x17).portr("DSW").w(this, FUNC(rc702_state::port14_w)); // motors
-	map(0x18, 0x1b).w(this, FUNC(rc702_state::port18_w)); // memory banking
-	map(0x1c, 0x1f).w(this, FUNC(rc702_state::port1c_w)); // sound
+	map(0x14, 0x17).portr("DSW").w(FUNC(rc702_state::port14_w)); // motors
+	map(0x18, 0x1b).w(FUNC(rc702_state::port18_w)); // memory banking
+	map(0x1c, 0x1f).w(FUNC(rc702_state::port1c_w)); // sound
 	map(0xf0, 0xff).rw(m_dma, FUNC(am9517a_device::read), FUNC(am9517a_device::write));
 }
 
@@ -147,7 +151,7 @@ static INPUT_PORTS_START( rc702 )
 	PORT_DIPSETTING(    0x00, DEF_STR( On ))
 INPUT_PORTS_END
 
-MACHINE_RESET_MEMBER( rc702_state, rc702 )
+void rc702_state::machine_reset()
 {
 	membank("bankr0")->set_entry(0); // point at rom
 	membank("bankw0")->set_entry(0); // always write to ram
@@ -243,7 +247,7 @@ static const rgb_t our_palette[3] = {
 	rgb_t(0xff, 0xb4, 0x00), // on
 };
 
-DRIVER_INIT_MEMBER( rc702_state, rc702 )
+void rc702_state::init_rc702()
 {
 	uint8_t *main = memregion("maincpu")->base();
 
@@ -329,43 +333,40 @@ static void floppies(device_slot_interface &device)
 
 MACHINE_CONFIG_START(rc702_state::rc702)
 	/* basic machine hardware */
-	MCFG_CPU_ADD("maincpu", Z80, XTAL(8'000'000) / 2)
-	MCFG_CPU_PROGRAM_MAP(rc702_mem)
-	MCFG_CPU_IO_MAP(rc702_io)
+	MCFG_DEVICE_ADD("maincpu", Z80, XTAL(8'000'000) / 2)
+	MCFG_DEVICE_PROGRAM_MAP(rc702_mem)
+	MCFG_DEVICE_IO_MAP(rc702_io)
 	MCFG_Z80_DAISY_CHAIN(daisy_chain_intf)
 
-	MCFG_MACHINE_RESET_OVERRIDE(rc702_state, rc702)
+	CLOCK(config, "ctc_clock", 614000).signal_handler().set(FUNC(rc702_state::clock_w));
 
-	MCFG_DEVICE_ADD("ctc_clock", CLOCK, 614000)
-	MCFG_CLOCK_SIGNAL_HANDLER(WRITELINE(rc702_state, clock_w))
-
-	MCFG_DEVICE_ADD("ctc1", Z80CTC, XTAL(8'000'000) / 2)
-	MCFG_Z80CTC_ZC0_CB(DEVWRITELINE("sio1", z80dart_device, txca_w))
-	MCFG_DEVCB_CHAIN_OUTPUT(DEVWRITELINE("sio1", z80dart_device, rxca_w))
-	MCFG_Z80CTC_ZC1_CB(DEVWRITELINE("sio1", z80dart_device, rxtxcb_w))
-	MCFG_Z80CTC_INTR_CB(INPUTLINE("maincpu", INPUT_LINE_IRQ0))
+	Z80CTC(config, m_ctc1, 8_MHz_XTAL / 2);
+	m_ctc1->zc_callback<0>().set("sio1", FUNC(z80dart_device::txca_w));
+	m_ctc1->zc_callback<0>().append("sio1", FUNC(z80dart_device::rxca_w));
+	m_ctc1->zc_callback<1>().set("sio1", FUNC(z80dart_device::rxtxcb_w));
+	m_ctc1->intr_callback().set_inputline(m_maincpu, INPUT_LINE_IRQ0);
 
 	MCFG_DEVICE_ADD("sio1", Z80DART, XTAL(8'000'000) / 2)
 	MCFG_Z80DART_OUT_INT_CB(INPUTLINE("maincpu", INPUT_LINE_IRQ0))
 
-	MCFG_DEVICE_ADD("pio", Z80PIO, XTAL(8'000'000) / 2)
-	MCFG_Z80PIO_OUT_INT_CB(INPUTLINE("maincpu", INPUT_LINE_IRQ0))
-//  MCFG_Z80PIO_OUT_PB_CB(WRITE8(rc702_state, portxx_w)) // parallel port
+	Z80PIO(config, m_pio, 8_MHz_XTAL / 2);
+	m_pio->out_int_callback().set_inputline(m_maincpu, INPUT_LINE_IRQ0);
+//  m_pio->out_pb_callback().set(FUNC(rc702_state::portxx_w)); // parallel port
 
-	MCFG_DEVICE_ADD("dma", AM9517A, XTAL(8'000'000) / 2)
-	MCFG_I8237_OUT_HREQ_CB(WRITELINE(rc702_state, busreq_w))
-	MCFG_I8237_OUT_EOP_CB(WRITELINE(rc702_state, tc_w)) // inverted
-	MCFG_I8237_IN_MEMR_CB(READ8(rc702_state, memory_read_byte))
-	MCFG_I8237_OUT_MEMW_CB(WRITE8(rc702_state, memory_write_byte))
-	MCFG_I8237_IN_IOR_1_CB(DEVREAD8("fdc", upd765a_device, mdma_r))
-	MCFG_I8237_OUT_IOW_1_CB(DEVWRITE8("fdc", upd765a_device, mdma_w))
-	MCFG_I8237_OUT_IOW_2_CB(DEVWRITE8("crtc", i8275_device, dack_w))
-	MCFG_I8237_OUT_IOW_3_CB(DEVWRITE8("crtc", i8275_device, dack_w))
-	MCFG_I8237_OUT_DACK_1_CB(WRITELINE(rc702_state, dack1_w)) // inverted
+	AM9517A(config, m_dma, 8_MHz_XTAL / 2);
+	m_dma->out_hreq_callback().set(FUNC(rc702_state::busreq_w));
+	m_dma->out_eop_callback().set(FUNC(rc702_state::tc_w)); // inverted
+	m_dma->in_memr_callback().set(FUNC(rc702_state::memory_read_byte));
+	m_dma->out_memw_callback().set(FUNC(rc702_state::memory_write_byte));
+	m_dma->in_ior_callback<1>().set(m_fdc, FUNC(upd765a_device::mdma_r));
+	m_dma->out_iow_callback<1>().set(m_fdc, FUNC(upd765a_device::mdma_w));
+	m_dma->out_iow_callback<2>().set("crtc", FUNC(i8275_device::dack_w));
+	m_dma->out_iow_callback<3>().set("crtc", FUNC(i8275_device::dack_w));
+	m_dma->out_dack_callback<1>().set(FUNC(rc702_state::dack1_w)); // inverted
 
 	MCFG_UPD765A_ADD("fdc", false, true)
-	MCFG_UPD765_INTRQ_CALLBACK(DEVWRITELINE("ctc1", z80ctc_device, trg3))
-	MCFG_UPD765_DRQ_CALLBACK(DEVWRITELINE("dma", am9517a_device, dreq1_w))
+	MCFG_UPD765_INTRQ_CALLBACK(WRITELINE("ctc1", z80ctc_device, trg3))
+	MCFG_UPD765_DRQ_CALLBACK(WRITELINE("dma", am9517a_device, dreq1_w))
 	MCFG_FLOPPY_DRIVE_ADD("fdc:0", floppies, "525qd", floppy_image_device::default_floppy_formats)
 	MCFG_FLOPPY_DRIVE_SOUND(true)
 
@@ -374,8 +375,8 @@ MACHINE_CONFIG_START(rc702_state::rc702)
 	MCFG_GENERIC_KEYBOARD_CB(PUT(rc702_state, kbd_put))
 
 	MCFG_DEVICE_ADD("7474", TTL7474, 0)
-	MCFG_7474_COMP_OUTPUT_CB(WRITELINE(rc702_state, q_w))
-	MCFG_7474_COMP_OUTPUT_CB(WRITELINE(rc702_state, qbar_w))
+	MCFG_7474_COMP_OUTPUT_CB(WRITELINE(*this, rc702_state, q_w))
+	MCFG_7474_COMP_OUTPUT_CB(WRITELINE(*this, rc702_state, qbar_w))
 
 	/* video hardware */
 	MCFG_SCREEN_ADD("screen", RASTER)
@@ -384,17 +385,17 @@ MACHINE_CONFIG_START(rc702_state::rc702)
 	MCFG_SCREEN_VISIBLE_AREA(0, 272*2-1, 0, 200-1)
 	MCFG_SCREEN_UPDATE_DEVICE("crtc", i8275_device, screen_update)
 
-	MCFG_DEVICE_ADD("crtc", I8275, 11640000/7)
-	MCFG_I8275_CHARACTER_WIDTH(7)
-	MCFG_I8275_DRAW_CHARACTER_CALLBACK_OWNER(rc702_state, display_pixels)
-	MCFG_I8275_IRQ_CALLBACK(DEVWRITELINE("7474", ttl7474_device, clear_w)) MCFG_DEVCB_INVERT
-	MCFG_DEVCB_CHAIN_OUTPUT(DEVWRITELINE("ctc1", z80ctc_device, trg2))
-	MCFG_I8275_DRQ_CALLBACK(WRITELINE(rc702_state, crtc_drq_w))
+	i8275_device &crtc(I8275(config, "crtc", 11640000/7));
+	crtc.set_character_width(7);
+	crtc.set_display_callback(FUNC(rc702_state::display_pixels), this);
+	crtc.irq_wr_callback().set(m_7474, FUNC(ttl7474_device::clear_w)).invert();
+	crtc.irq_wr_callback().append(m_ctc1, FUNC(z80ctc_device::trg2));
+	crtc.drq_wr_callback().set(FUNC(rc702_state::crtc_drq_w));
 	MCFG_PALETTE_ADD("palette", 2)
 
 	/* sound hardware */
-	MCFG_SPEAKER_STANDARD_MONO("mono")
-	MCFG_SOUND_ADD("beeper", BEEP, 1000)
+	SPEAKER(config, "mono").front_center();
+	MCFG_DEVICE_ADD("beeper", BEEP, 1000)
 	MCFG_SOUND_ROUTE(ALL_OUTPUTS, "mono", 0.50)
 MACHINE_CONFIG_END
 
@@ -403,11 +404,11 @@ MACHINE_CONFIG_END
 ROM_START( rc702 )
 	ROM_REGION( 0x10800, "maincpu", 0 )
 		ROM_SYSTEM_BIOS(0, "rc700", "RC700")
-		ROMX_LOAD( "rob358.rom", 0x10000, 0x0800,  CRC(254aa89e) SHA1(5fb1eb8df1b853b931e670a2ff8d062c1bd8d6bc), ROM_BIOS(1))
+		ROMX_LOAD( "rob358.rom", 0x10000, 0x0800,  CRC(254aa89e) SHA1(5fb1eb8df1b853b931e670a2ff8d062c1bd8d6bc), ROM_BIOS(0))
 		ROM_SYSTEM_BIOS(1, "rc702", "RC702")
-		ROMX_LOAD( "roa375.ic66", 0x10000, 0x0800, CRC(034cf9ea) SHA1(306af9fc779e3d4f51645ba04f8a99b11b5e6084), ROM_BIOS(2))
+		ROMX_LOAD( "roa375.ic66", 0x10000, 0x0800, CRC(034cf9ea) SHA1(306af9fc779e3d4f51645ba04f8a99b11b5e6084), ROM_BIOS(1))
 		ROM_SYSTEM_BIOS(2, "rc703", "RC703")
-		ROMX_LOAD( "rob357.rom", 0x10000, 0x0800,  CRC(dcf84a48) SHA1(7190d3a898bcbfa212178a4d36afc32bbbc166ef), ROM_BIOS(3))
+		ROMX_LOAD( "rob357.rom", 0x10000, 0x0800,  CRC(dcf84a48) SHA1(7190d3a898bcbfa212178a4d36afc32bbbc166ef), ROM_BIOS(2))
 
 	ROM_REGION( 0x1000, "chargen", 0 )
 		ROM_LOAD( "roa296.rom", 0x0000, 0x0800, CRC(7d7e4548) SHA1(efb8b1ece5f9eeca948202a6396865f26134ff2f) ) // char
@@ -416,5 +417,5 @@ ROM_END
 
 /* Driver */
 
-//    YEAR  NAME       PARENT   COMPAT  MACHINE     INPUT     CLASS            INIT    COMPANY            FULLNAME         FLAGS
-COMP( 1979, rc702,     0,       0,      rc702,      rc702,    rc702_state,     rc702,  "Regnecentralen",  "RC702 Piccolo", MACHINE_NOT_WORKING )
+//    YEAR  NAME   PARENT  COMPAT  MACHINE  INPUT  CLASS        INIT        COMPANY           FULLNAME         FLAGS
+COMP( 1979, rc702, 0,      0,      rc702,   rc702, rc702_state, init_rc702, "Regnecentralen", "RC702 Piccolo", MACHINE_NOT_WORKING )

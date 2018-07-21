@@ -153,6 +153,7 @@
 #include "emu.h"
 #include "cpu/m6805/m6805.h"
 
+#include "emupal.h"
 #include "rendlay.h"
 #include "screen.h"
 
@@ -166,13 +167,15 @@ public:
 		, m_rombank(*this, "rombank")
 	{ }
 
+	void pitajr(machine_config &config);
+
+private:
 	required_device<cpu_device> m_maincpu;
 	required_memory_bank m_rombank;
 
 	virtual void machine_start() override;
 	DECLARE_PALETTE_INIT(pitagjr);
 	uint32_t screen_update(screen_device &screen, bitmap_ind16 &bitmap, const rectangle &cliprect);
-	void pitajr(machine_config &config);
 	void pitajr_mem(address_map &map);
 };
 
@@ -207,8 +210,8 @@ uint32_t pitagjr_state::screen_update(screen_device &screen, bitmap_ind16 &bitma
 
 MACHINE_CONFIG_START(pitagjr_state::pitajr)
 	/* basic machine hardware */
-	MCFG_CPU_ADD("maincpu", HD63705, XTAL(2'000'000))   // probably a m6805-based MCU with internal boot ROM
-	MCFG_CPU_PROGRAM_MAP(pitajr_mem)
+	MCFG_DEVICE_ADD("maincpu", HD63705, XTAL(2'000'000))   // probably a m6805-based MCU with internal boot ROM
+	MCFG_DEVICE_PROGRAM_MAP(pitajr_mem)
 
 	/* video hardware */
 	MCFG_SCREEN_ADD("screen", LCD)
@@ -219,7 +222,7 @@ MACHINE_CONFIG_START(pitagjr_state::pitajr)
 	MCFG_SCREEN_VISIBLE_AREA( 0, 200-1, 0, 100-1 )
 	MCFG_SCREEN_PALETTE("palette")
 
-	MCFG_DEFAULT_LAYOUT(layout_lcd)
+	config.set_default_layout(layout_lcd);
 
 	MCFG_PALETTE_ADD("palette", 2)
 	MCFG_PALETTE_INIT_OWNER(pitagjr_state, pitagjr)
@@ -234,5 +237,5 @@ ROM_END
 
 /* Driver */
 
-//    YEAR  NAME      PARENT  COMPAT  MACHINE  INPUT   STATE          INIT   COMPANY  FULLNAME           FLAGS
-COMP( 199?, pitagjr,  0,      0,      pitajr,  pitajr, pitagjr_state, 0,    "VTech", "Pitagorin Junior", MACHINE_IS_SKELETON )
+//    YEAR  NAME     PARENT  COMPAT  MACHINE  INPUT   CLASS          INIT        COMPANY  FULLNAME            FLAGS
+COMP( 199?, pitagjr, 0,      0,      pitajr,  pitajr, pitagjr_state, empty_init, "VTech", "Pitagorin Junior", MACHINE_IS_SKELETON )

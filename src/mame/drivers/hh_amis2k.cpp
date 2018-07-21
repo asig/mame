@@ -50,7 +50,7 @@ public:
 
 	void wildfire(machine_config &config);
 
-protected:
+private:
 	virtual void machine_start() override;
 
 	DECLARE_WRITE8_MEMBER(write_d);
@@ -66,7 +66,6 @@ protected:
 	void write_a12(int state);
 	void sound_update();
 
-private:
 	required_device<cpu_device> m_maincpu;
 	required_device<speaker_sound_device> m_speaker;
 	required_device<timer_device> m_a12_decay_timer;
@@ -316,23 +315,23 @@ static const u8 wildfire_7seg_table[0x10] =
 MACHINE_CONFIG_START(wildfire_state::wildfire)
 
 	/* basic machine hardware */
-	MCFG_CPU_ADD("maincpu", AMI_S2152, MASTER_CLOCK)
+	MCFG_DEVICE_ADD("maincpu", AMI_S2152, MASTER_CLOCK)
 	MCFG_AMI_S2000_7SEG_DECODER(wildfire_7seg_table)
 	MCFG_AMI_S2000_READ_I_CB(IOPORT("IN1"))
-	MCFG_AMI_S2000_WRITE_D_CB(WRITE8(wildfire_state, write_d))
-	MCFG_AMI_S2000_WRITE_A_CB(WRITE16(wildfire_state, write_a))
-	MCFG_AMI_S2152_FOUT_CB(WRITELINE(wildfire_state, write_f))
+	MCFG_AMI_S2000_WRITE_D_CB(WRITE8(*this, wildfire_state, write_d))
+	MCFG_AMI_S2000_WRITE_A_CB(WRITE16(*this, wildfire_state, write_a))
+	MCFG_AMI_S2152_FOUT_CB(WRITELINE(*this, wildfire_state, write_f))
 
 	MCFG_TIMER_DRIVER_ADD_PERIODIC("display_decay", wildfire_state, display_decay_tick, attotime::from_msec(1))
 	MCFG_TIMER_DRIVER_ADD("a12_decay", wildfire_state, reset_q2)
 
-	MCFG_DEFAULT_LAYOUT(layout_wildfire)
+	config.set_default_layout(layout_wildfire);
 
 	/* no video! */
 
 	/* sound hardware */
-	MCFG_SPEAKER_STANDARD_MONO("mono")
-	MCFG_SOUND_ADD("speaker", SPEAKER_SOUND, 0)
+	SPEAKER(config, "mono").front_center();
+	MCFG_DEVICE_ADD("speaker", SPEAKER_SOUND)
 	MCFG_SOUND_ROUTE(ALL_OUTPUTS, "mono", 0.25)
 MACHINE_CONFIG_END
 
@@ -351,5 +350,5 @@ ROM_START( wildfire )
 ROM_END
 
 
-//    YEAR  NAME      PARENT CMP MACHINE   INPUT     STATE        INIT  COMPANY, FULLNAME, FLAGS
-CONS( 1979, wildfire, 0,      0, wildfire, wildfire, wildfire_state, 0, "Parker Brothers", "Wildfire (patent)", MACHINE_IMPERFECT_SOUND | MACHINE_SUPPORTS_SAVE | MACHINE_REQUIRES_ARTWORK ) // note: pretty sure that it matches the commercial release
+//    YEAR  NAME      PARENT CMP MACHINE   INPUT     CLASS           INIT        COMPANY, FULLNAME, FLAGS
+CONS( 1979, wildfire, 0,      0, wildfire, wildfire, wildfire_state, empty_init, "Parker Brothers", "Wildfire (patent)", MACHINE_IMPERFECT_SOUND | MACHINE_SUPPORTS_SAVE | MACHINE_REQUIRES_ARTWORK ) // note: pretty sure that it matches the commercial release

@@ -26,13 +26,15 @@ public:
 		, m_videoram(*this, "videoram")
 	{ }
 
-	MC6845_UPDATE_ROW(update_row);
-
 	void qvt190(machine_config &config);
 	void qvt102(machine_config &config);
+
+private:
+	MC6845_UPDATE_ROW(update_row);
+
 	void qvt102_mem_map(address_map &map);
 	void qvt190_mem_map(address_map &map);
-private:
+
 	required_device<cpu_device> m_maincpu;
 	required_region_ptr<u8> m_p_chargen;
 	required_shared_ptr<u8> m_videoram;
@@ -68,8 +70,8 @@ static INPUT_PORTS_START( qvt6800 )
 INPUT_PORTS_END
 
 MACHINE_CONFIG_START(qvt6800_state::qvt102)
-	MCFG_CPU_ADD("maincpu", M6800, XTAL(16'669'800) / 18)
-	MCFG_CPU_PROGRAM_MAP(qvt102_mem_map)
+	MCFG_DEVICE_ADD("maincpu", M6800, XTAL(16'669'800) / 18)
+	MCFG_DEVICE_PROGRAM_MAP(qvt102_mem_map)
 
 	MCFG_NVRAM_ADD_0FILL("nvram") // 2x TC5514-APL + 3V battery
 
@@ -78,12 +80,12 @@ MACHINE_CONFIG_START(qvt6800_state::qvt102)
 	MCFG_DEVICE_ADD("acia", ACIA6850, 0)
 
 	MCFG_DEVICE_ADD("ctc", Z80CTC, XTAL(16'669'800) / 9)
-	MCFG_Z80CTC_ZC0_CB(DEVWRITELINE("acia", acia6850_device, write_txc))
-	MCFG_Z80CTC_ZC1_CB(DEVWRITELINE("acia", acia6850_device, write_rxc))
+	MCFG_Z80CTC_ZC0_CB(WRITELINE("acia", acia6850_device, write_txc))
+	MCFG_Z80CTC_ZC1_CB(WRITELINE("acia", acia6850_device, write_rxc))
 
-	MCFG_DEVICE_ADD("ctcclk", CLOCK, XTAL(16'669'800) / 18) // OR of CRTC CLK and ϕ1
-	MCFG_CLOCK_SIGNAL_HANDLER(DEVWRITELINE("ctc", z80ctc_device, trg0))
-	MCFG_DEVCB_CHAIN_OUTPUT(DEVWRITELINE("ctc", z80ctc_device, trg1))
+	clock_device &ctcclk(CLOCK(config, "ctcclk", 16.6698_MHz_XTAL / 18)); // OR of CRTC CLK and ϕ1
+	ctcclk.signal_handler().set("ctc", FUNC(z80ctc_device::trg0));
+	ctcclk.signal_handler().append("ctc", FUNC(z80ctc_device::trg1));
 
 	MCFG_SCREEN_ADD("screen", RASTER)
 	MCFG_SCREEN_RAW_PARAMS(XTAL(16'669'800), 882, 0, 720, 315, 0, 300)
@@ -94,12 +96,12 @@ MACHINE_CONFIG_START(qvt6800_state::qvt102)
 	MCFG_MC6845_UPDATE_ROW_CB(qvt6800_state, update_row)
 	MCFG_VIDEO_SET_SCREEN("screen")
 
-	MCFG_CPU_ADD("kbdmcu", I8748, XTAL(6'000'000))
+	MCFG_DEVICE_ADD("kbdmcu", I8748, XTAL(6'000'000))
 MACHINE_CONFIG_END
 
 MACHINE_CONFIG_START(qvt6800_state::qvt190)
-	MCFG_CPU_ADD("maincpu", M6800, XTAL(16'669'800) / 9)
-	MCFG_CPU_PROGRAM_MAP(qvt190_mem_map)
+	MCFG_DEVICE_ADD("maincpu", M6800, XTAL(16'669'800) / 9)
+	MCFG_DEVICE_PROGRAM_MAP(qvt190_mem_map)
 
 	MCFG_NVRAM_ADD_0FILL("nvram") // V61C16P55L + battery
 
@@ -139,7 +141,7 @@ ROM_START( qvt102 )
 	ROM_LOAD( "k301.u302",  0x0000, 0x0400, CRC(67564b20) SHA1(5897ff920f8fae4aa498d3a4dfd45b58183c041d) )
 ROM_END
 
-COMP( 1983, qvt102, 0, 0, qvt102, qvt6800, qvt6800_state, 0, "Qume", "QVT-102", MACHINE_IS_SKELETON )
+COMP( 1983, qvt102, 0, 0, qvt102, qvt6800, qvt6800_state, empty_init, "Qume", "QVT-102", MACHINE_IS_SKELETON )
 
 
 
@@ -159,4 +161,4 @@ ROM_START( qvt190 )
 	ROM_LOAD( "95864-304.u17", 0x0000, 0x2000, CRC(2792e99b) SHA1(4a84d029d0e63975fc95dc7056d2523193dff986) )
 ROM_END
 
-COMP( 1987, qvt190, 0, 0, qvt190, qvt6800, qvt6800_state, 0, "Qume", "QVT-190", MACHINE_IS_SKELETON )
+COMP( 1987, qvt190, 0, 0, qvt190, qvt6800, qvt6800_state, empty_init, "Qume", "QVT-190", MACHINE_IS_SKELETON )

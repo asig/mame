@@ -31,6 +31,7 @@
 
 #include "emu.h"
 #include "cpu/m6502/m6502.h"
+#include "emupal.h"
 #include "screen.h"
 #include "speaker.h"
 #include "machine/bankdev.h"
@@ -84,13 +85,18 @@ public:
 		m_gfxdecode(*this, "gfxdecode")
 	{ }
 
+
+	void radica_eu3a14(machine_config &config);
+	void radica_eu3a14_adc(machine_config &config);
+
+	void init_rad_gtg();
+	void init_rad_foot();
+
+private:
 	READ8_MEMBER(irq_vector_r);
 
 	// screen updates
 	uint32_t screen_update(screen_device &screen, bitmap_ind16 &bitmap, const rectangle &cliprect);
-
-	void radica_eu3a14(machine_config &config);
-	void radica_eu3a14_adc(machine_config &config);
 
 	int m_custom_irq;
 	uint16_t m_custom_irq_vector;
@@ -113,20 +119,15 @@ public:
 	// for callback
 	DECLARE_READ8_MEMBER(read_full_space);
 
-	DECLARE_DRIVER_INIT(rad_gtg);
-	DECLARE_DRIVER_INIT(rad_foot);
-
 	void bank_map(address_map &map);
 	void radica_eu3a14_map(address_map &map);
 
-protected:
 	// driver_device overrides
 	virtual void machine_start() override;
 	virtual void machine_reset() override;
 
 	virtual void video_start() override;
 
-private:
 	double hue2rgb(double p, double q, double t);
 
 	required_device<cpu_device> m_maincpu;
@@ -493,13 +494,13 @@ void radica_eu3a14_state::radica_eu3a14_map(address_map &map)
 	map(0x5008, 0x5008).nopw(); // startup
 	map(0x5009, 0x5009).noprw();
 	map(0x500a, 0x500a).nopw(); // startup
-	map(0x500b, 0x500b).r(this, FUNC(radica_eu3a14_state::radicasi_pal_ntsc_r)).nopw(); // PAL / NTSC flag at least
-	map(0x500c, 0x500c).w(this, FUNC(radica_eu3a14_state::radicasi_rombank_hi_w));
-	map(0x500d, 0x500d).rw(this, FUNC(radica_eu3a14_state::radicasi_rombank_lo_r), FUNC(radica_eu3a14_state::radicasi_rombank_lo_w));
+	map(0x500b, 0x500b).r(FUNC(radica_eu3a14_state::radicasi_pal_ntsc_r)).nopw(); // PAL / NTSC flag at least
+	map(0x500c, 0x500c).w(FUNC(radica_eu3a14_state::radicasi_rombank_hi_w));
+	map(0x500d, 0x500d).rw(FUNC(radica_eu3a14_state::radicasi_rombank_lo_r), FUNC(radica_eu3a14_state::radicasi_rombank_lo_w));
 
 	// DMA is similar to, but not the same as eu3a05
 	map(0x500f, 0x5017).ram().share("dmaparams");
-	map(0x5018, 0x5018).rw(this, FUNC(radica_eu3a14_state::dma_trigger_r), FUNC(radica_eu3a14_state::dma_trigger_w));
+	map(0x5018, 0x5018).rw(FUNC(radica_eu3a14_state::dma_trigger_r), FUNC(radica_eu3a14_state::dma_trigger_w));
 
 	// probably GPIO like eu3a05, although it access 47/48 as unknown instead of 48/49/4a
 	map(0x5040, 0x5040).nopw();
@@ -540,7 +541,7 @@ void radica_eu3a14_state::radica_eu3a14_map(address_map &map)
 
 	map(0xe000, 0xffff).rom().region("maincpu", 0x0000);
 
-	map(0xfffe, 0xffff).r(this, FUNC(radica_eu3a14_state::irq_vector_r));
+	map(0xfffe, 0xffff).r(FUNC(radica_eu3a14_state::irq_vector_r));
 }
 
 READ8_MEMBER(radica_eu3a14_state::dma_trigger_r)
@@ -763,7 +764,7 @@ static const gfx_layout helper8x8x4_layout =
 };
 
 
-static GFXDECODE_START( helper )
+static GFXDECODE_START( gfx_helper )
 	GFXDECODE_ENTRY( "maincpu", 0, helper8x1x2_layout,    0x0, 128  )
 	GFXDECODE_ENTRY( "maincpu", 0, helper8x1x4_layout,    0x0, 32  )
 	GFXDECODE_ENTRY( "maincpu", 0, helper8x1x8_layout,    0x0, 2  )
@@ -776,9 +777,9 @@ GFXDECODE_END
 
 MACHINE_CONFIG_START(radica_eu3a14_state::radica_eu3a14)
 	/* basic machine hardware */
-	MCFG_CPU_ADD("maincpu",M6502,XTAL(21'477'272)/2) // marked as 21'477'270
-	MCFG_CPU_PROGRAM_MAP(radica_eu3a14_map)
-	MCFG_CPU_VBLANK_INT_DRIVER("screen", radica_eu3a14_state,  interrupt)
+	MCFG_DEVICE_ADD("maincpu",M6502,XTAL(21'477'272)/2) // marked as 21'477'270
+	MCFG_DEVICE_PROGRAM_MAP(radica_eu3a14_map)
+	MCFG_DEVICE_VBLANK_INT_DRIVER("screen", radica_eu3a14_state,  interrupt)
 
 	MCFG_DEVICE_ADD("bank", ADDRESS_MAP_BANK, 0)
 	MCFG_DEVICE_PROGRAM_MAP(bank_map)
@@ -787,7 +788,7 @@ MACHINE_CONFIG_START(radica_eu3a14_state::radica_eu3a14)
 	MCFG_ADDRESS_MAP_BANK_ADDR_WIDTH(24)
 	MCFG_ADDRESS_MAP_BANK_STRIDE(0x8000)
 
-	MCFG_GFXDECODE_ADD("gfxdecode", "palette", helper)
+	MCFG_DEVICE_ADD("gfxdecode", GFXDECODE, "palette", gfx_helper)
 
 	/* video hardware */
 	MCFG_SCREEN_ADD("screen", RASTER)
@@ -802,9 +803,9 @@ MACHINE_CONFIG_START(radica_eu3a14_state::radica_eu3a14)
 	MCFG_PALETTE_ADD("palette", 512)
 
 	/* sound hardware */
-	MCFG_SPEAKER_STANDARD_MONO("mono")
+	SPEAKER(config, "mono").front_center();
 	MCFG_DEVICE_ADD("6ch_sound", RADICA6502_SOUND, 8000)
-	MCFG_RADICA6502_SOUND_SPACE_READ_CB(READ8(radica_eu3a14_state, read_full_space))
+	MCFG_RADICA6502_SOUND_SPACE_READ_CB(READ8(*this, radica_eu3a14_state, read_full_space))
 	MCFG_SOUND_ROUTE(ALL_OUTPUTS, "mono", 1.0)
 
 MACHINE_CONFIG_END
@@ -815,14 +816,14 @@ MACHINE_CONFIG_START(radica_eu3a14_state::radica_eu3a14_adc)
 	MCFG_TIMER_DRIVER_ADD_SCANLINE("scantimer", radica_eu3a14_state, scanline_cb, "screen", 0, 1)
 MACHINE_CONFIG_END
 
-DRIVER_INIT_MEMBER(radica_eu3a14_state, rad_gtg)
+void radica_eu3a14_state::init_rad_gtg()
 {
 	// must be registers to control this
 	m_tilerambase = 0x0a00 - 0x200;
 	m_spriterambase = 0x0220 - 0x200;
 }
 
-DRIVER_INIT_MEMBER(radica_eu3a14_state, rad_foot)
+void radica_eu3a14_state::init_rad_foot()
 {
 	// must be registers to control this
 	m_tilerambase = 0x0200 - 0x200;
@@ -840,7 +841,7 @@ ROM_START( rad_foot )
 	ROM_LOAD( "connectvfootball.bin", 0x000000, 0x400000, CRC(00ac4fc0) SHA1(2b60ae5c6bc7e9ef7cdbd3f6a0a0657ed3ab5afe) )
 ROM_END
 
-CONS( 2006, rad_gtg,  0,   0,  radica_eu3a14_adc,  rad_gtg,       radica_eu3a14_state, rad_gtg, "Radica (licensed from Incredible Technologies)", "Golden Tee Golf: Home Edition", MACHINE_NOT_WORKING )
+CONS( 2006, rad_gtg,  0, 0, radica_eu3a14_adc, rad_gtg,       radica_eu3a14_state, init_rad_gtg,  "Radica (licensed from Incredible Technologies)", "Golden Tee Golf: Home Edition", MACHINE_NOT_WORKING )
 
 // also has a Connectv Real Soccer logo in the roms, apparently unused, maybe that was to be the US title (without the logo being changed to Play TV) but Play TV Soccer ended up being a different game licensed from Epoch instead.
-CONS( 2006, rad_foot, 0,   0,  radica_eu3a14,      radica_eu3a14, radica_eu3a14_state, rad_foot, "Radica", "Connectv Football", MACHINE_NOT_WORKING )
+CONS( 2006, rad_foot, 0, 0, radica_eu3a14,     radica_eu3a14, radica_eu3a14_state, init_rad_foot, "Radica", "Connectv Football", MACHINE_NOT_WORKING )

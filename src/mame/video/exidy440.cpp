@@ -230,11 +230,14 @@ void exidy440_state::exidy440_update_firq()
 }
 
 
-INTERRUPT_GEN_MEMBER(exidy440_state::exidy440_vblank_interrupt)
+WRITE_LINE_MEMBER(exidy440_state::vblank_interrupt_w)
 {
 	/* set the FIRQ line on a VBLANK */
-	m_firq_vblank = 1;
-	exidy440_update_firq();
+	if (state)
+	{
+		m_firq_vblank = 1;
+		exidy440_update_firq();
+	}
 }
 
 
@@ -460,11 +463,13 @@ uint32_t topsecex_state::screen_update_topsecex(screen_device &screen, bitmap_in
 MACHINE_CONFIG_START(exidy440_state::exidy440_video)
 	MCFG_PALETTE_ADD("palette", 256)
 
-	MCFG_SCREEN_ADD("screen", RASTER)
-	MCFG_SCREEN_VIDEO_ATTRIBUTES(VIDEO_ALWAYS_UPDATE)
-	MCFG_SCREEN_RAW_PARAMS(PIXEL_CLOCK, HTOTAL, HBEND, HBSTART, VTOTAL, VBEND, VBSTART)
-	MCFG_SCREEN_UPDATE_DRIVER(exidy440_state, screen_update_exidy440)
-	MCFG_SCREEN_PALETTE("palette")
+	screen_device &screen(SCREEN(config, "screen", SCREEN_TYPE_RASTER));
+	screen.set_video_attributes(VIDEO_ALWAYS_UPDATE);
+	screen.set_raw(PIXEL_CLOCK, HTOTAL, HBEND, HBSTART, VTOTAL, VBEND, VBSTART);
+	screen.set_screen_update(FUNC(exidy440_state::screen_update_exidy440));
+	screen.set_palette(m_palette);
+	screen.screen_vblank().set(FUNC(exidy440_state::vblank_interrupt_w));
+	screen.screen_vblank().append(m_custom, FUNC(exidy440_sound_device::sound_interrupt_w));
 MACHINE_CONFIG_END
 
 

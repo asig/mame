@@ -12,17 +12,17 @@
 
 /* trampolines so we can specify the 68681 serial configuration when adding the CPU  */
 #define MCFG_MC68307_SERIAL_A_TX_CALLBACK(_cb) \
-	devcb = &downcast<m68307_cpu_device &>(*device).set_a_tx_cb(DEVCB_##_cb);
+	downcast<m68307_cpu_device &>(*device).set_a_tx_cb(DEVCB_##_cb);
 
 #define MCFG_MC68307_SERIAL_B_TX_CALLBACK(_cb) \
-	devcb = &downcast<m68307_cpu_device &>(*device).set_b_tx_cb(DEVCB_##_cb);
+	downcast<m68307_cpu_device &>(*device).set_b_tx_cb(DEVCB_##_cb);
 
 // deprecated: use ipX_w() instead
 #define MCFG_MC68307_SERIAL_INPORT_CALLBACK(_cb) \
-	devcb = &downcast<m68307_cpu_device &>(*device).set_inport_cb(DEVCB_##_cb);
+	downcast<m68307_cpu_device &>(*device).set_inport_cb(DEVCB_##_cb);
 
 #define MCFG_MC68307_SERIAL_OUTPORT_CALLBACK(_cb) \
-	devcb = &downcast<m68307_cpu_device &>(*device).set_outport_cb(DEVCB_##_cb);
+	downcast<m68307_cpu_device &>(*device).set_outport_cb(DEVCB_##_cb);
 
 
 class m68307_cpu_device : public m68000_device
@@ -75,15 +75,6 @@ private:
 	void init16_m68307(address_space &space);
 
 	int calc_cs(offs_t address) const;
-
-	uint16_t simple_read_immediate_16_m68307(offs_t address);
-
-	uint8_t read_byte_m68307(offs_t address);
-	uint16_t read_word_m68307(offs_t address);
-	uint32_t read_dword_m68307(offs_t address);
-	void write_byte_m68307(offs_t address, uint8_t data);
-	void write_word_m68307(offs_t address, uint16_t data);
-	void write_dword_m68307(offs_t address, uint32_t data);
 
 	DECLARE_READ16_MEMBER( m68307_internal_base_r );
 	DECLARE_WRITE16_MEMBER( m68307_internal_base_w );

@@ -16,6 +16,7 @@
 #include "sound/dac.h"
 #include "video/hd44780.h"
 #include "imagedev/cassette.h"
+#include "emupal.h"
 #include "rendlay.h"
 
 #define MCFG_ALESIS_DM3AG_ADD(_tag,_clock) \
@@ -132,7 +133,7 @@ public:
 		m_setup(*this, "setup")
 	{ }
 
-	DECLARE_DRIVER_INIT(hr16);
+	void init_hr16();
 	void mmt8(machine_config &config);
 	void hr16(machine_config &config);
 	void sr16(machine_config &config);
@@ -169,7 +170,7 @@ private:
 
 	required_device<hd44780_device> m_lcdc;
 	optional_device<cassette_image_device> m_cassette;
-	required_device<cpu_device> m_maincpu;
+	required_device<mcs51_cpu_device> m_maincpu;
 
 	required_ioport m_col1;
 	required_ioport m_col2;

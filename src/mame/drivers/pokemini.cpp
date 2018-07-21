@@ -15,6 +15,7 @@ The LCD is likely to be a SSD1828 LCD.
 #include "sound/spkrdev.h"
 #include "bus/generic/slot.h"
 #include "bus/generic/carts.h"
+#include "emupal.h"
 #include "rendlay.h"
 #include "screen.h"
 #include "softlist.h"
@@ -64,6 +65,9 @@ public:
 		, m_inputs(*this, "INPUTS")
 	{ }
 
+	void pokemini(machine_config &config);
+
+private:
 	uint8_t m_pm_reg[0x100];
 	PRC m_prc;
 	TIMERS m_timers;
@@ -78,9 +82,8 @@ public:
 	DECLARE_READ8_MEMBER(rom_r);
 	DECLARE_DEVICE_IMAGE_LOAD_MEMBER(pokemini_cart);
 
-	void pokemini(machine_config &config);
 	void pokemini_mem_map(address_map &map);
-protected:
+
 	enum
 	{
 		TIMER_SECONDS,
@@ -129,8 +132,8 @@ void pokemini_state::pokemini_mem_map(address_map &map)
 {
 	map(0x000000, 0x000fff).rom();                            /* bios */
 	map(0x001000, 0x001fff).ram().share("p_ram");          /* VRAM/RAM */
-	map(0x002000, 0x0020ff).rw(this, FUNC(pokemini_state::hwreg_r), FUNC(pokemini_state::hwreg_w));    /* hardware registers */
-	map(0x002100, 0x1fffff).r(this, FUNC(pokemini_state::rom_r));                    /* cartridge area */
+	map(0x002000, 0x0020ff).rw(FUNC(pokemini_state::hwreg_r), FUNC(pokemini_state::hwreg_w));    /* hardware registers */
+	map(0x002100, 0x1fffff).r(FUNC(pokemini_state::rom_r));                    /* cartridge area */
 }
 
 
@@ -1760,8 +1763,8 @@ uint32_t pokemini_state::screen_update(screen_device &screen, bitmap_ind16 &bitm
 
 MACHINE_CONFIG_START(pokemini_state::pokemini)
 	/* basic machine hardware */
-	MCFG_CPU_ADD("maincpu", MINX, 4000000)
-	MCFG_CPU_PROGRAM_MAP(pokemini_mem_map)
+	MCFG_DEVICE_ADD("maincpu", MINX, 4000000)
+	MCFG_DEVICE_PROGRAM_MAP(pokemini_mem_map)
 
 	MCFG_QUANTUM_TIME(attotime::from_hz(60))
 
@@ -1776,14 +1779,14 @@ MACHINE_CONFIG_START(pokemini_state::pokemini)
 	MCFG_SCREEN_REFRESH_RATE( 72 )
 	MCFG_SCREEN_PALETTE("palette")
 
-	MCFG_DEFAULT_LAYOUT(layout_lcd)
+	config.set_default_layout(layout_lcd);
 
 	MCFG_PALETTE_ADD("palette", 4)
 	MCFG_PALETTE_INIT_OWNER(pokemini_state, pokemini)
 
 	/* sound hardware */
-	MCFG_SPEAKER_STANDARD_MONO("mono")
-	MCFG_SOUND_ADD("speaker", SPEAKER_SOUND, 0)
+	SPEAKER(config, "mono").front_center();
+	MCFG_DEVICE_ADD("speaker", SPEAKER_SOUND)
 	MCFG_SPEAKER_LEVELS(3, speaker_levels)
 	MCFG_SOUND_ROUTE(ALL_OUTPUTS, "mono", 0.50)
 
@@ -1802,4 +1805,4 @@ ROM_START( pokemini )
 ROM_END
 
 
-CONS( 2001, pokemini, 0, 0, pokemini, pokemini, pokemini_state, 0, "Nintendo", "Pokemon Mini", MACHINE_NO_SOUND )
+CONS( 2001, pokemini, 0, 0, pokemini, pokemini, pokemini_state, empty_init, "Nintendo", "Pokemon Mini", MACHINE_NO_SOUND )

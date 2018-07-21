@@ -16,6 +16,7 @@
 #include "sound/sn76477.h"
 #include "sound/tms3615.h"
 
+#include "emupal.h"
 #include "screen.h"
 
 
@@ -60,7 +61,7 @@ public:
 	{
 	}
 
-	DECLARE_DRIVER_INIT(laserbat);
+	void init_laserbat();
 
 	void laserbat_base(machine_config &config);
 	void laserbat_io_map(address_map &map);

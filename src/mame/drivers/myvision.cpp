@@ -49,16 +49,18 @@ public:
 		, m_io_row3(*this, "ROW3")
 	{ }
 
+	void myvision(machine_config &config);
+
+private:
 	DECLARE_DEVICE_IMAGE_LOAD_MEMBER( cart );
 	DECLARE_READ8_MEMBER( ay_port_a_r );
 	DECLARE_READ8_MEMBER( ay_port_b_r );
 	DECLARE_WRITE8_MEMBER( ay_port_a_w );
 	DECLARE_WRITE8_MEMBER( ay_port_b_w );
 
-	void myvision(machine_config &config);
 	void myvision_io(address_map &map);
 	void myvision_mem(address_map &map);
-private:
+
 	virtual void machine_start() override;
 	virtual void machine_reset() override;
 	required_device<cpu_device> m_maincpu;
@@ -76,8 +78,8 @@ void myvision_state::myvision_mem(address_map &map)
 	map.unmap_value_high();
 	//AM_RANGE(0x0000, 0x5fff)      // mapped by the cartslot
 	map(0xa000, 0xa7ff).ram();
-	map(0xe000, 0xe000).rw("tms9918", FUNC(tms9918a_device::vram_read), FUNC(tms9918a_device::vram_write));
-	map(0xe002, 0xe002).rw("tms9918", FUNC(tms9918a_device::register_read), FUNC(tms9918a_device::register_write));
+	map(0xe000, 0xe000).rw("tms9918", FUNC(tms9918a_device::vram_r), FUNC(tms9918a_device::vram_w));
+	map(0xe002, 0xe002).rw("tms9918", FUNC(tms9918a_device::register_r), FUNC(tms9918a_device::register_w));
 }
 
 
@@ -214,9 +216,9 @@ WRITE8_MEMBER( myvision_state::ay_port_b_w )
 
 MACHINE_CONFIG_START(myvision_state::myvision)
 	/* basic machine hardware */
-	MCFG_CPU_ADD("maincpu",Z80, XTAL(10'738'635)/3)  /* Not verified */
-	MCFG_CPU_PROGRAM_MAP(myvision_mem)
-	MCFG_CPU_IO_MAP(myvision_io)
+	MCFG_DEVICE_ADD("maincpu",Z80, XTAL(10'738'635)/3)  /* Not verified */
+	MCFG_DEVICE_PROGRAM_MAP(myvision_mem)
+	MCFG_DEVICE_IO_MAP(myvision_io)
 
 	/* video hardware */
 	MCFG_DEVICE_ADD( "tms9918", TMS9918A, XTAL(10'738'635) / 2 )  /* Exact model not verified */
@@ -226,12 +228,12 @@ MACHINE_CONFIG_START(myvision_state::myvision)
 	MCFG_SCREEN_UPDATE_DEVICE( "tms9918", tms9918a_device, screen_update )
 
 	/* sound hardware */
-	MCFG_SPEAKER_STANDARD_MONO("mono")
-	MCFG_SOUND_ADD("ay8910", AY8910, XTAL(10'738'635)/3/2)  /* Exact model and clock not verified */
-	MCFG_AY8910_PORT_A_READ_CB(READ8(myvision_state, ay_port_a_r))
-	MCFG_AY8910_PORT_B_READ_CB(READ8(myvision_state, ay_port_b_r))
-	MCFG_AY8910_PORT_A_WRITE_CB(WRITE8(myvision_state, ay_port_a_w))
-	MCFG_AY8910_PORT_B_WRITE_CB(WRITE8(myvision_state, ay_port_b_w))
+	SPEAKER(config, "mono").front_center();
+	MCFG_DEVICE_ADD("ay8910", AY8910, XTAL(10'738'635)/3/2)  /* Exact model and clock not verified */
+	MCFG_AY8910_PORT_A_READ_CB(READ8(*this, myvision_state, ay_port_a_r))
+	MCFG_AY8910_PORT_B_READ_CB(READ8(*this, myvision_state, ay_port_b_r))
+	MCFG_AY8910_PORT_A_WRITE_CB(WRITE8(*this, myvision_state, ay_port_a_w))
+	MCFG_AY8910_PORT_B_WRITE_CB(WRITE8(*this, myvision_state, ay_port_b_w))
 	MCFG_SOUND_ROUTE(ALL_OUTPUTS, "mono", 0.50)
 
 	/* cartridge */
@@ -250,5 +252,5 @@ ROM_END
 
 /* Driver */
 
-//    YEAR  NAME      PARENT  COMPAT   MACHINE    INPUT     STATE           INIT  COMPANY       FULLN AME              FLAGS
-CONS( 1983, myvision, 0,      0,       myvision,  myvision, myvision_state, 0,    "Nichibutsu", "My Vision (KH-1000)", 0 )
+//    YEAR  NAME      PARENT  COMPAT  MACHINE   INPUT     STATE           INIT        COMPANY       FULLN AME              FLAGS
+CONS( 1983, myvision, 0,      0,      myvision, myvision, myvision_state, empty_init, "Nichibutsu", "My Vision (KH-1000)", 0 )

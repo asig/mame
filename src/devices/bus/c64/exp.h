@@ -59,31 +59,31 @@
 
 #define MCFG_C64_PASSTHRU_EXPANSION_SLOT_ADD() \
 	MCFG_C64_EXPANSION_SLOT_ADD(C64_EXPANSION_SLOT_TAG, 0, c64_expansion_cards, nullptr) \
-	MCFG_C64_EXPANSION_SLOT_IRQ_CALLBACK(DEVWRITELINE(DEVICE_SELF_OWNER, c64_expansion_slot_device, irq_w)) \
-	MCFG_C64_EXPANSION_SLOT_NMI_CALLBACK(DEVWRITELINE(DEVICE_SELF_OWNER, c64_expansion_slot_device, nmi_w)) \
-	MCFG_C64_EXPANSION_SLOT_RESET_CALLBACK(DEVWRITELINE(DEVICE_SELF_OWNER, c64_expansion_slot_device, reset_w)) \
-	MCFG_C64_EXPANSION_SLOT_CD_INPUT_CALLBACK(DEVREAD8(DEVICE_SELF_OWNER, c64_expansion_slot_device, dma_cd_r)) \
-	MCFG_C64_EXPANSION_SLOT_CD_OUTPUT_CALLBACK(DEVWRITE8(DEVICE_SELF_OWNER, c64_expansion_slot_device, dma_cd_w)) \
-	MCFG_C64_EXPANSION_SLOT_DMA_CALLBACK(DEVWRITELINE(DEVICE_SELF_OWNER, c64_expansion_slot_device, dma_w))
+	MCFG_C64_EXPANSION_SLOT_IRQ_CALLBACK(WRITELINE(DEVICE_SELF_OWNER, c64_expansion_slot_device, irq_w)) \
+	MCFG_C64_EXPANSION_SLOT_NMI_CALLBACK(WRITELINE(DEVICE_SELF_OWNER, c64_expansion_slot_device, nmi_w)) \
+	MCFG_C64_EXPANSION_SLOT_RESET_CALLBACK(WRITELINE(DEVICE_SELF_OWNER, c64_expansion_slot_device, reset_w)) \
+	MCFG_C64_EXPANSION_SLOT_CD_INPUT_CALLBACK(READ8(DEVICE_SELF_OWNER, c64_expansion_slot_device, dma_cd_r)) \
+	MCFG_C64_EXPANSION_SLOT_CD_OUTPUT_CALLBACK(WRITE8(DEVICE_SELF_OWNER, c64_expansion_slot_device, dma_cd_w)) \
+	MCFG_C64_EXPANSION_SLOT_DMA_CALLBACK(WRITELINE(DEVICE_SELF_OWNER, c64_expansion_slot_device, dma_w))
 
 
 #define MCFG_C64_EXPANSION_SLOT_IRQ_CALLBACK(_write) \
-	devcb = &downcast<c64_expansion_slot_device &>(*device).set_irq_wr_callback(DEVCB_##_write);
+	downcast<c64_expansion_slot_device &>(*device).set_irq_wr_callback(DEVCB_##_write);
 
 #define MCFG_C64_EXPANSION_SLOT_NMI_CALLBACK(_write) \
-	devcb = &downcast<c64_expansion_slot_device &>(*device).set_nmi_wr_callback(DEVCB_##_write);
+	downcast<c64_expansion_slot_device &>(*device).set_nmi_wr_callback(DEVCB_##_write);
 
 #define MCFG_C64_EXPANSION_SLOT_RESET_CALLBACK(_write) \
-	devcb = &downcast<c64_expansion_slot_device &>(*device).set_reset_wr_callback(DEVCB_##_write);
+	downcast<c64_expansion_slot_device &>(*device).set_reset_wr_callback(DEVCB_##_write);
 
 #define MCFG_C64_EXPANSION_SLOT_CD_INPUT_CALLBACK(_read) \
-	devcb = &downcast<c64_expansion_slot_device &>(*device).set_cd_rd_callback(DEVCB_##_read);
+	downcast<c64_expansion_slot_device &>(*device).set_cd_rd_callback(DEVCB_##_read);
 
 #define MCFG_C64_EXPANSION_SLOT_CD_OUTPUT_CALLBACK(_write) \
-	devcb = &downcast<c64_expansion_slot_device &>(*device).set_cd_wr_callback(DEVCB_##_write);
+	downcast<c64_expansion_slot_device &>(*device).set_cd_wr_callback(DEVCB_##_write);
 
 #define MCFG_C64_EXPANSION_SLOT_DMA_CALLBACK(_write) \
-	devcb = &downcast<c64_expansion_slot_device &>(*device).set_dma_wr_callback(DEVCB_##_write);
+	downcast<c64_expansion_slot_device &>(*device).set_dma_wr_callback(DEVCB_##_write);
 
 
 

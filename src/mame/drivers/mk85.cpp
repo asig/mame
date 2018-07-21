@@ -21,6 +21,7 @@ Models:
 
 #include "emu.h"
 #include "cpu/t11/t11.h"
+#include "emupal.h"
 #include "screen.h"
 
 
@@ -33,11 +34,13 @@ public:
 	{
 	}
 
+	void mk85(machine_config &config);
+
+private:
 	virtual void machine_reset() override;
 	virtual void video_start() override;
 	uint32_t screen_update_mk85(screen_device &screen, bitmap_ind16 &bitmap, const rectangle &cliprect);
 	required_device<cpu_device> m_maincpu;
-	void mk85(machine_config &config);
 	void mk85_mem(address_map &map);
 };
 
@@ -69,9 +72,9 @@ uint32_t mk85_state::screen_update_mk85(screen_device &screen, bitmap_ind16 &bit
 
 MACHINE_CONFIG_START(mk85_state::mk85)
 	/* basic machine hardware */
-	MCFG_CPU_ADD("maincpu", K1801VM2, XTAL(4'000'000))
+	MCFG_DEVICE_ADD("maincpu", K1801VM2, XTAL(4'000'000))
 	MCFG_T11_INITIAL_MODE(0)
-	MCFG_CPU_PROGRAM_MAP(mk85_mem)
+	MCFG_DEVICE_PROGRAM_MAP(mk85_mem)
 
 
 	/* video hardware */
@@ -94,5 +97,5 @@ ROM_END
 
 /* Driver */
 
-/*    YEAR  NAME    PARENT  COMPAT   MACHINE    INPUT  STATE       INIT  COMPANY        FULLNAME  FLAGS */
-COMP( 1986, mk85,   0,      0,       mk85,      mk85,  mk85_state, 0,    "Elektronika", "MK-85",  MACHINE_NOT_WORKING | MACHINE_NO_SOUND)
+/*    YEAR  NAME  PARENT  COMPAT  MACHINE  INPUT  CLASS       INIT        COMPANY        FULLNAME  FLAGS */
+COMP( 1986, mk85, 0,      0,      mk85,    mk85,  mk85_state, empty_init, "Elektronika", "MK-85",  MACHINE_NOT_WORKING | MACHINE_NO_SOUND)

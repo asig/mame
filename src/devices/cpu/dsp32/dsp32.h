@@ -31,7 +31,7 @@ const int DSP32_OUTPUT_PDF  = 0x02;
 //**************************************************************************
 
 #define MCFG_DSP32C_OUTPUT_CALLBACK(_write) \
-	devcb = &downcast<dsp32c_device &>(*device).set_output_pins_callback(DEVCB_##_write);
+	downcast<dsp32c_device &>(*device).set_output_pins_callback(DEVCB_##_write);
 
 // ======================> dsp32c_device
 
@@ -421,7 +421,7 @@ protected:
 	uint8_t           m_lastpins;
 	uint32_t          m_ppc;
 	address_space * m_program;
-	direct_read_data<0> *m_direct;
+	memory_access_cache<2, 0, ENDIANNESS_LITTLE> *m_cache;
 
 	devcb_write32 m_output_pins_changed;
 	// tables

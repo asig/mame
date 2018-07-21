@@ -1263,12 +1263,18 @@ if (CPUS["MIPS"]~=null) then
 		MAME_DIR .. "src/devices/cpu/mips/mips3fe.cpp",
 		MAME_DIR .. "src/devices/cpu/mips/mips3fe.h",
 		MAME_DIR .. "src/devices/cpu/mips/mips3drc.cpp",
+		MAME_DIR .. "src/devices/cpu/mips/ps2vu.cpp",
+		MAME_DIR .. "src/devices/cpu/mips/ps2vu.h",
+		MAME_DIR .. "src/devices/cpu/mips/ps2vif1.cpp",
+		MAME_DIR .. "src/devices/cpu/mips/ps2vif1.h",
 	}
 end
 
 if (CPUS["MIPS"]~=null or _OPTIONS["with-tools"]) then
 	table.insert(disasm_files , MAME_DIR .. "src/devices/cpu/mips/mips3dsm.cpp")
 	table.insert(disasm_files , MAME_DIR .. "src/devices/cpu/mips/mips3dsm.h")
+	table.insert(disasm_files , MAME_DIR .. "src/devices/cpu/mips/vudasm.cpp")
+	table.insert(disasm_files , MAME_DIR .. "src/devices/cpu/mips/vudasm.h")
 end
 
 --------------------------------------------------
@@ -1984,6 +1990,9 @@ if (CPUS["SM510"]~=null) then
 		MAME_DIR .. "src/devices/cpu/sm510/sm510op.cpp",
 		MAME_DIR .. "src/devices/cpu/sm510/sm510core.cpp",
 		MAME_DIR .. "src/devices/cpu/sm510/sm511core.cpp",
+		MAME_DIR .. "src/devices/cpu/sm510/sm530.h",
+		MAME_DIR .. "src/devices/cpu/sm510/sm530op.cpp",
+		MAME_DIR .. "src/devices/cpu/sm510/sm530core.cpp",
 		MAME_DIR .. "src/devices/cpu/sm510/sm500.h",
 		MAME_DIR .. "src/devices/cpu/sm510/sm500op.cpp",
 		MAME_DIR .. "src/devices/cpu/sm510/sm500core.cpp",
@@ -2404,17 +2413,12 @@ end
 --------------------------------------------------
 -- Zilog Z80
 --@src/devices/cpu/z80/z80.h,CPUS["Z80"] = true
---@src/devices/cpu/z80/z80daisy.h,CPUS["Z80"] = true
 --------------------------------------------------
 
 if (CPUS["Z80"]~=null) then
 	files {
 		MAME_DIR .. "src/devices/cpu/z80/z80.cpp",
 		MAME_DIR .. "src/devices/cpu/z80/z80.h",
-		MAME_DIR .. "src/devices/cpu/z80/z80daisy.cpp",
-		MAME_DIR .. "src/devices/cpu/z80/z80daisy.h",
-		MAME_DIR .. "src/devices/cpu/z80/z80daisy_generic.cpp",
-		MAME_DIR .. "src/devices/cpu/z80/z80daisy_generic.h",
 		MAME_DIR .. "src/devices/cpu/z80/tmpz84c011.cpp",
 		MAME_DIR .. "src/devices/cpu/z80/tmpz84c011.h",
 		MAME_DIR .. "src/devices/cpu/z80/tmpz84c015.cpp",
@@ -2465,8 +2469,6 @@ if (CPUS["Z180"]~=null) then
 		MAME_DIR .. "src/devices/cpu/z180/z180ops.h",
 		MAME_DIR .. "src/devices/cpu/z180/z180tbl.h",
 		MAME_DIR .. "src/devices/cpu/z180/z180xy.hxx",
-		MAME_DIR .. "src/devices/cpu/z80/z80daisy.cpp",
-		MAME_DIR .. "src/devices/cpu/z80/z80daisy.h",
 	}
 end
 

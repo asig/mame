@@ -76,6 +76,39 @@ public:
 		std::fill(std::begin(m_cat702_dataout), std::end(m_cat702_dataout), 1);
 	}
 
+	void zn1_1mb_vram(machine_config &config);
+	void zn1_2mb_vram(machine_config &config);
+	void zn2(machine_config &config);
+	void jdredd(machine_config &config);
+	void coh1002msnd(machine_config &config);
+	void coh1002tb(machine_config &config);
+	void coh1000a(machine_config &config);
+	void coh1000tb(machine_config &config);
+	void coh1002m(machine_config &config);
+	void coh1002ml(machine_config &config);
+	void coh1001l(machine_config &config);
+	void bam2(machine_config &config);
+	void beastrzrb(machine_config &config);
+	void glpracr(machine_config &config);
+	void coh1000ta(machine_config &config);
+	void coh1002v(machine_config &config);
+	void nbajamex(machine_config &config);
+	void coh1000c(machine_config &config);
+	void coh1000w(machine_config &config);
+	void coh1002e(machine_config &config);
+	void coh3002c(machine_config &config);
+	void coh1002c(machine_config &config);
+
+	void init_coh1000tb();
+	void init_nbajamex();
+	void init_bam2();
+	void init_jdredd();
+	void init_coh1000w();
+	void init_primrag2();
+
+	DECLARE_CUSTOM_INPUT_MEMBER(jdredd_gun_mux_read);
+
+private:
 	DECLARE_WRITE_LINE_MEMBER(sio0_sck){ m_cat702[0]->write_clock(state);  m_cat702[1]->write_clock(state); m_znmcu->write_clock(state); }
 	DECLARE_WRITE_LINE_MEMBER(sio0_txd){ m_cat702[0]->write_datain(state);  m_cat702[1]->write_datain(state); }
 	template<int Chip> DECLARE_WRITE_LINE_MEMBER(cat702_dataout){ m_cat702_dataout[Chip] = state; update_sio0_rxd(); }
@@ -83,7 +116,6 @@ public:
 	DECLARE_WRITE_LINE_MEMBER(znmcu_dsrout){ m_znmcu_dsrout = state; update_sio0_dsr(); }
 	void update_sio0_rxd(){ m_sio0->write_rxd(m_cat702_dataout[0] && m_cat702_dataout[1] && m_znmcu_dataout); }
 	void update_sio0_dsr(){ m_sio0->write_dsr(m_znmcu_dsrout); }
-	DECLARE_CUSTOM_INPUT_MEMBER(jdredd_gun_mux_read);
 	DECLARE_READ8_MEMBER(znsecsel_r);
 	DECLARE_WRITE8_MEMBER(znsecsel_w);
 	DECLARE_READ8_MEMBER(boardconfig_r);
@@ -118,12 +150,7 @@ public:
 	DECLARE_WRITE16_MEMBER(vt83c461_16_w);
 	DECLARE_READ16_MEMBER(vt83c461_32_r);
 	DECLARE_WRITE16_MEMBER(vt83c461_32_w);
-	DECLARE_DRIVER_INIT(coh1000tb);
-	DECLARE_DRIVER_INIT(nbajamex);
-	DECLARE_DRIVER_INIT(bam2);
-	DECLARE_DRIVER_INIT(jdredd);
-	DECLARE_DRIVER_INIT(coh1000w);
-	DECLARE_DRIVER_INIT(primrag2);
+
 	DECLARE_MACHINE_START(coh1000c);
 	DECLARE_MACHINE_START(coh1000ta);
 	DECLARE_MACHINE_START(coh1002e);
@@ -146,28 +173,6 @@ public:
 	void atpsx_dma_write(uint32_t *p_n_psxram, uint32_t n_address, int32_t n_size );
 	void jdredd_vblank(screen_device &screen, bool vblank_state);
 
-	void zn1_1mb_vram(machine_config &config);
-	void zn1_2mb_vram(machine_config &config);
-	void zn2(machine_config &config);
-	void jdredd(machine_config &config);
-	void coh1002msnd(machine_config &config);
-	void coh1002tb(machine_config &config);
-	void coh1000a(machine_config &config);
-	void coh1000tb(machine_config &config);
-	void coh1002m(machine_config &config);
-	void coh1002ml(machine_config &config);
-	void coh1001l(machine_config &config);
-	void bam2(machine_config &config);
-	void beastrzrb(machine_config &config);
-	void glpracr(machine_config &config);
-	void coh1000ta(machine_config &config);
-	void coh1002v(machine_config &config);
-	void nbajamex(machine_config &config);
-	void coh1000c(machine_config &config);
-	void coh1000w(machine_config &config);
-	void coh1002e(machine_config &config);
-	void coh3002c(machine_config &config);
-	void coh1002c(machine_config &config);
 	void atlus_snd_map(address_map &map);
 	void bam2_map(address_map &map);
 	void beastrzrb_snd_map(address_map &map);
@@ -194,10 +199,9 @@ public:
 	void qsound_map(address_map &map);
 	void qsound_portmap(address_map &map);
 	void zn_map(address_map &map);
-protected:
+
 	virtual void machine_start() override;
 
-private:
 	inline void ATTR_PRINTF(3,4) verboselog( int n_level, const char *s_fmt, ... );
 	inline void psxwriteword( uint32_t *p_n_psxram, uint32_t n_address, uint16_t n_data );
 
@@ -365,38 +369,38 @@ void zn_state::zn_map(address_map &map)
 	map(0x1fa00300, 0x1fa00303).portr("SYSTEM");
 	map(0x1fa10000, 0x1fa10003).portr("P3");
 	map(0x1fa10100, 0x1fa10103).portr("P4");
-	map(0x1fa10200, 0x1fa10200).r(this, FUNC(zn_state::boardconfig_r));
-	map(0x1fa10300, 0x1fa10300).rw(this, FUNC(zn_state::znsecsel_r), FUNC(zn_state::znsecsel_w));
-	map(0x1fa20000, 0x1fa20000).w(this, FUNC(zn_state::coin_w));
+	map(0x1fa10200, 0x1fa10200).r(FUNC(zn_state::boardconfig_r));
+	map(0x1fa10300, 0x1fa10300).rw(FUNC(zn_state::znsecsel_r), FUNC(zn_state::znsecsel_w));
+	map(0x1fa20000, 0x1fa20000).w(FUNC(zn_state::coin_w));
 	map(0x1fa30000, 0x1fa30003).noprw(); /* ?? */
 	map(0x1fa40000, 0x1fa40003).nopr(); /* ?? */
 	map(0x1fa60000, 0x1fa60003).nopr(); /* ?? */
 	map(0x1faf0000, 0x1faf07ff).rw("at28c16", FUNC(at28c16_device::read), FUNC(at28c16_device::write)); /* eeprom */
-	map(0x1fb20000, 0x1fb20007).r(this, FUNC(zn_state::unknown_r));
+	map(0x1fb20000, 0x1fb20007).r(FUNC(zn_state::unknown_r));
 }
 
 MACHINE_CONFIG_START(zn_state::zn1_1mb_vram)
 
 	/* basic machine hardware */
-	MCFG_CPU_ADD( m_maincpu, CXD8530CQ, XTAL(67'737'600) )
-	MCFG_CPU_PROGRAM_MAP( zn_map)
+	MCFG_DEVICE_ADD( m_maincpu, CXD8530CQ, XTAL(67'737'600) )
+	MCFG_DEVICE_PROGRAM_MAP( zn_map)
 
 	MCFG_RAM_MODIFY("maincpu:ram")
 	MCFG_RAM_DEFAULT_SIZE("4M")
 
 	MCFG_DEVICE_MODIFY("maincpu:sio0")
-	MCFG_PSX_SIO_SCK_HANDLER(WRITELINE(zn_state, sio0_sck))
-	MCFG_PSX_SIO_TXD_HANDLER(WRITELINE(zn_state, sio0_txd))
+	MCFG_PSX_SIO_SCK_HANDLER(WRITELINE(*this, zn_state, sio0_sck))
+	MCFG_PSX_SIO_TXD_HANDLER(WRITELINE(*this, zn_state, sio0_txd))
 
 	MCFG_DEVICE_ADD("cat702_1", CAT702, 0)
-	MCFG_CAT702_DATAOUT_HANDLER(WRITELINE(zn_state, cat702_dataout<0>))
+	MCFG_CAT702_DATAOUT_HANDLER(WRITELINE(*this, zn_state, cat702_dataout<0>))
 
 	MCFG_DEVICE_ADD("cat702_2", CAT702, 0)
-	MCFG_CAT702_DATAOUT_HANDLER(WRITELINE(zn_state, cat702_dataout<1>))
+	MCFG_CAT702_DATAOUT_HANDLER(WRITELINE(*this, zn_state, cat702_dataout<1>))
 
 	MCFG_DEVICE_ADD("znmcu", ZNMCU, 0)
-	MCFG_ZNMCU_DATAOUT_HANDLER(WRITELINE(zn_state, znmcu_dataout))
-	MCFG_ZNMCU_DSR_HANDLER(WRITELINE(zn_state, znmcu_dsrout))
+	MCFG_ZNMCU_DATAOUT_HANDLER(WRITELINE(*this, zn_state, znmcu_dataout))
+	MCFG_ZNMCU_DSR_HANDLER(WRITELINE(*this, zn_state, znmcu_dsrout))
 	MCFG_ZNMCU_DSW_HANDLER(IOPORT("DSW"))
 	MCFG_ZNMCU_ANALOG1_HANDLER(IOPORT("ANALOG1"))
 	MCFG_ZNMCU_ANALOG2_HANDLER(IOPORT("ANALOG2"))
@@ -405,9 +409,10 @@ MACHINE_CONFIG_START(zn_state::zn1_1mb_vram)
 	MCFG_PSXGPU_ADD( "maincpu", "gpu", CXD8561Q, 0x100000, XTAL(53'693'175) )
 
 	/* sound hardware */
-	MCFG_SPEAKER_STANDARD_STEREO("lspeaker", "rspeaker")
+	SPEAKER(config, "lspeaker").front_left();
+	SPEAKER(config, "rspeaker").front_right();
 
-	MCFG_GENERIC_LATCH_8_ADD("soundlatch")
+	GENERIC_LATCH_8(config, m_soundlatch);
 
 	MCFG_SPU_ADD( "spu", XTAL(67'737'600)/2 )
 	MCFG_SOUND_ROUTE(0, "lspeaker", 0.35)
@@ -424,25 +429,25 @@ MACHINE_CONFIG_END
 MACHINE_CONFIG_START(zn_state::zn2)
 
 	/* basic machine hardware */
-	MCFG_CPU_ADD( m_maincpu, CXD8661R, XTAL(100'000'000) )
-	MCFG_CPU_PROGRAM_MAP( zn_map)
+	MCFG_DEVICE_ADD( m_maincpu, CXD8661R, XTAL(100'000'000) )
+	MCFG_DEVICE_PROGRAM_MAP( zn_map)
 
 	MCFG_RAM_MODIFY("maincpu:ram")
 	MCFG_RAM_DEFAULT_SIZE("4M")
 
 	MCFG_DEVICE_MODIFY("maincpu:sio0")
-	MCFG_PSX_SIO_SCK_HANDLER(WRITELINE(zn_state, sio0_sck))
-	MCFG_PSX_SIO_TXD_HANDLER(WRITELINE(zn_state, sio0_txd))
+	MCFG_PSX_SIO_SCK_HANDLER(WRITELINE(*this, zn_state, sio0_sck))
+	MCFG_PSX_SIO_TXD_HANDLER(WRITELINE(*this, zn_state, sio0_txd))
 
 	MCFG_DEVICE_ADD("cat702_1", CAT702, 0)
-	MCFG_CAT702_DATAOUT_HANDLER(WRITELINE(zn_state, cat702_dataout<0>))
+	MCFG_CAT702_DATAOUT_HANDLER(WRITELINE(*this, zn_state, cat702_dataout<0>))
 
 	MCFG_DEVICE_ADD("cat702_2", CAT702, 0)
-	MCFG_CAT702_DATAOUT_HANDLER(WRITELINE(zn_state, cat702_dataout<1>))
+	MCFG_CAT702_DATAOUT_HANDLER(WRITELINE(*this, zn_state, cat702_dataout<1>))
 
 	MCFG_DEVICE_ADD("znmcu", ZNMCU, 0)
-	MCFG_ZNMCU_DATAOUT_HANDLER(WRITELINE(zn_state, znmcu_dataout))
-	MCFG_ZNMCU_DSR_HANDLER(WRITELINE(zn_state, znmcu_dsrout))
+	MCFG_ZNMCU_DATAOUT_HANDLER(WRITELINE(*this, zn_state, znmcu_dataout))
+	MCFG_ZNMCU_DSR_HANDLER(WRITELINE(*this, zn_state, znmcu_dsrout))
 	MCFG_ZNMCU_DSW_HANDLER(IOPORT("DSW"))
 	MCFG_ZNMCU_ANALOG1_HANDLER(IOPORT("ANALOG1"))
 	MCFG_ZNMCU_ANALOG2_HANDLER(IOPORT("ANALOG2"))
@@ -451,9 +456,10 @@ MACHINE_CONFIG_START(zn_state::zn2)
 	MCFG_PSXGPU_ADD( "maincpu", "gpu", CXD8654Q, 0x200000, XTAL(53'693'175) )
 
 	/* sound hardware */
-	MCFG_SPEAKER_STANDARD_STEREO("lspeaker", "rspeaker")
+	SPEAKER(config, "lspeaker").front_left();
+	SPEAKER(config, "rspeaker").front_right();
 
-	MCFG_GENERIC_LATCH_8_ADD("soundlatch")
+	GENERIC_LATCH_8(config, m_soundlatch);
 
 	MCFG_SPU_ADD( "spu", XTAL(67'737'600)/2 )
 	MCFG_SOUND_ROUTE(0, "lspeaker", 0.35)
@@ -604,9 +610,9 @@ void zn_state::coh1000c_map(address_map &map)
 
 	map(0x1f000000, 0x1f3fffff).rom().region("bankedroms", 0);
 	map(0x1f400000, 0x1f7fffff).bankr("rombank1");
-	map(0x1fb00000, 0x1fb00000).w(this, FUNC(zn_state::bank_coh1000c_w));
-	map(0x1fb40010, 0x1fb40011).r(this, FUNC(zn_state::capcom_kickharness_r));
-	map(0x1fb40020, 0x1fb40021).r(this, FUNC(zn_state::capcom_kickharness_r));
+	map(0x1fb00000, 0x1fb00000).w(FUNC(zn_state::bank_coh1000c_w));
+	map(0x1fb40010, 0x1fb40011).r(FUNC(zn_state::capcom_kickharness_r));
+	map(0x1fb40020, 0x1fb40021).r(FUNC(zn_state::capcom_kickharness_r));
 	map(0x1fb80000, 0x1fbfffff).rom().region("countryrom", 0);
 	map(0x1fb60000, 0x1fb60000).w(m_soundlatch, FUNC(generic_latch_8_device::write));
 }
@@ -634,7 +640,7 @@ void zn_state::qsound_map(address_map &map)
 	map(0x0000, 0x7fff).rom();
 	map(0x8000, 0xbfff).bankr("soundbank");       /* banked (contains music data) */
 	map(0xd000, 0xd002).w("qsound", FUNC(qsound_device::qsound_w));
-	map(0xd003, 0xd003).w(this, FUNC(zn_state::qsound_bankswitch_w));
+	map(0xd003, 0xd003).w(FUNC(zn_state::qsound_bankswitch_w));
 	map(0xd007, 0xd007).r("qsound", FUNC(qsound_device::qsound_r));
 	map(0xf000, 0xffff).ram();
 }
@@ -647,19 +653,18 @@ void zn_state::qsound_portmap(address_map &map)
 
 MACHINE_CONFIG_START(zn_state::coh1000c)
 	zn1_1mb_vram(config);
-	MCFG_CPU_MODIFY("maincpu")
-	MCFG_CPU_PROGRAM_MAP(coh1000c_map)
+	MCFG_DEVICE_MODIFY("maincpu")
+	MCFG_DEVICE_PROGRAM_MAP(coh1000c_map)
 
-	MCFG_CPU_ADD(m_audiocpu, Z80, XTAL(8'000'000))
-	MCFG_CPU_PROGRAM_MAP(qsound_map)
-	MCFG_CPU_IO_MAP(qsound_portmap)
-	MCFG_CPU_PERIODIC_INT_DRIVER(zn_state, qsound_interrupt, 250) // measured (cps2.cpp)
+	MCFG_DEVICE_ADD(m_audiocpu, Z80, XTAL(8'000'000))
+	MCFG_DEVICE_PROGRAM_MAP(qsound_map)
+	MCFG_DEVICE_IO_MAP(qsound_portmap)
+	MCFG_DEVICE_PERIODIC_INT_DRIVER(zn_state, qsound_interrupt, 250) // measured (cps2.cpp)
 
 	MCFG_MACHINE_START_OVERRIDE(zn_state, coh1000c)
 	MCFG_MACHINE_RESET_OVERRIDE(zn_state, coh1000c)
 
-	MCFG_DEVICE_MODIFY("soundlatch")
-	MCFG_GENERIC_LATCH_DATA_PENDING_CB(INPUTLINE(m_audiocpu, INPUT_LINE_NMI))
+	m_soundlatch->data_pending_callback().set_inputline(m_audiocpu, INPUT_LINE_NMI);
 
 	MCFG_DEVICE_ADD("qsound", QSOUND)
 	MCFG_SOUND_ROUTE(0, "lspeaker", 1.0)
@@ -673,19 +678,18 @@ MACHINE_CONFIG_END
 
 MACHINE_CONFIG_START(zn_state::coh1002c)
 	zn1_2mb_vram(config);
-	MCFG_CPU_MODIFY("maincpu")
-	MCFG_CPU_PROGRAM_MAP(coh1000c_map)
+	MCFG_DEVICE_MODIFY("maincpu")
+	MCFG_DEVICE_PROGRAM_MAP(coh1000c_map)
 
-	MCFG_CPU_ADD(m_audiocpu, Z80, XTAL(8'000'000))
-	MCFG_CPU_PROGRAM_MAP(qsound_map)
-	MCFG_CPU_IO_MAP(qsound_portmap)
-	MCFG_CPU_PERIODIC_INT_DRIVER(zn_state, qsound_interrupt, 250) // measured (cps2.cpp)
+	MCFG_DEVICE_ADD(m_audiocpu, Z80, XTAL(8'000'000))
+	MCFG_DEVICE_PROGRAM_MAP(qsound_map)
+	MCFG_DEVICE_IO_MAP(qsound_portmap)
+	MCFG_DEVICE_PERIODIC_INT_DRIVER(zn_state, qsound_interrupt, 250) // measured (cps2.cpp)
 
 	MCFG_MACHINE_START_OVERRIDE(zn_state, coh1000c)
 	MCFG_MACHINE_RESET_OVERRIDE(zn_state, coh1000c)
 
-	MCFG_DEVICE_MODIFY("soundlatch")
-	MCFG_GENERIC_LATCH_DATA_PENDING_CB(INPUTLINE(m_audiocpu, INPUT_LINE_NMI))
+	m_soundlatch->data_pending_callback().set_inputline(m_audiocpu, INPUT_LINE_NMI);
 
 	MCFG_DEVICE_ADD("qsound", QSOUND)
 	MCFG_SOUND_ROUTE(0, "lspeaker", 1.0)
@@ -835,19 +839,18 @@ Notes:
 
 MACHINE_CONFIG_START(zn_state::coh3002c)
 	zn2(config);
-	MCFG_CPU_MODIFY("maincpu")
-	MCFG_CPU_PROGRAM_MAP(coh1000c_map)
+	MCFG_DEVICE_MODIFY("maincpu")
+	MCFG_DEVICE_PROGRAM_MAP(coh1000c_map)
 
-	MCFG_CPU_ADD(m_audiocpu, Z80, XTAL(8'000'000))
-	MCFG_CPU_PROGRAM_MAP(qsound_map)
-	MCFG_CPU_IO_MAP(qsound_portmap)
-	MCFG_CPU_PERIODIC_INT_DRIVER(zn_state, qsound_interrupt, 250) // measured (cps2.cpp)
+	MCFG_DEVICE_ADD(m_audiocpu, Z80, XTAL(8'000'000))
+	MCFG_DEVICE_PROGRAM_MAP(qsound_map)
+	MCFG_DEVICE_IO_MAP(qsound_portmap)
+	MCFG_DEVICE_PERIODIC_INT_DRIVER(zn_state, qsound_interrupt, 250) // measured (cps2.cpp)
 
 	MCFG_MACHINE_START_OVERRIDE(zn_state, coh1000c)
 	MCFG_MACHINE_RESET_OVERRIDE(zn_state, coh1000c)
 
-	MCFG_DEVICE_MODIFY("soundlatch")
-	MCFG_GENERIC_LATCH_DATA_PENDING_CB(INPUTLINE(m_audiocpu, INPUT_LINE_NMI))
+	m_soundlatch->data_pending_callback().set_inputline(m_audiocpu, INPUT_LINE_NMI);
 
 	MCFG_DEVICE_ADD("qsound", QSOUND)
 	MCFG_SOUND_ROUTE(0, "lspeaker", 1.0)
@@ -1093,7 +1096,7 @@ void zn_state::coh1000ta_map(address_map &map)
 	zn_map(map);
 
 	map(0x1f000000, 0x1f7fffff).bankr("rombank1");
-	map(0x1fb40000, 0x1fb40000).w(this, FUNC(zn_state::bank_coh1000t_w));
+	map(0x1fb40000, 0x1fb40000).w(FUNC(zn_state::bank_coh1000t_w));
 	map(0x1fb80000, 0x1fb80000).w("tc0140syt", FUNC(tc0140syt_device::master_port_w));
 	map(0x1fb80002, 0x1fb80002).rw("tc0140syt", FUNC(tc0140syt_device::master_comm_r), FUNC(tc0140syt_device::master_comm_w));
 }
@@ -1126,27 +1129,27 @@ void zn_state::fx1a_sound_map(address_map &map)
 	map(0xe400, 0xe403).nopw(); /* pan */
 	map(0xee00, 0xee00).noprw(); /* ? */
 	map(0xf000, 0xf000).nopw(); /* ? */
-	map(0xf200, 0xf200).w(this, FUNC(zn_state::fx1a_sound_bankswitch_w));
+	map(0xf200, 0xf200).w(FUNC(zn_state::fx1a_sound_bankswitch_w));
 }
 
 
 MACHINE_CONFIG_START(zn_state::coh1000ta)
 	zn1_1mb_vram(config);
-	MCFG_CPU_MODIFY("maincpu")
-	MCFG_CPU_PROGRAM_MAP(coh1000ta_map)
+	MCFG_DEVICE_MODIFY("maincpu")
+	MCFG_DEVICE_PROGRAM_MAP(coh1000ta_map)
 
-	MCFG_CPU_ADD(m_audiocpu, Z80, XTAL(16'000'000) / 4)    /* 4 MHz */
-	MCFG_CPU_PROGRAM_MAP(fx1a_sound_map)
+	MCFG_DEVICE_ADD(m_audiocpu, Z80, XTAL(16'000'000) / 4)    /* 4 MHz */
+	MCFG_DEVICE_PROGRAM_MAP(fx1a_sound_map)
 
 	MCFG_MACHINE_START_OVERRIDE(zn_state, coh1000ta)
 	MCFG_MACHINE_RESET_OVERRIDE(zn_state, coh1000ta)
 
-	MCFG_SOUND_ADD("ymsnd", YM2610B, XTAL(16'000'000)/2)
-	MCFG_YM2610_IRQ_HANDLER(INPUTLINE(m_audiocpu, 0))
-	MCFG_SOUND_ROUTE(0, "lspeaker", 0.25)
-	MCFG_SOUND_ROUTE(0, "rspeaker", 0.25)
-	MCFG_SOUND_ROUTE(1, "lspeaker", 1.0)
-	MCFG_SOUND_ROUTE(2, "rspeaker", 1.0)
+	ym2610b_device &ymsnd(YM2610B(config, "ymsnd", 16_MHz_XTAL/2));
+	ymsnd.irq_handler().set_inputline(m_audiocpu, 0);
+	ymsnd.add_route(0, "lspeaker", 0.25);
+	ymsnd.add_route(0, "rspeaker", 0.25);
+	ymsnd.add_route(1, "lspeaker", 1.0);
+	ymsnd.add_route(2, "rspeaker", 1.0);
 
 	MCFG_MB3773_ADD("mb3773")
 
@@ -1169,8 +1172,8 @@ void zn_state::coh1000tb_map(address_map &map)
 {
 	zn_map(map);
 	map(0x1f000000, 0x1f7fffff).bankr("rombank1");
-	map(0x1fb00000, 0x1fb003ff).rw(this, FUNC(zn_state::fx1b_fram_r), FUNC(zn_state::fx1b_fram_w)).umask32(0x00ff00ff);
-	map(0x1fb40000, 0x1fb40000).w(this, FUNC(zn_state::bank_coh1000t_w));
+	map(0x1fb00000, 0x1fb003ff).rw(FUNC(zn_state::fx1b_fram_r), FUNC(zn_state::fx1b_fram_w)).umask32(0x00ff00ff);
+	map(0x1fb40000, 0x1fb40000).w(FUNC(zn_state::bank_coh1000t_w));
 	map(0x1fb80000, 0x1fb80001).w(m_zoom, FUNC(taito_zoom_device::reg_data_w));
 	map(0x1fb80002, 0x1fb80003).w(m_zoom, FUNC(taito_zoom_device::reg_address_w));
 	map(0x1fba0000, 0x1fba0001).w(m_zoom, FUNC(taito_zoom_device::sound_irq_w));
@@ -1178,20 +1181,20 @@ void zn_state::coh1000tb_map(address_map &map)
 	map(0x1fbe0000, 0x1fbe01ff).rw(m_zoom, FUNC(taito_zoom_device::shared_ram_r), FUNC(taito_zoom_device::shared_ram_w)).umask32(0x00ff00ff); // M66220FP for comm with the MN10200
 }
 
-DRIVER_INIT_MEMBER(zn_state,coh1000tb)
+void zn_state::init_coh1000tb()
 {
 	m_fx1b_fram = std::make_unique<uint8_t[]>(0x200);
-	machine().device<nvram_device>("fm1208s")->set_base(m_fx1b_fram.get(), 0x200);
+	subdevice<nvram_device>("fm1208s")->set_base(m_fx1b_fram.get(), 0x200);
 
-	save_pointer(NAME(m_fx1b_fram.get()), 0x200);
+	save_pointer(NAME(m_fx1b_fram), 0x200);
 }
 
 MACHINE_CONFIG_START(zn_state::coh1000tb)
 	zn1_1mb_vram(config);
 
 	/* basic machine hardware */
-	MCFG_CPU_MODIFY("maincpu")
-	MCFG_CPU_PROGRAM_MAP(coh1000tb_map)
+	MCFG_DEVICE_MODIFY("maincpu")
+	MCFG_DEVICE_PROGRAM_MAP(coh1000tb_map)
 
 	MCFG_MACHINE_START_OVERRIDE(zn_state, coh1000ta)
 	MCFG_MACHINE_RESET_OVERRIDE(zn_state, coh1000ta)
@@ -1200,7 +1203,7 @@ MACHINE_CONFIG_START(zn_state::coh1000tb)
 	MCFG_MB3773_ADD("mb3773")
 
 	/* sound hardware */
-	MCFG_SOUND_MODIFY("spu")
+	MCFG_DEVICE_MODIFY("spu")
 	MCFG_SOUND_ROUTES_RESET()
 	MCFG_SOUND_ROUTE(0, "lspeaker", 0.45)
 	MCFG_SOUND_ROUTE(1, "rspeaker", 0.45)
@@ -1212,8 +1215,8 @@ MACHINE_CONFIG_START(zn_state::coh1002tb)
 	zn1_2mb_vram(config);
 
 	/* basic machine hardware */
-	MCFG_CPU_MODIFY("maincpu")
-	MCFG_CPU_PROGRAM_MAP(coh1000tb_map)
+	MCFG_DEVICE_MODIFY("maincpu")
+	MCFG_DEVICE_PROGRAM_MAP(coh1000tb_map)
 
 	MCFG_MACHINE_START_OVERRIDE(zn_state, coh1000ta)
 	MCFG_MACHINE_RESET_OVERRIDE(zn_state, coh1000ta)
@@ -1222,7 +1225,7 @@ MACHINE_CONFIG_START(zn_state::coh1002tb)
 	MCFG_MB3773_ADD("mb3773")
 
 	/* sound hardware */
-	MCFG_SOUND_MODIFY("spu")
+	MCFG_DEVICE_MODIFY("spu")
 	MCFG_SOUND_ROUTES_RESET()
 	MCFG_SOUND_ROUTE(0, "lspeaker", 0.45)
 	MCFG_SOUND_ROUTE(1, "rspeaker", 0.45)
@@ -1441,7 +1444,7 @@ WRITE16_MEMBER(zn_state::vt83c461_32_w)
 	logerror( "unhandled 32 bit write %04x %04x %04x\n", offset, data, mem_mask );
 }
 
-DRIVER_INIT_MEMBER(zn_state,primrag2)
+void zn_state::init_primrag2()
 {
 	save_item(NAME(m_vt83c461_latch));
 }
@@ -1452,20 +1455,20 @@ void zn_state::coh1000w_map(address_map &map)
 	map(0x1f000000, 0x1f1fffff).rom().region("roms", 0);
 	map(0x1f000000, 0x1f000003).nopw();
 	map(0x1f7e8000, 0x1f7e8003).noprw();
-	map(0x1f7e4000, 0x1f7e4fff).rw(this, FUNC(zn_state::vt83c461_16_r), FUNC(zn_state::vt83c461_16_w));
-	map(0x1f7f4000, 0x1f7f4fff).rw(this, FUNC(zn_state::vt83c461_32_r), FUNC(zn_state::vt83c461_32_w));
+	map(0x1f7e4000, 0x1f7e4fff).rw(FUNC(zn_state::vt83c461_16_r), FUNC(zn_state::vt83c461_16_w));
+	map(0x1f7f4000, 0x1f7f4fff).rw(FUNC(zn_state::vt83c461_32_r), FUNC(zn_state::vt83c461_32_w));
 }
 
 MACHINE_CONFIG_START(zn_state::coh1000w)
 	zn1_2mb_vram(config);
-	MCFG_CPU_MODIFY("maincpu")
-	MCFG_CPU_PROGRAM_MAP(coh1000w_map)
+	MCFG_DEVICE_MODIFY("maincpu")
+	MCFG_DEVICE_PROGRAM_MAP(coh1000w_map)
 
 	MCFG_RAM_MODIFY("maincpu:ram")
 	MCFG_RAM_DEFAULT_SIZE("8M")
 
 	MCFG_VT83C461_ADD("ide", ata_devices, "hdd", nullptr, true)
-	MCFG_ATA_INTERFACE_IRQ_HANDLER(DEVWRITELINE("maincpu:irq", psxirq_device, intin10))
+	MCFG_ATA_INTERFACE_IRQ_HANDLER(WRITELINE("maincpu:irq", psxirq_device, intin10))
 	MCFG_PSX_DMA_CHANNEL_READ( "maincpu", 5, psxdma_device::read_delegate(&zn_state::atpsx_dma_read, this ) )
 	MCFG_PSX_DMA_CHANNEL_WRITE( "maincpu", 5, psxdma_device::write_delegate(&zn_state::atpsx_dma_write, this ) )
 MACHINE_CONFIG_END
@@ -1635,9 +1638,9 @@ void zn_state::coh1002e_map(address_map &map)
 	zn_map(map);
 
 	map(0x1f000000, 0x1f7fffff).bankr("rombank1");
-	map(0x1fa10300, 0x1fa10300).w(this, FUNC(zn_state::coh1002e_bank_w));
+	map(0x1fa10300, 0x1fa10300).w(FUNC(zn_state::coh1002e_bank_w));
 	map(0x1fb00000, 0x1fb00000).w(m_soundlatch, FUNC(generic_latch_8_device::write));
-	map(0x1fb00004, 0x1fb00004).w(this, FUNC(zn_state::coh1002e_sound_irq_w));
+	map(0x1fb00004, 0x1fb00004).w(FUNC(zn_state::coh1002e_sound_irq_w));
 }
 
 MACHINE_START_MEMBER(zn_state,coh1002e)
@@ -1677,32 +1680,32 @@ void zn_state::oki_map(address_map &map)
 
 MACHINE_CONFIG_START(zn_state::coh1002e)
 	zn1_2mb_vram(config);
-	MCFG_CPU_MODIFY("maincpu")
-	MCFG_CPU_PROGRAM_MAP(coh1002e_map)
+	MCFG_DEVICE_MODIFY("maincpu")
+	MCFG_DEVICE_PROGRAM_MAP(coh1002e_map)
 
-	MCFG_CPU_ADD(m_audiocpu, M68000, XTAL(12'000'000))
-	MCFG_CPU_PROGRAM_MAP(psarc_snd_map)
+	MCFG_DEVICE_ADD(m_audiocpu, M68000, XTAL(12'000'000))
+	MCFG_DEVICE_PROGRAM_MAP(psarc_snd_map)
 
 	MCFG_MACHINE_START_OVERRIDE(zn_state, coh1002e)
 	MCFG_MACHINE_RESET_OVERRIDE(zn_state, coh1002e)
 
-	MCFG_SOUND_ADD("ymf", YMF271, XTAL(16'934'400))
+	MCFG_DEVICE_ADD("ymf", YMF271, XTAL(16'934'400))
 	MCFG_SOUND_ROUTE(0, "lspeaker", 1.0)
 	MCFG_SOUND_ROUTE(1, "rspeaker", 1.0)
 MACHINE_CONFIG_END
 
 MACHINE_CONFIG_START(zn_state::beastrzrb)
 	zn1_2mb_vram(config);
-	MCFG_CPU_MODIFY("maincpu")
-	MCFG_CPU_PROGRAM_MAP(coh1002e_map)
+	MCFG_DEVICE_MODIFY("maincpu")
+	MCFG_DEVICE_PROGRAM_MAP(coh1002e_map)
 
-	MCFG_CPU_ADD(m_audiocpu, AT89C4051, XTAL(12'000'000)) // clock unverified
-	MCFG_CPU_PROGRAM_MAP(beastrzrb_snd_map)
+	MCFG_DEVICE_ADD(m_audiocpu, AT89C4051, XTAL(12'000'000)) // clock unverified
+	MCFG_DEVICE_PROGRAM_MAP(beastrzrb_snd_map)
 
 	MCFG_MACHINE_START_OVERRIDE(zn_state, coh1002e)
 	MCFG_MACHINE_RESET_OVERRIDE(zn_state, coh1002e)
 
-	MCFG_OKIM6295_ADD("oki", 1000000, PIN7_LOW) // clock frequency & pin 7 not verified
+	MCFG_DEVICE_ADD("oki", OKIM6295, 1000000, okim6295_device::PIN7_LOW) // clock frequency & pin 7 not verified
 	MCFG_SOUND_ROUTE(ALL_OUTPUTS, "lspeaker", 1.0)
 	MCFG_SOUND_ROUTE(ALL_OUTPUTS, "rspeaker", 1.0)
 	MCFG_DEVICE_ADDRESS_MAP(0, oki_map)
@@ -1812,11 +1815,11 @@ void zn_state::bam2_map(address_map &map)
 
 	map(0x1f000000, 0x1f3fffff).rom().region("bankedroms", 0);
 	map(0x1f400000, 0x1f7fffff).bankr("rombank1");
-	map(0x1fa20000, 0x1fa20001).r(this, FUNC(zn_state::bam2_unk_r));
-	map(0x1fb00000, 0x1fb00007).rw(this, FUNC(zn_state::bam2_mcu_r), FUNC(zn_state::bam2_mcu_w));
+	map(0x1fa20000, 0x1fa20001).r(FUNC(zn_state::bam2_unk_r));
+	map(0x1fb00000, 0x1fb00007).rw(FUNC(zn_state::bam2_mcu_r), FUNC(zn_state::bam2_mcu_w));
 }
 
-DRIVER_INIT_MEMBER(zn_state,bam2)
+void zn_state::init_bam2()
 {
 	save_item(NAME(m_bam2_mcu_command));
 }
@@ -1833,8 +1836,8 @@ MACHINE_RESET_MEMBER(zn_state,bam2)
 
 MACHINE_CONFIG_START(zn_state::bam2)
 	zn1_2mb_vram(config);
-	MCFG_CPU_MODIFY("maincpu")
-	MCFG_CPU_PROGRAM_MAP(bam2_map)
+	MCFG_DEVICE_MODIFY("maincpu")
+	MCFG_DEVICE_PROGRAM_MAP(bam2_map)
 
 	MCFG_MACHINE_START_OVERRIDE(zn_state, bam2)
 	MCFG_MACHINE_RESET_OVERRIDE(zn_state, bam2)
@@ -2120,8 +2123,8 @@ WRITE8_MEMBER(zn_state::nbajamex_backup_w)
 void zn_state::coh1000a_map(address_map &map)
 {
 	zn_map(map);
-	map(0x1fbfff00, 0x1fbfff03).w(this, FUNC(zn_state::acpsx_00_w));
-	map(0x1fbfff12, 0x1fbfff13).w(this, FUNC(zn_state::acpsx_10_w));
+	map(0x1fbfff00, 0x1fbfff03).w(FUNC(zn_state::acpsx_00_w));
+	map(0x1fbfff12, 0x1fbfff13).w(FUNC(zn_state::acpsx_10_w));
 }
 
 void zn_state::nbajamex_map(address_map &map)
@@ -2129,25 +2132,25 @@ void zn_state::nbajamex_map(address_map &map)
 	coh1000a_map(map);
 
 	map(0x1f000000, 0x1f7fffff).m(m_nbajamex_bankmap, FUNC(address_map_bank_device::amap32));
-	map(0x1fbfff00, 0x1fbfff07).w(this, FUNC(zn_state::nbajamex_bank_w));
-	map(0x1fbfff08, 0x1fbfff09).r(this, FUNC(zn_state::nbajamex_08_r));
-	map(0x1fbfff80, 0x1fbfff81).rw(this, FUNC(zn_state::nbajamex_80_r), FUNC(zn_state::nbajamex_80_w));
+	map(0x1fbfff00, 0x1fbfff07).w(FUNC(zn_state::nbajamex_bank_w));
+	map(0x1fbfff08, 0x1fbfff09).r(FUNC(zn_state::nbajamex_08_r));
+	map(0x1fbfff80, 0x1fbfff81).rw(FUNC(zn_state::nbajamex_80_r), FUNC(zn_state::nbajamex_80_w));
 }
 
 void zn_state::nbajamex_bank_map(address_map &map)
 {
 	map(0x000000, 0x1fffff).mirror(0x800000).bankr("rombank1");
-	map(0x200000, 0x207fff).mirror(0x800000).w(this, FUNC(zn_state::nbajamex_backup_w));
+	map(0x200000, 0x207fff).mirror(0x800000).w(FUNC(zn_state::nbajamex_backup_w));
 	map(0x200000, 0x207fff).bankr("sram");
 	map(0xa00000, 0xffffff).bankr("rombank2");
 }
 
-DRIVER_INIT_MEMBER(zn_state,nbajamex)
+void zn_state::init_nbajamex()
 {
 	m_nbajamex_sram = std::make_unique<uint8_t[]>(0x8000);
-	machine().device<nvram_device>("71256")->set_base(m_nbajamex_sram.get(), 0x8000);
+	subdevice<nvram_device>("71256")->set_base(m_nbajamex_sram.get(), 0x8000);
 
-	save_pointer(NAME(m_nbajamex_sram.get()), 0x8000);
+	save_pointer(NAME(m_nbajamex_sram), 0x8000);
 
 	save_item(NAME(m_nbajamex_rombank));
 }
@@ -2167,7 +2170,7 @@ MACHINE_RESET_MEMBER(zn_state,nbajamex)
 	m_rombank[1]->set_entry( 0 );
 }
 
-DRIVER_INIT_MEMBER(zn_state,jdredd)
+void zn_state::init_jdredd()
 {
 	save_item(NAME(m_jdredd_gun_mux));
 }
@@ -2177,20 +2180,20 @@ void zn_state::jdredd_map(address_map &map)
 	coh1000a_map(map);
 
 	map(0x1f000000, 0x1f1fffff).rom().region("roms", 0);
-	map(0x1fbfff80, 0x1fbfff8f).rw("ata", FUNC(ata_interface_device::read_cs1), FUNC(ata_interface_device::write_cs1));
-	map(0x1fbfff90, 0x1fbfff9f).rw("ata", FUNC(ata_interface_device::read_cs0), FUNC(ata_interface_device::write_cs0));
+	map(0x1fbfff80, 0x1fbfff8f).rw("ata", FUNC(ata_interface_device::cs1_r), FUNC(ata_interface_device::cs1_w));
+	map(0x1fbfff90, 0x1fbfff9f).rw("ata", FUNC(ata_interface_device::cs0_r), FUNC(ata_interface_device::cs0_w));
 }
 
 MACHINE_CONFIG_START(zn_state::coh1000a)
 	zn1_2mb_vram(config);
-	MCFG_CPU_MODIFY("maincpu")
-	MCFG_CPU_PROGRAM_MAP(coh1000a_map)
+	MCFG_DEVICE_MODIFY("maincpu")
+	MCFG_DEVICE_PROGRAM_MAP(coh1000a_map)
 MACHINE_CONFIG_END
 
 MACHINE_CONFIG_START(zn_state::nbajamex)
 	coh1000a(config);
-	MCFG_CPU_MODIFY("maincpu")
-	MCFG_CPU_PROGRAM_MAP(nbajamex_map)
+	MCFG_DEVICE_MODIFY("maincpu")
+	MCFG_DEVICE_PROGRAM_MAP(nbajamex_map)
 
 	MCFG_NVRAM_ADD_1FILL("71256")
 
@@ -2209,14 +2212,14 @@ MACHINE_CONFIG_END
 
 MACHINE_CONFIG_START(zn_state::jdredd)
 	coh1000a(config);
-	MCFG_CPU_MODIFY("maincpu")
-	MCFG_CPU_PROGRAM_MAP(jdredd_map)
+	MCFG_DEVICE_MODIFY("maincpu")
+	MCFG_DEVICE_PROGRAM_MAP(jdredd_map)
 
 	MCFG_DEVICE_MODIFY("gpu")
 	MCFG_PSXGPU_VBLANK_CALLBACK(vblank_state_delegate(&zn_state::jdredd_vblank, this))
 
 	MCFG_ATA_INTERFACE_ADD("ata", ata_devices, "hdd", nullptr, true)
-	MCFG_ATA_INTERFACE_IRQ_HANDLER(DEVWRITELINE("maincpu:irq", psxirq_device, intin10))
+	MCFG_ATA_INTERFACE_IRQ_HANDLER(WRITELINE("maincpu:irq", psxirq_device, intin10))
 MACHINE_CONFIG_END
 
 /*
@@ -2353,7 +2356,7 @@ void zn_state::coh1001l_map(address_map &map)
 
 	map(0x1f000000, 0x1f7fffff).bankr("rombank1");
 	map(0x1fb00000, 0x1fb00001).w(m_soundlatch16, FUNC(generic_latch_16_device::write));
-	map(0x1fb00002, 0x1fb00002).w(this, FUNC(zn_state::coh1001l_bank_w));
+	map(0x1fb00002, 0x1fb00002).w(FUNC(zn_state::coh1001l_bank_w));
 }
 
 MACHINE_START_MEMBER(zn_state,coh1001l)
@@ -2369,7 +2372,7 @@ MACHINE_RESET_MEMBER(zn_state,coh1001l)
 void zn_state::atlus_snd_map(address_map &map)
 {
 	map(0x000000, 0x03ffff).rom();
-	map(0x100000, 0x100001).r(m_soundlatch16, FUNC(generic_latch_16_device::read)).w(this, FUNC(zn_state::coh1001l_sound_unk_w));
+	map(0x100000, 0x100001).r(m_soundlatch16, FUNC(generic_latch_16_device::read)).w(FUNC(zn_state::coh1001l_sound_unk_w));
 	map(0x200000, 0x200003).rw("ymz", FUNC(ymz280b_device::read), FUNC(ymz280b_device::write)).umask16(0x00ff);
 	map(0x700000, 0x70ffff).ram();
 }
@@ -2377,22 +2380,22 @@ void zn_state::atlus_snd_map(address_map &map)
 
 MACHINE_CONFIG_START(zn_state::coh1001l)
 	zn1_2mb_vram(config);
-	MCFG_CPU_MODIFY("maincpu")
-	MCFG_CPU_PROGRAM_MAP(coh1001l_map)
+	MCFG_DEVICE_MODIFY("maincpu")
+	MCFG_DEVICE_PROGRAM_MAP(coh1001l_map)
 
-	MCFG_CPU_ADD(m_audiocpu, M68000, XTAL(10'000'000))
-	MCFG_CPU_PROGRAM_MAP(atlus_snd_map)
+	MCFG_DEVICE_ADD(m_audiocpu, M68000, XTAL(10'000'000))
+	MCFG_DEVICE_PROGRAM_MAP(atlus_snd_map)
 
 	MCFG_MACHINE_START_OVERRIDE(zn_state, coh1001l)
 	MCFG_MACHINE_RESET_OVERRIDE(zn_state, coh1001l)
 
-	MCFG_GENERIC_LATCH_16_ADD("soundlatch16")
-	MCFG_GENERIC_LATCH_DATA_PENDING_CB(INPUTLINE(m_audiocpu, 3))
+	GENERIC_LATCH_16(config, m_soundlatch16);
+	m_soundlatch16->data_pending_callback().set_inputline(m_audiocpu, 3);
 
-	MCFG_SOUND_ADD("ymz", YMZ280B, XTAL(16'934'400))
-	MCFG_YMZ280B_IRQ_HANDLER(INPUTLINE(m_audiocpu, 2))
-	MCFG_SOUND_ROUTE(0, "lspeaker", 0.35)
-	MCFG_SOUND_ROUTE(1, "rspeaker", 0.35)
+	ymz280b_device &ymz(YMZ280B(config, "ymz", XTAL(16'934'400)));
+	ymz.irq_handler().set_inputline(m_audiocpu, 2);
+	ymz.add_route(0, "lspeaker", 0.35);
+	ymz.add_route(1, "rspeaker", 0.35);
 MACHINE_CONFIG_END
 
 /*
@@ -2418,7 +2421,7 @@ void zn_state::coh1002v_map(address_map &map)
 	zn_map(map);
 	map(0x1f000000, 0x1f27ffff).rom().region("fixedroms", 0);
 	map(0x1fb00000, 0x1fbfffff).bankr("rombank1");
-	map(0x1fb00000, 0x1fb00000).w(this, FUNC(zn_state::coh1002v_bank_w));
+	map(0x1fb00000, 0x1fb00000).w(FUNC(zn_state::coh1002v_bank_w));
 }
 
 MACHINE_START_MEMBER(zn_state,coh1002v)
@@ -2433,8 +2436,8 @@ MACHINE_RESET_MEMBER(zn_state,coh1002v)
 
 MACHINE_CONFIG_START(zn_state::coh1002v)
 	zn1_2mb_vram(config);
-	MCFG_CPU_MODIFY("maincpu")
-	MCFG_CPU_PROGRAM_MAP(coh1002v_map)
+	MCFG_DEVICE_MODIFY("maincpu")
+	MCFG_DEVICE_PROGRAM_MAP(coh1002v_map)
 
 	MCFG_MACHINE_START_OVERRIDE(zn_state, coh1002v)
 	MCFG_MACHINE_RESET_OVERRIDE(zn_state, coh1002v)
@@ -2608,7 +2611,7 @@ void zn_state::coh1002m_map(address_map &map)
 {
 	zn_map(map);
 	map(0x1f000000, 0x1f7fffff).bankr("rombank1");
-	map(0x1fb00006, 0x1fb00006).w(this, FUNC(zn_state::coh1002m_bank_w));
+	map(0x1fb00006, 0x1fb00006).w(FUNC(zn_state::coh1002m_bank_w));
 }
 
 MACHINE_START_MEMBER(zn_state,coh1002m)
@@ -2623,8 +2626,8 @@ MACHINE_RESET_MEMBER(zn_state,coh1002m)
 
 MACHINE_CONFIG_START(zn_state::coh1002m)
 	zn1_2mb_vram(config);
-	MCFG_CPU_MODIFY("maincpu")
-	MCFG_CPU_PROGRAM_MAP(coh1002m_map)
+	MCFG_DEVICE_MODIFY("maincpu")
+	MCFG_DEVICE_PROGRAM_MAP(coh1002m_map)
 
 	MCFG_MACHINE_START_OVERRIDE(zn_state, coh1002m)
 	MCFG_MACHINE_RESET_OVERRIDE(zn_state, coh1002m)
@@ -2641,7 +2644,7 @@ void zn_state::coh1002msnd_map(address_map &map)
 	coh1002m_map(map);
 	map(0x1fb00000, 0x1fb00000).r("cbaj_fifo2", FUNC(fifo7200_device::data_byte_r));
 	map(0x1fb00000, 0x1fb00000).w("cbaj_fifo1", FUNC(fifo7200_device::data_byte_w));
-	map(0x1fb00003, 0x1fb00003).r(this, FUNC(zn_state::cbaj_sound_main_status_r));
+	map(0x1fb00003, 0x1fb00003).r(FUNC(zn_state::cbaj_sound_main_status_r));
 }
 
 READ8_MEMBER(zn_state::cbaj_sound_z80_status_r)
@@ -2662,7 +2665,7 @@ void zn_state::cbaj_z80_port_map(address_map &map)
 	map(0x84, 0x85).rw("ymz", FUNC(ymz280b_device::read), FUNC(ymz280b_device::write));
 	map(0x90, 0x90).r("cbaj_fifo1", FUNC(fifo7200_device::data_byte_r));
 	map(0x90, 0x90).w("cbaj_fifo2", FUNC(fifo7200_device::data_byte_w));
-	map(0x91, 0x91).r(this, FUNC(zn_state::cbaj_sound_z80_status_r));
+	map(0x91, 0x91).r(FUNC(zn_state::cbaj_sound_z80_status_r));
 }
 
 void zn_state::coh1002ml_link_map(address_map &map)
@@ -2680,12 +2683,12 @@ MACHINE_CONFIG_START(zn_state::coh1002msnd)
 	coh1002m(config);
 
 	/* basic machine hardware */
-	MCFG_CPU_MODIFY("maincpu")
-	MCFG_CPU_PROGRAM_MAP(coh1002msnd_map)
+	MCFG_DEVICE_MODIFY("maincpu")
+	MCFG_DEVICE_PROGRAM_MAP(coh1002msnd_map)
 
-	MCFG_CPU_ADD(m_audiocpu, Z80, XTAL(32'000'000)/8)
-	MCFG_CPU_PROGRAM_MAP(cbaj_z80_map)
-	MCFG_CPU_IO_MAP(cbaj_z80_port_map)
+	MCFG_DEVICE_ADD(m_audiocpu, Z80, XTAL(32'000'000)/8)
+	MCFG_DEVICE_PROGRAM_MAP(cbaj_z80_map)
+	MCFG_DEVICE_IO_MAP(cbaj_z80_port_map)
 
 	MCFG_FIFO7200_ADD("cbaj_fifo1", 0x400) // LH540202
 	MCFG_FIFO7200_ADD("cbaj_fifo2", 0x400) // "
@@ -2693,16 +2696,16 @@ MACHINE_CONFIG_START(zn_state::coh1002msnd)
 	MCFG_QUANTUM_TIME(attotime::from_hz(6000))
 
 	/* sound hardware */
-	MCFG_SOUND_ADD("ymz", YMZ280B, XTAL(16'934'400))
+	MCFG_DEVICE_ADD("ymz", YMZ280B, XTAL(16'934'400))
 	MCFG_SOUND_ROUTE(0, "lspeaker", 0.35)
 	MCFG_SOUND_ROUTE(1, "rspeaker", 0.35)
 MACHINE_CONFIG_END
 
 MACHINE_CONFIG_START(zn_state::coh1002ml)
 	coh1002m(config);
-	MCFG_CPU_ADD("link", Z80, 4000000) // ?
-	MCFG_CPU_PROGRAM_MAP(coh1002ml_link_map)
-	MCFG_CPU_IO_MAP(coh1002ml_link_port_map)
+	MCFG_DEVICE_ADD("link", Z80, 4000000) // ?
+	MCFG_DEVICE_PROGRAM_MAP(coh1002ml_link_map)
+	MCFG_DEVICE_IO_MAP(coh1002ml_link_port_map)
 MACHINE_CONFIG_END
 
 
@@ -2955,9 +2958,9 @@ ROM Definitions
 #define CPZN1_BIOS \
 	ROM_REGION32_LE( 0x080000, "maincpu:rom", 0 ) \
 	ROM_SYSTEM_BIOS( 0, "j", "japan" ) \
-	ROMX_LOAD( "m534002c-13.ic353", 0x0000000, 0x080000, CRC(50033af6) SHA1(486d92ff6c7f1e54f8e0ef41cd9116eca0e10e1a), ROM_BIOS(1) ) /* japanese */ \
+	ROMX_LOAD( "m534002c-13.ic353", 0x0000000, 0x080000, CRC(50033af6) SHA1(486d92ff6c7f1e54f8e0ef41cd9116eca0e10e1a), ROM_BIOS(0) ) /* japanese */ \
 	ROM_SYSTEM_BIOS( 1, "e", "english (debug)" ) \
-	ROMX_LOAD( "msm27c402zb.ic353", 0x000000, 0x080000, CRC(f20f7fe5) SHA1(9aac7d3b3d0cc0bbbe4056164b73078dce41d91c), ROM_BIOS(2) ) /* english (debug) */ \
+	ROMX_LOAD( "msm27c402zb.ic353", 0x000000, 0x080000, CRC(f20f7fe5) SHA1(9aac7d3b3d0cc0bbbe4056164b73078dce41d91c), ROM_BIOS(1) ) /* english (debug) */ \
 	ROM_REGION( 0x8, "cat702_1", 0 ) \
 	ROM_LOAD( "cp01.ic652", 0x000000, 0x000008, CRC(bb7ba033) SHA1(966f3aee5d00e1312c455f855915d621e6cb0672) ) \
 	ROM_REGION( 0x2000, "upd78081", 0 ) \
@@ -3934,6 +3937,32 @@ ROM_END
 
 /* 97695-1 */
 ROM_START( strider2 )
+	CPZN2_BIOS
+
+	ROM_REGION32_LE( 0x80000, "countryrom", 0 )
+	ROM_LOAD( "hr2e_04.2h", 0x0000000, 0x080000, CRC(32d89b1c) SHA1(77d4d9de768cb195d1290b89892feaef6d8705e8) )
+
+	ROM_REGION32_LE( 0x3000000, "bankedroms", 0 )
+	ROM_LOAD( "hr2-05m.3h", 0x0000000, 0x800000, CRC(18716fe8) SHA1(bb923f18120086054cd6fd91f77d27a190c1eed4) )
+	ROM_LOAD( "hr2-06m.4h", 0x0800000, 0x800000, CRC(6f13b69c) SHA1(9a14ecc72631bc44053af71fe7e3934bedf1a71e) )
+	ROM_LOAD( "hr2-07m.5h", 0x1000000, 0x800000, CRC(3925701b) SHA1(d93218d2b97cc0fc6c30221bd6b5e955520fbc46) )
+	ROM_LOAD( "hr2-08m.2k", 0x1800000, 0x800000, CRC(d844c0dc) SHA1(6010cfbf4dc42fda182884d78e12dcb63df00249) )
+	ROM_LOAD( "hr2-09m.3k", 0x2000000, 0x800000, CRC(cdd43e6b) SHA1(346a83deadecd56428276acefc2ce95249a49921) )
+	ROM_LOAD( "hr2-10m.4k", 0x2800000, 0x400000, CRC(d95b3f37) SHA1(b6566c1184718f6c0986d13060894c0fb400c201) )
+
+	ROM_REGION( 0x40000, "audiocpu", 0 ) /* 64k for the audio CPU (+banks) */
+	ROM_LOAD( "hr2_02.2e",  0x00000, 0x20000, CRC(acd8d385) SHA1(5edb61c3d66d2d09a28a71db52eee3a9f7db8c9d) )
+
+	ROM_REGION( 0x400000, "qsound", 0 ) /* Q Sound Samples */
+	ROM_LOAD16_WORD_SWAP( "hr2-01m.3a", 0x0000000, 0x200000, CRC(510a16d1) SHA1(05f10c2921a4d3b1fab4d0a4ea06351809bdbb07) )
+	ROM_RELOAD(                         0x0200000, 0x200000 )
+
+	ROM_REGION( 0x8, "cat702_2", 0 )
+	ROM_LOAD( "cp13", 0x000000, 0x000008, CRC(606edf50) SHA1(db711a9da4ecaf74e0b37deb8eb94e8b8fbae041) )
+ROM_END
+
+/* 97695-1 */
+ROM_START( strider2u )
 	CPZN2_BIOS
 
 	ROM_REGION32_LE( 0x80000, "countryrom", 0 )
@@ -5320,131 +5349,132 @@ ROM_START( hvnsgate )
 ROM_END
 
 /* Capcom ZN1 */
-GAME( 1995, coh1000c,  0,        coh1000c,    zn,       zn_state, 0, ROT0, "Capcom",          "ZN1",                                                    MACHINE_IS_BIOS_ROOT )
-GAME( 1995, ts2,       coh1000c, coh1000c,    zn6b,     zn_state, 0, ROT0, "Capcom / Takara", "Battle Arena Toshinden 2 (USA 951124)",                  MACHINE_IMPERFECT_GRAPHICS | MACHINE_IMPERFECT_SOUND )
-GAME( 1995, ts2a,      ts2,      coh1000c,    zn6b,     zn_state, 0, ROT0, "Capcom / Takara", "Battle Arena Toshinden 2 (USA 951124) Older",            MACHINE_IMPERFECT_GRAPHICS | MACHINE_IMPERFECT_SOUND )
-GAME( 1995, ts2j,      ts2,      coh1000c,    zn6b,     zn_state, 0, ROT0, "Capcom / Takara", "Battle Arena Toshinden 2 (Japan 951124)",                MACHINE_IMPERFECT_GRAPHICS | MACHINE_IMPERFECT_SOUND )
-GAME( 1996, starglad,  coh1000c, coh1000c,    zn6b,     zn_state, 0, ROT0, "Capcom",          "Star Gladiator Episode I: Final Crusade (USA 960627)",   MACHINE_IMPERFECT_GRAPHICS | MACHINE_IMPERFECT_SOUND )
-GAME( 1996, stargladj, starglad, coh1000c,    zn6b,     zn_state, 0, ROT0, "Capcom",          "Star Gladiator Episode I: Final Crusade (Japan 960627)", MACHINE_IMPERFECT_GRAPHICS | MACHINE_IMPERFECT_SOUND )
-GAME( 1996, glpracr,   coh1000c, glpracr,     zn,       zn_state, 0, ROT0, "Tecmo",           "Gallop Racer (English Ver 10.17.K)",                     MACHINE_IMPERFECT_GRAPHICS | MACHINE_IMPERFECT_SOUND )
-GAME( 1996, glpracrj,  glpracr,  glpracr,     zn,       zn_state, 0, ROT0, "Tecmo",           "Gallop Racer (Japanese Ver 9.01.12)",                    MACHINE_IMPERFECT_GRAPHICS | MACHINE_IMPERFECT_SOUND )
-GAME( 1996, sfex,      coh1000c, coh1002c,    zn6b,     zn_state, 0, ROT0, "Capcom / Arika",  "Street Fighter EX (Euro 961219)",                        MACHINE_IMPERFECT_GRAPHICS | MACHINE_IMPERFECT_SOUND )
-GAME( 1996, sfexu,     sfex,     coh1002c,    zn6b,     zn_state, 0, ROT0, "Capcom / Arika",  "Street Fighter EX (USA 961219)",                         MACHINE_IMPERFECT_GRAPHICS | MACHINE_IMPERFECT_SOUND )
-GAME( 1996, sfexa,     sfex,     coh1002c,    zn6b,     zn_state, 0, ROT0, "Capcom / Arika",  "Street Fighter EX (Asia 961219)",                        MACHINE_IMPERFECT_GRAPHICS | MACHINE_IMPERFECT_SOUND )
-GAME( 1996, sfexj,     sfex,     coh1002c,    zn6b,     zn_state, 0, ROT0, "Capcom / Arika",  "Street Fighter EX (Japan 961130)",                       MACHINE_IMPERFECT_GRAPHICS | MACHINE_IMPERFECT_SOUND )
-GAME( 1997, sfexp,     coh1000c, coh1002c,    zn6b,     zn_state, 0, ROT0, "Capcom / Arika",  "Street Fighter EX Plus (USA 970407)",                    MACHINE_IMPERFECT_GRAPHICS | MACHINE_IMPERFECT_SOUND )
-GAME( 1997, sfexpu1,   sfexp,    coh1002c,    zn6b,     zn_state, 0, ROT0, "Capcom / Arika",  "Street Fighter EX Plus (USA 970311)",                    MACHINE_IMPERFECT_GRAPHICS | MACHINE_IMPERFECT_SOUND )
-GAME( 1997, sfexpj,    sfexp,    coh1002c,    zn6b,     zn_state, 0, ROT0, "Capcom / Arika",  "Street Fighter EX Plus (Japan 970407)",                  MACHINE_IMPERFECT_GRAPHICS | MACHINE_IMPERFECT_SOUND )
-GAME( 1997, sfexpj1,   sfexp,    coh1002c,    zn6b,     zn_state, 0, ROT0, "Capcom / Arika",  "Street Fighter EX Plus (Japan 970311)",                  MACHINE_IMPERFECT_GRAPHICS | MACHINE_IMPERFECT_SOUND )
+GAME( 1995, coh1000c,  0,        coh1000c,    zn,       zn_state, empty_init, ROT0, "Capcom",          "ZN1",                                                    MACHINE_IS_BIOS_ROOT )
+GAME( 1995, ts2,       coh1000c, coh1000c,    zn6b,     zn_state, empty_init, ROT0, "Capcom / Takara", "Battle Arena Toshinden 2 (USA 951124)",                  MACHINE_IMPERFECT_GRAPHICS | MACHINE_IMPERFECT_SOUND )
+GAME( 1995, ts2a,      ts2,      coh1000c,    zn6b,     zn_state, empty_init, ROT0, "Capcom / Takara", "Battle Arena Toshinden 2 (USA 951124) Older",            MACHINE_IMPERFECT_GRAPHICS | MACHINE_IMPERFECT_SOUND )
+GAME( 1995, ts2j,      ts2,      coh1000c,    zn6b,     zn_state, empty_init, ROT0, "Capcom / Takara", "Battle Arena Toshinden 2 (Japan 951124)",                MACHINE_IMPERFECT_GRAPHICS | MACHINE_IMPERFECT_SOUND )
+GAME( 1996, starglad,  coh1000c, coh1000c,    zn6b,     zn_state, empty_init, ROT0, "Capcom",          "Star Gladiator Episode I: Final Crusade (USA 960627)",   MACHINE_IMPERFECT_GRAPHICS | MACHINE_IMPERFECT_SOUND )
+GAME( 1996, stargladj, starglad, coh1000c,    zn6b,     zn_state, empty_init, ROT0, "Capcom",          "Star Gladiator Episode I: Final Crusade (Japan 960627)", MACHINE_IMPERFECT_GRAPHICS | MACHINE_IMPERFECT_SOUND )
+GAME( 1996, glpracr,   coh1000c, glpracr,     zn,       zn_state, empty_init, ROT0, "Tecmo",           "Gallop Racer (English Ver 10.17.K)",                     MACHINE_IMPERFECT_GRAPHICS | MACHINE_IMPERFECT_SOUND )
+GAME( 1996, glpracrj,  glpracr,  glpracr,     zn,       zn_state, empty_init, ROT0, "Tecmo",           "Gallop Racer (Japanese Ver 9.01.12)",                    MACHINE_IMPERFECT_GRAPHICS | MACHINE_IMPERFECT_SOUND )
+GAME( 1996, sfex,      coh1000c, coh1002c,    zn6b,     zn_state, empty_init, ROT0, "Capcom / Arika",  "Street Fighter EX (Euro 961219)",                        MACHINE_IMPERFECT_GRAPHICS | MACHINE_IMPERFECT_SOUND )
+GAME( 1996, sfexu,     sfex,     coh1002c,    zn6b,     zn_state, empty_init, ROT0, "Capcom / Arika",  "Street Fighter EX (USA 961219)",                         MACHINE_IMPERFECT_GRAPHICS | MACHINE_IMPERFECT_SOUND )
+GAME( 1996, sfexa,     sfex,     coh1002c,    zn6b,     zn_state, empty_init, ROT0, "Capcom / Arika",  "Street Fighter EX (Asia 961219)",                        MACHINE_IMPERFECT_GRAPHICS | MACHINE_IMPERFECT_SOUND )
+GAME( 1996, sfexj,     sfex,     coh1002c,    zn6b,     zn_state, empty_init, ROT0, "Capcom / Arika",  "Street Fighter EX (Japan 961130)",                       MACHINE_IMPERFECT_GRAPHICS | MACHINE_IMPERFECT_SOUND )
+GAME( 1997, sfexp,     coh1000c, coh1002c,    zn6b,     zn_state, empty_init, ROT0, "Capcom / Arika",  "Street Fighter EX Plus (USA 970407)",                    MACHINE_IMPERFECT_GRAPHICS | MACHINE_IMPERFECT_SOUND )
+GAME( 1997, sfexpu1,   sfexp,    coh1002c,    zn6b,     zn_state, empty_init, ROT0, "Capcom / Arika",  "Street Fighter EX Plus (USA 970311)",                    MACHINE_IMPERFECT_GRAPHICS | MACHINE_IMPERFECT_SOUND )
+GAME( 1997, sfexpj,    sfexp,    coh1002c,    zn6b,     zn_state, empty_init, ROT0, "Capcom / Arika",  "Street Fighter EX Plus (Japan 970407)",                  MACHINE_IMPERFECT_GRAPHICS | MACHINE_IMPERFECT_SOUND )
+GAME( 1997, sfexpj1,   sfexp,    coh1002c,    zn6b,     zn_state, empty_init, ROT0, "Capcom / Arika",  "Street Fighter EX Plus (Japan 970311)",                  MACHINE_IMPERFECT_GRAPHICS | MACHINE_IMPERFECT_SOUND )
 
 /* Capcom ZN2 */
-GAME( 1997, coh3002c,  0,        coh3002c,    zn,       zn_state, 0, ROT0, "Capcom",         "ZN2",                                                      MACHINE_IS_BIOS_ROOT )
-GAME( 1997, rvschool,  coh3002c, coh3002c,    zn6b,     zn_state, 0, ROT0, "Capcom",         "Rival Schools: United By Fate (Euro 971117)",              MACHINE_IMPERFECT_GRAPHICS | MACHINE_IMPERFECT_SOUND )
-GAME( 1997, rvschoolu, rvschool, coh3002c,    zn6b,     zn_state, 0, ROT0, "Capcom",         "Rival Schools: United By Fate (USA 971117)",               MACHINE_IMPERFECT_GRAPHICS | MACHINE_IMPERFECT_SOUND )
-GAME( 1997, rvschoola, rvschool, coh3002c,    zn6b,     zn_state, 0, ROT0, "Capcom",         "Rival Schools: United By Fate (Asia 971117)",              MACHINE_IMPERFECT_GRAPHICS | MACHINE_IMPERFECT_SOUND )
-GAME( 1997, jgakuen,   rvschool, coh3002c,    zn6b,     zn_state, 0, ROT0, "Capcom",         "Shiritsu Justice Gakuen: Legion of Heroes (Japan 971216)", MACHINE_IMPERFECT_GRAPHICS | MACHINE_IMPERFECT_SOUND )
-GAME( 1997, jgakuen1,  rvschool, coh3002c,    zn6b,     zn_state, 0, ROT0, "Capcom",         "Shiritsu Justice Gakuen: Legion of Heroes (Japan 971117)", MACHINE_IMPERFECT_GRAPHICS | MACHINE_IMPERFECT_SOUND )
-GAME( 1998, sfex2,     coh3002c, coh3002c,    zn6b,     zn_state, 0, ROT0, "Capcom / Arika", "Street Fighter EX2 (USA 980526)",                          MACHINE_IMPERFECT_GRAPHICS | MACHINE_IMPERFECT_SOUND )
-GAME( 1998, sfex2u1,   sfex2,    coh3002c,    zn6b,     zn_state, 0, ROT0, "Capcom / Arika", "Street Fighter EX2 (USA 980312)",                          MACHINE_IMPERFECT_GRAPHICS | MACHINE_IMPERFECT_SOUND )
-GAME( 1998, sfex2a,    sfex2,    coh3002c,    zn6b,     zn_state, 0, ROT0, "Capcom / Arika", "Street Fighter EX2 (Asia 980312)",                         MACHINE_IMPERFECT_GRAPHICS | MACHINE_IMPERFECT_SOUND )
-GAME( 1998, sfex2h,    sfex2,    coh3002c,    zn6b,     zn_state, 0, ROT0, "Capcom / Arika", "Street Fighter EX2 (Hispanic 980312)",                     MACHINE_IMPERFECT_GRAPHICS | MACHINE_IMPERFECT_SOUND )
-GAME( 1998, sfex2j,    sfex2,    coh3002c,    zn6b,     zn_state, 0, ROT0, "Capcom / Arika", "Street Fighter EX2 (Japan 980312)",                        MACHINE_IMPERFECT_GRAPHICS | MACHINE_IMPERFECT_SOUND )
-GAME( 1998, plsmaswd,  coh3002c, coh3002c,    zn6b,     zn_state, 0, ROT0, "Capcom",         "Plasma Sword: Nightmare of Bilstein (USA 980316)",         MACHINE_IMPERFECT_GRAPHICS | MACHINE_IMPERFECT_SOUND )
-GAME( 1998, plsmaswda, plsmaswd, coh3002c,    zn6b,     zn_state, 0, ROT0, "Capcom",         "Plasma Sword: Nightmare of Bilstein (Asia 980316)",        MACHINE_IMPERFECT_GRAPHICS | MACHINE_IMPERFECT_SOUND )
-GAME( 1998, stargld2,  plsmaswd, coh3002c,    zn6b,     zn_state, 0, ROT0, "Capcom",         "Star Gladiator 2: Nightmare of Bilstein (Japan 980316)",   MACHINE_IMPERFECT_GRAPHICS | MACHINE_IMPERFECT_SOUND )
-GAME( 1998, tgmj,      coh3002c, coh3002c,    zn4w,     zn_state, 0, ROT0, "Arika / Capcom", "Tetris The Grand Master (Japan 980710)",                   MACHINE_IMPERFECT_GRAPHICS | MACHINE_IMPERFECT_SOUND )
-GAME( 1998, techromn,  coh3002c, coh3002c,    zn6b,     zn_state, 0, ROT0, "Capcom",         "Tech Romancer (Euro 980914)",                              MACHINE_IMPERFECT_GRAPHICS | MACHINE_IMPERFECT_SOUND )
-GAME( 1998, techromnu, techromn, coh3002c,    zn6b,     zn_state, 0, ROT0, "Capcom",         "Tech Romancer (USA 980914)",                               MACHINE_IMPERFECT_GRAPHICS | MACHINE_IMPERFECT_SOUND )
-GAME( 1998, kikaioh,   techromn, coh3002c,    zn6b,     zn_state, 0, ROT0, "Capcom",         "Choukou Senki Kikaioh (Japan 980914)",                     MACHINE_IMPERFECT_GRAPHICS | MACHINE_IMPERFECT_SOUND )
-GAME( 1999, sfex2p,    coh3002c, coh3002c,    zn6b,     zn_state, 0, ROT0, "Capcom / Arika", "Street Fighter EX2 Plus (USA 990611)",                     MACHINE_IMPERFECT_GRAPHICS | MACHINE_IMPERFECT_SOUND )
-GAME( 1999, sfex2pa,   sfex2p,   coh3002c,    zn6b,     zn_state, 0, ROT0, "Capcom / Arika", "Street Fighter EX2 Plus (Asia 990611)",                    MACHINE_IMPERFECT_GRAPHICS | MACHINE_IMPERFECT_SOUND )
-GAME( 1999, sfex2ph,   sfex2p,   coh3002c,    zn6b,     zn_state, 0, ROT0, "Capcom / Arika", "Street Fighter EX2 Plus (Hispanic 990611)",                MACHINE_IMPERFECT_GRAPHICS | MACHINE_IMPERFECT_SOUND )
-GAME( 1999, sfex2pj,   sfex2p,   coh3002c,    zn6b,     zn_state, 0, ROT0, "Capcom / Arika", "Street Fighter EX2 Plus (Japan 990611)",                   MACHINE_IMPERFECT_GRAPHICS | MACHINE_IMPERFECT_SOUND )
-GAME( 1999, strider2,  coh3002c, coh3002c,    zn,       zn_state, 0, ROT0, "Capcom",         "Strider 2 (USA 991213)",                                   MACHINE_IMPERFECT_GRAPHICS | MACHINE_IMPERFECT_SOUND | MACHINE_NOT_WORKING ) // random hangs / crashes
-GAME( 1999, strider2a, strider2, coh3002c,    zn,       zn_state, 0, ROT0, "Capcom",         "Strider 2 (Asia 991213)",                                  MACHINE_IMPERFECT_GRAPHICS | MACHINE_IMPERFECT_SOUND | MACHINE_NOT_WORKING )
-GAME( 1999, shiryu2,   strider2, coh3002c,    zn,       zn_state, 0, ROT0, "Capcom",         "Strider Hiryu 2 (Japan 991213)",                           MACHINE_IMPERFECT_GRAPHICS | MACHINE_IMPERFECT_SOUND | MACHINE_NOT_WORKING  )
+GAME( 1997, coh3002c,  0,        coh3002c,    zn,       zn_state, empty_init, ROT0, "Capcom",         "ZN2",                                                      MACHINE_IS_BIOS_ROOT )
+GAME( 1997, rvschool,  coh3002c, coh3002c,    zn6b,     zn_state, empty_init, ROT0, "Capcom",         "Rival Schools: United By Fate (Euro 971117)",              MACHINE_IMPERFECT_GRAPHICS | MACHINE_IMPERFECT_SOUND )
+GAME( 1997, rvschoolu, rvschool, coh3002c,    zn6b,     zn_state, empty_init, ROT0, "Capcom",         "Rival Schools: United By Fate (USA 971117)",               MACHINE_IMPERFECT_GRAPHICS | MACHINE_IMPERFECT_SOUND )
+GAME( 1997, rvschoola, rvschool, coh3002c,    zn6b,     zn_state, empty_init, ROT0, "Capcom",         "Rival Schools: United By Fate (Asia 971117)",              MACHINE_IMPERFECT_GRAPHICS | MACHINE_IMPERFECT_SOUND )
+GAME( 1997, jgakuen,   rvschool, coh3002c,    zn6b,     zn_state, empty_init, ROT0, "Capcom",         "Shiritsu Justice Gakuen: Legion of Heroes (Japan 971216)", MACHINE_IMPERFECT_GRAPHICS | MACHINE_IMPERFECT_SOUND )
+GAME( 1997, jgakuen1,  rvschool, coh3002c,    zn6b,     zn_state, empty_init, ROT0, "Capcom",         "Shiritsu Justice Gakuen: Legion of Heroes (Japan 971117)", MACHINE_IMPERFECT_GRAPHICS | MACHINE_IMPERFECT_SOUND )
+GAME( 1998, sfex2,     coh3002c, coh3002c,    zn6b,     zn_state, empty_init, ROT0, "Capcom / Arika", "Street Fighter EX2 (USA 980526)",                          MACHINE_IMPERFECT_GRAPHICS | MACHINE_IMPERFECT_SOUND )
+GAME( 1998, sfex2u1,   sfex2,    coh3002c,    zn6b,     zn_state, empty_init, ROT0, "Capcom / Arika", "Street Fighter EX2 (USA 980312)",                          MACHINE_IMPERFECT_GRAPHICS | MACHINE_IMPERFECT_SOUND )
+GAME( 1998, sfex2a,    sfex2,    coh3002c,    zn6b,     zn_state, empty_init, ROT0, "Capcom / Arika", "Street Fighter EX2 (Asia 980312)",                         MACHINE_IMPERFECT_GRAPHICS | MACHINE_IMPERFECT_SOUND )
+GAME( 1998, sfex2h,    sfex2,    coh3002c,    zn6b,     zn_state, empty_init, ROT0, "Capcom / Arika", "Street Fighter EX2 (Hispanic 980312)",                     MACHINE_IMPERFECT_GRAPHICS | MACHINE_IMPERFECT_SOUND )
+GAME( 1998, sfex2j,    sfex2,    coh3002c,    zn6b,     zn_state, empty_init, ROT0, "Capcom / Arika", "Street Fighter EX2 (Japan 980312)",                        MACHINE_IMPERFECT_GRAPHICS | MACHINE_IMPERFECT_SOUND )
+GAME( 1998, plsmaswd,  coh3002c, coh3002c,    zn6b,     zn_state, empty_init, ROT0, "Capcom",         "Plasma Sword: Nightmare of Bilstein (USA 980316)",         MACHINE_IMPERFECT_GRAPHICS | MACHINE_IMPERFECT_SOUND )
+GAME( 1998, plsmaswda, plsmaswd, coh3002c,    zn6b,     zn_state, empty_init, ROT0, "Capcom",         "Plasma Sword: Nightmare of Bilstein (Asia 980316)",        MACHINE_IMPERFECT_GRAPHICS | MACHINE_IMPERFECT_SOUND )
+GAME( 1998, stargld2,  plsmaswd, coh3002c,    zn6b,     zn_state, empty_init, ROT0, "Capcom",         "Star Gladiator 2: Nightmare of Bilstein (Japan 980316)",   MACHINE_IMPERFECT_GRAPHICS | MACHINE_IMPERFECT_SOUND )
+GAME( 1998, tgmj,      coh3002c, coh3002c,    zn4w,     zn_state, empty_init, ROT0, "Arika / Capcom", "Tetris The Grand Master (Japan 980710)",                   MACHINE_IMPERFECT_GRAPHICS | MACHINE_IMPERFECT_SOUND )
+GAME( 1998, techromn,  coh3002c, coh3002c,    zn6b,     zn_state, empty_init, ROT0, "Capcom",         "Tech Romancer (Euro 980914)",                              MACHINE_IMPERFECT_GRAPHICS | MACHINE_IMPERFECT_SOUND )
+GAME( 1998, techromnu, techromn, coh3002c,    zn6b,     zn_state, empty_init, ROT0, "Capcom",         "Tech Romancer (USA 980914)",                               MACHINE_IMPERFECT_GRAPHICS | MACHINE_IMPERFECT_SOUND )
+GAME( 1998, kikaioh,   techromn, coh3002c,    zn6b,     zn_state, empty_init, ROT0, "Capcom",         "Choukou Senki Kikaioh (Japan 980914)",                     MACHINE_IMPERFECT_GRAPHICS | MACHINE_IMPERFECT_SOUND )
+GAME( 1999, sfex2p,    coh3002c, coh3002c,    zn6b,     zn_state, empty_init, ROT0, "Capcom / Arika", "Street Fighter EX2 Plus (USA 990611)",                     MACHINE_IMPERFECT_GRAPHICS | MACHINE_IMPERFECT_SOUND )
+GAME( 1999, sfex2pa,   sfex2p,   coh3002c,    zn6b,     zn_state, empty_init, ROT0, "Capcom / Arika", "Street Fighter EX2 Plus (Asia 990611)",                    MACHINE_IMPERFECT_GRAPHICS | MACHINE_IMPERFECT_SOUND )
+GAME( 1999, sfex2ph,   sfex2p,   coh3002c,    zn6b,     zn_state, empty_init, ROT0, "Capcom / Arika", "Street Fighter EX2 Plus (Hispanic 990611)",                MACHINE_IMPERFECT_GRAPHICS | MACHINE_IMPERFECT_SOUND )
+GAME( 1999, sfex2pj,   sfex2p,   coh3002c,    zn6b,     zn_state, empty_init, ROT0, "Capcom / Arika", "Street Fighter EX2 Plus (Japan 990611)",                   MACHINE_IMPERFECT_GRAPHICS | MACHINE_IMPERFECT_SOUND )
+GAME( 1999, strider2,  coh3002c, coh3002c,    zn,       zn_state, empty_init, ROT0, "Capcom",         "Strider 2 (Euro 991213)",                                  MACHINE_IMPERFECT_GRAPHICS | MACHINE_IMPERFECT_SOUND | MACHINE_NOT_WORKING ) // random hangs / crashes
+GAME( 1999, strider2u, strider2, coh3002c,    zn,       zn_state, empty_init, ROT0, "Capcom",         "Strider 2 (USA 991213)",                                   MACHINE_IMPERFECT_GRAPHICS | MACHINE_IMPERFECT_SOUND | MACHINE_NOT_WORKING )
+GAME( 1999, strider2a, strider2, coh3002c,    zn,       zn_state, empty_init, ROT0, "Capcom",         "Strider 2 (Asia 991213)",                                  MACHINE_IMPERFECT_GRAPHICS | MACHINE_IMPERFECT_SOUND | MACHINE_NOT_WORKING )
+GAME( 1999, shiryu2,   strider2, coh3002c,    zn,       zn_state, empty_init, ROT0, "Capcom",         "Strider Hiryu 2 (Japan 991213)",                           MACHINE_IMPERFECT_GRAPHICS | MACHINE_IMPERFECT_SOUND | MACHINE_NOT_WORKING )
 
 /* Atari */
-GAME( 1996, coh1000w,  0,        coh1000w,    zn,       zn_state, 0,        ROT0, "Atari", "Atari PSX",                 MACHINE_IS_BIOS_ROOT )
-GAME( 1996, primrag2,  coh1000w, coh1000w,    primrag2, zn_state, primrag2, ROT0, "Atari", "Primal Rage 2 (Ver 0.36a)", MACHINE_IMPERFECT_GRAPHICS | MACHINE_IMPERFECT_SOUND | MACHINE_NOT_WORKING ) // watchdog reset at startup
+GAME( 1996, coh1000w,  0,        coh1000w,    zn,       zn_state, empty_init,   ROT0, "Atari", "Atari PSX",                 MACHINE_IS_BIOS_ROOT )
+GAME( 1996, primrag2,  coh1000w, coh1000w,    primrag2, zn_state, init_primrag2, ROT0, "Atari", "Primal Rage 2 (Ver 0.36a)", MACHINE_IMPERFECT_GRAPHICS | MACHINE_IMPERFECT_SOUND | MACHINE_NOT_WORKING ) // watchdog reset at startup
 
 /* Acclaim */
-GAME( 1995, coh1000a,  0,        coh1000a,    zn,       zn_state, 0,        ROT0, "Acclaim", "Acclaim PSX",                      MACHINE_IS_BIOS_ROOT )
-GAME( 1996, nbajamex,  coh1000a, nbajamex,    nbajamex, zn_state, nbajamex, ROT0, "Acclaim", "NBA Jam Extreme (ver. 1.10I)",     MACHINE_IMPERFECT_GRAPHICS )
-GAME( 1996, nbajamexa, nbajamex, nbajamex,    nbajamex, zn_state, nbajamex, ROT0, "Acclaim", "NBA Jam Extreme (ver. 1.04)",      MACHINE_IMPERFECT_GRAPHICS )
-GAME( 1996, jdredd,    coh1000a, jdredd,      jdredd,   zn_state, jdredd,   ROT0, "Acclaim", "Judge Dredd (Rev C Dec. 17 1997)", MACHINE_IMPERFECT_GRAPHICS | MACHINE_IMPERFECT_SOUND )
-GAME( 1996, jdreddb,   jdredd,   jdredd,      jdredd,   zn_state, jdredd,   ROT0, "Acclaim", "Judge Dredd (Rev B Nov. 26 1997)", MACHINE_IMPERFECT_GRAPHICS | MACHINE_IMPERFECT_SOUND )
+GAME( 1995, coh1000a,  0,        coh1000a,    zn,       zn_state, empty_init,   ROT0, "Acclaim", "Acclaim PSX",                      MACHINE_IS_BIOS_ROOT )
+GAME( 1996, nbajamex,  coh1000a, nbajamex,    nbajamex, zn_state, init_nbajamex, ROT0, "Acclaim", "NBA Jam Extreme (ver. 1.10I)",     MACHINE_IMPERFECT_GRAPHICS )
+GAME( 1996, nbajamexa, nbajamex, nbajamex,    nbajamex, zn_state, init_nbajamex, ROT0, "Acclaim", "NBA Jam Extreme (ver. 1.04)",      MACHINE_IMPERFECT_GRAPHICS )
+GAME( 1996, jdredd,    coh1000a, jdredd,      jdredd,   zn_state, init_jdredd,   ROT0, "Acclaim", "Judge Dredd (Rev C Dec. 17 1997)", MACHINE_IMPERFECT_GRAPHICS | MACHINE_IMPERFECT_SOUND )
+GAME( 1996, jdreddb,   jdredd,   jdredd,      jdredd,   zn_state, init_jdredd,   ROT0, "Acclaim", "Judge Dredd (Rev B Nov. 26 1997)", MACHINE_IMPERFECT_GRAPHICS | MACHINE_IMPERFECT_SOUND )
 
 /* Tecmo */
-GAME( 1997, coh1002m,  0,        coh1002m,    zn,       zn_state, 0, ROT0, "Tecmo",                  "TPS",                                MACHINE_IS_BIOS_ROOT )
-GAME( 1997, glpracr2,  coh1002m, coh1002m,    zn,       zn_state, 0, ROT0, "Tecmo",                  "Gallop Racer 2 (Export)",            MACHINE_IMPERFECT_GRAPHICS | MACHINE_IMPERFECT_SOUND )
-GAME( 1997, glpracr2j, glpracr2, coh1002m,    zn,       zn_state, 0, ROT0, "Tecmo",                  "Gallop Racer 2 (Japan)",             MACHINE_IMPERFECT_GRAPHICS | MACHINE_IMPERFECT_SOUND )
-GAME( 1997, glpracr2l, glpracr2, coh1002ml,   zn,       zn_state, 0, ROT0, "Tecmo",                  "Gallop Racer 2 Link HW (Japan)",     MACHINE_IMPERFECT_GRAPHICS | MACHINE_IMPERFECT_SOUND )
-GAME( 1998, doapp,     coh1002m, coh1002m,    zn,       zn_state, 0, ROT0, "Tecmo",                  "Dead Or Alive ++ (Japan)",           MACHINE_IMPERFECT_GRAPHICS | MACHINE_IMPERFECT_SOUND )
-GAME( 1998, cbaj,      coh1002m, coh1002msnd, zn,       zn_state, 0, ROT0, "UEP Systems",            "Cool Boarders Arcade Jam",           MACHINE_IMPERFECT_GRAPHICS | MACHINE_IMPERFECT_SOUND )
-GAME( 1998, shngmtkb,  coh1002m, coh1002m,    zn,       zn_state, 0, ROT0, "Sunsoft / Activision",   "Shanghai Matekibuyuu",               MACHINE_IMPERFECT_GRAPHICS | MACHINE_IMPERFECT_SOUND )
-GAME( 1999, tondemo,   coh1002m, coh1002m,    zn,       zn_state, 0, ROT0, "Tecmo",                  "Tondemo Crisis (Japan)",             MACHINE_IMPERFECT_GRAPHICS | MACHINE_IMPERFECT_SOUND )
-GAME( 1999, glpracr3,  coh1002m, coh1002m,    zn,       zn_state, 0, ROT0, "Tecmo",                  "Gallop Racer 3 (Export)",            MACHINE_IMPERFECT_GRAPHICS | MACHINE_IMPERFECT_SOUND )
-GAME( 1999, glpracr3j, glpracr3, coh1002m,    zn,       zn_state, 0, ROT0, "Tecmo",                  "Gallop Racer 3 (Japan)",             MACHINE_IMPERFECT_GRAPHICS | MACHINE_IMPERFECT_SOUND )
-GAME( 1999, flamegun,  coh1002m, coh1002m,    zn,       zn_state, 0, ROT0, "Gaps Inc.",              "Flame Gunner",                       MACHINE_IMPERFECT_GRAPHICS | MACHINE_IMPERFECT_SOUND )
-GAME( 1999, flamegunj, flamegun, coh1002m,    zn,       zn_state, 0, ROT0, "Gaps Inc.",              "Flame Gunner (Japan)",               MACHINE_IMPERFECT_GRAPHICS | MACHINE_IMPERFECT_SOUND )
-GAME( 1999, lpadv,     coh1002m, coh1002m,    zn,       zn_state, 0, ROT0, "Amuse World",            "Logic Pro Adventure (Japan)",        MACHINE_IMPERFECT_GRAPHICS | MACHINE_IMPERFECT_SOUND )
-GAME( 2000, tblkkuzu,  coh1002m, coh1002m,    zn,       zn_state, 0, ROT0, "Tamsoft / D3 Publisher", "The Block Kuzushi (Japan)",          MACHINE_IMPERFECT_GRAPHICS | MACHINE_IMPERFECT_SOUND )
-GAME( 2000, 1on1gov,   coh1002m, coh1002m,    zn,       zn_state, 0, ROT0, "Tecmo",                  "1 on 1 Government (Japan)",          MACHINE_IMPERFECT_GRAPHICS | MACHINE_IMPERFECT_SOUND )
-GAME( 2000, twcupmil,  coh1002m, coh1002m,    zn,       zn_state, 0, ROT0, "Tecmo",                  "Tecmo World Cup Millennium (Japan)", MACHINE_IMPERFECT_GRAPHICS | MACHINE_IMPERFECT_SOUND )
-GAME( 2001, mfjump,    coh1002m, coh1002m,    zn,       zn_state, 0, ROT0, "Tecmo",                  "Monster Farm Jump (Japan)",          MACHINE_IMPERFECT_GRAPHICS | MACHINE_IMPERFECT_SOUND )
+GAME( 1997, coh1002m,  0,        coh1002m,    zn,       zn_state, empty_init, ROT0, "Tecmo",                  "TPS",                                MACHINE_IS_BIOS_ROOT )
+GAME( 1997, glpracr2,  coh1002m, coh1002m,    zn,       zn_state, empty_init, ROT0, "Tecmo",                  "Gallop Racer 2 (Export)",            MACHINE_IMPERFECT_GRAPHICS | MACHINE_IMPERFECT_SOUND )
+GAME( 1997, glpracr2j, glpracr2, coh1002m,    zn,       zn_state, empty_init, ROT0, "Tecmo",                  "Gallop Racer 2 (Japan)",             MACHINE_IMPERFECT_GRAPHICS | MACHINE_IMPERFECT_SOUND )
+GAME( 1997, glpracr2l, glpracr2, coh1002ml,   zn,       zn_state, empty_init, ROT0, "Tecmo",                  "Gallop Racer 2 Link HW (Japan)",     MACHINE_IMPERFECT_GRAPHICS | MACHINE_IMPERFECT_SOUND )
+GAME( 1998, doapp,     coh1002m, coh1002m,    zn,       zn_state, empty_init, ROT0, "Tecmo",                  "Dead Or Alive ++ (Japan)",           MACHINE_IMPERFECT_GRAPHICS | MACHINE_IMPERFECT_SOUND )
+GAME( 1998, cbaj,      coh1002m, coh1002msnd, zn,       zn_state, empty_init, ROT0, "UEP Systems",            "Cool Boarders Arcade Jam",           MACHINE_IMPERFECT_GRAPHICS | MACHINE_IMPERFECT_SOUND )
+GAME( 1998, shngmtkb,  coh1002m, coh1002m,    zn,       zn_state, empty_init, ROT0, "Sunsoft / Activision",   "Shanghai Matekibuyuu",               MACHINE_IMPERFECT_GRAPHICS | MACHINE_IMPERFECT_SOUND )
+GAME( 1999, tondemo,   coh1002m, coh1002m,    zn,       zn_state, empty_init, ROT0, "Tecmo",                  "Tondemo Crisis (Japan)",             MACHINE_IMPERFECT_GRAPHICS | MACHINE_IMPERFECT_SOUND )
+GAME( 1999, glpracr3,  coh1002m, coh1002m,    zn,       zn_state, empty_init, ROT0, "Tecmo",                  "Gallop Racer 3 (Export)",            MACHINE_IMPERFECT_GRAPHICS | MACHINE_IMPERFECT_SOUND )
+GAME( 1999, glpracr3j, glpracr3, coh1002m,    zn,       zn_state, empty_init, ROT0, "Tecmo",                  "Gallop Racer 3 (Japan)",             MACHINE_IMPERFECT_GRAPHICS | MACHINE_IMPERFECT_SOUND )
+GAME( 1999, flamegun,  coh1002m, coh1002m,    zn,       zn_state, empty_init, ROT0, "Gaps Inc.",              "Flame Gunner",                       MACHINE_IMPERFECT_GRAPHICS | MACHINE_IMPERFECT_SOUND )
+GAME( 1999, flamegunj, flamegun, coh1002m,    zn,       zn_state, empty_init, ROT0, "Gaps Inc.",              "Flame Gunner (Japan)",               MACHINE_IMPERFECT_GRAPHICS | MACHINE_IMPERFECT_SOUND )
+GAME( 1999, lpadv,     coh1002m, coh1002m,    zn,       zn_state, empty_init, ROT0, "Amuse World",            "Logic Pro Adventure (Japan)",        MACHINE_IMPERFECT_GRAPHICS | MACHINE_IMPERFECT_SOUND )
+GAME( 2000, tblkkuzu,  coh1002m, coh1002m,    zn,       zn_state, empty_init, ROT0, "Tamsoft / D3 Publisher", "The Block Kuzushi (Japan)",          MACHINE_IMPERFECT_GRAPHICS | MACHINE_IMPERFECT_SOUND )
+GAME( 2000, 1on1gov,   coh1002m, coh1002m,    zn,       zn_state, empty_init, ROT0, "Tecmo",                  "1 on 1 Government (Japan)",          MACHINE_IMPERFECT_GRAPHICS | MACHINE_IMPERFECT_SOUND )
+GAME( 2000, twcupmil,  coh1002m, coh1002m,    zn,       zn_state, empty_init, ROT0, "Tecmo",                  "Tecmo World Cup Millennium (Japan)", MACHINE_IMPERFECT_GRAPHICS | MACHINE_IMPERFECT_SOUND )
+GAME( 2001, mfjump,    coh1002m, coh1002m,    zn,       zn_state, empty_init, ROT0, "Tecmo",                  "Monster Farm Jump (Japan)",          MACHINE_IMPERFECT_GRAPHICS | MACHINE_IMPERFECT_SOUND )
 
 /* Video System */
-GAME( 1996, coh1002v,  0,        coh1002v,    zn,       zn_state, 0, ROT0,   "Video System Co.", "Video System PSX",               MACHINE_IS_BIOS_ROOT )
-GAME( 1996, aerofgts,  coh1002v, coh1002v,    aerofgts, zn_state, 0, ROT270, "Video System Co.", "Aero Fighters Special (Taiwan)", MACHINE_IMPERFECT_GRAPHICS | MACHINE_IMPERFECT_SOUND )
-GAME( 1996, sncwgltd,  aerofgts, coh1002v,    aerofgts, zn_state, 0, ROT270, "Video System Co.", "Sonic Wings Limited (Japan)",    MACHINE_IMPERFECT_GRAPHICS | MACHINE_IMPERFECT_SOUND )
+GAME( 1996, coh1002v,  0,        coh1002v,    zn,       zn_state, empty_init, ROT0,   "Video System Co.", "Video System PSX",               MACHINE_IS_BIOS_ROOT )
+GAME( 1996, aerofgts,  coh1002v, coh1002v,    aerofgts, zn_state, empty_init, ROT270, "Video System Co.", "Aero Fighters Special (Taiwan)", MACHINE_IMPERFECT_GRAPHICS | MACHINE_IMPERFECT_SOUND )
+GAME( 1996, sncwgltd,  aerofgts, coh1002v,    aerofgts, zn_state, empty_init, ROT270, "Video System Co.", "Sonic Wings Limited (Japan)",    MACHINE_IMPERFECT_GRAPHICS | MACHINE_IMPERFECT_SOUND )
 
 /* Taito FX-1A */
-GAME( 1995, coh1000t,  0,        coh1000ta,   znt,      zn_state, 0, ROT0, "Taito", "Taito FX1", MACHINE_IS_BIOS_ROOT )
-GAME( 1995, sfchamp,   coh1000t, coh1000ta,   znt,      zn_state, 0, ROT0, "Taito", "Super Football Champ (Ver 2.5O)", MACHINE_IMPERFECT_GRAPHICS | MACHINE_IMPERFECT_SOUND )
-GAME( 1995, sfchampo,  sfchamp,  coh1000ta,   znt,      zn_state, 0, ROT0, "Taito", "Super Football Champ (Ver 2.4O)", MACHINE_IMPERFECT_GRAPHICS | MACHINE_IMPERFECT_SOUND )
-GAME( 1995, sfchampu,  sfchamp,  coh1000ta,   znt,      zn_state, 0, ROT0, "Taito", "Super Football Champ (Ver 2.4A)", MACHINE_IMPERFECT_GRAPHICS | MACHINE_IMPERFECT_SOUND )
-GAME( 1995, sfchampj,  sfchamp,  coh1000ta,   znt,      zn_state, 0, ROT0, "Taito", "Super Football Champ (Ver 2.4J)", MACHINE_IMPERFECT_GRAPHICS | MACHINE_IMPERFECT_SOUND )
-GAME( 1995, psyforce,  coh1000t, coh1000ta,   znt,      zn_state, 0, ROT0, "Taito", "Psychic Force (Ver 2.4O)", MACHINE_IMPERFECT_GRAPHICS | MACHINE_IMPERFECT_SOUND )
-GAME( 1995, psyforcej, psyforce, coh1000ta,   znt,      zn_state, 0, ROT0, "Taito", "Psychic Force (Ver 2.4J)", MACHINE_IMPERFECT_GRAPHICS | MACHINE_IMPERFECT_SOUND )
-GAME( 1995, psyforcex, psyforce, coh1000ta,   znt,      zn_state, 0, ROT0, "Taito", "Psychic Force EX (Ver 2.0J)", MACHINE_IMPERFECT_GRAPHICS | MACHINE_IMPERFECT_SOUND | MACHINE_NOT_WORKING ) // exception in attract after reading 0xbbbbbbbb from 0x8025ed18 leads to watchdog reset
-GAME( 1996, mgcldate,  mgcldtex, coh1000ta,   znt,      zn_state, 0, ROT0, "Taito", "Magical Date / Magical Date - dokidoki kokuhaku daisakusen (Ver 2.02J)", MACHINE_IMPERFECT_GRAPHICS | MACHINE_IMPERFECT_SOUND )
-GAME( 1997, mgcldtex,  coh1000t, coh1000ta,   znt,      zn_state, 0, ROT0, "Taito", "Magical Date EX / Magical Date - sotsugyou kokuhaku daisakusen (Ver 2.01J)", MACHINE_IMPERFECT_GRAPHICS | MACHINE_IMPERFECT_SOUND )
+GAME( 1995, coh1000t,  0,        coh1000ta,   znt,      zn_state, empty_init, ROT0, "Taito", "Taito FX1", MACHINE_IS_BIOS_ROOT )
+GAME( 1995, sfchamp,   coh1000t, coh1000ta,   znt,      zn_state, empty_init, ROT0, "Taito", "Super Football Champ (Ver 2.5O)", MACHINE_IMPERFECT_GRAPHICS | MACHINE_IMPERFECT_SOUND )
+GAME( 1995, sfchampo,  sfchamp,  coh1000ta,   znt,      zn_state, empty_init, ROT0, "Taito", "Super Football Champ (Ver 2.4O)", MACHINE_IMPERFECT_GRAPHICS | MACHINE_IMPERFECT_SOUND )
+GAME( 1995, sfchampu,  sfchamp,  coh1000ta,   znt,      zn_state, empty_init, ROT0, "Taito", "Super Football Champ (Ver 2.4A)", MACHINE_IMPERFECT_GRAPHICS | MACHINE_IMPERFECT_SOUND )
+GAME( 1995, sfchampj,  sfchamp,  coh1000ta,   znt,      zn_state, empty_init, ROT0, "Taito", "Super Football Champ (Ver 2.4J)", MACHINE_IMPERFECT_GRAPHICS | MACHINE_IMPERFECT_SOUND )
+GAME( 1995, psyforce,  coh1000t, coh1000ta,   znt,      zn_state, empty_init, ROT0, "Taito", "Psychic Force (Ver 2.4O)", MACHINE_IMPERFECT_GRAPHICS | MACHINE_IMPERFECT_SOUND )
+GAME( 1995, psyforcej, psyforce, coh1000ta,   znt,      zn_state, empty_init, ROT0, "Taito", "Psychic Force (Ver 2.4J)", MACHINE_IMPERFECT_GRAPHICS | MACHINE_IMPERFECT_SOUND )
+GAME( 1995, psyforcex, psyforce, coh1000ta,   znt,      zn_state, empty_init, ROT0, "Taito", "Psychic Force EX (Ver 2.0J)", MACHINE_IMPERFECT_GRAPHICS | MACHINE_IMPERFECT_SOUND | MACHINE_NOT_WORKING ) // exception in attract after reading 0xbbbbbbbb from 0x8025ed18 leads to watchdog reset
+GAME( 1996, mgcldate,  mgcldtex, coh1000ta,   znt,      zn_state, empty_init, ROT0, "Taito", "Magical Date / Magical Date - dokidoki kokuhaku daisakusen (Ver 2.02J)", MACHINE_IMPERFECT_GRAPHICS | MACHINE_IMPERFECT_SOUND )
+GAME( 1997, mgcldtex,  coh1000t, coh1000ta,   znt,      zn_state, empty_init, ROT0, "Taito", "Magical Date EX / Magical Date - sotsugyou kokuhaku daisakusen (Ver 2.01J)", MACHINE_IMPERFECT_GRAPHICS | MACHINE_IMPERFECT_SOUND )
 
 /* Taito FX-1B */
-GAME( 1996, raystorm,  coh1000t, coh1000tb,   znt,      zn_state, coh1000tb, ROT0, "Taito", "Ray Storm (Ver 2.06A)",          MACHINE_IMPERFECT_GRAPHICS | MACHINE_IMPERFECT_SOUND )
-GAME( 1996, raystormo, raystorm, coh1000tb,   znt,      zn_state, coh1000tb, ROT0, "Taito", "Ray Storm (Ver 2.05O)",          MACHINE_IMPERFECT_GRAPHICS | MACHINE_IMPERFECT_SOUND )
-GAME( 1996, raystormu, raystorm, coh1000tb,   znt,      zn_state, coh1000tb, ROT0, "Taito", "Ray Storm (Ver 2.05A)",          MACHINE_IMPERFECT_GRAPHICS | MACHINE_IMPERFECT_SOUND )
-GAME( 1996, raystormj, raystorm, coh1000tb,   znt,      zn_state, coh1000tb, ROT0, "Taito", "Ray Storm (Ver 2.05J)",          MACHINE_IMPERFECT_GRAPHICS | MACHINE_IMPERFECT_SOUND )
-GAME( 1996, ftimpact,  ftimpcta, coh1000tb,   znt,      zn_state, coh1000tb, ROT0, "Taito", "Fighters' Impact (Ver 2.02O)",   MACHINE_IMPERFECT_GRAPHICS | MACHINE_IMPERFECT_SOUND )
-GAME( 1996, ftimpactu, ftimpcta, coh1000tb,   znt,      zn_state, coh1000tb, ROT0, "Taito", "Fighters' Impact (Ver 2.02A)",   MACHINE_IMPERFECT_GRAPHICS | MACHINE_IMPERFECT_SOUND )
-GAME( 1996, ftimpactj, ftimpcta, coh1000tb,   znt,      zn_state, coh1000tb, ROT0, "Taito", "Fighters' Impact (Ver 2.02J)",   MACHINE_IMPERFECT_GRAPHICS | MACHINE_IMPERFECT_SOUND )
-GAME( 1997, ftimpcta,  coh1000t, coh1000tb,   znt,      zn_state, coh1000tb, ROT0, "Taito", "Fighters' Impact A (Ver 2.00J)", MACHINE_IMPERFECT_GRAPHICS | MACHINE_IMPERFECT_SOUND )
-GAME( 1997, gdarius,   gdarius2, coh1002tb,   znt,      zn_state, coh1000tb, ROT0, "Taito", "G-Darius (Ver 2.01J)",           MACHINE_IMPERFECT_GRAPHICS | MACHINE_IMPERFECT_SOUND )
-GAME( 1997, gdariusb,  gdarius2, coh1002tb,   znt,      zn_state, coh1000tb, ROT0, "Taito", "G-Darius (Ver 2.02A)",           MACHINE_IMPERFECT_GRAPHICS | MACHINE_IMPERFECT_SOUND )
-GAME( 1997, gdarius2,  coh1000t, coh1002tb,   znt,      zn_state, coh1000tb, ROT0, "Taito", "G-Darius Ver.2 (Ver 2.03J)",     MACHINE_IMPERFECT_GRAPHICS | MACHINE_IMPERFECT_SOUND )
+GAME( 1996, raystorm,  coh1000t, coh1000tb,   znt,      zn_state, init_coh1000tb, ROT0, "Taito", "Ray Storm (Ver 2.06A)",          MACHINE_IMPERFECT_GRAPHICS | MACHINE_IMPERFECT_SOUND )
+GAME( 1996, raystormo, raystorm, coh1000tb,   znt,      zn_state, init_coh1000tb, ROT0, "Taito", "Ray Storm (Ver 2.05O)",          MACHINE_IMPERFECT_GRAPHICS | MACHINE_IMPERFECT_SOUND )
+GAME( 1996, raystormu, raystorm, coh1000tb,   znt,      zn_state, init_coh1000tb, ROT0, "Taito", "Ray Storm (Ver 2.05A)",          MACHINE_IMPERFECT_GRAPHICS | MACHINE_IMPERFECT_SOUND )
+GAME( 1996, raystormj, raystorm, coh1000tb,   znt,      zn_state, init_coh1000tb, ROT0, "Taito", "Ray Storm (Ver 2.05J)",          MACHINE_IMPERFECT_GRAPHICS | MACHINE_IMPERFECT_SOUND )
+GAME( 1996, ftimpact,  ftimpcta, coh1000tb,   znt,      zn_state, init_coh1000tb, ROT0, "Taito", "Fighters' Impact (Ver 2.02O)",   MACHINE_IMPERFECT_GRAPHICS | MACHINE_IMPERFECT_SOUND )
+GAME( 1996, ftimpactu, ftimpcta, coh1000tb,   znt,      zn_state, init_coh1000tb, ROT0, "Taito", "Fighters' Impact (Ver 2.02A)",   MACHINE_IMPERFECT_GRAPHICS | MACHINE_IMPERFECT_SOUND )
+GAME( 1996, ftimpactj, ftimpcta, coh1000tb,   znt,      zn_state, init_coh1000tb, ROT0, "Taito", "Fighters' Impact (Ver 2.02J)",   MACHINE_IMPERFECT_GRAPHICS | MACHINE_IMPERFECT_SOUND )
+GAME( 1997, ftimpcta,  coh1000t, coh1000tb,   znt,      zn_state, init_coh1000tb, ROT0, "Taito", "Fighters' Impact A (Ver 2.00J)", MACHINE_IMPERFECT_GRAPHICS | MACHINE_IMPERFECT_SOUND )
+GAME( 1997, gdarius,   gdarius2, coh1002tb,   znt,      zn_state, init_coh1000tb, ROT0, "Taito", "G-Darius (Ver 2.01J)",           MACHINE_IMPERFECT_GRAPHICS | MACHINE_IMPERFECT_SOUND )
+GAME( 1997, gdariusb,  gdarius2, coh1002tb,   znt,      zn_state, init_coh1000tb, ROT0, "Taito", "G-Darius (Ver 2.02A)",           MACHINE_IMPERFECT_GRAPHICS | MACHINE_IMPERFECT_SOUND )
+GAME( 1997, gdarius2,  coh1000t, coh1002tb,   znt,      zn_state, init_coh1000tb, ROT0, "Taito", "G-Darius Ver.2 (Ver 2.03J)",     MACHINE_IMPERFECT_GRAPHICS | MACHINE_IMPERFECT_SOUND )
 
 /* Eighting / Raizing */
-GAME( 1997, coh1002e,  0,        coh1002e,    znt,      zn_state, 0, ROT0, "Eighting / Raizing", "PS Arcade 95",              MACHINE_IS_BIOS_ROOT )
-GAME( 1997, beastrzr,  coh1002e, coh1002e,    znt,      zn_state, 0, ROT0, "Eighting / Raizing", "Beastorizer (USA)",         MACHINE_IMPERFECT_GRAPHICS | MACHINE_IMPERFECT_SOUND )
-GAME( 1997, bldyroar,  beastrzr, coh1002e,    znt,      zn_state, 0, ROT0, "Eighting / Raizing", "Bloody Roar (Japan)",       MACHINE_IMPERFECT_GRAPHICS | MACHINE_IMPERFECT_SOUND )
-GAME( 1997, beastrzrb, beastrzr, beastrzrb,   znt,      zn_state, 0, ROT0, "bootleg",            "Beastorizer (USA bootleg)", MACHINE_IMPERFECT_GRAPHICS | MACHINE_IMPERFECT_SOUND | MACHINE_NOT_WORKING )
+GAME( 1997, coh1002e,  0,        coh1002e,    znt,      zn_state, empty_init, ROT0, "Eighting / Raizing", "PS Arcade 95",              MACHINE_IS_BIOS_ROOT )
+GAME( 1997, beastrzr,  coh1002e, coh1002e,    znt,      zn_state, empty_init, ROT0, "Eighting / Raizing", "Beastorizer (USA)",         MACHINE_IMPERFECT_GRAPHICS | MACHINE_IMPERFECT_SOUND )
+GAME( 1997, bldyroar,  beastrzr, coh1002e,    znt,      zn_state, empty_init, ROT0, "Eighting / Raizing", "Bloody Roar (Japan)",       MACHINE_IMPERFECT_GRAPHICS | MACHINE_IMPERFECT_SOUND )
+GAME( 1997, beastrzrb, beastrzr, beastrzrb,   znt,      zn_state, empty_init, ROT0, "bootleg",            "Beastorizer (USA bootleg)", MACHINE_IMPERFECT_GRAPHICS | MACHINE_IMPERFECT_SOUND | MACHINE_NOT_WORKING )
 
 /* The region on these is determined from the NVRAM, it can't be changed from the test menu, it's pre-programmed */
-GAME( 1998, bldyror2,  coh1002e, coh1002e,    bldyror2, zn_state, 0, ROT0, "Eighting / Raizing", "Bloody Roar 2 (World)", MACHINE_IMPERFECT_GRAPHICS | MACHINE_IMPERFECT_SOUND ) // locks up if you coin up during the fmw with interlace enabled
-GAME( 1998, bldyror2u, bldyror2, coh1002e,    bldyror2, zn_state, 0, ROT0, "Eighting / Raizing", "Bloody Roar 2 (USA)",   MACHINE_IMPERFECT_GRAPHICS | MACHINE_IMPERFECT_SOUND )
-GAME( 1998, bldyror2a, bldyror2, coh1002e,    bldyror2, zn_state, 0, ROT0, "Eighting / Raizing", "Bloody Roar 2 (Asia)",  MACHINE_IMPERFECT_GRAPHICS | MACHINE_IMPERFECT_SOUND )
-GAME( 1998, bldyror2j, bldyror2, coh1002e,    bldyror2, zn_state, 0, ROT0, "Eighting / Raizing", "Bloody Roar 2 (Japan)", MACHINE_IMPERFECT_GRAPHICS | MACHINE_IMPERFECT_SOUND )
+GAME( 1998, bldyror2,  coh1002e, coh1002e,    bldyror2, zn_state, empty_init, ROT0, "Eighting / Raizing", "Bloody Roar 2 (World)", MACHINE_IMPERFECT_GRAPHICS | MACHINE_IMPERFECT_SOUND ) // locks up if you coin up during the fmw with interlace enabled
+GAME( 1998, bldyror2u, bldyror2, coh1002e,    bldyror2, zn_state, empty_init, ROT0, "Eighting / Raizing", "Bloody Roar 2 (USA)",   MACHINE_IMPERFECT_GRAPHICS | MACHINE_IMPERFECT_SOUND )
+GAME( 1998, bldyror2a, bldyror2, coh1002e,    bldyror2, zn_state, empty_init, ROT0, "Eighting / Raizing", "Bloody Roar 2 (Asia)",  MACHINE_IMPERFECT_GRAPHICS | MACHINE_IMPERFECT_SOUND )
+GAME( 1998, bldyror2j, bldyror2, coh1002e,    bldyror2, zn_state, empty_init, ROT0, "Eighting / Raizing", "Bloody Roar 2 (Japan)", MACHINE_IMPERFECT_GRAPHICS | MACHINE_IMPERFECT_SOUND )
 
 /* The region on these is determined from the NVRAM, it can't be changed from the test menu, it's pre-programmed */
-GAME( 2000, brvblade,  coh1002m, coh1002e,    znt,      zn_state, 0, ROT270, "Eighting / Raizing", "Brave Blade (World)", MACHINE_IMPERFECT_GRAPHICS | MACHINE_IMPERFECT_SOUND )
-GAME( 2000, brvbladeu, brvblade, coh1002e,    znt,      zn_state, 0, ROT270, "Eighting / Raizing", "Brave Blade (USA)",   MACHINE_IMPERFECT_GRAPHICS | MACHINE_IMPERFECT_SOUND )
-GAME( 2000, brvbladea, brvblade, coh1002e,    znt,      zn_state, 0, ROT270, "Eighting / Raizing", "Brave Blade (Asia)",  MACHINE_IMPERFECT_GRAPHICS | MACHINE_IMPERFECT_SOUND )
-GAME( 2000, brvbladej, brvblade, coh1002e,    znt,      zn_state, 0, ROT270, "Eighting / Raizing", "Brave Blade (Japan)", MACHINE_IMPERFECT_GRAPHICS | MACHINE_IMPERFECT_SOUND )
+GAME( 2000, brvblade,  coh1002m, coh1002e,    znt,      zn_state, empty_init, ROT270, "Eighting / Raizing", "Brave Blade (World)", MACHINE_IMPERFECT_GRAPHICS | MACHINE_IMPERFECT_SOUND )
+GAME( 2000, brvbladeu, brvblade, coh1002e,    znt,      zn_state, empty_init, ROT270, "Eighting / Raizing", "Brave Blade (USA)",   MACHINE_IMPERFECT_GRAPHICS | MACHINE_IMPERFECT_SOUND )
+GAME( 2000, brvbladea, brvblade, coh1002e,    znt,      zn_state, empty_init, ROT270, "Eighting / Raizing", "Brave Blade (Asia)",  MACHINE_IMPERFECT_GRAPHICS | MACHINE_IMPERFECT_SOUND )
+GAME( 2000, brvbladej, brvblade, coh1002e,    znt,      zn_state, empty_init, ROT270, "Eighting / Raizing", "Brave Blade (Japan)", MACHINE_IMPERFECT_GRAPHICS | MACHINE_IMPERFECT_SOUND )
 
 /* Bust a Move 2 uses the PSARC95 bios and ET series security but the top board is completely different */
-GAME( 1999, bam2,      coh1002e, bam2,        zn,       zn_state, bam2, ROT0, "Metro / Enix / Namco", "Bust a Move 2 - Dance Tengoku Mix (Japanese ROM ver. 1999/07/17 10:00:00)", MACHINE_IMPERFECT_GRAPHICS | MACHINE_IMPERFECT_SOUND | MACHINE_NOT_WORKING )
+GAME( 1999, bam2,      coh1002e, bam2,        zn,       zn_state, init_bam2,  ROT0, "Metro / Enix / Namco", "Bust a Move 2 - Dance Tengoku Mix (Japanese ROM ver. 1999/07/17 10:00:00)", MACHINE_IMPERFECT_GRAPHICS | MACHINE_IMPERFECT_SOUND | MACHINE_NOT_WORKING )
 
 /* Atlus */
-GAME( 1996, coh1001l,  0,        coh1001l,    zn,       zn_state, 0, ROT0, "Atlus",          "Atlus PSX",     MACHINE_IS_BIOS_ROOT )
-GAME( 1996, hvnsgate,  coh1001l, coh1001l,    zn,       zn_state, 0, ROT0, "Racdym / Atlus", "Heaven's Gate", MACHINE_IMPERFECT_GRAPHICS | MACHINE_IMPERFECT_SOUND )
+GAME( 1996, coh1001l,  0,        coh1001l,    zn,       zn_state, empty_init, ROT0, "Atlus",          "Atlus PSX",     MACHINE_IS_BIOS_ROOT )
+GAME( 1996, hvnsgate,  coh1001l, coh1001l,    zn,       zn_state, empty_init, ROT0, "Racdym / Atlus", "Heaven's Gate", MACHINE_IMPERFECT_GRAPHICS | MACHINE_IMPERFECT_SOUND )

@@ -53,13 +53,13 @@ public:
 		, m_towerlamps(*this, "towerlamp%u", 0U)
 	{ }
 
+	void segajw(machine_config &config);
+
 	DECLARE_INPUT_CHANGED_MEMBER(coin_drop_start);
 	DECLARE_CUSTOM_INPUT_MEMBER(coin_sensors_r);
 	DECLARE_CUSTOM_INPUT_MEMBER(hopper_sensors_r);
 
-	void segajw(machine_config &config);
-
-protected:
+private:
 	DECLARE_READ8_MEMBER(coin_counter_r);
 	DECLARE_WRITE8_MEMBER(coin_counter_w);
 	DECLARE_WRITE8_MEMBER(hopper_w);
@@ -77,7 +77,6 @@ protected:
 	void segajw_hd63484_map(address_map &map);
 	void segajw_map(address_map &map);
 
-private:
 	// devices
 	required_device<cpu_device> m_maincpu;
 	required_device<cpu_device> m_audiocpu;
@@ -373,31 +372,31 @@ void segajw_state::ramdac_map(address_map &map)
 
 MACHINE_CONFIG_START(segajw_state::segajw)
 	/* basic machine hardware */
-	MCFG_CPU_ADD("maincpu",M68000,8000000) // unknown clock
-	MCFG_CPU_PROGRAM_MAP(segajw_map)
-	MCFG_CPU_VBLANK_INT_DRIVER("screen", segajw_state, irq4_line_hold)
+	MCFG_DEVICE_ADD("maincpu",M68000,8000000) // unknown clock
+	MCFG_DEVICE_PROGRAM_MAP(segajw_map)
+	MCFG_DEVICE_VBLANK_INT_DRIVER("screen", segajw_state, irq4_line_hold)
 
-	MCFG_CPU_ADD("audiocpu", Z80, 4000000) // unknown clock
-	MCFG_CPU_PROGRAM_MAP(segajw_audiocpu_map)
-	MCFG_CPU_IO_MAP(segajw_audiocpu_io_map)
+	MCFG_DEVICE_ADD("audiocpu", Z80, 4000000) // unknown clock
+	MCFG_DEVICE_PROGRAM_MAP(segajw_audiocpu_map)
+	MCFG_DEVICE_IO_MAP(segajw_audiocpu_io_map)
 
 	MCFG_QUANTUM_TIME(attotime::from_hz(2000))
 
 	MCFG_NVRAM_ADD_NO_FILL("nvram")
 
-	MCFG_DEVICE_ADD("io1a", SEGA_315_5296, 0) // unknown clock
-	MCFG_315_5296_OUT_PORTA_CB(WRITE8(segajw_state, coin_counter_w))
-	MCFG_315_5296_OUT_PORTB_CB(WRITE8(segajw_state, lamps1_w))
-	MCFG_315_5296_OUT_PORTC_CB(WRITE8(segajw_state, lamps2_w))
-	MCFG_315_5296_OUT_PORTD_CB(WRITE8(segajw_state, hopper_w))
-	MCFG_315_5296_IN_PORTF_CB(READ8(segajw_state, coin_counter_r))
+	sega_315_5296_device &io1a(SEGA_315_5296(config, "io1a", 0)); // unknown clock
+	io1a.out_pa_callback().set(FUNC(segajw_state::coin_counter_w));
+	io1a.out_pb_callback().set(FUNC(segajw_state::lamps1_w));
+	io1a.out_pc_callback().set(FUNC(segajw_state::lamps2_w));
+	io1a.out_pd_callback().set(FUNC(segajw_state::hopper_w));
+	io1a.in_pf_callback().set(FUNC(segajw_state::coin_counter_r));
 
-	MCFG_DEVICE_ADD("io1c", SEGA_315_5296, 0) // unknown clock
-	MCFG_315_5296_IN_PORTA_CB(IOPORT("IN0"))
-	MCFG_315_5296_IN_PORTB_CB(IOPORT("IN1"))
-	MCFG_315_5296_IN_PORTC_CB(IOPORT("IN2"))
-	MCFG_315_5296_IN_PORTD_CB(IOPORT("IN3"))
-	MCFG_315_5296_OUT_PORTG_CB(WRITE8(segajw_state, coinlockout_w))
+	sega_315_5296_device &io1c(SEGA_315_5296(config, "io1c", 0)); // unknown clock
+	io1c.in_pa_callback().set_ioport("IN0");
+	io1c.in_pb_callback().set_ioport("IN1");
+	io1c.in_pc_callback().set_ioport("IN2");
+	io1c.in_pd_callback().set_ioport("IN3");
+	io1c.out_pg_callback().set(FUNC(segajw_state::coinlockout_w));
 
 	/* video hardware */
 	MCFG_SCREEN_ADD("screen", RASTER)
@@ -414,14 +413,14 @@ MACHINE_CONFIG_START(segajw_state::segajw)
 	MCFG_HD63484_ADD("hd63484", 8000000, segajw_hd63484_map) // unknown clock
 
 	/* sound hardware */
-	MCFG_SPEAKER_STANDARD_MONO("mono")
+	SPEAKER(config, "mono").front_center();
 
 	MCFG_GENERIC_LATCH_8_ADD("soundlatch")
 	MCFG_GENERIC_LATCH_DATA_PENDING_CB(INPUTLINE("audiocpu", INPUT_LINE_NMI))
 
 	MCFG_GENERIC_LATCH_8_ADD("soundlatch2")
 
-	MCFG_SOUND_ADD("ymsnd", YM3438, 8000000)   // unknown clock
+	MCFG_DEVICE_ADD("ymsnd", YM3438, 8000000)   // unknown clock
 	MCFG_YM2612_IRQ_HANDLER(INPUTLINE("maincpu", 5))
 	MCFG_SOUND_ROUTE(ALL_OUTPUTS, "mono", 0.50)
 MACHINE_CONFIG_END
@@ -445,4 +444,4 @@ ROM_START( segajw )
 ROM_END
 
 
-GAMEL( 1991, segajw,  0,   segajw,  segajw, segajw_state,  0, ROT0, "Sega", "Joker's Wild (Rev. B)", MACHINE_IMPERFECT_SOUND | MACHINE_IMPERFECT_GRAPHICS | MACHINE_SUPPORTS_SAVE, layout_segajw )
+GAMEL( 1991, segajw, 0, segajw,  segajw, segajw_state, empty_init, ROT0, "Sega", "Joker's Wild (Rev. B)", MACHINE_IMPERFECT_SOUND | MACHINE_IMPERFECT_GRAPHICS | MACHINE_SUPPORTS_SAVE, layout_segajw )

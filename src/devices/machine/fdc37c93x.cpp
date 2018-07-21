@@ -235,23 +235,23 @@ FLOPPY_FORMATS_END
 MACHINE_CONFIG_START(fdc37c93x_device::device_add_mconfig)
 	// floppy disc controller
 	MCFG_SMC37C78_ADD("fdc")
-	MCFG_UPD765_INTRQ_CALLBACK(WRITELINE(fdc37c93x_device, irq_floppy_w))
-	MCFG_UPD765_DRQ_CALLBACK(WRITELINE(fdc37c93x_device, drq_floppy_w))
+	MCFG_UPD765_INTRQ_CALLBACK(WRITELINE(*this, fdc37c93x_device, irq_floppy_w))
+	MCFG_UPD765_DRQ_CALLBACK(WRITELINE(*this, fdc37c93x_device, drq_floppy_w))
 	MCFG_FLOPPY_DRIVE_ADD("fdc:0", pc_hd_floppies, "35hd", fdc37c93x_device::floppy_formats)
 	MCFG_FLOPPY_DRIVE_ADD("fdc:1", pc_hd_floppies, "35hd", fdc37c93x_device::floppy_formats)
 	// parallel port
 	MCFG_DEVICE_ADD("lpt", PC_LPT, 0)
-	MCFG_PC_LPT_IRQ_HANDLER(WRITELINE(fdc37c93x_device, irq_parallel_w))
+	MCFG_PC_LPT_IRQ_HANDLER(WRITELINE(*this, fdc37c93x_device, irq_parallel_w))
 	// RTC
 	MCFG_DS12885_ADD("rtc")
-	MCFG_MC146818_IRQ_HANDLER(WRITELINE(fdc37c93x_device, irq_rtc_w))
+	MCFG_MC146818_IRQ_HANDLER(WRITELINE(*this, fdc37c93x_device, irq_rtc_w))
 	MCFG_MC146818_CENTURY_INDEX(0x32)
 	// keyboard
 	MCFG_DEVICE_ADD("pc_kbdc", KBDC8042, 0)
 	MCFG_KBDC8042_KEYBOARD_TYPE(KBDC8042_PS2)
-	MCFG_KBDC8042_INPUT_BUFFER_FULL_CB(WRITELINE(fdc37c93x_device, irq_keyboard_w))
-	MCFG_KBDC8042_SYSTEM_RESET_CB(WRITELINE(fdc37c93x_device, kbdp20_gp20_reset_w))
-	MCFG_KBDC8042_GATE_A20_CB(WRITELINE(fdc37c93x_device, kbdp21_gp25_gatea20_w))
+	MCFG_KBDC8042_INPUT_BUFFER_FULL_CB(WRITELINE(*this, fdc37c93x_device, irq_keyboard_w))
+	MCFG_KBDC8042_SYSTEM_RESET_CB(WRITELINE(*this, fdc37c93x_device, kbdp20_gp20_reset_w))
+	MCFG_KBDC8042_GATE_A20_CB(WRITELINE(*this, fdc37c93x_device, kbdp21_gp25_gatea20_w))
 MACHINE_CONFIG_END
 
 WRITE_LINE_MEMBER(fdc37c93x_device::irq_floppy_w)
@@ -380,13 +380,13 @@ WRITE8_MEMBER(fdc37c93x_device::disabled_write)
 
 void fdc37c93x_device::unmap_fdc(address_map &map)
 {
-	map(0x0, 0x0).rw(this, FUNC(fdc37c93x_device::disabled_read), FUNC(fdc37c93x_device::disabled_write));
-	map(0x1, 0x1).rw(this, FUNC(fdc37c93x_device::disabled_read), FUNC(fdc37c93x_device::disabled_write));
-	map(0x2, 0x2).rw(this, FUNC(fdc37c93x_device::disabled_read), FUNC(fdc37c93x_device::disabled_write));
-	map(0x3, 0x3).rw(this, FUNC(fdc37c93x_device::disabled_read), FUNC(fdc37c93x_device::disabled_write));
-	map(0x4, 0x4).rw(this, FUNC(fdc37c93x_device::disabled_read), FUNC(fdc37c93x_device::disabled_write));
-	map(0x5, 0x5).rw(this, FUNC(fdc37c93x_device::disabled_read), FUNC(fdc37c93x_device::disabled_write));
-	map(0x7, 0x7).rw(this, FUNC(fdc37c93x_device::disabled_read), FUNC(fdc37c93x_device::disabled_write));
+	map(0x0, 0x0).rw(FUNC(fdc37c93x_device::disabled_read), FUNC(fdc37c93x_device::disabled_write));
+	map(0x1, 0x1).rw(FUNC(fdc37c93x_device::disabled_read), FUNC(fdc37c93x_device::disabled_write));
+	map(0x2, 0x2).rw(FUNC(fdc37c93x_device::disabled_read), FUNC(fdc37c93x_device::disabled_write));
+	map(0x3, 0x3).rw(FUNC(fdc37c93x_device::disabled_read), FUNC(fdc37c93x_device::disabled_write));
+	map(0x4, 0x4).rw(FUNC(fdc37c93x_device::disabled_read), FUNC(fdc37c93x_device::disabled_write));
+	map(0x5, 0x5).rw(FUNC(fdc37c93x_device::disabled_read), FUNC(fdc37c93x_device::disabled_write));
+	map(0x7, 0x7).rw(FUNC(fdc37c93x_device::disabled_read), FUNC(fdc37c93x_device::disabled_write));
 }
 #else
 void fdc37c93x_device::unmap_fdc(address_map &map)
@@ -417,7 +417,7 @@ void fdc37c93x_device::unmap_fdc_addresses()
 
 void fdc37c93x_device::map_lpt(address_map &map)
 {
-	map(0x0, 0x3).rw(this, FUNC(fdc37c93x_device::lpt_read), FUNC(fdc37c93x_device::lpt_write));
+	map(0x0, 0x3).rw(FUNC(fdc37c93x_device::lpt_read), FUNC(fdc37c93x_device::lpt_write));
 }
 
 READ8_MEMBER(fdc37c93x_device::lpt_read)
@@ -446,7 +446,7 @@ void fdc37c93x_device::unmap_lpt_addresses()
 
 void fdc37c93x_device::map_rtc(address_map &map)
 {
-	map(0x0, 0xf).rw(this, FUNC(fdc37c93x_device::rtc_read), FUNC(fdc37c93x_device::rtc_write));
+	map(0x0, 0xf).rw(FUNC(fdc37c93x_device::rtc_read), FUNC(fdc37c93x_device::rtc_write));
 }
 
 READ8_MEMBER(fdc37c93x_device::rtc_read)
@@ -475,8 +475,8 @@ void fdc37c93x_device::unmap_rtc_addresses()
 
 void fdc37c93x_device::map_keyboard(address_map &map)
 {
-	map(0x0, 0x0).rw(this, FUNC(fdc37c93x_device::at_keybc_r), FUNC(fdc37c93x_device::at_keybc_w));
-	map(0x4, 0x4).rw(this, FUNC(fdc37c93x_device::keybc_status_r), FUNC(fdc37c93x_device::keybc_command_w));
+	map(0x0, 0x0).rw(FUNC(fdc37c93x_device::at_keybc_r), FUNC(fdc37c93x_device::at_keybc_w));
+	map(0x4, 0x4).rw(FUNC(fdc37c93x_device::keybc_status_r), FUNC(fdc37c93x_device::keybc_command_w));
 }
 
 void fdc37c93x_device::unmap_keyboard(address_map &map)
@@ -531,7 +531,21 @@ void fdc37c93x_device::unmap_keyboard_addresses()
 
 void fdc37c93x_device::remap(int space_id, offs_t start, offs_t end)
 {
-	//printf("remapping needed %d %d %d\n\r", space_id, start, end);
+	if (space_id == AS_IO)
+	{
+		if (sysopt_pin == 0)
+			m_isa->install_device(0x03f0, 0x03f3, read8_delegate(FUNC(fdc37c93x_device::read_fdc37c93x), this), write8_delegate(FUNC(fdc37c93x_device::write_fdc37c93x), this));
+		else
+			m_isa->install_device(0x0370, 0x0373, read8_delegate(FUNC(fdc37c93x_device::read_fdc37c93x), this), write8_delegate(FUNC(fdc37c93x_device::write_fdc37c93x), this));
+		if (enabled_logical[LogicalDevice::FDC] == true)
+			map_fdc_addresses();
+		if (enabled_logical[LogicalDevice::Parallel] == true)
+			map_lpt_addresses();
+		if (enabled_logical[LogicalDevice::RTC] == true)
+			map_rtc_addresses();
+		if (enabled_logical[LogicalDevice::Keyboard] == true)
+			map_keyboard_addresses();
+	}
 }
 
 /* Register access */
@@ -767,10 +781,7 @@ void fdc37c93x_device::device_start()
 	m_isa->set_dma_channel(1, this, true);
 	m_isa->set_dma_channel(2, this, true);
 	m_isa->set_dma_channel(3, this, true);
-	if (sysopt_pin == 0)
-		m_isa->install_device(0x03f0, 0x03f3, read8_delegate(FUNC(fdc37c93x_device::read_fdc37c93x), this), write8_delegate(FUNC(fdc37c93x_device::write_fdc37c93x), this));
-	else
-		m_isa->install_device(0x0370, 0x0373, read8_delegate(FUNC(fdc37c93x_device::read_fdc37c93x), this), write8_delegate(FUNC(fdc37c93x_device::write_fdc37c93x), this));
+	remap(AS_IO, 0, 0x400);
 	m_gp20_reset_callback.resolve_safe();
 	m_gp25_gatea20_callback.resolve_safe();
 	m_irq1_callback.resolve_safe();

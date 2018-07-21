@@ -26,6 +26,7 @@ and an unpopulated position for a YM2413 or UM3567
 #include "sound/ay8910.h"
 #include "machine/nvram.h"
 #include "machine/ticket.h"
+#include "emupal.h"
 #include "screen.h"
 #include "speaker.h"
 
@@ -241,7 +242,7 @@ uint32_t fun_tech_corp_state::screen_update(screen_device &screen, bitmap_ind16 
 INTERRUPT_GEN_MEMBER(fun_tech_corp_state::vblank_interrupt)
 {
 //  if (m_nmi_enable)
-		device.execute().set_input_line(INPUT_LINE_NMI, PULSE_LINE);
+		device.execute().pulse_input_line(INPUT_LINE_NMI, attotime::zero);
 }
 
 
@@ -257,10 +258,10 @@ void fun_tech_corp_state::funtech_map(address_map &map)
 
 	map(0xd800, 0xdfff).ram().share("nvram");
 
-	map(0xe000, 0xefff).ram().w(this, FUNC(fun_tech_corp_state::fgram_w)).share("fgram");
-	map(0xf000, 0xf1ff).ram().w(this, FUNC(fun_tech_corp_state::reel1_ram_w)).share("reel1ram");
-	map(0xf200, 0xf3ff).ram().w(this, FUNC(fun_tech_corp_state::reel2_ram_w)).share("reel2ram");
-	map(0xf400, 0xf5ff).ram().w(this, FUNC(fun_tech_corp_state::reel3_ram_w)).share("reel3ram");
+	map(0xe000, 0xefff).ram().w(FUNC(fun_tech_corp_state::fgram_w)).share("fgram");
+	map(0xf000, 0xf1ff).ram().w(FUNC(fun_tech_corp_state::reel1_ram_w)).share("reel1ram");
+	map(0xf200, 0xf3ff).ram().w(FUNC(fun_tech_corp_state::reel2_ram_w)).share("reel2ram");
+	map(0xf400, 0xf5ff).ram().w(FUNC(fun_tech_corp_state::reel3_ram_w)).share("reel3ram");
 	map(0xf600, 0xf7ff).ram();
 
 	map(0xf840, 0xf87f).ram().share("reel1_scroll");
@@ -321,10 +322,10 @@ void fun_tech_corp_state::funtech_io_map(address_map &map)
 {
 	map.global_mask(0xff);
 	// lamps?
-	map(0x00, 0x00).w(this, FUNC(fun_tech_corp_state::lamps_w));
-	map(0x01, 0x01).w(this, FUNC(fun_tech_corp_state::coins_w));
+	map(0x00, 0x00).w(FUNC(fun_tech_corp_state::lamps_w));
+	map(0x01, 0x01).w(FUNC(fun_tech_corp_state::coins_w));
 
-	map(0x03, 0x03).w(this, FUNC(fun_tech_corp_state::vreg_w));
+	map(0x03, 0x03).w(FUNC(fun_tech_corp_state::vreg_w));
 
 	map(0x04, 0x04).portr("IN0");
 	map(0x05, 0x05).portr("IN1");
@@ -471,7 +472,7 @@ static const gfx_layout tiles8x8_layout =
 };
 
 
-static GFXDECODE_START( funtech )
+static GFXDECODE_START( gfx_funtech )
 	GFXDECODE_ENTRY( "gfx1", 0, tiles8x8_layout, 0, 16 )
 	GFXDECODE_ENTRY( "gfx2", 0, tiles8x32_layout, 0x100, 1 )
 GFXDECODE_END
@@ -488,10 +489,10 @@ void fun_tech_corp_state::machine_start()
 MACHINE_CONFIG_START(fun_tech_corp_state::funtech)
 
 	/* basic machine hardware */
-	MCFG_CPU_ADD("maincpu", Z80, 4000000)         /* ? MHz */
-	MCFG_CPU_PROGRAM_MAP(funtech_map)
-	MCFG_CPU_IO_MAP(funtech_io_map)
-	MCFG_CPU_VBLANK_INT_DRIVER("screen", fun_tech_corp_state, vblank_interrupt)
+	MCFG_DEVICE_ADD("maincpu", Z80, 4000000)         /* ? MHz */
+	MCFG_DEVICE_PROGRAM_MAP(funtech_map)
+	MCFG_DEVICE_IO_MAP(funtech_io_map)
+	MCFG_DEVICE_VBLANK_INT_DRIVER("screen", fun_tech_corp_state, vblank_interrupt)
 
 	/* video hardware */
 	MCFG_SCREEN_ADD("screen", RASTER)
@@ -502,7 +503,7 @@ MACHINE_CONFIG_START(fun_tech_corp_state::funtech)
 	MCFG_SCREEN_UPDATE_DRIVER(fun_tech_corp_state, screen_update)
 	MCFG_SCREEN_PALETTE("palette")
 
-	MCFG_GFXDECODE_ADD("gfxdecode", "palette", funtech)
+	MCFG_DEVICE_ADD("gfxdecode", GFXDECODE, "palette", gfx_funtech)
 	MCFG_PALETTE_ADD("palette", 0x200)
 	MCFG_PALETTE_FORMAT(xBBBBBGGGGGRRRRR)
 
@@ -511,9 +512,9 @@ MACHINE_CONFIG_START(fun_tech_corp_state::funtech)
 	MCFG_TICKET_DISPENSER_ADD("hopper", attotime::from_msec(50), TICKET_MOTOR_ACTIVE_HIGH, TICKET_STATUS_ACTIVE_HIGH)
 
 	/* sound hardware */
-	MCFG_SPEAKER_STANDARD_MONO("mono")
+	SPEAKER(config, "mono").front_center();
 
-	MCFG_SOUND_ADD("aysnd", AY8910, 1500000) /* M5255, ? MHz */
+	MCFG_DEVICE_ADD("aysnd", AY8910, 1500000) /* M5255, ? MHz */
 	MCFG_SOUND_ROUTE(ALL_OUTPUTS, "mono", 1.00)
 MACHINE_CONFIG_END
 
@@ -531,4 +532,4 @@ ROM_START( fts2in1 )
 	ROM_LOAD16_BYTE( "u30.bin", 0x00001, 0x20000, CRC(d572bddc) SHA1(06499aeb47085a02af9eb4987ed987f9a3a397f7) )
 ROM_END
 
-GAMEL( 1993, fts2in1,  0,    funtech, funtech, fun_tech_corp_state,  0, ROT0, "Fun Tech Corporation", "Super Two In One", 0, layout_fts2in1 )
+GAMEL( 1993, fts2in1, 0, funtech, funtech, fun_tech_corp_state, empty_init, ROT0, "Fun Tech Corporation", "Super Two In One", 0, layout_fts2in1 )

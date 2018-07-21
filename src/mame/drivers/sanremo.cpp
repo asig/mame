@@ -95,6 +95,7 @@
 #include "machine/nvram.h"
 #include "sound/ay8910.h"
 #include "video/mc6845.h"
+#include "emupal.h"
 #include "screen.h"
 #include "speaker.h"
 
@@ -233,7 +234,7 @@ WRITE8_MEMBER(sanremo_state::banksel_w)
 void sanremo_state::sanremo_map(address_map &map)
 {
 	map(0x0000, 0x7fff).rom();
-	map(0x8000, 0x87ff).ram().w(this, FUNC(sanremo_state::videoram_w)).share("videoram");  // 2x 76C28 (1x accessed directly, latched bank written to other like subsino etc.)
+	map(0x8000, 0x87ff).ram().w(FUNC(sanremo_state::videoram_w)).share("videoram");  // 2x 76C28 (1x accessed directly, latched bank written to other like subsino etc.)
 	map(0xc000, 0xc7ff).ram().share("nvram");                               // battery backed UM6116
 }
 
@@ -243,10 +244,10 @@ void sanremo_state::sanremo_portmap(address_map &map)
 	map(0x01, 0x01).portr("IN0");
 	map(0x02, 0x02).portr("IN1");
 	map(0x04, 0x04).w("crtc", FUNC(mc6845_device::address_w));
-	map(0x05, 0x05).w(this, FUNC(sanremo_state::lamps_w));
+	map(0x05, 0x05).w(FUNC(sanremo_state::lamps_w));
 	map(0x14, 0x14).rw("crtc", FUNC(mc6845_device::register_r), FUNC(mc6845_device::register_w));
 	map(0x17, 0x17).w("ay8910", FUNC(ay8910_device::data_w));
-	map(0x24, 0x24).w(this, FUNC(sanremo_state::banksel_w));
+	map(0x24, 0x24).w(FUNC(sanremo_state::banksel_w));
 	map(0x27, 0x27).r("ay8910", FUNC(ay8910_device::data_r));
 	map(0x37, 0x37).w("ay8910", FUNC(ay8910_device::address_w));
 }
@@ -344,7 +345,7 @@ static const gfx_layout tilelayout =
 *           Graphics Decode Information           *
 **************************************************/
 
-static GFXDECODE_START( sanremo )
+static GFXDECODE_START( gfx_sanremo )
 	GFXDECODE_ENTRY( "gfx",  0,   tilelayout, 0, 1 )
 GFXDECODE_END
 
@@ -356,10 +357,10 @@ GFXDECODE_END
 MACHINE_CONFIG_START(sanremo_state::sanremo)
 
 	/* basic machine hardware */
-	MCFG_CPU_ADD("maincpu", Z80, CPU_CLOCK)
-	MCFG_CPU_PROGRAM_MAP(sanremo_map)
-	MCFG_CPU_IO_MAP(sanremo_portmap)
-	MCFG_CPU_VBLANK_INT_DRIVER("screen", sanremo_state, irq0_line_hold)
+	MCFG_DEVICE_ADD("maincpu", Z80, CPU_CLOCK)
+	MCFG_DEVICE_PROGRAM_MAP(sanremo_map)
+	MCFG_DEVICE_IO_MAP(sanremo_portmap)
+	MCFG_DEVICE_VBLANK_INT_DRIVER("screen", sanremo_state, irq0_line_hold)
 
 	MCFG_NVRAM_ADD_0FILL("nvram")
 
@@ -380,13 +381,13 @@ MACHINE_CONFIG_START(sanremo_state::sanremo)
 	MCFG_MC6845_SHOW_BORDER_AREA(false)
 	MCFG_MC6845_CHAR_WIDTH(8)
 
-	MCFG_GFXDECODE_ADD("gfxdecode", "palette", sanremo)
+	MCFG_DEVICE_ADD("gfxdecode", GFXDECODE, "palette", gfx_sanremo)
 	MCFG_PALETTE_ADD("palette", 0x10)
 	MCFG_PALETTE_INIT_OWNER(sanremo_state, sanremo)
 
 	/* sound hardware */
-	MCFG_SPEAKER_STANDARD_MONO("mono")
-	MCFG_SOUND_ADD("ay8910", AY8910, SND_CLOCK)
+	SPEAKER(config, "mono").front_center();
+	MCFG_DEVICE_ADD("ay8910", AY8910, SND_CLOCK)
 	MCFG_AY8910_PORT_A_READ_CB(IOPORT("DSW"))
 	MCFG_SOUND_ROUTE(ALL_OUTPUTS, "mono", 1.00)
 MACHINE_CONFIG_END
@@ -420,5 +421,5 @@ ROM_END
 *                Game Drivers                *
 *********************************************/
 
-//     YEAR  NAME     PARENT  MACHINE  INPUT    STATE          INIT   ROT   COMPANY           FULLNAME       FLAGS                    LAYOUT
-GAMEL( 1996, number1, 0,      sanremo, number1, sanremo_state, 0,     ROT0, "San Remo Games", "Number One",  MACHINE_SUPPORTS_SAVE,   layout_sanremo )
+//     YEAR  NAME     PARENT  MACHINE  INPUT    CLASS          INIT        ROT   COMPANY           FULLNAME       FLAGS                    LAYOUT
+GAMEL( 1996, number1, 0,      sanremo, number1, sanremo_state, empty_init, ROT0, "San Remo Games", "Number One",  MACHINE_SUPPORTS_SAVE,   layout_sanremo )

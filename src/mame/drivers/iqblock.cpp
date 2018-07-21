@@ -56,6 +56,7 @@ Grndtour:
 #include "cpu/z180/z180.h"
 #include "machine/i8255.h"
 #include "sound/ym2413.h"
+#include "emupal.h"
 #include "screen.h"
 #include "speaker.h"
 
@@ -86,7 +87,7 @@ TIMER_DEVICE_CALLBACK_MEMBER(iqblock_state::irq)
 	if((scanline % 32) == 16)
 		m_maincpu->set_input_line(0, HOLD_LINE);
 	else if ((scanline % 32) == 0)
-		m_maincpu->set_input_line(INPUT_LINE_NMI, PULSE_LINE);
+		m_maincpu->pulse_input_line(INPUT_LINE_NMI, attotime::zero);
 }
 
 
@@ -124,10 +125,10 @@ void iqblock_state::main_portmap(address_map &map)
 	map(0x5090, 0x5090).portr("SW0");
 	map(0x50a0, 0x50a0).portr("SW1");
 	map(0x50b0, 0x50b1).w("ymsnd", FUNC(ym2413_device::write)); // UM3567_data_port_0_w
-	map(0x50c0, 0x50c0).w(this, FUNC(iqblock_state::irqack_w));
-	map(0x6000, 0x603f).w(this, FUNC(iqblock_state::fgscroll_w));
-	map(0x6800, 0x69ff).w(this, FUNC(iqblock_state::fgvideoram_w)).share("fgvideoram"); /* initialized up to 6fff... bug or larger tilemap? */
-	map(0x7000, 0x7fff).ram().w(this, FUNC(iqblock_state::bgvideoram_w)).share("bgvideoram");
+	map(0x50c0, 0x50c0).w(FUNC(iqblock_state::irqack_w));
+	map(0x6000, 0x603f).w(FUNC(iqblock_state::fgscroll_w));
+	map(0x6800, 0x69ff).w(FUNC(iqblock_state::fgvideoram_w)).share("fgvideoram"); /* initialized up to 6fff... bug or larger tilemap? */
+	map(0x7000, 0x7fff).ram().w(FUNC(iqblock_state::bgvideoram_w)).share("bgvideoram");
 	map(0x8000, 0xffff).rom().region("user1", 0);
 }
 
@@ -332,7 +333,7 @@ static const gfx_layout tilelayout3 =
 };
 #endif
 
-static GFXDECODE_START( iqblock )
+static GFXDECODE_START( gfx_iqblock )
 	GFXDECODE_ENTRY( "gfx1", 0, tilelayout1, 0, 16 )    /* only odd color codes are used */
 	GFXDECODE_ENTRY( "gfx2", 0, tilelayout2, 0,  4 )    /* only color codes 0 and 3 used */
 GFXDECODE_END
@@ -342,16 +343,16 @@ GFXDECODE_END
 MACHINE_CONFIG_START(iqblock_state::iqblock)
 
 	/* basic machine hardware */
-	MCFG_CPU_ADD("maincpu", Z80,12000000/2) /* 6 MHz */
-	MCFG_CPU_PROGRAM_MAP(main_map)
-	MCFG_CPU_IO_MAP(main_portmap)
+	MCFG_DEVICE_ADD("maincpu", Z80,12000000/2) /* 6 MHz */
+	MCFG_DEVICE_PROGRAM_MAP(main_map)
+	MCFG_DEVICE_IO_MAP(main_portmap)
 	MCFG_TIMER_DRIVER_ADD_SCANLINE("scantimer", iqblock_state, irq, "screen", 0, 1)
 
 	MCFG_DEVICE_ADD("ppi8255", I8255A, 0)
 	MCFG_I8255_IN_PORTA_CB(IOPORT("P1"))
 	MCFG_I8255_IN_PORTB_CB(IOPORT("P2"))
 	MCFG_I8255_IN_PORTC_CB(IOPORT("EXTRA"))
-	MCFG_I8255_OUT_PORTC_CB(WRITE8(iqblock_state, port_C_w))
+	MCFG_I8255_OUT_PORTC_CB(WRITE8(*this, iqblock_state, port_C_w))
 
 	/* video hardware */
 	MCFG_SCREEN_ADD("screen", RASTER)
@@ -362,14 +363,14 @@ MACHINE_CONFIG_START(iqblock_state::iqblock)
 	MCFG_SCREEN_UPDATE_DRIVER(iqblock_state, screen_update)
 	MCFG_SCREEN_PALETTE("palette")
 
-	MCFG_GFXDECODE_ADD("gfxdecode", "palette", iqblock)
+	MCFG_DEVICE_ADD("gfxdecode", GFXDECODE, "palette", gfx_iqblock)
 	MCFG_PALETTE_ADD("palette", 1024)
 	MCFG_PALETTE_FORMAT(xBBBBBGGGGGRRRRR)
 
 	/* sound hardware */
-	MCFG_SPEAKER_STANDARD_MONO("mono")
+	SPEAKER(config, "mono").front_center();
 
-	MCFG_SOUND_ADD("ymsnd", YM2413, 3579545)
+	MCFG_DEVICE_ADD("ymsnd", YM2413, 3579545)
 	MCFG_SOUND_ROUTE(ALL_OUTPUTS, "mono", 1.0)
 MACHINE_CONFIG_END
 
@@ -478,13 +479,11 @@ ROM_START( grndtour )
 	ROM_LOAD( "grand5.u24",        0x4000, 0x4000, CRC(f896efb2) SHA1(8dc8546e363b4ff80983e3b8e2a19ebb7ff30c7b) )
 ROM_END
 
-DRIVER_INIT_MEMBER(iqblock_state,iqblock)
+void iqblock_state::init_iqblock()
 {
 	uint8_t *rom = memregion("maincpu")->base();
-	int i;
-
 	/* decrypt the program ROM */
-	for (i = 0;i < 0xf000;i++)
+	for (int i = 0; i < 0xf000; i++)
 	{
 		if ((i & 0x0282) != 0x0282) rom[i] ^= 0x01;
 		if ((i & 0x0940) == 0x0940) rom[i] ^= 0x02;
@@ -495,13 +494,11 @@ DRIVER_INIT_MEMBER(iqblock_state,iqblock)
 	m_video_type=1;
 }
 
-DRIVER_INIT_MEMBER(iqblock_state,grndtour)
+void iqblock_state::init_grndtour()
 {
 	uint8_t *rom = memregion("maincpu")->base();
-	int i;
-
 	/* decrypt the program ROM */
-	for (i = 0;i < 0xf000;i++)
+	for (int i = 0; i < 0xf000; i++)
 	{
 		if ((i & 0x0282) != 0x0282) rom[i] ^= 0x01;
 		if ((i & 0x0940) == 0x0940) rom[i] ^= 0x02;
@@ -514,5 +511,5 @@ DRIVER_INIT_MEMBER(iqblock_state,grndtour)
 
 
 
-GAME( 1993, iqblock,  0, iqblock,  iqblock, iqblock_state, iqblock,  ROT0, "IGS", "IQ-Block (V100U)",   MACHINE_SUPPORTS_SAVE )
-GAME( 1993, grndtour, 0, iqblock,  grndtour,iqblock_state, grndtour, ROT0, "IGS", "Grand Tour (V100U)", MACHINE_SUPPORTS_SAVE )
+GAME( 1993, iqblock,  0, iqblock, iqblock,  iqblock_state, init_iqblock,  ROT0, "IGS", "IQ-Block (V100U)",   MACHINE_SUPPORTS_SAVE )
+GAME( 1993, grndtour, 0, iqblock, grndtour, iqblock_state, init_grndtour, ROT0, "IGS", "Grand Tour (V100U)", MACHINE_SUPPORTS_SAVE )

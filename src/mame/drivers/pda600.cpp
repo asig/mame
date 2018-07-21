@@ -59,6 +59,7 @@
 #include "cpu/z180/z180.h"
 #include "machine/nvram.h"
 #include "machine/hd64610.h"
+#include "emupal.h"
 #include "rendlay.h"
 #include "screen.h"
 
@@ -71,6 +72,9 @@ public:
 			m_maincpu(*this, "maincpu")
 		{}
 
+	void pda600(machine_config &config);
+
+private:
 	required_device<cpu_device> m_maincpu;
 
 	virtual void video_start() override;
@@ -78,7 +82,6 @@ public:
 	uint32_t screen_update(screen_device &screen, bitmap_ind16 &bitmap, const rectangle &cliprect);
 
 	uint8_t *     m_video_ram;
-	void pda600(machine_config &config);
 	void pda600_io(address_map &map);
 	void pda600_mem(address_map &map);
 };
@@ -192,7 +195,7 @@ static const gfx_layout pda600_charlayout_19a =
 	8*19
 };
 
-static GFXDECODE_START( pda600 )
+static GFXDECODE_START( gfx_pda600 )
 	GFXDECODE_ENTRY( "maincpu", 0x45cd, pda600_charlayout_19, 0, 1 )
 	GFXDECODE_ENTRY( "maincpu", 0x4892, pda600_charlayout_19a, 0, 1 )
 	GFXDECODE_ENTRY( "maincpu", 0x4d73, pda600_charlayout_8, 0, 1 )
@@ -203,9 +206,9 @@ GFXDECODE_END
 
 MACHINE_CONFIG_START(pda600_state::pda600)
 	/* basic machine hardware */
-	MCFG_CPU_ADD("maincpu",Z180, XTAL(14'318'181))
-	MCFG_CPU_PROGRAM_MAP(pda600_mem)
-	MCFG_CPU_IO_MAP(pda600_io)
+	MCFG_DEVICE_ADD("maincpu",Z180, XTAL(14'318'181))
+	MCFG_DEVICE_PROGRAM_MAP(pda600_mem)
+	MCFG_DEVICE_IO_MAP(pda600_io)
 
 	/* video hardware */
 	MCFG_SCREEN_ADD("screen", LCD)
@@ -216,8 +219,8 @@ MACHINE_CONFIG_START(pda600_state::pda600)
 	MCFG_SCREEN_UPDATE_DRIVER( pda600_state, screen_update )
 	MCFG_SCREEN_PALETTE("palette")
 
-	MCFG_GFXDECODE_ADD("gfxdecode", "palette", pda600)
-	MCFG_DEFAULT_LAYOUT(layout_lcd)
+	MCFG_DEVICE_ADD("gfxdecode", GFXDECODE, "palette", gfx_pda600)
+	config.set_default_layout(layout_lcd);
 	MCFG_PALETTE_ADD_MONOCHROME("palette")
 
 	// NVRAM needs to be filled with random data to fail the checksum and be initialized correctly
@@ -240,5 +243,5 @@ ROM_END
 
 /* Driver */
 
-/*    YEAR  NAME     PARENT  COMPAT  MACHINE    INPUT    STATE          INIT  COMPANY        FULLNAME          FLAGS */
-COMP( 1993, pda600,  0,      0,      pda600,    pda600,  pda600_state,  0,    "Amstrad plc", "PenPad PDA 600", MACHINE_NOT_WORKING | MACHINE_NO_SOUND)
+/*    YEAR  NAME    PARENT  COMPAT  MACHINE  INPUT   CLASS         INIT        COMPANY        FULLNAME          FLAGS */
+COMP( 1993, pda600, 0,      0,      pda600,  pda600, pda600_state, empty_init, "Amstrad plc", "PenPad PDA 600", MACHINE_NOT_WORKING | MACHINE_NO_SOUND)

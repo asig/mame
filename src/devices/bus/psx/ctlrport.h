@@ -82,10 +82,10 @@ private:
 };
 
 #define MCFG_PSX_CONTROLLER_PORTS_DSR_HANDLER(_devcb) \
-	devcb = &downcast<psxcontrollerports_device &>(*device).set_dsr_handler(DEVCB_##_devcb);
+	downcast<psxcontrollerports_device &>(*device).set_dsr_handler(DEVCB_##_devcb);
 
 #define MCFG_PSX_CONTROLLER_PORTS_RXD_HANDLER(_devcb) \
-	devcb = &downcast<psxcontrollerports_device &>(*device).set_rxd_handler(DEVCB_##_devcb);
+	downcast<psxcontrollerports_device &>(*device).set_rxd_handler(DEVCB_##_devcb);
 
 class psxcontrollerports_device : public device_t
 {
@@ -105,8 +105,8 @@ protected:
 	virtual void device_start() override;
 
 private:
-	psx_controller_port_device *m_port0;
-	psx_controller_port_device *m_port1;
+	required_device<psx_controller_port_device> m_port0;
+	required_device<psx_controller_port_device> m_port1;
 
 	devcb_write_line m_dsr_handler;
 	devcb_write_line m_rxd_handler;

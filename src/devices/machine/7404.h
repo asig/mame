@@ -62,31 +62,28 @@
 
 
 #define MCFG_7404_Y1_CB(_devcb) \
-	devcb = &downcast<ttl7404_device &>(*device).set_y1_cb(DEVCB_##_devcb);
+	downcast<ttl7404_device &>(*device).set_y1_cb(DEVCB_##_devcb);
 
 #define MCFG_7404_Y2_CB(_devcb) \
-	devcb = &downcast<ttl7404_device &>(*device).set_y2_cb(DEVCB_##_devcb);
+	downcast<ttl7404_device &>(*device).set_y2_cb(DEVCB_##_devcb);
 
 #define MCFG_7404_Y3_CB(_devcb) \
-	devcb = &downcast<ttl7404_device &>(*device).set_y3_cb(DEVCB_##_devcb);
+	downcast<ttl7404_device &>(*device).set_y3_cb(DEVCB_##_devcb);
 
 #define MCFG_7404_Y4_CB(_devcb) \
-	devcb = &downcast<ttl7404_device &>(*device).set_y4_cb(DEVCB_##_devcb);
+	downcast<ttl7404_device &>(*device).set_y4_cb(DEVCB_##_devcb);
 
 #define MCFG_7404_Y5_CB(_devcb) \
-	devcb = &downcast<ttl7404_device &>(*device).set_y5_cb(DEVCB_##_devcb);
+	downcast<ttl7404_device &>(*device).set_y5_cb(DEVCB_##_devcb);
 
 #define MCFG_7404_Y6_CB(_devcb) \
-	devcb = &downcast<ttl7404_device &>(*device).set_y6_cb(DEVCB_##_devcb);
-
-#define MCFG_7404_ADD(_tag) \
-	MCFG_DEVICE_ADD(_tag, TTL7404, 0)
+	downcast<ttl7404_device &>(*device).set_y6_cb(DEVCB_##_devcb);
 
 class ttl7404_device : public device_t
 {
 public:
 	// construction/destruction
-	ttl7404_device(const machine_config &mconfig, const char *tag, device_t *owner, uint32_t clock);
+	ttl7404_device(const machine_config &mconfig, const char *tag, device_t *owner, uint32_t clock = 0);
 
 	// static configuration helpers
 	template <class Object> devcb_base &set_y1_cb(Object &&cb) { return m_y1_func.set_callback(std::forward<Object>(cb)); }

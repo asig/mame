@@ -28,37 +28,54 @@
 **************************************************************************/
 
 #include "emu.h"
-#include "speaker.h"
-#include "video/k053250_ps.h"
-#include "machine/nvram.h"
-#include "machine/timer.h"
-#include "cpu/m68000/m68000.h"
-#include "sound/k054539.h"
+
 #include "includes/konamigx.h" // TODO: WHY?
-#include "video/konami_helper.h"
-#include "machine/ticket.h"
+
+#include "cpu/m68000/m68000.h"
 #include "machine/gen_latch.h"
 #include "machine/k053252.h"
-#include "video/k055555.h"
-#include "video/k054000.h"
+#include "machine/nvram.h"
+#include "machine/ticket.h"
+#include "machine/timer.h"
+#include "sound/k054539.h"
 #include "video/k053246_k053247_k055673.h"
+#include "video/k053250_ps.h"
+#include "video/k054000.h"
+#include "video/k055555.h"
+#include "video/konami_helper.h"
+
+#include "speaker.h"
+
 
 class piratesh_state : public driver_device
 {
 public:
-	piratesh_state(const machine_config &mconfig, device_type type, const char *tag)
-	: driver_device(mconfig, type, tag),
-	m_maincpu(*this,"maincpu"),
-	m_k053250(*this, "k053250"),
-	m_k053252(*this, "k053252"),
-	m_k056832(*this, "k056832"),
-	m_k055673(*this, "k055673"),
-	m_k055555(*this, "k055555"),
-//  m_k053246(*this, "k053246"),
-	m_k054539(*this, "k054539"),
-	m_spriteram(*this,"spriteram")
+	piratesh_state(const machine_config &mconfig, device_type type, const char *tag) :
+		driver_device(mconfig, type, tag),
+		m_maincpu(*this,"maincpu"),
+		m_k053250(*this, "k053250"),
+		m_k053252(*this, "k053252"),
+		m_k056832(*this, "k056832"),
+		m_k055673(*this, "k055673"),
+		m_k055555(*this, "k055555"),
+		//m_k053246(*this, "k053246"),
+		m_k054539(*this, "k054539"),
+		m_tickets(*this, "ticket"),
+		m_hopper(*this, "hopper"),
+		m_spriteram(*this,"spriteram")
 	{ }
 
+	void piratesh(machine_config &config);
+
+	DECLARE_CUSTOM_INPUT_MEMBER(helm_r);
+	DECLARE_CUSTOM_INPUT_MEMBER(battery_r);
+
+protected:
+	virtual void machine_start() override;
+	virtual void machine_reset() override;
+	virtual void video_start() override;
+
+private:
 	required_device<cpu_device> m_maincpu;
 
 	required_device<k053250ps_device> m_k053250;
@@ -68,6 +85,9 @@ public:
 	required_device<k055555_device> m_k055555;
 	required_device<k054539_device> m_k054539;
 //  required_device<k053247_device> m_k053246;
+
+	required_device<ticket_dispenser_device> m_tickets;
+	required_device<ticket_dispenser_device> m_hopper;
 
 	optional_shared_ptr<uint16_t> m_spriteram;
 
@@ -92,18 +112,12 @@ public:
 	DECLARE_WRITE16_MEMBER(k053247_scattered_word_w);
 	DECLARE_READ16_MEMBER(k053247_martchmp_word_r);
 	DECLARE_WRITE16_MEMBER(k053247_martchmp_word_w);
-	DECLARE_CUSTOM_INPUT_MEMBER(helm_r);
-	DECLARE_CUSTOM_INPUT_MEMBER(battery_r);
 
-	DECLARE_MACHINE_START(piratesh);
-	DECLARE_MACHINE_RESET(piratesh);
-	DECLARE_VIDEO_START(piratesh);
 	uint32_t screen_update_piratesh(screen_device &screen, bitmap_rgb32 &bitmap, const rectangle &cliprect);
 	DECLARE_WRITE_LINE_MEMBER(k054539_nmi_gen);
 	TIMER_DEVICE_CALLBACK_MEMBER(piratesh_interrupt);
 	K056832_CB_MEMBER(piratesh_tile_callback);
 	K055673_CB_MEMBER(piratesh_sprite_callback);
-	void piratesh(machine_config &config);
 	void piratesh_map(address_map &map);
 };
 
@@ -131,7 +145,7 @@ K056832_CB_MEMBER(piratesh_state::piratesh_tile_callback)
 	// Color
 	// Flags
 //  if (*color != 0)
-//      printf("%x %x %x\n", layer, *code, *color >> 2);
+//      logerror("%x %x %x\n", layer, *code, *color >> 2);
 
 	*color = (m_layer_colorbase[layer] << 4) + ((*color >> 2));// & 0x0f);
 }
@@ -181,7 +195,7 @@ K055673_CB_MEMBER(piratesh_state::piratesh_sprite_callback)
 
 
 
-VIDEO_START_MEMBER(piratesh_state, piratesh)
+void piratesh_state::video_start()
 {
 	// TODO: These come from the 055555
 	m_layer_colorbase[0] = 0;
@@ -339,7 +353,7 @@ WRITE16_MEMBER(piratesh_state::control1_w)
 	// .... x... .... ....      - Lamp? (active when waiting to start game)
 
 	if (data & ~0x0f00)
-		printf("CTRL3: %x %x %x\n", offset, data, mem_mask);
+		logerror("CTRL3: %x %x %x\n", offset, data, mem_mask);
 }
 
 WRITE16_MEMBER(piratesh_state::control2_w)
@@ -361,7 +375,7 @@ WRITE16_MEMBER(piratesh_state::control2_w)
 	update_interrupts();
 
 	if (data & ~0xfbf0)
-		printf("CTRL2: %x %x %x\n", offset, data, mem_mask);
+		logerror("CTRL2: %x %x %x\n", offset, data, mem_mask);
 }
 
 WRITE16_MEMBER(piratesh_state::control3_w)
@@ -373,11 +387,11 @@ WRITE16_MEMBER(piratesh_state::control3_w)
 	// .... ...x .... ....      - Unknown (always 1?)
 
 	if ((data & ~0x0133) || (~data & 0x100))
-		printf("CTRL1 W: %x %x %x\n", offset, data, mem_mask);
+		logerror("CTRL1 W: %x %x %x\n", offset, data, mem_mask);
 
-//  printf("CTRL 1: %x\n", data & 0x0010);
-	machine().device<ticket_dispenser_device>("ticket")->motor_w(data & 0x0010 ? 1 : 0);
-	machine().device<ticket_dispenser_device>("hopper")->motor_w(data & 0x0020 ? 1 : 0);
+//  logerror("CTRL 1: %x\n", data & 0x0010);
+	m_tickets->motor_w(data & 0x0010 ? 1 : 0);
+	m_hopper->motor_w(data & 0x0020 ? 1 : 0);
 
 	m_control = data;
 }
@@ -403,10 +417,10 @@ void piratesh_state::piratesh_map(address_map &map)
 	map(0x400004, 0x400005).portr("DSW1");
 	map(0x400006, 0x400007).portr("DSW2");
 	map(0x400008, 0x400009).portr("SPECIAL");
-	map(0x40000c, 0x40000d).w(this, FUNC(piratesh_state::control1_w));
-	map(0x400010, 0x400011).w(this, FUNC(piratesh_state::control2_w));
-	map(0x400014, 0x400015).w(this, FUNC(piratesh_state::control3_w));
-	map(0x500000, 0x50ffff).r(this, FUNC(piratesh_state::K056832_rom_r)); // VRAM ROM
+	map(0x40000c, 0x40000d).w(FUNC(piratesh_state::control1_w));
+	map(0x400010, 0x400011).w(FUNC(piratesh_state::control2_w));
+	map(0x400014, 0x400015).w(FUNC(piratesh_state::control3_w));
+	map(0x500000, 0x50ffff).r(FUNC(piratesh_state::K056832_rom_r)); // VRAM ROM
 	map(0x580000, 0x581fff).r(m_k053250, FUNC(k053250ps_device::rom_r)); // LVC ROM access
 	map(0x600000, 0x6004ff).rw("k054539", FUNC(k054539_device::read), FUNC(k054539_device::write)).umask16(0xff00); // SOUND
 	map(0x680000, 0x681fff).rw(m_k056832, FUNC(k056832_device::ram_word_r), FUNC(k056832_device::ram_word_w)); // TILEMAP
@@ -551,7 +565,7 @@ INPUT_PORTS_END
 
 /**********************************************************************************/
 
-MACHINE_START_MEMBER(piratesh_state, piratesh)
+void piratesh_state::machine_start()
 {
 #if 0
 	m_sound_ctrl = 2;
@@ -566,7 +580,7 @@ MACHINE_START_MEMBER(piratesh_state, piratesh)
 #endif
 }
 
-MACHINE_RESET_MEMBER(piratesh_state,piratesh)
+void piratesh_state::machine_reset()
 {
 	m_int_status = 0;
 
@@ -586,17 +600,14 @@ MACHINE_RESET_MEMBER(piratesh_state,piratesh)
 MACHINE_CONFIG_START(piratesh_state::piratesh)
 
 	/* basic machine hardware */
-	MCFG_CPU_ADD("maincpu", M68000, XTAL(32'000'000)/2)
-	MCFG_CPU_PROGRAM_MAP(piratesh_map)
+	MCFG_DEVICE_ADD("maincpu", M68000, XTAL(32'000'000)/2)
+	MCFG_DEVICE_PROGRAM_MAP(piratesh_map)
 	MCFG_TIMER_DRIVER_ADD_SCANLINE("scantimer", piratesh_state, piratesh_interrupt, "screen", 0, 1)
 
 	MCFG_NVRAM_ADD_0FILL("nvram")
 
 	MCFG_DEVICE_ADD("k053252", K053252, XTAL(32'000'000)/4)
 	MCFG_K053252_OFFSETS(40, 16) // TODO
-
-	MCFG_MACHINE_START_OVERRIDE(piratesh_state, piratesh)
-	MCFG_MACHINE_RESET_OVERRIDE(piratesh_state, piratesh)
 
 	MCFG_TICKET_DISPENSER_ADD("ticket", attotime::from_msec(200), TICKET_MOTOR_ACTIVE_HIGH, TICKET_STATUS_ACTIVE_HIGH)
 	MCFG_TICKET_DISPENSER_ADD("hopper", attotime::from_msec(200), TICKET_MOTOR_ACTIVE_HIGH, TICKET_STATUS_ACTIVE_HIGH)
@@ -618,7 +629,7 @@ MACHINE_CONFIG_START(piratesh_state::piratesh)
 
 	MCFG_DEVICE_ADD("k056832", K056832, 0)
 	MCFG_K056832_CB(piratesh_state, piratesh_tile_callback)
-	MCFG_K056832_CONFIG("gfx1", K056832_BPP_4PIRATESH, 1, 0, "none")
+	MCFG_K056832_CONFIG("gfx1", K056832_BPP_4PIRATESH, 1, 0)
 	MCFG_K056832_PALETTE("palette")
 
 	MCFG_K055555_ADD("k055555")
@@ -636,17 +647,15 @@ MACHINE_CONFIG_START(piratesh_state::piratesh)
 	//MCFG_K053246_CONFIG("gfx2", NORMAL_PLANE_ORDER, -48+1, 23)
 	//MCFG_K053246_PALETTE("palette")
 
-	MCFG_DEVICE_ADD("k054338", K054338, 0)
+	MCFG_DEVICE_ADD("k054338", K054338, 0, "k055555")
 	MCFG_K054338_ALPHAINV(1)
-	MCFG_K054338_MIXER("k055555")
-
-	MCFG_VIDEO_START_OVERRIDE(piratesh_state, piratesh)
 
 	/* sound hardware */
-	MCFG_SPEAKER_STANDARD_STEREO("lspeaker", "rspeaker")
+	SPEAKER(config, "lspeaker").front_left();
+	SPEAKER(config, "rspeaker").front_right();
 
 	MCFG_DEVICE_ADD("k054539", K054539, XTAL(18'432'000))
-	MCFG_K054539_TIMER_HANDLER(WRITELINE(piratesh_state, k054539_nmi_gen))
+	MCFG_K054539_TIMER_HANDLER(WRITELINE(*this, piratesh_state, k054539_nmi_gen))
 	MCFG_SOUND_ROUTE(0, "lspeaker", 0.2)
 	MCFG_SOUND_ROUTE(1, "rspeaker", 0.2)
 MACHINE_CONFIG_END
@@ -680,4 +689,4 @@ ROM_START( piratesh )
 ROM_END
 
 //    year  name        parent    machine   input     state           init
-GAME( 1995, piratesh,   0,        piratesh, piratesh, piratesh_state, 0, ROT90,  "Konami", "Pirate Ship (ver UAA)", MACHINE_IMPERFECT_GRAPHICS )
+GAME( 1995, piratesh,   0,        piratesh, piratesh, piratesh_state, empty_init, ROT90,  "Konami", "Pirate Ship (ver UAA)", MACHINE_IMPERFECT_GRAPHICS )

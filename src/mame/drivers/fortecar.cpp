@@ -318,6 +318,7 @@
 #include "sound/ay8910.h"
 #include "video/mc6845.h"
 #include "video/resnet.h"
+#include "emupal.h"
 #include "screen.h"
 #include "speaker.h"
 
@@ -345,7 +346,7 @@ public:
 
 	void fortecar(machine_config &config);
 
-	DECLARE_DRIVER_INIT(fortecar);
+	void init_fortecar();
 
 protected:
 	virtual void machine_start() override;
@@ -658,7 +659,7 @@ static const gfx_layout tiles8x8_layout_6bpp =
 *      Graphics Decode Information      *
 ****************************************/
 
-static GFXDECODE_START( fortecar )
+static GFXDECODE_START( gfx_fortecar )
 	GFXDECODE_ENTRY( "gfx1", 0, tiles8x8_layout_3bpp, 0x000, 0x20 )
 	GFXDECODE_ENTRY( "gfx1", 0, tiles8x8_layout_6bpp, 0x100, 0x04 )
 GFXDECODE_END
@@ -682,9 +683,9 @@ void fortecar_state::machine_reset()
 
 MACHINE_CONFIG_START(fortecar_state::fortecar)
 	/* basic machine hardware */
-	MCFG_CPU_ADD("maincpu", Z80, CPU_CLOCK)      /* 3 MHz, measured */
-	MCFG_CPU_PROGRAM_MAP(fortecar_map)
-	MCFG_CPU_IO_MAP(fortecar_ports)
+	MCFG_DEVICE_ADD("maincpu", Z80, CPU_CLOCK)      /* 3 MHz, measured */
+	MCFG_DEVICE_PROGRAM_MAP(fortecar_map)
+	MCFG_DEVICE_IO_MAP(fortecar_ports)
 
 	MCFG_WATCHDOG_ADD("watchdog")
 	MCFG_WATCHDOG_TIME_INIT(attotime::from_msec(200))   /* guess */
@@ -700,20 +701,20 @@ MACHINE_CONFIG_START(fortecar_state::fortecar)
 	MCFG_SCREEN_UPDATE_DRIVER(fortecar_state, screen_update)
 	MCFG_SCREEN_PALETTE("palette")
 
-	MCFG_EEPROM_SERIAL_93C56_ADD("eeprom")
-	MCFG_EEPROM_SERIAL_DEFAULT_VALUE(0)
+	MCFG_DEVICE_ADD("eeprom", EEPROM_SERIAL_93C56_16BIT)
+	MCFG_EEPROM_DEFAULT_VALUE(0)
 
 	MCFG_DEVICE_ADD("fcppi0", I8255A, 0)
 	/*  Init with 0x9a... A, B and high C as input
 	 Serial Eprom connected to Port C */
 	MCFG_I8255_IN_PORTA_CB(IOPORT("SYSTEM"))
 	MCFG_I8255_IN_PORTB_CB(IOPORT("INPUT"))
-	MCFG_I8255_IN_PORTC_CB(READ8(fortecar_state, ppi0_portc_r))
-	MCFG_I8255_OUT_PORTC_CB(WRITE8(fortecar_state, ppi0_portc_w))
+	MCFG_I8255_IN_PORTC_CB(READ8(*this, fortecar_state, ppi0_portc_r))
+	MCFG_I8255_OUT_PORTC_CB(WRITE8(*this, fortecar_state, ppi0_portc_w))
 
 	MCFG_V3021_ADD("rtc")
 
-	MCFG_GFXDECODE_ADD("gfxdecode", "palette", fortecar)
+	MCFG_DEVICE_ADD("gfxdecode", GFXDECODE, "palette", gfx_fortecar)
 	MCFG_PALETTE_ADD("palette", 0x200)
 	MCFG_PALETTE_INIT_OWNER(fortecar_state, fortecar)
 
@@ -722,11 +723,11 @@ MACHINE_CONFIG_START(fortecar_state::fortecar)
 	MCFG_MC6845_CHAR_WIDTH(8)
 	MCFG_MC6845_OUT_VSYNC_CB(INPUTLINE("maincpu", INPUT_LINE_NMI))
 
-	MCFG_SPEAKER_STANDARD_MONO("mono")
+	SPEAKER(config, "mono").front_center();
 
-	MCFG_SOUND_ADD("aysnd", AY8910, AY_CLOCK)   /* 1.5 MHz, measured */
-	MCFG_AY8910_PORT_A_WRITE_CB(WRITE8(fortecar_state, ayporta_w))
-	MCFG_AY8910_PORT_B_WRITE_CB(WRITE8(fortecar_state, ayportb_w))
+	MCFG_DEVICE_ADD("aysnd", AY8910, AY_CLOCK)   /* 1.5 MHz, measured */
+	MCFG_AY8910_PORT_A_WRITE_CB(WRITE8(*this, fortecar_state, ayporta_w))
+	MCFG_AY8910_PORT_B_WRITE_CB(WRITE8(*this, fortecar_state, ayportb_w))
 	MCFG_SOUND_ROUTE(ALL_OUTPUTS, "mono", 0.50)
 MACHINE_CONFIG_END
 
@@ -779,7 +780,7 @@ ROM_END
 *           Driver Init            *
 ***********************************/
 
-DRIVER_INIT_MEMBER(fortecar_state, fortecar)
+void fortecar_state::init_fortecar()
 {
 	// ...
 }
@@ -789,6 +790,6 @@ DRIVER_INIT_MEMBER(fortecar_state, fortecar)
 *          Game Drivers            *
 ***********************************/
 
-//     YEAR  NAME      PARENT    MACHINE   INPUT     STATE           INIT      ROT   COMPANY        FULLNAME                        FLAGS                LAYOUT
-GAMEL( 1994, fortecrd, 0,        fortecar, fortecar, fortecar_state, fortecar, ROT0, "Fortex Ltd", "Forte Card (Ver 110, Spanish)", 0,                   layout_fortecrd )
-GAMEL( 1994, fortecar, fortecrd, fortecar, fortecar, fortecar_state, fortecar, ROT0, "Fortex Ltd", "Forte Card (Ver 103, English)", MACHINE_NOT_WORKING, layout_fortecrd )
+//     YEAR  NAME      PARENT    MACHINE   INPUT     CLASS           INIT           ROT   COMPANY       FULLNAME                         FLAGS                LAYOUT
+GAMEL( 1994, fortecrd, 0,        fortecar, fortecar, fortecar_state, init_fortecar, ROT0, "Fortex Ltd", "Forte Card (Ver 110, Spanish)", 0,                   layout_fortecrd )
+GAMEL( 1994, fortecar, fortecrd, fortecar, fortecar, fortecar_state, init_fortecar, ROT0, "Fortex Ltd", "Forte Card (Ver 103, English)", MACHINE_NOT_WORKING, layout_fortecrd )

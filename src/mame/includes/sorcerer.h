@@ -44,20 +44,13 @@ struct cass_data_t {
 class sorcerer_state : public driver_device
 {
 public:
-	enum
-	{
-		TIMER_SERIAL,
-		TIMER_CASSETTE,
-		TIMER_RESET
-	};
-
 	sorcerer_state(const machine_config &mconfig, device_type type, const char *tag)
 		: driver_device(mconfig, type, tag)
 		, m_maincpu(*this, "maincpu")
 		, m_cassette1(*this, "cassette")
 		, m_cassette2(*this, "cassette2")
-		, m_wave1(*this, WAVE_TAG)
-		, m_wave2(*this, WAVE2_TAG)
+		, m_wave1(*this, "wave")
+		, m_wave2(*this, "wave2")
 		, m_uart(*this, "uart")
 		, m_rs232(*this, "rs232")
 		, m_centronics(*this, "centronics")
@@ -68,25 +61,37 @@ public:
 		, m_iop_x(*this, "X.%u", 0)
 	{ }
 
+	void sorcerer(machine_config &config);
+	void sorcererd(machine_config &config);
+
+	void init_sorcerer();
+
+private:
+	enum
+	{
+		TIMER_SERIAL,
+		TIMER_CASSETTE,
+		TIMER_RESET
+	};
+
 	DECLARE_READ8_MEMBER(sorcerer_fd_r);
 	DECLARE_READ8_MEMBER(sorcerer_fe_r);
 	DECLARE_WRITE8_MEMBER(sorcerer_fd_w);
 	DECLARE_WRITE8_MEMBER(sorcerer_fe_w);
 	DECLARE_WRITE8_MEMBER(sorcerer_ff_w);
 	DECLARE_MACHINE_START(sorcererd);
-	DECLARE_DRIVER_INIT(sorcerer);
+
 	TIMER_CALLBACK_MEMBER(sorcerer_cassette_tc);
 	TIMER_CALLBACK_MEMBER(sorcerer_serial_tc);
 	TIMER_CALLBACK_MEMBER(sorcerer_reset);
 	DECLARE_SNAPSHOT_LOAD_MEMBER( sorcerer );
 	DECLARE_QUICKLOAD_LOAD_MEMBER( sorcerer);
 	uint32_t screen_update(screen_device &screen, bitmap_ind16 &bitmap, const rectangle &cliprect);
-	void sorcerer(machine_config &config);
-	void sorcererd(machine_config &config);
+
 	void sorcerer_io(address_map &map);
 	void sorcerer_mem(address_map &map);
 	void sorcererd_mem(address_map &map);
-private:
+
 	uint8_t m_fe;
 	uint8_t m_keyboard_line;
 	const uint8_t *m_p_videoram;

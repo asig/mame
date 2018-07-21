@@ -16,7 +16,6 @@ enum
 									/* Active eddge is selecrable by internal reg.  */
 									/* raise eddge : CLEAR_LINE  -> ASSERT_LINE     */
 									/* fall  eddge : ASSERT_LINE -> CLEAR_LINE      */
-									/* it is usuali to use PULSE_LINE state         */
 	M6801_SC1_LINE
 };
 
@@ -52,9 +51,9 @@ enum
 
 
 #define MCFG_M6801_SC2(_devcb) \
-	devcb = &downcast<m6801_cpu_device &>(*device).set_out_sc2_func(DEVCB_##_devcb);
+	downcast<m6801_cpu_device &>(*device).set_out_sc2_func(DEVCB_##_devcb);
 #define MCFG_M6801_SER_TX(_devcb) \
-	devcb = &downcast<m6801_cpu_device &>(*device).set_out_sertx_func(DEVCB_##_devcb);
+	downcast<m6801_cpu_device &>(*device).set_out_sertx_func(DEVCB_##_devcb);
 
 
 class m6801_cpu_device : public m6800_cpu_device

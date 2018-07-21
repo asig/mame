@@ -179,8 +179,9 @@ mzr8105_state(const machine_config &mconfig, device_type type, const char *tag) 
 	}
 
 	void mzr8105(machine_config &config);
-	void mzr8105_mem(address_map &map);
+	
 private:
+	void mzr8105_mem(address_map &map);
 	required_device<cpu_device> m_maincpu;
 };
 
@@ -208,8 +209,8 @@ static void mzr8105_vme_cards(device_slot_interface &device)
  * Machine configuration
  */
 MACHINE_CONFIG_START(mzr8105_state::mzr8105)
-	MCFG_CPU_ADD ("maincpu", M68000, XTAL(10'000'000))
-	MCFG_CPU_PROGRAM_MAP (mzr8105_mem)
+	MCFG_DEVICE_ADD ("maincpu", M68000, XTAL(10'000'000))
+	MCFG_DEVICE_PROGRAM_MAP (mzr8105_mem)
 	MCFG_VME_DEVICE_ADD("vme")
 	MCFG_VME_BUS_OWNER_SPACES()
 	MCFG_VME_SLOT_ADD ("vme", 1, mzr8105_vme_cards, "mzr8300")
@@ -231,5 +232,5 @@ ROM_START (mzr8105)
 ROM_END
 
 /* Driver */
-//    YEAR  NAME          PARENT  COMPAT   MACHINE         INPUT    CLASS           INIT  COMPANY      FULLNAME          FLAGS
-COMP (1987, mzr8105,      0,      0,       mzr8105,        mzr8105, mzr8105_state,  0,    "Mizar Inc", "Mizar VME8105",  MACHINE_NOT_WORKING | MACHINE_NO_SOUND_HW )
+//    YEAR  NAME     PARENT  COMPAT  MACHINE  INPUT    CLASS          INIT        COMPANY      FULLNAME         FLAGS
+COMP( 1987, mzr8105, 0,      0,      mzr8105, mzr8105, mzr8105_state, empty_init, "Mizar Inc", "Mizar VME8105", MACHINE_NOT_WORKING | MACHINE_NO_SOUND_HW )

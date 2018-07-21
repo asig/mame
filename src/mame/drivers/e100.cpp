@@ -37,6 +37,7 @@
 // Features
 #include "imagedev/cassette.h"
 #include "bus/rs232/rs232.h"
+#include "emupal.h"
 #include "screen.h"
 
 //**************************************************************************
@@ -148,15 +149,15 @@ public:
 		,m_io_line7(*this, "LINE7")
 		,m_io_line8(*this, "LINE8")
 		,m_io_line9(*this, "LINE9")
-		,m_line0(0)
-		,m_line1(0)
-		,m_line2(0)
-		,m_line3(0)
 		,m_pia1(*this, PIA1_TAG)
 		,m_pia2(*this, PIA2_TAG)
 		,m_pia1_B(0)
 		,m_50hz(0)
 		{ }
+
+	void e100(machine_config &config);
+
+private:
 	required_device<m6802_cpu_device> m_maincpu;
 	required_device<ttl74145_device> m_kbd_74145;
 	required_shared_ptr<uint8_t> m_videoram;
@@ -178,9 +179,8 @@ public:
 	DECLARE_WRITE_LINE_MEMBER( pia1_ca2_w);
 	DECLARE_WRITE_LINE_MEMBER( pia1_cb2_w);
 	TIMER_DEVICE_CALLBACK_MEMBER(rtc_w);
-	void e100(machine_config &config);
 	void e100_map(address_map &map);
-protected:
+
 	required_ioport m_io_line0;
 	required_ioport m_io_line1;
 	required_ioport m_io_line2;
@@ -191,10 +191,6 @@ protected:
 	required_ioport m_io_line7;
 	required_ioport m_io_line8;
 	required_ioport m_io_line9;
-	uint8_t m_line0;
-	uint8_t m_line1;
-	uint8_t m_line2;
-	uint8_t m_line3;
 	required_device<pia6821_device> m_pia1;
 	required_device<pia6821_device> m_pia2;
 	uint8_t m_pia1_B;
@@ -428,7 +424,7 @@ void e100_state::e100_map(address_map &map)
 	map(0x0000, 0x1fff).ram();
 	map(0x8000, 0x87ff).rom().region("roms", 0);
 	map(0xc000, 0xc3ff).ram().share("videoram");
-	map(0xc800, 0xc81f).rw(this, FUNC(e100_state::pia_r), FUNC(e100_state::pia_w)).mirror(0x07e0);
+	map(0xc800, 0xc81f).rw(FUNC(e100_state::pia_r), FUNC(e100_state::pia_w)).mirror(0x07e0);
 	map(0xd000, 0xffff).rom().region("roms", 0x1000);
 }
 
@@ -543,8 +539,8 @@ static INPUT_PORTS_START( e100 )
 INPUT_PORTS_END
 
 MACHINE_CONFIG_START(e100_state::e100)
-	MCFG_CPU_ADD("maincpu", M6802, XTAL(4'000'000))
-	MCFG_CPU_PROGRAM_MAP(e100_map)
+	MCFG_DEVICE_ADD("maincpu", M6802, XTAL(4'000'000))
+	MCFG_DEVICE_PROGRAM_MAP(e100_map)
 
 	/* Devices */
 	MCFG_DEVICE_ADD("kbd_74145", TTL74145, 0)
@@ -565,21 +561,21 @@ MACHINE_CONFIG_START(e100_state::e100)
 	/* 0xF896 0xC818 (PIA1 Control B) = 0x34 - CB2 is low and lock DDRB */
 	/* 0xF896 0xC818 (PIA2 Control B) = 0x34 - CB2 is low and lock DDRB */
 	MCFG_DEVICE_ADD(PIA1_TAG, PIA6821, 0)
-	MCFG_PIA_WRITEPA_HANDLER(WRITE8(e100_state, pia1_kbA_w))
-	MCFG_PIA_READPA_HANDLER(READ8(e100_state, pia1_kbA_r))
-	MCFG_PIA_WRITEPB_HANDLER(WRITE8(e100_state, pia1_kbB_w))
-	MCFG_PIA_READPB_HANDLER(READ8(e100_state, pia1_kbB_r))
-	MCFG_PIA_READCA1_HANDLER(READLINE(e100_state, pia1_ca1_r))
-	MCFG_PIA_READCB1_HANDLER(READLINE(e100_state, pia1_cb1_r))
-	MCFG_PIA_CA2_HANDLER(WRITELINE(e100_state, pia1_ca2_w))
-	MCFG_PIA_CB2_HANDLER(WRITELINE(e100_state, pia1_cb2_w))
+	MCFG_PIA_WRITEPA_HANDLER(WRITE8(*this, e100_state, pia1_kbA_w))
+	MCFG_PIA_READPA_HANDLER(READ8(*this, e100_state, pia1_kbA_r))
+	MCFG_PIA_WRITEPB_HANDLER(WRITE8(*this, e100_state, pia1_kbB_w))
+	MCFG_PIA_READPB_HANDLER(READ8(*this, e100_state, pia1_kbB_r))
+	MCFG_PIA_READCA1_HANDLER(READLINE(*this, e100_state, pia1_ca1_r))
+	MCFG_PIA_READCB1_HANDLER(READLINE(*this, e100_state, pia1_cb1_r))
+	MCFG_PIA_CA2_HANDLER(WRITELINE(*this, e100_state, pia1_ca2_w))
+	MCFG_PIA_CB2_HANDLER(WRITELINE(*this, e100_state, pia1_cb2_w))
 
 	/* The optional second PIA enables the expansion port on CA1 and a software RTC with 50Hz resolution */
 	MCFG_DEVICE_ADD(PIA2_TAG, PIA6821, 0)
 	MCFG_PIA_IRQA_HANDLER(INPUTLINE("maincpu", M6800_IRQ_LINE))
 
 	/* Serial port support */
-	MCFG_RS232_PORT_ADD("rs232", default_rs232_devices, nullptr)
+	MCFG_DEVICE_ADD("rs232", RS232_PORT, default_rs232_devices, nullptr)
 
 	/* Cassette support - E100 uses 300 baud Kansas City Standard with 1200/2400 Hz modulation */
 	/* NOTE on usage: mame e100 -window -cass <wav file> -ui_active
@@ -610,22 +606,22 @@ ROM_START( e100 )
 
 	/* TODO: Get the original ROMs */
 	ROM_SYSTEM_BIOS(0, "rev1-basic", "Esselte 100 rev1 BASIC")
-	ROMX_LOAD( "e100r1u201.bin", 0x1000, 0x0800, NO_DUMP, ROM_BIOS(1) )
-	ROMX_LOAD( "e100r1u202.bin", 0x1800, 0x0800, NO_DUMP, ROM_BIOS(1) )
-	ROMX_LOAD( "e100r1u203.bin", 0x2000, 0x0800, NO_DUMP, ROM_BIOS(1) )
-	ROMX_LOAD( "e100r1u204.bin", 0x2800, 0x0800, NO_DUMP, ROM_BIOS(1) )
-	ROMX_LOAD( "e100r1u205.bin", 0x3000, 0x0800, NO_DUMP, ROM_BIOS(1) )
-	ROMX_LOAD( "e100r1u206.bin", 0x3800, 0x0800, NO_DUMP, ROM_BIOS(1) )
+	ROMX_LOAD( "e100r1u201.bin", 0x1000, 0x0800, NO_DUMP, ROM_BIOS(0) )
+	ROMX_LOAD( "e100r1u202.bin", 0x1800, 0x0800, NO_DUMP, ROM_BIOS(0) )
+	ROMX_LOAD( "e100r1u203.bin", 0x2000, 0x0800, NO_DUMP, ROM_BIOS(0) )
+	ROMX_LOAD( "e100r1u204.bin", 0x2800, 0x0800, NO_DUMP, ROM_BIOS(0) )
+	ROMX_LOAD( "e100r1u205.bin", 0x3000, 0x0800, NO_DUMP, ROM_BIOS(0) )
+	ROMX_LOAD( "e100r1u206.bin", 0x3800, 0x0800, NO_DUMP, ROM_BIOS(0) )
 
 	/* This is a prototype ROM, commercial relase not verified. The prototype also have different keyboard and supports
 	   more ram so might need to be split out as a clone later */
 	ROM_SYSTEM_BIOS(1, "rev2-basic", "Esselte 100 rev2 BASIC")
-	ROMX_LOAD( "e100r2u201.bin", 0x0000, 0x2000, CRC(53513b67) SHA1(a91c5c32aead82dcc87db5d818ff286a7fc6a5c8), ROM_BIOS(2) )
-	ROMX_LOAD( "e100r2u202.bin", 0x2000, 0x2000, CRC(eab3adf2) SHA1(ff3f5f5c8ea8732702a39cff76d0706ab6b751ee), ROM_BIOS(2) )
+	ROMX_LOAD( "e100r2u201.bin", 0x0000, 0x2000, CRC(53513b67) SHA1(a91c5c32aead82dcc87db5d818ff286a7fc6a5c8), ROM_BIOS(1) )
+	ROMX_LOAD( "e100r2u202.bin", 0x2000, 0x2000, CRC(eab3adf2) SHA1(ff3f5f5c8ea8732702a39cff76d0706ab6b751ee), ROM_BIOS(1) )
 
 	ROM_REGION(0x0800, "chargen",0)
 	ROM_LOAD( "e100u506.bin", 0x0000, 0x0800, CRC(fff9f288) SHA1(2dfb3eb551fe1ef67da328f61ef51ae8d1abdfb8) )
 ROM_END
 
-//    YEAR  NAME        PARENT      COMPAT  MACHINE     INPUT   CLASS         INIT        COMPANY             FULLNAME            FLAGS
-COMP( 1982, e100,       0,          0,      e100,       e100,   e100_state,   0,          "Didact AB",        "Esselte 100",      MACHINE_NO_SOUND_HW | MACHINE_SUPPORTS_SAVE)
+//    YEAR  NAME  PARENT  COMPAT  MACHINE  INPUT  CLASS       INIT        COMPANY      FULLNAME       FLAGS
+COMP( 1982, e100, 0,      0,      e100,    e100,  e100_state, empty_init, "Didact AB", "Esselte 100", MACHINE_NO_SOUND_HW | MACHINE_SUPPORTS_SAVE)

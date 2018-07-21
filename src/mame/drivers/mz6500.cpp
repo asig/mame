@@ -12,6 +12,7 @@
 #include "cpu/i86/i86.h"
 #include "machine/upd765.h"
 #include "video/upd7220.h"
+#include "emupal.h"
 #include "screen.h"
 
 class mz6500_state : public driver_device
@@ -25,6 +26,9 @@ public:
 		m_maincpu(*this, "maincpu"),
 		m_palette(*this, "palette") { }
 
+	void mz6500(machine_config &config);
+
+private:
 	required_device<upd7220_device> m_hgdc;
 	required_device<upd765a_device> m_fdc;
 	DECLARE_READ8_MEMBER(mz6500_vram_r);
@@ -37,7 +41,6 @@ public:
 	required_device<cpu_device> m_maincpu;
 	required_device<palette_device> m_palette;
 	UPD7220_DISPLAY_PIXELS_MEMBER( hgdc_display_pixels );
-	void mz6500(machine_config &config);
 	void mz6500_io(address_map &map);
 	void mz6500_map(address_map &map);
 	void upd7220_map(address_map &map);
@@ -85,7 +88,7 @@ void mz6500_state::mz6500_map(address_map &map)
 	map.unmap_value_high();
 	map(0x00000, 0x9ffff).ram();
 //  AM_RANGE(0xa0000,0xbffff) kanji/dictionary ROM
-	map(0xc0000, 0xeffff).rw(this, FUNC(mz6500_state::mz6500_vram_r), FUNC(mz6500_state::mz6500_vram_w));
+	map(0xc0000, 0xeffff).rw(FUNC(mz6500_state::mz6500_vram_r), FUNC(mz6500_state::mz6500_vram_w));
 	map(0xfc000, 0xfffff).rom().region("ipl", 0);
 }
 
@@ -147,9 +150,9 @@ void mz6500_state::upd7220_map(address_map &map)
 
 MACHINE_CONFIG_START(mz6500_state::mz6500)
 	/* basic machine hardware */
-	MCFG_CPU_ADD("maincpu", I8086, 8000000) //unk clock
-	MCFG_CPU_PROGRAM_MAP(mz6500_map)
-	MCFG_CPU_IO_MAP(mz6500_io)
+	MCFG_DEVICE_ADD("maincpu", I8086, 8000000) //unk clock
+	MCFG_DEVICE_PROGRAM_MAP(mz6500_map)
+	MCFG_DEVICE_IO_MAP(mz6500_io)
 
 
 	/* video hardware */
@@ -185,5 +188,5 @@ ROM_END
 
 /* Driver */
 
-//    YEAR  NAME     PARENT  COMPAT   MACHINE    INPUT   STATE            INIT   COMPANY    FULLNAME   FLAGS
-COMP( 198?, mz6500,  0,      0,       mz6500,    mz6500, mz6500_state,    0,     "Sharp",   "MZ-6500", MACHINE_NOT_WORKING | MACHINE_NO_SOUND)
+//    YEAR  NAME    PARENT  COMPAT  MACHINE  INPUT   CLASS         INIT        COMPANY  FULLNAME   FLAGS
+COMP( 198?, mz6500, 0,      0,      mz6500,  mz6500, mz6500_state, empty_init, "Sharp", "MZ-6500", MACHINE_NOT_WORKING | MACHINE_NO_SOUND)

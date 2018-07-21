@@ -29,14 +29,11 @@
 //  INTERFACE CONFIGURATION MACROS
 //**************************************************************************
 
-#define MCFG_TTL153_ADD(_tag) \
-	MCFG_DEVICE_ADD(_tag, TTL153, 0)
-
 #define MCFG_TTL153_ZA_CB(_devcb) \
-	devcb = &downcast<ttl153_device &>(*device).set_za_callback(DEVCB_##_devcb);
+	downcast<ttl153_device &>(*device).set_za_callback(DEVCB_##_devcb);
 
 #define MCFG_TTL153_ZB_CB(_devcb) \
-	devcb = &downcast<ttl153_device &>(*device).set_zb_callback(DEVCB_##_devcb);
+	downcast<ttl153_device &>(*device).set_zb_callback(DEVCB_##_devcb);
 
 
 //**************************************************************************
@@ -47,7 +44,7 @@ class ttl153_device : public device_t
 {
 public:
 	// construction/destruction
-	ttl153_device(const machine_config &mconfig, const char *tag, device_t *owner, uint32_t clock);
+	ttl153_device(const machine_config &mconfig, const char *tag, device_t *owner, uint32_t clock = 0);
 
 	// configuration
 	template <class Object> devcb_base &set_za_callback(Object &&cb) { return m_za_cb.set_callback(std::forward<Object>(cb)); }

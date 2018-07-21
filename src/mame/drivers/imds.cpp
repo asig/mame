@@ -35,7 +35,7 @@ public:
 
 	void imds(machine_config &config);
 
-protected:
+private:
 	DECLARE_READ8_MEMBER(term_r);
 	DECLARE_READ8_MEMBER(term_status_r);
 	void kbd_put(u8 data);
@@ -44,7 +44,6 @@ protected:
 	void imds_io(address_map &map);
 	void imds_mem(address_map &map);
 
-private:
 	required_device<cpu_device> m_maincpu;
 	required_device<generic_terminal_device> m_terminal;
 };
@@ -99,9 +98,9 @@ void imds_state::machine_reset()
 
 MACHINE_CONFIG_START(imds_state::imds)
 	/* basic machine hardware */
-	MCFG_CPU_ADD("maincpu", I8080, 4_MHz_XTAL) // no idea of clock.
-	MCFG_CPU_PROGRAM_MAP(imds_mem)
-	MCFG_CPU_IO_MAP(imds_io)
+	MCFG_DEVICE_ADD("maincpu", I8080, 4_MHz_XTAL) // no idea of clock.
+	MCFG_DEVICE_PROGRAM_MAP(imds_mem)
+	MCFG_DEVICE_IO_MAP(imds_io)
 
 //  MCFG_INS8250_ADD( "ins8250", imds_com_interface )
 
@@ -121,5 +120,5 @@ ROM_END
 
 /* Driver */
 
-/*    YEAR  NAME    PARENT  COMPAT   MACHINE    INPUT  STATE        INIT  COMPANY  FULLNAME        FLAGS */
-COMP( 1983, imds,     0,    0,       imds,      imds,  imds_state,  0,    "Intel", "Intellec MDS", MACHINE_NOT_WORKING | MACHINE_NO_SOUND)
+/*    YEAR  NAME  PARENT  COMPAT  MACHINE  INPUT  CLASS       INIT        COMPANY  FULLNAME        FLAGS */
+COMP( 1983, imds, 0,      0,      imds,    imds,  imds_state, empty_init, "Intel", "Intellec MDS", MACHINE_NOT_WORKING | MACHINE_NO_SOUND)

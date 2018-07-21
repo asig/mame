@@ -38,6 +38,7 @@
 #include "machine/ram.h"
 //#include "machine/x2212.h"
 //#include "video/crt9007.h"
+#include "emupal.h"
 #include "screen.h"
 
 
@@ -49,13 +50,15 @@ public:
 		m_maincpu(*this, "maincpu"),
 		m_ram(*this, RAM_TAG) { }
 
+	void vt220(machine_config &config);
+	void vt220a(machine_config &config);
+
+private:
 	virtual void machine_reset() override;
 	virtual void video_start() override;
 	uint32_t screen_update_vt220(screen_device &screen, bitmap_ind16 &bitmap, const rectangle &cliprect);
 	required_device<cpu_device> m_maincpu;
 	required_device<ram_device> m_ram;
-	void vt220(machine_config &config);
-	void vt220a(machine_config &config);
 	void vt220_io(address_map &map);
 	void vt220_mem(address_map &map);
 	void vt220a_io(address_map &map);
@@ -106,10 +109,10 @@ uint32_t vt220_state::screen_update_vt220(screen_device &screen, bitmap_ind16 &b
 
 MACHINE_CONFIG_START(vt220_state::vt220)
 	/* basic machine hardware */
-	MCFG_CPU_ADD("maincpu", I8051, XTAL(11'059'200)) // from schematic for earlier version
-	MCFG_CPU_PROGRAM_MAP(vt220_mem)
-	MCFG_CPU_IO_MAP(vt220_io)
-	MCFG_MCS51_PORT_P1_IN_CB(NOOP) // ???
+	MCFG_DEVICE_ADD("maincpu", I8051, XTAL(11'059'200)) // from schematic for earlier version
+	MCFG_DEVICE_PROGRAM_MAP(vt220_mem)
+	MCFG_DEVICE_IO_MAP(vt220_io)
+	MCFG_MCS51_PORT_P1_IN_CB(CONSTANT(0)) // ???
 
 	MCFG_DEVICE_ADD("duart", SCN2681, XTAL(3'686'400))
 	MCFG_MC68681_IRQ_CALLBACK(INPUTLINE("maincpu", MCS51_INT1_LINE))
@@ -132,9 +135,9 @@ MACHINE_CONFIG_END
 
 MACHINE_CONFIG_START(vt220_state::vt220a)
 	vt220(config);
-	MCFG_CPU_MODIFY("maincpu")
-	MCFG_CPU_PROGRAM_MAP(vt220a_mem)
-	MCFG_CPU_IO_MAP(vt220a_io)
+	MCFG_DEVICE_MODIFY("maincpu")
+	MCFG_DEVICE_PROGRAM_MAP(vt220a_mem)
+	MCFG_DEVICE_IO_MAP(vt220a_io)
 MACHINE_CONFIG_END
 
 /* ROM definitions */
@@ -173,6 +176,6 @@ ROM_END
 
 /* Driver */
 
-/*    YEAR  NAME    PARENT  COMPAT   MACHINE    INPUT  STATE         INIT  COMPANY                          FULLNAME  FLAGS */
-COMP( 1983, vt220,  0,      0,       vt220,     vt220, vt220_state,  0,    "Digital Equipment Corporation", "VT220 (Version 2.3)",  MACHINE_IS_SKELETON )
-COMP( 1983, vt220a, vt220,  0,       vt220a,    vt220, vt220_state,  0,    "Digital Equipment Corporation", "VT220 (Version 2.1)",  MACHINE_IS_SKELETON )
+/*    YEAR  NAME    PARENT  COMPAT  MACHINE  INPUT  STATE        INIT        COMPANY                          FULLNAME               FLAGS */
+COMP( 1983, vt220,  0,      0,      vt220,   vt220, vt220_state, empty_init, "Digital Equipment Corporation", "VT220 (Version 2.3)", MACHINE_IS_SKELETON )
+COMP( 1983, vt220a, vt220,  0,      vt220a,  vt220, vt220_state, empty_init, "Digital Equipment Corporation", "VT220 (Version 2.1)", MACHINE_IS_SKELETON )

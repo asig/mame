@@ -265,9 +265,11 @@ public:
 	//,m_brg(*this, "brg")
 	//,m_ay3600(*this, "ay3600")
 	{ }
+
 	void t4490(machine_config &config);
-	void t4490_map(address_map &map);
+
 private:
+	void t4490_map(address_map &map);
 	required_device<m6800_cpu_device> m_maincpu;
   //    virtual void machine_reset() override { m_maincpu->reset(); LOG("--->%s()\n", FUNCNAME); };
 	required_device<pia6821_device> m_pia1;
@@ -294,8 +296,8 @@ static INPUT_PORTS_START( t4490 )
 INPUT_PORTS_END
 
 MACHINE_CONFIG_START(t4490_state::t4490)
-	MCFG_CPU_ADD("maincpu", M6800, XTAL(8'000'000)/4) // divided by a MC6875
-	MCFG_CPU_PROGRAM_MAP(t4490_map)
+	MCFG_DEVICE_ADD("maincpu", M6800, XTAL(8'000'000)/4) // divided by a MC6875
+	MCFG_DEVICE_PROGRAM_MAP(t4490_map)
 
 	/* devices */
 	MCFG_DEVICE_ADD("pia1", PIA6821, 0)
@@ -314,5 +316,5 @@ ROM_START( t4490 )
 	ROM_LOAD( "terco4490-f861104.bin", 0xf000, 0x1000, CRC(a45bc3e7) SHA1(e12efa9a4c72e4bce1d59ad359ee66d7c3babfa6) )
 ROM_END
 
-//    YEAR  NAME        PARENT      COMPAT  MACHINE     INPUT   CLASS        INIT     COMPANY             FULLNAME                       FLAGS
-COMP( 1986, t4490,      0,          0,      t4490,      t4490,  t4490_state,   0,    "Terco AB",         "Terco 4490 Mill CNC Control",  MACHINE_IS_SKELETON )
+//    YEAR  NAME   PARENT  COMPAT  MACHINE  INPUT  CLASS        INIT        COMPANY     FULLNAME                       FLAGS
+COMP( 1986, t4490, 0,      0,      t4490,   t4490, t4490_state, empty_init, "Terco AB", "Terco 4490 Mill CNC Control", MACHINE_IS_SKELETON )

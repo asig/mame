@@ -18,7 +18,7 @@
 
 
 #define MCFG_TMS32010_BIO_IN_CB(_devcb) \
-	devcb = &downcast<tms32010_device &>(*device).set_bio_in_cb(DEVCB_##_devcb); /* BIO input  */
+	downcast<tms32010_device &>(*device).set_bio_in_cb(DEVCB_##_devcb); /* BIO input  */
 
 
 #define TMS32010_INT_PENDING    0x80000000
@@ -109,7 +109,7 @@ private:
 	int     m_addr_mask;
 
 	address_space *m_program;
-	direct_read_data<-1> *m_direct;
+	memory_access_cache<1, -1, ENDIANNESS_BIG> *m_cache;
 	address_space *m_data;
 	address_space *m_io;
 

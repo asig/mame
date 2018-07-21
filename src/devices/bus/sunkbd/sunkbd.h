@@ -5,14 +5,7 @@
 
 #pragma once
 
-
-
-#define MCFG_SUNKBD_PORT_ADD(tag, slot_intf, def_slot) \
-	MCFG_DEVICE_ADD(tag, SUNKBD_PORT, 0) \
-	MCFG_DEVICE_SLOT_INTERFACE(slot_intf, def_slot, false)
-
-#define MCFG_SUNKBD_RXD_HANDLER(cb) \
-	devcb = &downcast<sun_keyboard_port_device &>(*device).set_rxd_handler(DEVCB_##cb);
+#include "diserial.h"
 
 
 class device_sun_keyboard_port_interface;
@@ -23,11 +16,20 @@ class sun_keyboard_port_device : public device_t, public device_slot_interface
 	friend class device_sun_keyboard_port_interface;
 
 public:
-	sun_keyboard_port_device(machine_config const &mconfig, char const *tag, device_t *owner, uint32_t clock);
+	template <typename T>
+	sun_keyboard_port_device(machine_config const &mconfig, char const *tag, device_t *owner, T &&opts, char const *dflt)
+		: sun_keyboard_port_device(mconfig, tag, owner, 0)
+	{
+		option_reset();
+		opts(*this);
+		set_default_option(dflt);
+		set_fixed(false);
+	}
+	sun_keyboard_port_device(machine_config const &mconfig, char const *tag, device_t *owner, uint32_t clock = 0);
 	virtual ~sun_keyboard_port_device();
 
 	// static configuration helpers
-	template <class Object> devcb_base &set_rxd_handler(Object &&cb) { return m_rxd_handler.set_callback(std::forward<Object>(cb)); }
+	auto rxd_handler() { return m_rxd_handler.bind(); }
 
 	DECLARE_WRITE_LINE_MEMBER( write_txd );
 

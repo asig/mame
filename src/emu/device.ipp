@@ -45,6 +45,21 @@ inline DeviceClass &device_type_impl<DeviceClass>::operator()(machine_config &mc
 	return finder = result;
 }
 
+template <class DeviceClass> template <typename... Params>
+inline DeviceClass &device_type_impl<DeviceClass>::operator()(machine_config_replace replace, char const *tag, Params &&... args) const
+{
+	return dynamic_cast<DeviceClass &>(*replace.config.device_replace(tag, *this, std::forward<Params>(args)...));
+}
+
+template <class DeviceClass> template <typename Exposed, bool Required, typename... Params>
+inline DeviceClass &device_type_impl<DeviceClass>::operator()(machine_config_replace replace, device_finder<Exposed, Required> &finder, Params &&... args) const
+{
+	std::pair<device_t &, char const *> const target(finder.finder_target());
+	assert(&replace.config.current_device() == &target.first);
+	DeviceClass &result(dynamic_cast<DeviceClass &>(*replace.config.device_replace(target.second, *this, std::forward<Params>(args)...)));
+	return finder = result;
+}
+
 } } // namespace emu::detail
 
 
@@ -73,6 +88,20 @@ inline void device_t::logerror(Format &&fmt, Params &&... args) const
 
 		g_profiler.stop();
 	}
+}
+
+template <typename T, typename Ret, typename... Params>
+inline std::enable_if_t<device_memory_interface::is_related_class<device_t, T>::value> device_memory_interface::set_addrmap(int spacenum, Ret (T::*func)(Params... args))
+{
+	device_t &dev(device().mconfig().current_device());
+	set_addrmap(spacenum, address_map_constructor(func, dev.tag(), &downcast<T &>(dev)));
+}
+
+template <typename T, typename Ret, typename... Params>
+inline std::enable_if_t<!device_memory_interface::is_related_class<device_t, T>::value> device_memory_interface::set_addrmap(int spacenum, Ret (T::*func)(Params... args))
+{
+	device_t &dev(device().mconfig().current_device());
+	set_addrmap(spacenum, address_map_constructor(func, dev.tag(), &dynamic_cast<T &>(dev)));
 }
 
 #endif // MAME_EMU_DEVICE_IPP

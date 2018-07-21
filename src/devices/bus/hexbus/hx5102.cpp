@@ -113,7 +113,7 @@ namespace bus { namespace hexbus {
 
 void hx5102_device::memmap(address_map &map)
 {
-	map(0x0000, 0xffff).rw(this, FUNC(hx5102_device::read), FUNC(hx5102_device::write));
+	map(0x0000, 0xffff).rw(FUNC(hx5102_device::read), FUNC(hx5102_device::write));
 }
 
 /*
@@ -121,8 +121,8 @@ void hx5102_device::memmap(address_map &map)
 */
 void hx5102_device::crumap(address_map &map)
 {
-	map(0x17e0>>4, 0x17fe>>4).r(this, FUNC(hx5102_device::cruread));
-	map(0x17e0>>1, 0x17fe>>1).w(this, FUNC(hx5102_device::cruwrite));
+	map(0x17e0>>4, 0x17fe>>4).r(FUNC(hx5102_device::cruread));
+	map(0x17e0>>1, 0x17fe>>1).w(FUNC(hx5102_device::cruwrite));
 }
 
 hx5102_device::hx5102_device(const machine_config &mconfig, const char *tag, device_t *owner, uint32_t clock):
@@ -374,12 +374,12 @@ READ8_MEMBER(hx5102_device::fdc_read)
 	{
 	case 0:
 		// Main status register
-		val = m_floppy_ctrl->msr_r();
+		val = m_floppy_ctrl->read_msr();
 		LOGMASKED(LOG_STATUS, "i8272A.msr -> %02x\n", val);
 		break;
 	case 4:
 		// FIFO read
-		val = m_floppy_ctrl->fifo_r();
+		val = m_floppy_ctrl->read_fifo();
 		LOGMASKED(LOG_FIFO, "i8272A.fifo -> %02x\n", val);
 		break;
 	}
@@ -398,7 +398,7 @@ WRITE8_MEMBER(hx5102_device::fdc_write)
 	case 0x08:
 		// Command register (FIFO write)
 		LOGMASKED(LOG_STATUS, "i8272A.fifo <- %02x\n", data);
-		m_floppy_ctrl->fifo_w(data);
+		m_floppy_ctrl->write_fifo(data);
 		break;
 	case 0x0c:
 		// DMA lock
@@ -460,7 +460,7 @@ WRITE_LINE_MEMBER(hx5102_device::hsklatch_out)
     | TD3 | TD2 | TD1 | TD0 |  0  | TIM | MON | INT |
     +-----+-----+-----+-----+-----+-----+-----+-----+
 
-    TDx = Tracks for drive x; 0 = 40, 1 = 77
+    TDx = Tracks for drive x; 1 = 40, 0 = 77
     TIM = Timeout
     MON = Motor on
     INT = Interrupt from i8272A
@@ -472,6 +472,9 @@ READ8_MEMBER(hx5102_device::cruread)
 	if (m_pending_int) crubits |= 0x01;
 	if (m_motor_on) crubits |= 0x02;
 	if (m_mspeed_on) crubits |= 0x04;
+
+	crubits |= ((ioport("HXDIP")->read())<<4);
+
 	return crubits;
 }
 
@@ -646,30 +649,46 @@ static void hx5102_drive(device_slot_interface &device)
 	device.option_add("525dd", FLOPPY_525_DD);
 }
 
+INPUT_PORTS_START( hx5102 )
+	PORT_START( "HXDIP" )
+	PORT_DIPNAME( 0x01, 0x01, "Drive 1 cylinders" )
+		PORT_DIPSETTING( 0x01, "40")
+		PORT_DIPSETTING( 0x00, "77")
+	PORT_DIPNAME( 0x02, 0x02, "Drive 2 cylinders" )
+		PORT_DIPSETTING( 0x02, "40")
+		PORT_DIPSETTING( 0x00, "77")
+	PORT_DIPNAME( 0x04, 0x04, "Drive 3 cylinders" )
+		PORT_DIPSETTING( 0x04, "40")
+		PORT_DIPSETTING( 0x00, "77")
+	PORT_DIPNAME( 0x08, 0x08, "Drive 4 cylinders" )
+		PORT_DIPSETTING( 0x08, "40")
+		PORT_DIPSETTING( 0x00, "77")
+INPUT_PORTS_END
+
 /*
     HX5102 configuration
 */
 MACHINE_CONFIG_START(hx5102_device::device_add_mconfig)
 	// Hexbus controller
 	MCFG_DEVICE_ADD(IBC_TAG, IBC, 0)
-	MCFG_IBC_HEXBUS_OUT_CALLBACK(WRITE8(hx5102_device, hexbus_out))
-	MCFG_IBC_HSKLATCH_CALLBACK(WRITELINE(hx5102_device, hsklatch_out))
+	MCFG_IBC_HEXBUS_OUT_CALLBACK(WRITE8(*this, hx5102_device, hexbus_out))
+	MCFG_IBC_HSKLATCH_CALLBACK(WRITELINE(*this, hx5102_device, hsklatch_out))
 
 	// Outgoing socket for downstream devices
 	MCFG_HEXBUS_ADD("hexbus")
 
 	// TMS9995 CPU @ 12.0 MHz
 	MCFG_TMS99xx_ADD(TMS9995_TAG, TMS9995, XTAL(12'000'000), memmap, crumap)
-	MCFG_TMS9995_EXTOP_HANDLER( WRITE8(hx5102_device, external_operation) )
-	MCFG_TMS9995_CLKOUT_HANDLER( WRITELINE(hx5102_device, clock_out) )
+	MCFG_TMS9995_EXTOP_HANDLER( WRITE8(*this, hx5102_device, external_operation) )
+	MCFG_TMS9995_CLKOUT_HANDLER( WRITELINE(*this, hx5102_device, clock_out) )
 
 	// Disk controller i8272A
 	// Not connected: Select lines (DS0, DS1), Head load (HDL), VCO
 	// Tied to 1: READY
 	// Tied to 0: TC
 	MCFG_I8272A_ADD(FDC_TAG, false)
-	MCFG_UPD765_INTRQ_CALLBACK(WRITELINE(hx5102_device, fdc_irq_w))
-	MCFG_UPD765_DRQ_CALLBACK(WRITELINE(hx5102_device, fdc_drq_w))
+	MCFG_UPD765_INTRQ_CALLBACK(WRITELINE(*this, hx5102_device, fdc_irq_w))
+	MCFG_UPD765_DRQ_CALLBACK(WRITELINE(*this, hx5102_device, fdc_drq_w))
 	MCFG_FLOPPY_DRIVE_ADD("d0", hx5102_drive, "525dd", hx5102_device::floppy_formats)
 	MCFG_FLOPPY_DRIVE_SOUND(true)
 	MCFG_FLOPPY_DRIVE_ADD("d1", hx5102_drive, nullptr, hx5102_device::floppy_formats)
@@ -683,7 +702,7 @@ MACHINE_CONFIG_START(hx5102_device::device_add_mconfig)
 	MCFG_TTL74123_A_PIN_VALUE(0)
 	MCFG_TTL74123_B_PIN_VALUE(1)
 	MCFG_TTL74123_CLEAR_PIN_VALUE(1)
-	MCFG_TTL74123_OUTPUT_CHANGED_CB(WRITELINE(hx5102_device, motor_w))
+	MCFG_TTL74123_OUTPUT_CHANGED_CB(WRITELINE(*this, hx5102_device, motor_w))
 
 	MCFG_DEVICE_ADD(MTSPD_TAG, TTL74123, 0)
 	MCFG_TTL74123_CONNECTION_TYPE(TTL74123_GROUNDED)
@@ -692,11 +711,11 @@ MACHINE_CONFIG_START(hx5102_device::device_add_mconfig)
 	MCFG_TTL74123_A_PIN_VALUE(0)
 	MCFG_TTL74123_B_PIN_VALUE(1)
 	MCFG_TTL74123_CLEAR_PIN_VALUE(1)
-	MCFG_TTL74123_OUTPUT_CHANGED_CB(WRITELINE(hx5102_device, mspeed_w))
+	MCFG_TTL74123_OUTPUT_CHANGED_CB(WRITELINE(*this, hx5102_device, mspeed_w))
 
 	// READY flipflop
 	MCFG_DEVICE_ADD(READYFF_TAG, TTL7474, 0)
-	MCFG_7474_COMP_OUTPUT_CB(WRITELINE(hx5102_device, board_ready))
+	MCFG_7474_COMP_OUTPUT_CB(WRITELINE(*this, hx5102_device, board_ready))
 
 	// RAM
 	MCFG_RAM_ADD(RAM1_TAG)
@@ -718,6 +737,11 @@ ROM_END
 const tiny_rom_entry *hx5102_device::device_rom_region() const
 {
 	return ROM_NAME( hx5102 );
+}
+
+ioport_constructor hx5102_device::device_input_ports() const
+{
+	return INPUT_PORTS_NAME( hx5102 );
 }
 
 }   }  // end namespace bus::hexbus

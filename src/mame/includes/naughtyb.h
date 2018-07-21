@@ -1,6 +1,7 @@
 // license:BSD-3-Clause
 // copyright-holders:Brad Oliver,Sal and John Bugliarisi,Paul Priest
 #include "audio/pleiads.h"
+#include "emupal.h"
 #include "screen.h"
 
 class naughtyb_state : public driver_device
@@ -21,8 +22,8 @@ public:
 	void popflame(machine_config &config);
 	void naughtyb(machine_config &config);
 
-	DECLARE_DRIVER_INIT(trvmstr);
-	DECLARE_DRIVER_INIT(popflame);
+	void init_trvmstr();
+	void init_popflame();
 
 	DECLARE_INPUT_CHANGED_MEMBER(coin_inserted);
 

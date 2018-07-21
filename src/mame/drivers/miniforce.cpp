@@ -129,13 +129,16 @@
 class miniforce_state : public driver_device
 {
 public:
-miniforce_state(const machine_config &mconfig, device_type type, const char *tag)
-		: driver_device (mconfig, type, tag)
+	miniforce_state(const machine_config &mconfig, device_type type, const char *tag)
+		: driver_device(mconfig, type, tag)
 	{
 	}
-	virtual void machine_start () override;
-	virtual void machine_reset () override;
+
 	void miniforce(machine_config &config);
+
+private:
+	virtual void machine_start() override;
+	virtual void machine_reset() override;
 	void miniforce_mem(address_map &map);
 };
 
@@ -180,7 +183,7 @@ static void miniforce_vme_cards(device_slot_interface &device)
  * Machine configuration
  */
 MACHINE_CONFIG_START(miniforce_state::miniforce)
-//  MCFG_CPU_PROGRAM_MAP (miniforce_mem)
+//  MCFG_DEVICE_PROGRAM_MAP (miniforce_mem)
 	MCFG_VME_DEVICE_ADD("vme")
 	MCFG_VME_SLOT_ADD ("vme", 1, miniforce_vme_cards, "fccpu21")
 	MCFG_VME_SLOT_ADD ("vme", 2, miniforce_vme_cards, nullptr)
@@ -197,5 +200,5 @@ ROM_START(miniforce)
 ROM_END
 
 /* Drivers TODO: setup distinct miniforce machine configurations */
-/*    YEAR  NAME        PARENT  COMPAT  MACHINE     INPUT       CLASS             INIT  COMPANY             FULLNAME      FLAGS */
-COMP (1987, miniforce,  0,      0,      miniforce,  miniforce,  miniforce_state,  0,    "Force Computers",  "miniFORCE",  MACHINE_NOT_WORKING | MACHINE_NO_SOUND_HW )
+/*    YEAR  NAME       PARENT  COMPAT  MACHINE    INPUT      CLASS            INIT        COMPANY            FULLNAME     FLAGS */
+COMP( 1987, miniforce, 0,      0,      miniforce, miniforce, miniforce_state, empty_init, "Force Computers", "miniFORCE", MACHINE_NOT_WORKING | MACHINE_NO_SOUND_HW )

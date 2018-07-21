@@ -2296,14 +2296,10 @@ READ8_MEMBER(apple2e_state::c800_r)
 		return mig_r(offset-0x600);
 	}
 
-	if (offset == 0x7ff)
+	if ((offset == 0x7ff) && !machine().side_effects_disabled())
 	{
-		if (!machine().side_effects_disabled())
-		{
-			m_cnxx_slot = CNXX_UNCLAIMED;
-			update_slotrom_banks();
-		}
-
+		m_cnxx_slot = CNXX_UNCLAIMED;
+		update_slotrom_banks();
 		return 0xff;
 	}
 
@@ -2580,7 +2576,7 @@ uint8_t apple2e_state::read_floatingbus()
 
 	// calculate vertical scanning state
 	//
-	v_line  = i / kHClocks; // which vertical scanning line
+	v_line  = (i / kHClocks) + 188; // which vertical scanning line (MAME starts at blank, not the beginning of the scanning area)
 	v_state = kVLine0State + v_line; // V state bits
 	if ((v_line >= kVPresetLine)) // check for previous vertical state preset
 	{
@@ -2699,8 +2695,8 @@ void apple2e_state::apple2e_map(address_map &map)
 	map(0x0800, 0x1fff).m(m_0800bank, FUNC(address_map_bank_device::amap8));
 	map(0x2000, 0x3fff).m(m_2000bank, FUNC(address_map_bank_device::amap8));
 	map(0x4000, 0xbfff).m(m_4000bank, FUNC(address_map_bank_device::amap8));
-	map(0xc000, 0xc07f).rw(this, FUNC(apple2e_state::c000_r), FUNC(apple2e_state::c000_w));
-	map(0xc080, 0xc0ff).rw(this, FUNC(apple2e_state::c080_r), FUNC(apple2e_state::c080_w));
+	map(0xc000, 0xc07f).rw(FUNC(apple2e_state::c000_r), FUNC(apple2e_state::c000_w));
+	map(0xc080, 0xc0ff).rw(FUNC(apple2e_state::c080_r), FUNC(apple2e_state::c080_w));
 	map(0xc100, 0xc2ff).m(m_c100bank, FUNC(address_map_bank_device::amap8));
 	map(0xc300, 0xc3ff).m(m_c300bank, FUNC(address_map_bank_device::amap8));
 	map(0xc400, 0xc7ff).m(m_c400bank, FUNC(address_map_bank_device::amap8));
@@ -2716,8 +2712,8 @@ void apple2e_state::apple2c_map(address_map &map)
 	map(0x0800, 0x1fff).m(m_0800bank, FUNC(address_map_bank_device::amap8));
 	map(0x2000, 0x3fff).m(m_2000bank, FUNC(address_map_bank_device::amap8));
 	map(0x4000, 0xbfff).m(m_4000bank, FUNC(address_map_bank_device::amap8));
-	map(0xc000, 0xc07f).rw(this, FUNC(apple2e_state::c000_iic_r), FUNC(apple2e_state::c000_iic_w));
-	map(0xc080, 0xc0ff).rw(this, FUNC(apple2e_state::c080_r), FUNC(apple2e_state::c080_w));
+	map(0xc000, 0xc07f).rw(FUNC(apple2e_state::c000_iic_r), FUNC(apple2e_state::c000_iic_w));
+	map(0xc080, 0xc0ff).rw(FUNC(apple2e_state::c080_r), FUNC(apple2e_state::c080_w));
 	map(0xc098, 0xc09b).rw(m_acia1, FUNC(mos6551_device::read), FUNC(mos6551_device::write));
 	map(0xc0a8, 0xc0ab).rw(IIC_ACIA2_TAG, FUNC(mos6551_device::read), FUNC(mos6551_device::write));
 	map(0xc100, 0xc2ff).m(m_c100bank, FUNC(address_map_bank_device::amap8));
@@ -2735,11 +2731,11 @@ void apple2e_state::apple2c_memexp_map(address_map &map)
 	map(0x0800, 0x1fff).m(m_0800bank, FUNC(address_map_bank_device::amap8));
 	map(0x2000, 0x3fff).m(m_2000bank, FUNC(address_map_bank_device::amap8));
 	map(0x4000, 0xbfff).m(m_4000bank, FUNC(address_map_bank_device::amap8));
-	map(0xc000, 0xc07f).rw(this, FUNC(apple2e_state::c000_iic_r), FUNC(apple2e_state::c000_iic_w));
-	map(0xc080, 0xc0ff).rw(this, FUNC(apple2e_state::c080_r), FUNC(apple2e_state::c080_w));
+	map(0xc000, 0xc07f).rw(FUNC(apple2e_state::c000_iic_r), FUNC(apple2e_state::c000_iic_w));
+	map(0xc080, 0xc0ff).rw(FUNC(apple2e_state::c080_r), FUNC(apple2e_state::c080_w));
 	map(0xc098, 0xc09b).rw(m_acia1, FUNC(mos6551_device::read), FUNC(mos6551_device::write));
 	map(0xc0a8, 0xc0ab).rw(IIC_ACIA2_TAG, FUNC(mos6551_device::read), FUNC(mos6551_device::write));
-	map(0xc0c0, 0xc0c3).rw(this, FUNC(apple2e_state::memexp_r), FUNC(apple2e_state::memexp_w));
+	map(0xc0c0, 0xc0c3).rw(FUNC(apple2e_state::memexp_r), FUNC(apple2e_state::memexp_w));
 	map(0xc100, 0xc2ff).m(m_c100bank, FUNC(address_map_bank_device::amap8));
 	map(0xc300, 0xc3ff).m(m_c300bank, FUNC(address_map_bank_device::amap8));
 	map(0xc400, 0xc7ff).m(m_c400bank, FUNC(address_map_bank_device::amap8));
@@ -2755,12 +2751,12 @@ void apple2e_state::laser128_map(address_map &map)
 	map(0x0800, 0x1fff).m(m_0800bank, FUNC(address_map_bank_device::amap8));
 	map(0x2000, 0x3fff).m(m_2000bank, FUNC(address_map_bank_device::amap8));
 	map(0x4000, 0xbfff).m(m_4000bank, FUNC(address_map_bank_device::amap8));
-	map(0xc000, 0xc07f).rw(this, FUNC(apple2e_state::c000_r), FUNC(apple2e_state::c000_w));
-	map(0xc080, 0xc0ff).rw(this, FUNC(apple2e_state::c080_r), FUNC(apple2e_state::c080_w));
+	map(0xc000, 0xc07f).rw(FUNC(apple2e_state::c000_r), FUNC(apple2e_state::c000_w));
+	map(0xc080, 0xc0ff).rw(FUNC(apple2e_state::c080_r), FUNC(apple2e_state::c080_w));
 //  AM_RANGE(0xc098, 0xc09b) AM_DEVREADWRITE(IIC_ACIA1_TAG, mos6551_device, read, write)
 //  AM_RANGE(0xc0a8, 0xc0ab) AM_DEVREADWRITE(IIC_ACIA2_TAG, mos6551_device, read, write)
-	map(0xc0d0, 0xc0d3).rw(this, FUNC(apple2e_state::memexp_r), FUNC(apple2e_state::memexp_w));
-	map(0xc0e0, 0xc0ef).rw(m_laserudc, FUNC(applefdc_base_device::read), FUNC(applefdc_base_device::write));
+	map(0xc0d0, 0xc0d3).rw(FUNC(apple2e_state::memexp_r), FUNC(apple2e_state::memexp_w));
+	map(0xc0e0, 0xc0ef).rw(m_laserudc, FUNC(applefdc_base_device::bus_r), FUNC(applefdc_base_device::bus_w));
 	map(0xc100, 0xc2ff).m(m_c100bank, FUNC(address_map_bank_device::amap8));
 	map(0xc300, 0xc3ff).m(m_c300bank, FUNC(address_map_bank_device::amap8));
 	map(0xc400, 0xc7ff).m(m_c400bank, FUNC(address_map_bank_device::amap8));
@@ -2770,103 +2766,103 @@ void apple2e_state::laser128_map(address_map &map)
 
 void apple2e_state::r0000bank_map(address_map &map)
 {
-	map(0x0000, 0x01ff).rw(this, FUNC(apple2e_state::ram0000_r), FUNC(apple2e_state::ram0000_w));
-	map(0x0200, 0x03ff).rw(this, FUNC(apple2e_state::auxram0000_r), FUNC(apple2e_state::auxram0000_w));
+	map(0x0000, 0x01ff).rw(FUNC(apple2e_state::ram0000_r), FUNC(apple2e_state::ram0000_w));
+	map(0x0200, 0x03ff).rw(FUNC(apple2e_state::auxram0000_r), FUNC(apple2e_state::auxram0000_w));
 }
 
 void apple2e_state::r0200bank_map(address_map &map)
 {
-	map(0x0000, 0x01ff).rw(this, FUNC(apple2e_state::ram0200_r), FUNC(apple2e_state::ram0200_w)); // wr 0 rd 0
-	map(0x0200, 0x03ff).rw(this, FUNC(apple2e_state::auxram0200_r), FUNC(apple2e_state::ram0200_w)); // wr 0 rd 1
-	map(0x0400, 0x05ff).rw(this, FUNC(apple2e_state::ram0200_r), FUNC(apple2e_state::auxram0200_w)); // wr 1 rd 0
-	map(0x0600, 0x07ff).rw(this, FUNC(apple2e_state::auxram0200_r), FUNC(apple2e_state::auxram0200_w)); // wr 1 rd 1
+	map(0x0000, 0x01ff).rw(FUNC(apple2e_state::ram0200_r), FUNC(apple2e_state::ram0200_w)); // wr 0 rd 0
+	map(0x0200, 0x03ff).rw(FUNC(apple2e_state::auxram0200_r), FUNC(apple2e_state::ram0200_w)); // wr 0 rd 1
+	map(0x0400, 0x05ff).rw(FUNC(apple2e_state::ram0200_r), FUNC(apple2e_state::auxram0200_w)); // wr 1 rd 0
+	map(0x0600, 0x07ff).rw(FUNC(apple2e_state::auxram0200_r), FUNC(apple2e_state::auxram0200_w)); // wr 1 rd 1
 }
 
 void apple2e_state::r0400bank_map(address_map &map)
 {
-	map(0x0000, 0x03ff).rw(this, FUNC(apple2e_state::ram0400_r), FUNC(apple2e_state::ram0400_w)); // wr 0 rd 0
-	map(0x0400, 0x07ff).rw(this, FUNC(apple2e_state::auxram0400_r), FUNC(apple2e_state::ram0400_w));  // wr 0 rd 1
-	map(0x0800, 0x0bff).rw(this, FUNC(apple2e_state::ram0400_r), FUNC(apple2e_state::auxram0400_w));  // wr 1 rd 0
-	map(0x0c00, 0x0fff).rw(this, FUNC(apple2e_state::auxram0400_r), FUNC(apple2e_state::auxram0400_w)); // wr 1 rd 1
+	map(0x0000, 0x03ff).rw(FUNC(apple2e_state::ram0400_r), FUNC(apple2e_state::ram0400_w)); // wr 0 rd 0
+	map(0x0400, 0x07ff).rw(FUNC(apple2e_state::auxram0400_r), FUNC(apple2e_state::ram0400_w));  // wr 0 rd 1
+	map(0x0800, 0x0bff).rw(FUNC(apple2e_state::ram0400_r), FUNC(apple2e_state::auxram0400_w));  // wr 1 rd 0
+	map(0x0c00, 0x0fff).rw(FUNC(apple2e_state::auxram0400_r), FUNC(apple2e_state::auxram0400_w)); // wr 1 rd 1
 }
 
 void apple2e_state::r0800bank_map(address_map &map)
 {
-	map(0x0000, 0x17ff).rw(this, FUNC(apple2e_state::ram0800_r), FUNC(apple2e_state::ram0800_w));
-	map(0x2000, 0x37ff).rw(this, FUNC(apple2e_state::auxram0800_r), FUNC(apple2e_state::ram0800_w));
-	map(0x4000, 0x57ff).rw(this, FUNC(apple2e_state::ram0800_r), FUNC(apple2e_state::auxram0800_w));
-	map(0x6000, 0x77ff).rw(this, FUNC(apple2e_state::auxram0800_r), FUNC(apple2e_state::auxram0800_w));
+	map(0x0000, 0x17ff).rw(FUNC(apple2e_state::ram0800_r), FUNC(apple2e_state::ram0800_w));
+	map(0x2000, 0x37ff).rw(FUNC(apple2e_state::auxram0800_r), FUNC(apple2e_state::ram0800_w));
+	map(0x4000, 0x57ff).rw(FUNC(apple2e_state::ram0800_r), FUNC(apple2e_state::auxram0800_w));
+	map(0x6000, 0x77ff).rw(FUNC(apple2e_state::auxram0800_r), FUNC(apple2e_state::auxram0800_w));
 }
 
 void apple2e_state::r2000bank_map(address_map &map)
 {
-	map(0x0000, 0x1fff).rw(this, FUNC(apple2e_state::ram2000_r), FUNC(apple2e_state::ram2000_w));
-	map(0x2000, 0x3fff).rw(this, FUNC(apple2e_state::auxram2000_r), FUNC(apple2e_state::ram2000_w));
-	map(0x4000, 0x5fff).rw(this, FUNC(apple2e_state::ram2000_r), FUNC(apple2e_state::auxram2000_w));
-	map(0x6000, 0x7fff).rw(this, FUNC(apple2e_state::auxram2000_r), FUNC(apple2e_state::auxram2000_w));
+	map(0x0000, 0x1fff).rw(FUNC(apple2e_state::ram2000_r), FUNC(apple2e_state::ram2000_w));
+	map(0x2000, 0x3fff).rw(FUNC(apple2e_state::auxram2000_r), FUNC(apple2e_state::ram2000_w));
+	map(0x4000, 0x5fff).rw(FUNC(apple2e_state::ram2000_r), FUNC(apple2e_state::auxram2000_w));
+	map(0x6000, 0x7fff).rw(FUNC(apple2e_state::auxram2000_r), FUNC(apple2e_state::auxram2000_w));
 }
 
 void apple2e_state::r4000bank_map(address_map &map)
 {
-	map(0x00000, 0x07fff).rw(this, FUNC(apple2e_state::ram4000_r), FUNC(apple2e_state::ram4000_w));
-	map(0x08000, 0x0ffff).rw(this, FUNC(apple2e_state::auxram4000_r), FUNC(apple2e_state::ram4000_w));
-	map(0x10000, 0x17fff).rw(this, FUNC(apple2e_state::ram4000_r), FUNC(apple2e_state::auxram4000_w));
-	map(0x18000, 0x1ffff).rw(this, FUNC(apple2e_state::auxram4000_r), FUNC(apple2e_state::auxram4000_w));
-	map(0x20000, 0x23fff).rw(this, FUNC(apple2e_state::cec4000_r), FUNC(apple2e_state::ram4000_w));
-	map(0x24000, 0x27fff).rw(this, FUNC(apple2e_state::cec8000_r), FUNC(apple2e_state::ram8000_w));
+	map(0x00000, 0x07fff).rw(FUNC(apple2e_state::ram4000_r), FUNC(apple2e_state::ram4000_w));
+	map(0x08000, 0x0ffff).rw(FUNC(apple2e_state::auxram4000_r), FUNC(apple2e_state::ram4000_w));
+	map(0x10000, 0x17fff).rw(FUNC(apple2e_state::ram4000_r), FUNC(apple2e_state::auxram4000_w));
+	map(0x18000, 0x1ffff).rw(FUNC(apple2e_state::auxram4000_r), FUNC(apple2e_state::auxram4000_w));
+	map(0x20000, 0x23fff).rw(FUNC(apple2e_state::cec4000_r), FUNC(apple2e_state::ram4000_w));
+	map(0x24000, 0x27fff).rw(FUNC(apple2e_state::cec8000_r), FUNC(apple2e_state::ram8000_w));
 }
 
 void apple2e_state::c100bank_map(address_map &map)
 {
-	map(0x0000, 0x01ff).rw(this, FUNC(apple2e_state::c100_r), FUNC(apple2e_state::c100_w));
-	map(0x0200, 0x03ff).r(this, FUNC(apple2e_state::c100_int_r)).nopw();
-	map(0x0400, 0x05ff).r(this, FUNC(apple2e_state::c100_int_bank_r)).nopw();
-	map(0x0600, 0x07ff).r(this, FUNC(apple2e_state::c100_cec_r)).nopw();
-	map(0x0800, 0x09ff).r(this, FUNC(apple2e_state::c100_cec_bank_r)).nopw();
+	map(0x0000, 0x01ff).rw(FUNC(apple2e_state::c100_r), FUNC(apple2e_state::c100_w));
+	map(0x0200, 0x03ff).r(FUNC(apple2e_state::c100_int_r)).nopw();
+	map(0x0400, 0x05ff).r(FUNC(apple2e_state::c100_int_bank_r)).nopw();
+	map(0x0600, 0x07ff).r(FUNC(apple2e_state::c100_cec_r)).nopw();
+	map(0x0800, 0x09ff).r(FUNC(apple2e_state::c100_cec_bank_r)).nopw();
 
 }
 
 void apple2e_state::c300bank_map(address_map &map)
 {
-	map(0x0000, 0x00ff).rw(this, FUNC(apple2e_state::c300_r), FUNC(apple2e_state::c300_w));
-	map(0x0100, 0x01ff).r(this, FUNC(apple2e_state::c300_int_r)).nopw();
-	map(0x0200, 0x02ff).r(this, FUNC(apple2e_state::c300_int_bank_r)).nopw();
-	map(0x0300, 0x03ff).r(this, FUNC(apple2e_state::c300_cec_r)).nopw();
-	map(0x0400, 0x04ff).r(this, FUNC(apple2e_state::c300_cec_bank_r)).nopw();
+	map(0x0000, 0x00ff).rw(FUNC(apple2e_state::c300_r), FUNC(apple2e_state::c300_w));
+	map(0x0100, 0x01ff).r(FUNC(apple2e_state::c300_int_r)).nopw();
+	map(0x0200, 0x02ff).r(FUNC(apple2e_state::c300_int_bank_r)).nopw();
+	map(0x0300, 0x03ff).r(FUNC(apple2e_state::c300_cec_r)).nopw();
+	map(0x0400, 0x04ff).r(FUNC(apple2e_state::c300_cec_bank_r)).nopw();
 }
 
 void apple2e_state::c400bank_map(address_map &map)
 {
-	map(0x0000, 0x03ff).rw(this, FUNC(apple2e_state::c400_r), FUNC(apple2e_state::c400_w));
-	map(0x0400, 0x07ff).rw(this, FUNC(apple2e_state::c400_int_r), FUNC(apple2e_state::c400_w));
-	map(0x0800, 0x0bff).rw(this, FUNC(apple2e_state::c400_int_bank_r), FUNC(apple2e_state::c400_w));
-	map(0x0c00, 0x0fff).r(this, FUNC(apple2e_state::c400_cec_r)).nopw();
-	map(0x1000, 0x13ff).r(this, FUNC(apple2e_state::c400_cec_bank_r)).nopw();
+	map(0x0000, 0x03ff).rw(FUNC(apple2e_state::c400_r), FUNC(apple2e_state::c400_w));
+	map(0x0400, 0x07ff).rw(FUNC(apple2e_state::c400_int_r), FUNC(apple2e_state::c400_w));
+	map(0x0800, 0x0bff).rw(FUNC(apple2e_state::c400_int_bank_r), FUNC(apple2e_state::c400_w));
+	map(0x0c00, 0x0fff).r(FUNC(apple2e_state::c400_cec_r)).nopw();
+	map(0x1000, 0x13ff).r(FUNC(apple2e_state::c400_cec_bank_r)).nopw();
 }
 
 void apple2e_state::c800bank_map(address_map &map)
 {
-	map(0x0000, 0x07ff).rw(this, FUNC(apple2e_state::c800_r), FUNC(apple2e_state::c800_w));
-	map(0x0800, 0x0fff).rw(this, FUNC(apple2e_state::c800_int_r), FUNC(apple2e_state::c800_w));
-	map(0x1000, 0x17ff).rw(this, FUNC(apple2e_state::c800_b2_int_r), FUNC(apple2e_state::c800_w));
-	map(0x1800, 0x1fff).r(this, FUNC(apple2e_state::c800_cec_r)).nopw();
-	map(0x2000, 0x27ff).r(this, FUNC(apple2e_state::c800_cec_bank_r)).nopw();
+	map(0x0000, 0x07ff).rw(FUNC(apple2e_state::c800_r), FUNC(apple2e_state::c800_w));
+	map(0x0800, 0x0fff).rw(FUNC(apple2e_state::c800_int_r), FUNC(apple2e_state::c800_w));
+	map(0x1000, 0x17ff).rw(FUNC(apple2e_state::c800_b2_int_r), FUNC(apple2e_state::c800_w));
+	map(0x1800, 0x1fff).r(FUNC(apple2e_state::c800_cec_r)).nopw();
+	map(0x2000, 0x27ff).r(FUNC(apple2e_state::c800_cec_bank_r)).nopw();
 }
 
 void apple2e_state::inhbank_map(address_map &map)
 {
 	map(0x0000, 0x2fff).m(m_lcbank, FUNC(address_map_bank_device::amap8));
-	map(0x3000, 0x5fff).rw(this, FUNC(apple2e_state::inh_r), FUNC(apple2e_state::inh_w));
+	map(0x3000, 0x5fff).rw(FUNC(apple2e_state::inh_r), FUNC(apple2e_state::inh_w));
 }
 
 void apple2e_state::lcbank_map(address_map &map)
 {
-	map(0x00000, 0x02fff).rom().region("maincpu", 0x1000).w(this, FUNC(apple2e_state::lc_w));
-	map(0x03000, 0x05fff).rw(this, FUNC(apple2e_state::lc_r), FUNC(apple2e_state::lc_w));
-	map(0x06000, 0x08fff).rw(this, FUNC(apple2e_state::lc_romswitch_r), FUNC(apple2e_state::lc_romswitch_w));
-	map(0x09000, 0x0bfff).rom().region("maincpu", 0x5000).w(this, FUNC(apple2e_state::lc_w));
-	map(0x0c000, 0x0efff).rw(this, FUNC(apple2e_state::lc_r), FUNC(apple2e_state::lc_w));
-	map(0x0f000, 0x11fff).rom().region("maincpu", 0xd000).w(this, FUNC(apple2e_state::lc_w));
+	map(0x00000, 0x02fff).rom().region("maincpu", 0x1000).w(FUNC(apple2e_state::lc_w));
+	map(0x03000, 0x05fff).rw(FUNC(apple2e_state::lc_r), FUNC(apple2e_state::lc_w));
+	map(0x06000, 0x08fff).rw(FUNC(apple2e_state::lc_romswitch_r), FUNC(apple2e_state::lc_romswitch_w));
+	map(0x09000, 0x0bfff).rom().region("maincpu", 0x5000).w(FUNC(apple2e_state::lc_w));
+	map(0x0c000, 0x0efff).rw(FUNC(apple2e_state::lc_r), FUNC(apple2e_state::lc_w));
+	map(0x0f000, 0x11fff).rom().region("maincpu", 0xd000).w(FUNC(apple2e_state::lc_w));
 }
 
 void apple2e_state::spectred_keyb_map(address_map &map)
@@ -3887,8 +3883,8 @@ static void apple2eaux_cards(device_slot_interface &device)
 
 MACHINE_CONFIG_START(apple2e_state::apple2e)
 	/* basic machine hardware */
-	MCFG_CPU_ADD("maincpu", M6502, 1021800)     /* close to actual CPU frequency of 1.020484 MHz */
-	MCFG_CPU_PROGRAM_MAP(apple2e_map)
+	MCFG_DEVICE_ADD("maincpu", M6502, 1021800)     /* close to actual CPU frequency of 1.020484 MHz */
+	MCFG_DEVICE_PROGRAM_MAP(apple2e_map)
 	MCFG_TIMER_DRIVER_ADD_SCANLINE("scantimer", apple2e_state, apple2_interrupt, "screen", 0, 1)
 	MCFG_QUANTUM_TIME(attotime::from_hz(60))
 
@@ -3903,13 +3899,13 @@ MACHINE_CONFIG_START(apple2e_state::apple2e)
 	MCFG_PALETTE_INIT_OWNER(apple2e_state, apple2)
 
 	/* sound hardware */
-	MCFG_SPEAKER_STANDARD_MONO("mono")
-	MCFG_SOUND_ADD(A2_SPEAKER_TAG, SPEAKER_SOUND, 0)
+	SPEAKER(config, "mono").front_center();
+	MCFG_DEVICE_ADD(A2_SPEAKER_TAG, SPEAKER_SOUND)
 	MCFG_SOUND_ROUTE(ALL_OUTPUTS, "mono", 1.00)
 
 	/* DS1315 for no-slot clock */
 	MCFG_DS1315_ADD("nsc")
-	MCFG_DS1315_BACKING_HANDLER(READ8(apple2e_state, nsc_backing_r))
+	MCFG_DS1315_BACKING_HANDLER(READ8(*this, apple2e_state, nsc_backing_r))
 
 	/* RAM */
 	MCFG_RAM_ADD(RAM_TAG)
@@ -4011,32 +4007,32 @@ MACHINE_CONFIG_START(apple2e_state::apple2e)
 	MCFG_AY3600_MATRIX_X6(IOPORT("X6"))
 	MCFG_AY3600_MATRIX_X7(IOPORT("X7"))
 	MCFG_AY3600_MATRIX_X8(IOPORT("X8"))
-	MCFG_AY3600_SHIFT_CB(READLINE(apple2e_state, ay3600_shift_r))
-	MCFG_AY3600_CONTROL_CB(READLINE(apple2e_state, ay3600_control_r))
-	MCFG_AY3600_DATA_READY_CB(WRITELINE(apple2e_state, ay3600_data_ready_w))
-	MCFG_AY3600_AKO_CB(WRITELINE(apple2e_state, ay3600_ako_w))
+	MCFG_AY3600_SHIFT_CB(READLINE(*this, apple2e_state, ay3600_shift_r))
+	MCFG_AY3600_CONTROL_CB(READLINE(*this, apple2e_state, ay3600_control_r))
+	MCFG_AY3600_DATA_READY_CB(WRITELINE(*this, apple2e_state, ay3600_data_ready_w))
+	MCFG_AY3600_AKO_CB(WRITELINE(*this, apple2e_state, ay3600_ako_w))
 
 	/* repeat timer.  15 Hz from page 7-15 of "Understanding the Apple IIe" */
 	MCFG_TIMER_DRIVER_ADD_PERIODIC("repttmr", apple2e_state, ay3600_repeat, attotime::from_hz(15))
 
 	/* slot devices */
-	MCFG_DEVICE_ADD("a2bus", A2BUS, 0)
+	MCFG_DEVICE_ADD(m_a2bus, A2BUS, 0)
 	MCFG_A2BUS_CPU("maincpu")
-	MCFG_A2BUS_OUT_IRQ_CB(WRITELINE(apple2e_state, a2bus_irq_w))
-	MCFG_A2BUS_OUT_NMI_CB(WRITELINE(apple2e_state, a2bus_nmi_w))
-	MCFG_A2BUS_OUT_INH_CB(WRITELINE(apple2e_state, a2bus_inh_w))
-	MCFG_A2BUS_SLOT_ADD("a2bus", "sl1", apple2_cards, nullptr)
-	MCFG_A2BUS_SLOT_ADD("a2bus", "sl2", apple2_cards, nullptr)
-	MCFG_A2BUS_SLOT_ADD("a2bus", "sl3", apple2_cards, nullptr)
-	MCFG_A2BUS_SLOT_ADD("a2bus", "sl4", apple2_cards, "mockingboard")
-	MCFG_A2BUS_SLOT_ADD("a2bus", "sl5", apple2_cards, nullptr)
-	MCFG_A2BUS_SLOT_ADD("a2bus", "sl6", apple2_cards, "diskiing")
-	MCFG_A2BUS_SLOT_ADD("a2bus", "sl7", apple2_cards, nullptr)
+	MCFG_A2BUS_OUT_IRQ_CB(WRITELINE(*this, apple2e_state, a2bus_irq_w))
+	MCFG_A2BUS_OUT_NMI_CB(WRITELINE(*this, apple2e_state, a2bus_nmi_w))
+	MCFG_A2BUS_OUT_INH_CB(WRITELINE(*this, apple2e_state, a2bus_inh_w))
+	A2BUS_SLOT(config, "sl1", m_a2bus, apple2_cards, nullptr);
+	A2BUS_SLOT(config, "sl2", m_a2bus, apple2_cards, nullptr);
+	A2BUS_SLOT(config, "sl3", m_a2bus, apple2_cards, nullptr);
+	A2BUS_SLOT(config, "sl4", m_a2bus, apple2_cards, "mockingboard");
+	A2BUS_SLOT(config, "sl5", m_a2bus, apple2_cards, nullptr);
+	A2BUS_SLOT(config, "sl6", m_a2bus, apple2_cards, "diskiing");
+	A2BUS_SLOT(config, "sl7", m_a2bus, apple2_cards, nullptr);
 
 	MCFG_DEVICE_ADD(A2_AUXSLOT_TAG, A2EAUXSLOT, 0)
 	MCFG_A2EAUXSLOT_CPU("maincpu")
-	MCFG_A2EAUXSLOT_OUT_IRQ_CB(WRITELINE(apple2e_state, a2bus_irq_w))
-	MCFG_A2EAUXSLOT_OUT_NMI_CB(WRITELINE(apple2e_state, a2bus_nmi_w))
+	MCFG_A2EAUXSLOT_OUT_IRQ_CB(WRITELINE(*this, apple2e_state, a2bus_irq_w))
+	MCFG_A2EAUXSLOT_OUT_NMI_CB(WRITELINE(*this, apple2e_state, a2bus_nmi_w))
 	MCFG_A2EAUXSLOT_SLOT_ADD(A2_AUXSLOT_TAG, "aux", apple2eaux_cards, "ext80")   // default to an extended 80-column card
 
 	MCFG_SOFTWARE_LIST_ADD("flop525_list","apple2")
@@ -4054,14 +4050,14 @@ MACHINE_CONFIG_END
 
 MACHINE_CONFIG_START(apple2e_state::apple2ee)
 	apple2e(config);
-	MCFG_CPU_REPLACE("maincpu", M65C02, 1021800)        /* close to actual CPU frequency of 1.020484 MHz */
-	MCFG_CPU_PROGRAM_MAP(apple2e_map)
+	MCFG_DEVICE_REPLACE("maincpu", M65C02, 1021800)        /* close to actual CPU frequency of 1.020484 MHz */
+	MCFG_DEVICE_PROGRAM_MAP(apple2e_map)
 MACHINE_CONFIG_END
 
 MACHINE_CONFIG_START(apple2e_state::spectred)
 	apple2e(config);
-	MCFG_CPU_ADD("keyb_mcu", I8035, XTAL(4'000'000)) /* guessed frequency */
-	MCFG_CPU_PROGRAM_MAP(spectred_keyb_map)
+	MCFG_DEVICE_ADD("keyb_mcu", I8035, XTAL(4'000'000)) /* guessed frequency */
+	MCFG_DEVICE_PROGRAM_MAP(spectred_keyb_map)
 
 		//TODO: implement the actual interfacing to this 8035 MCU and
 		//      and then remove the keyb CPU inherited from apple2e
@@ -4069,58 +4065,58 @@ MACHINE_CONFIG_END
 
 MACHINE_CONFIG_START(apple2e_state::tk3000)
 	apple2e(config);
-	MCFG_CPU_REPLACE("maincpu", M65C02, 1021800)        /* close to actual CPU frequency of 1.020484 MHz */
-	MCFG_CPU_PROGRAM_MAP(apple2e_map)
+	MCFG_DEVICE_REPLACE("maincpu", M65C02, 1021800)        /* close to actual CPU frequency of 1.020484 MHz */
+	MCFG_DEVICE_PROGRAM_MAP(apple2e_map)
 
-//  MCFG_CPU_ADD("subcpu", Z80, 1021800)    // schematics are illegible on where the clock comes from, but it *seems* to be the same as the 65C02 clock
-//  MCFG_CPU_PROGRAM_MAP(tk3000_kbd_map)
+//  MCFG_DEVICE_ADD("subcpu", Z80, 1021800)    // schematics are illegible on where the clock comes from, but it *seems* to be the same as the 65C02 clock
+//  MCFG_DEVICE_PROGRAM_MAP(tk3000_kbd_map)
 MACHINE_CONFIG_END
 
 MACHINE_CONFIG_START(apple2e_state::apple2ep)
 	apple2e(config);
-	MCFG_CPU_REPLACE("maincpu", M65C02, 1021800)        /* close to actual CPU frequency of 1.020484 MHz */
-	MCFG_CPU_PROGRAM_MAP(apple2e_map)
+	MCFG_DEVICE_REPLACE("maincpu", M65C02, 1021800)        /* close to actual CPU frequency of 1.020484 MHz */
+	MCFG_DEVICE_PROGRAM_MAP(apple2e_map)
 MACHINE_CONFIG_END
 
 MACHINE_CONFIG_START(apple2e_state::apple2c)
 	apple2ee(config);
-	MCFG_CPU_REPLACE("maincpu", M65C02, 1021800)        /* close to actual CPU frequency of 1.020484 MHz */
-	MCFG_CPU_PROGRAM_MAP(apple2c_map)
+	MCFG_DEVICE_REPLACE("maincpu", M65C02, 1021800)        /* close to actual CPU frequency of 1.020484 MHz */
+	MCFG_DEVICE_PROGRAM_MAP(apple2c_map)
 
 	// IIc and friends have no cassette port
 	MCFG_DEVICE_REMOVE(A2_CASSETTE_TAG)
 
-	MCFG_A2BUS_SLOT_REMOVE("sl1")   // IIc has no slots, of course :)
-	MCFG_A2BUS_SLOT_REMOVE("sl2")
-	MCFG_A2BUS_SLOT_REMOVE("sl3")
-	MCFG_A2BUS_SLOT_REMOVE("sl4")
-	MCFG_A2BUS_SLOT_REMOVE("sl5")
-	MCFG_A2BUS_SLOT_REMOVE("sl6")
-	MCFG_A2BUS_SLOT_REMOVE("sl7")
+	MCFG_DEVICE_REMOVE("sl1")   // IIc has no slots, of course :)
+	MCFG_DEVICE_REMOVE("sl2")
+	MCFG_DEVICE_REMOVE("sl3")
+	MCFG_DEVICE_REMOVE("sl4")
+	MCFG_DEVICE_REMOVE("sl5")
+	MCFG_DEVICE_REMOVE("sl6")
+	MCFG_DEVICE_REMOVE("sl7")
 
 	MCFG_DEVICE_ADD(IIC_ACIA1_TAG, MOS6551, 0)
 	MCFG_MOS6551_XTAL(XTAL(14'318'181) / 8) // ~1.789 MHz
-	MCFG_MOS6551_TXD_HANDLER(DEVWRITELINE(PRINTER_PORT_TAG, rs232_port_device, write_txd))
+	MCFG_MOS6551_TXD_HANDLER(WRITELINE(PRINTER_PORT_TAG, rs232_port_device, write_txd))
 
 	MCFG_DEVICE_ADD(IIC_ACIA2_TAG, MOS6551, 0)
 	MCFG_MOS6551_XTAL(XTAL(1'843'200))   // matches SSC so modem software is compatible
-	MCFG_MOS6551_TXD_HANDLER(DEVWRITELINE("modem", rs232_port_device, write_txd))
+	MCFG_MOS6551_TXD_HANDLER(WRITELINE("modem", rs232_port_device, write_txd))
 
-	MCFG_RS232_PORT_ADD(PRINTER_PORT_TAG, default_rs232_devices, nullptr)
-	MCFG_RS232_RXD_HANDLER(DEVWRITELINE(IIC_ACIA1_TAG, mos6551_device, write_rxd))
-	MCFG_RS232_DCD_HANDLER(DEVWRITELINE(IIC_ACIA1_TAG, mos6551_device, write_dcd))
-	MCFG_RS232_DSR_HANDLER(DEVWRITELINE(IIC_ACIA1_TAG, mos6551_device, write_dsr))
-	MCFG_RS232_CTS_HANDLER(DEVWRITELINE(IIC_ACIA1_TAG, mos6551_device, write_cts))
+	MCFG_DEVICE_ADD(PRINTER_PORT_TAG, RS232_PORT, default_rs232_devices, nullptr)
+	MCFG_RS232_RXD_HANDLER(WRITELINE(IIC_ACIA1_TAG, mos6551_device, write_rxd))
+	MCFG_RS232_DCD_HANDLER(WRITELINE(IIC_ACIA1_TAG, mos6551_device, write_dcd))
+	MCFG_RS232_DSR_HANDLER(WRITELINE(IIC_ACIA1_TAG, mos6551_device, write_dsr))
+	MCFG_RS232_CTS_HANDLER(WRITELINE(IIC_ACIA1_TAG, mos6551_device, write_cts))
 
-	MCFG_RS232_PORT_ADD(MODEM_PORT_TAG, default_rs232_devices, nullptr)
-	MCFG_RS232_RXD_HANDLER(DEVWRITELINE(IIC_ACIA2_TAG, mos6551_device, write_rxd))
-	MCFG_RS232_DCD_HANDLER(DEVWRITELINE(IIC_ACIA2_TAG, mos6551_device, write_dcd))
-	MCFG_RS232_DSR_HANDLER(DEVWRITELINE(IIC_ACIA2_TAG, mos6551_device, write_dsr))
-	MCFG_RS232_CTS_HANDLER(DEVWRITELINE(IIC_ACIA2_TAG, mos6551_device, write_cts))
+	MCFG_DEVICE_ADD(MODEM_PORT_TAG, RS232_PORT, default_rs232_devices, nullptr)
+	MCFG_RS232_RXD_HANDLER(WRITELINE(IIC_ACIA2_TAG, mos6551_device, write_rxd))
+	MCFG_RS232_DCD_HANDLER(WRITELINE(IIC_ACIA2_TAG, mos6551_device, write_dcd))
+	MCFG_RS232_DSR_HANDLER(WRITELINE(IIC_ACIA2_TAG, mos6551_device, write_dsr))
+	MCFG_RS232_CTS_HANDLER(WRITELINE(IIC_ACIA2_TAG, mos6551_device, write_cts))
 
 	// TODO: populate the IIc's other virtual slots with ONBOARD_ADD
-	MCFG_A2BUS_ONBOARD_ADD("a2bus", "sl4", A2BUS_MOCKINGBOARD, NOOP )   // Mockingboard 4C
-	MCFG_A2BUS_ONBOARD_ADD("a2bus", "sl6", A2BUS_DISKIING, NOOP)
+	A2BUS_MOCKINGBOARD(config, "sl4", A2BUS_7M_CLOCK).set_onboard(m_a2bus); // Mockingboard 4C
+	A2BUS_DISKIING(config, "sl6", A2BUS_7M_CLOCK).set_onboard(m_a2bus);
 
 	MCFG_A2EAUXSLOT_SLOT_REMOVE("aux")
 	MCFG_DEVICE_REMOVE(A2_AUXSLOT_TAG)
@@ -4149,8 +4145,8 @@ static const floppy_interface apple2cp_floppy35_floppy_interface =
 
 MACHINE_CONFIG_START(apple2e_state::apple2cp)
 	apple2c(config);
-	MCFG_A2BUS_SLOT_REMOVE("sl4")
-	MCFG_A2BUS_SLOT_REMOVE("sl6")
+	MCFG_DEVICE_REMOVE("sl4")
+	MCFG_DEVICE_REMOVE("sl6")
 	MCFG_IWM_ADD(IICP_IWM_TAG, a2cp_interface)
 	MCFG_LEGACY_FLOPPY_SONY_2_DRIVES_ADD(apple2cp_floppy35_floppy_interface)
 MACHINE_CONFIG_END
@@ -4158,17 +4154,17 @@ MACHINE_CONFIG_END
 MACHINE_CONFIG_START(apple2e_state::apple2c_iwm)
 	apple2c(config);
 
-	MCFG_A2BUS_SLOT_REMOVE("sl6")
-	MCFG_A2BUS_ONBOARD_ADD("a2bus", "sl6", A2BUS_IWM_FDC, NOOP)
+	MCFG_DEVICE_REMOVE("sl6")
+	A2BUS_IWM_FDC(config, "sl6", A2BUS_7M_CLOCK).set_onboard(m_a2bus);
 MACHINE_CONFIG_END
 
 MACHINE_CONFIG_START(apple2e_state::apple2c_mem)
 	apple2c(config);
-	MCFG_CPU_REPLACE("maincpu", M65C02, 1021800)        /* close to actual CPU frequency of 1.020484 MHz */
-	MCFG_CPU_PROGRAM_MAP(apple2c_memexp_map)
+	MCFG_DEVICE_REPLACE("maincpu", M65C02, 1021800)        /* close to actual CPU frequency of 1.020484 MHz */
+	MCFG_DEVICE_PROGRAM_MAP(apple2c_memexp_map)
 
-	MCFG_A2BUS_SLOT_REMOVE("sl6")
-	MCFG_A2BUS_ONBOARD_ADD("a2bus", "sl6", A2BUS_IWM_FDC, NOOP)
+	MCFG_DEVICE_REMOVE("sl6")
+	A2BUS_IWM_FDC(config, "sl6", A2BUS_7M_CLOCK).set_onboard(m_a2bus);
 
 	MCFG_RAM_MODIFY(RAM_TAG)
 	MCFG_RAM_DEFAULT_SIZE("128K")
@@ -4194,22 +4190,22 @@ static const floppy_interface floppy_interface =
 
 MACHINE_CONFIG_START(apple2e_state::laser128)
 	apple2c(config);
-	MCFG_CPU_REPLACE("maincpu", M65C02, 1021800)        /* close to actual CPU frequency of 1.020484 MHz */
-	MCFG_CPU_PROGRAM_MAP(laser128_map)
+	MCFG_DEVICE_REPLACE("maincpu", M65C02, 1021800)        /* close to actual CPU frequency of 1.020484 MHz */
+	MCFG_DEVICE_PROGRAM_MAP(laser128_map)
 
 	MCFG_APPLEFDC_ADD(LASER128_UDC_TAG, fdc_interface)
 	MCFG_LEGACY_FLOPPY_APPLE_2_DRIVES_ADD(floppy_interface,15,16)
 
-	MCFG_A2BUS_SLOT_REMOVE("sl4")
-	MCFG_A2BUS_SLOT_REMOVE("sl6")
+	MCFG_DEVICE_REMOVE("sl4")
+	MCFG_DEVICE_REMOVE("sl6")
 
-	MCFG_A2BUS_ONBOARD_ADD("a2bus", "sl1", A2BUS_LASER128, NOOP)
-	MCFG_A2BUS_ONBOARD_ADD("a2bus", "sl2", A2BUS_LASER128, NOOP)
-	MCFG_A2BUS_ONBOARD_ADD("a2bus", "sl3", A2BUS_LASER128, NOOP)
-	MCFG_A2BUS_ONBOARD_ADD("a2bus", "sl4", A2BUS_LASER128, NOOP)
-	MCFG_A2BUS_SLOT_ADD("a2bus", "sl5", apple2_cards, nullptr)
-	MCFG_A2BUS_ONBOARD_ADD("a2bus", "sl6", A2BUS_LASER128, NOOP)
-	MCFG_A2BUS_SLOT_ADD("a2bus", "sl7", apple2_cards, nullptr)
+	A2BUS_LASER128(config, "sl1", A2BUS_7M_CLOCK).set_onboard(m_a2bus);
+	A2BUS_LASER128(config, "sl2", A2BUS_7M_CLOCK).set_onboard(m_a2bus);
+	A2BUS_LASER128(config, "sl3", A2BUS_7M_CLOCK).set_onboard(m_a2bus);
+	A2BUS_LASER128(config, "sl4", A2BUS_7M_CLOCK).set_onboard(m_a2bus);
+	A2BUS_SLOT(config, "sl5", m_a2bus, apple2_cards, nullptr);
+	A2BUS_LASER128(config, "sl6", A2BUS_7M_CLOCK).set_onboard(m_a2bus);
+	A2BUS_SLOT(config, "sl7", m_a2bus, apple2_cards, nullptr);
 
 	MCFG_RAM_MODIFY(RAM_TAG)
 	MCFG_RAM_DEFAULT_SIZE("128K")
@@ -4218,22 +4214,22 @@ MACHINE_CONFIG_END
 
 MACHINE_CONFIG_START(apple2e_state::laser128ex2)
 	apple2c(config);
-	MCFG_CPU_REPLACE("maincpu", M65C02, 1021800)        /* close to actual CPU frequency of 1.020484 MHz */
-	MCFG_CPU_PROGRAM_MAP(laser128_map)
+	MCFG_DEVICE_REPLACE("maincpu", M65C02, 1021800)        /* close to actual CPU frequency of 1.020484 MHz */
+	MCFG_DEVICE_PROGRAM_MAP(laser128_map)
 
 	MCFG_APPLEFDC_ADD(LASER128_UDC_TAG, fdc_interface)
 	MCFG_LEGACY_FLOPPY_APPLE_2_DRIVES_ADD(floppy_interface,15,16)
 
-	MCFG_A2BUS_SLOT_REMOVE("sl4")
-	MCFG_A2BUS_SLOT_REMOVE("sl6")
+	MCFG_DEVICE_REMOVE("sl4")
+	MCFG_DEVICE_REMOVE("sl6")
 
-	MCFG_A2BUS_ONBOARD_ADD("a2bus", "sl1", A2BUS_LASER128, NOOP)
-	MCFG_A2BUS_ONBOARD_ADD("a2bus", "sl2", A2BUS_LASER128, NOOP)
-	MCFG_A2BUS_ONBOARD_ADD("a2bus", "sl3", A2BUS_LASER128, NOOP)
-	MCFG_A2BUS_ONBOARD_ADD("a2bus", "sl4", A2BUS_LASER128, NOOP)
-	MCFG_A2BUS_ONBOARD_ADD("a2bus", "sl5", A2BUS_LASER128, NOOP)
-	MCFG_A2BUS_ONBOARD_ADD("a2bus", "sl6", A2BUS_LASER128, NOOP)
-	MCFG_A2BUS_ONBOARD_ADD("a2bus", "sl7", A2BUS_LASER128, NOOP)
+	A2BUS_LASER128(config, "sl1", A2BUS_7M_CLOCK).set_onboard(m_a2bus);
+	A2BUS_LASER128(config, "sl2", A2BUS_7M_CLOCK).set_onboard(m_a2bus);
+	A2BUS_LASER128(config, "sl3", A2BUS_7M_CLOCK).set_onboard(m_a2bus);
+	A2BUS_LASER128(config, "sl4", A2BUS_7M_CLOCK).set_onboard(m_a2bus);
+	A2BUS_LASER128(config, "sl5", A2BUS_7M_CLOCK).set_onboard(m_a2bus);
+	A2BUS_LASER128(config, "sl6", A2BUS_7M_CLOCK).set_onboard(m_a2bus);
+	A2BUS_LASER128(config, "sl7", A2BUS_7M_CLOCK).set_onboard(m_a2bus);
 
 	MCFG_RAM_MODIFY(RAM_TAG)
 	MCFG_RAM_DEFAULT_SIZE("128K")
@@ -4242,15 +4238,15 @@ MACHINE_CONFIG_END
 
 MACHINE_CONFIG_START(apple2e_state::ceci)
 	apple2e(config);
-	MCFG_A2BUS_SLOT_REMOVE("sl1")
-	MCFG_A2BUS_SLOT_REMOVE("sl2")
-	MCFG_A2BUS_SLOT_REMOVE("sl3")
-	MCFG_A2BUS_SLOT_REMOVE("sl4")
-	MCFG_A2BUS_SLOT_REMOVE("sl5")
-	MCFG_A2BUS_SLOT_REMOVE("sl6")
-	MCFG_A2BUS_SLOT_REMOVE("sl7")
+	MCFG_DEVICE_REMOVE("sl1")
+	MCFG_DEVICE_REMOVE("sl2")
+	MCFG_DEVICE_REMOVE("sl3")
+	MCFG_DEVICE_REMOVE("sl4")
+	MCFG_DEVICE_REMOVE("sl5")
+	MCFG_DEVICE_REMOVE("sl6")
+	MCFG_DEVICE_REMOVE("sl7")
 
-	MCFG_A2BUS_ONBOARD_ADD("a2bus", "sl6", A2BUS_DISKIING, NOOP)
+	A2BUS_DISKIING(config, "sl6", A2BUS_7M_CLOCK).set_onboard(m_a2bus);
 
 	// there is no aux slot, the "aux" side of the //e is used for additional ROM
 	MCFG_A2EAUXSLOT_SLOT_REMOVE("aux")
@@ -4515,16 +4511,16 @@ ROM_START(ceci)
 
 	ROM_REGION(0x10000,"maincpu",0)
 	ROM_SYSTEM_BIOS(0, "default", "ver 1.21")
-	ROMX_LOAD( "u7.alt", 0x000000, 0x008000, CRC(23c87b3b) SHA1(ff9673f628390e9b0fb60732acc72b580200b5ae), ROM_BIOS(1) )
-	ROMX_LOAD( "u35.alt", 0x008000, 0x008000, CRC(a4f40181) SHA1(db1ed69b2ed3280b1c90f76dbd637370d5bc11b0), ROM_BIOS(1) )
+	ROMX_LOAD( "u7.alt", 0x000000, 0x008000, CRC(23c87b3b) SHA1(ff9673f628390e9b0fb60732acc72b580200b5ae), ROM_BIOS(0) )
+	ROMX_LOAD( "u35.alt", 0x008000, 0x008000, CRC(a4f40181) SHA1(db1ed69b2ed3280b1c90f76dbd637370d5bc11b0), ROM_BIOS(0) )
 
 	ROM_SYSTEM_BIOS(1, "older", "ver 1.1")
-	ROMX_LOAD( "u7.tmm24256ap.bin", 0x000000, 0x008000, CRC(2e3f73b0) SHA1(a2967b3a9a040a1c47eb0fea9a632b833cd1c060), ROM_BIOS(2) )
-	ROMX_LOAD( "u35.tmm24256ap.bin", 0x008000, 0x008000, CRC(7f3ee968) SHA1(f4fd7ceda4c9ab9bc626d6abb76b7fd2b5faf2da), ROM_BIOS(2) )
+	ROMX_LOAD( "u7.tmm24256ap.bin", 0x000000, 0x008000, CRC(2e3f73b0) SHA1(a2967b3a9a040a1c47eb0fea9a632b833cd1c060), ROM_BIOS(1) )
+	ROMX_LOAD( "u35.tmm24256ap.bin", 0x008000, 0x008000, CRC(7f3ee968) SHA1(f4fd7ceda4c9ab9bc626d6abb76b7fd2b5faf2da), ROM_BIOS(1) )
 
 	ROM_SYSTEM_BIOS(2, "diag", "self test")
-	ROMX_LOAD( "u7.selftest.bin", 0x000000, 0x008000, CRC(4b045a44) SHA1(d2c716d0eb9f1c70e108d16c6a88d44b894e39fd), ROM_BIOS(3) )
-	ROMX_LOAD( "u35.tmm24256ap.bin", 0x008000, 0x008000, CRC(7f3ee968) SHA1(f4fd7ceda4c9ab9bc626d6abb76b7fd2b5faf2da), ROM_BIOS(3) )
+	ROMX_LOAD( "u7.selftest.bin", 0x000000, 0x008000, CRC(4b045a44) SHA1(d2c716d0eb9f1c70e108d16c6a88d44b894e39fd), ROM_BIOS(2) )
+	ROMX_LOAD( "u35.tmm24256ap.bin", 0x008000, 0x008000, CRC(7f3ee968) SHA1(f4fd7ceda4c9ab9bc626d6abb76b7fd2b5faf2da), ROM_BIOS(2) )
 
 	ROM_REGION(0x40000,"cecexp",0)
 	ROM_LOAD16_BYTE( "u33.mx231024-0059.bin", 0x000000, 0x020000, CRC(a2a59f35) SHA1(01c787e150bf1378088a9333ec9338387aae0f50) )
@@ -4537,24 +4533,24 @@ ROM_START(ceci)
 	ROM_LOAD( "u40.m2822.bin", 0x000000, 0x000100, CRC(b72a2c70) SHA1(bc39fbd5b9a8d2287ac5d0a42e639fc4d3c2f9d4) )
 ROM_END
 
-/*    YEAR  NAME      PARENT    COMPAT    MACHINE      INPUT      STATE           INIT  COMPANY              FULLNAME */
-COMP( 1983, apple2e,  0,        apple2,   apple2e,     apple2e,   apple2e_state,  0,    "Apple Computer",    "Apple //e", MACHINE_SUPPORTS_SAVE )
-COMP( 1983, apple2euk,apple2e,  0,        apple2e,     apple2euk, apple2e_state,  0,    "Apple Computer",    "Apple //e (UK)", MACHINE_SUPPORTS_SAVE )
-COMP( 1983, apple2ees,apple2e,  0,        apple2e,     apple2ees, apple2e_state,  0,    "Apple Computer",    "Apple //e (Spain)", MACHINE_SUPPORTS_SAVE )
-COMP( 1983, mprof3,   apple2e,  0,        mprof3,      apple2e,   apple2e_state,  0,    "Multitech",         "Microprofessor III", MACHINE_NOT_WORKING | MACHINE_SUPPORTS_SAVE )
-COMP( 1985, apple2ee, apple2e,  0,        apple2ee,    apple2e,   apple2e_state,  0,    "Apple Computer",    "Apple //e (enhanced)", MACHINE_SUPPORTS_SAVE )
-COMP( 1985, apple2eeuk,apple2e, 0,        apple2ee,    apple2euk, apple2e_state,  0,    "Apple Computer",    "Apple //e (enhanced, UK)", MACHINE_SUPPORTS_SAVE )
-COMP( 1985, apple2eefr,apple2e, 0,        apple2ee,    apple2efr, apple2e_state,  0,    "Apple Computer",    "Apple //e (enhanced, France)", MACHINE_SUPPORTS_SAVE )
-COMP( 1987, apple2ep, apple2e,  0,        apple2ep,    apple2ep,  apple2e_state,  0,    "Apple Computer",    "Apple //e (Platinum)", MACHINE_SUPPORTS_SAVE )
-COMP( 1984, apple2c,  0,        apple2,   apple2c,     apple2c,   apple2e_state,  0,    "Apple Computer",    "Apple //c" , MACHINE_SUPPORTS_SAVE )
-COMP( 1985?,spectred, apple2e,  0,        spectred,    apple2e,   apple2e_state,  0,    "Scopus/Spectrum",   "Spectrum ED" , MACHINE_SUPPORTS_SAVE )
-COMP( 1986, tk3000,   apple2c,  0,        tk3000,      apple2e,   apple2e_state,  0,    "Microdigital",      "TK3000//e" , MACHINE_SUPPORTS_SAVE )
-COMP( 1989, prav8c,   apple2e,  0,        apple2e,     apple2e,   apple2e_state,  0,    "Pravetz",           "Pravetz 8C", MACHINE_NOT_WORKING | MACHINE_SUPPORTS_SAVE )
-COMP( 1987, laser128, apple2c,  0,        laser128,    apple2e,   apple2e_state,  0,    "Video Technology",  "Laser 128 (version 4.2)", MACHINE_SUPPORTS_SAVE )
-COMP( 1988, las128ex, apple2c,  0,        laser128,    apple2e,   apple2e_state,  0,    "Video Technology",  "Laser 128ex (version 4.5)", MACHINE_SUPPORTS_SAVE )
-COMP( 1988, las128e2, apple2c,  0,        laser128ex2, apple2e,   apple2e_state,  0,    "Video Technology",  "Laser 128ex2 (version 6.1)", MACHINE_SUPPORTS_SAVE )
-COMP( 1985, apple2c0, apple2c,  0,        apple2c_iwm, apple2c,   apple2e_state,  0,    "Apple Computer",    "Apple //c (UniDisk 3.5)", MACHINE_SUPPORTS_SAVE )
-COMP( 1986, apple2c3, apple2c,  0,        apple2c_mem, apple2c,   apple2e_state,  0,    "Apple Computer",    "Apple //c (Original Memory Expansion)", MACHINE_SUPPORTS_SAVE )
-COMP( 1986, apple2c4, apple2c,  0,        apple2c_mem, apple2c,   apple2e_state,  0,    "Apple Computer",    "Apple //c (rev 4)", MACHINE_SUPPORTS_SAVE )
-COMP( 1987, ceci,     0,        apple2,   ceci,        ceci,      apple2e_state,  0,    "Shaanxi Province Computer Factory", "China Education Computer I", MACHINE_SUPPORTS_SAVE )
-COMP( 1988, apple2cp, apple2c,  0,        apple2cp,    apple2c,   apple2e_state,  0,    "Apple Computer",    "Apple //c Plus", MACHINE_NOT_WORKING | MACHINE_SUPPORTS_SAVE )
+/*    YEAR  NAME        PARENT   COMPAT  MACHINE      INPUT      CLASS          INIT        COMPANY             FULLNAME */
+COMP( 1983, apple2e,    0,       apple2, apple2e,     apple2e,   apple2e_state, empty_init, "Apple Computer",   "Apple //e", MACHINE_SUPPORTS_SAVE )
+COMP( 1983, apple2euk,  apple2e, 0,      apple2e,     apple2euk, apple2e_state, empty_init, "Apple Computer",   "Apple //e (UK)", MACHINE_SUPPORTS_SAVE )
+COMP( 1983, apple2ees,  apple2e, 0,      apple2e,     apple2ees, apple2e_state, empty_init, "Apple Computer",   "Apple //e (Spain)", MACHINE_SUPPORTS_SAVE )
+COMP( 1983, mprof3,     apple2e, 0,      mprof3,      apple2e,   apple2e_state, empty_init, "Multitech",        "Microprofessor III", MACHINE_NOT_WORKING | MACHINE_SUPPORTS_SAVE )
+COMP( 1985, apple2ee,   apple2e, 0,      apple2ee,    apple2e,   apple2e_state, empty_init, "Apple Computer",   "Apple //e (enhanced)", MACHINE_SUPPORTS_SAVE )
+COMP( 1985, apple2eeuk, apple2e, 0,      apple2ee,    apple2euk, apple2e_state, empty_init, "Apple Computer",   "Apple //e (enhanced, UK)", MACHINE_SUPPORTS_SAVE )
+COMP( 1985, apple2eefr, apple2e, 0,      apple2ee,    apple2efr, apple2e_state, empty_init, "Apple Computer",   "Apple //e (enhanced, France)", MACHINE_SUPPORTS_SAVE )
+COMP( 1987, apple2ep,   apple2e, 0,      apple2ep,    apple2ep,  apple2e_state, empty_init, "Apple Computer",   "Apple //e (Platinum)", MACHINE_SUPPORTS_SAVE )
+COMP( 1984, apple2c,    0,       apple2, apple2c,     apple2c,   apple2e_state, empty_init, "Apple Computer",   "Apple //c" , MACHINE_SUPPORTS_SAVE )
+COMP( 1985?,spectred,   apple2e, 0,      spectred,    apple2e,   apple2e_state, empty_init, "Scopus/Spectrum",  "Spectrum ED" , MACHINE_SUPPORTS_SAVE )
+COMP( 1986, tk3000,     apple2c, 0,      tk3000,      apple2e,   apple2e_state, empty_init, "Microdigital",     "TK3000//e" , MACHINE_SUPPORTS_SAVE )
+COMP( 1989, prav8c,     apple2e, 0,      apple2e,     apple2e,   apple2e_state, empty_init, "Pravetz",          "Pravetz 8C", MACHINE_NOT_WORKING | MACHINE_SUPPORTS_SAVE )
+COMP( 1987, laser128,   apple2c, 0,      laser128,    apple2e,   apple2e_state, empty_init, "Video Technology", "Laser 128 (version 4.2)", MACHINE_SUPPORTS_SAVE )
+COMP( 1988, las128ex,   apple2c, 0,      laser128,    apple2e,   apple2e_state, empty_init, "Video Technology", "Laser 128ex (version 4.5)", MACHINE_SUPPORTS_SAVE )
+COMP( 1988, las128e2,   apple2c, 0,      laser128ex2, apple2e,   apple2e_state, empty_init, "Video Technology", "Laser 128ex2 (version 6.1)", MACHINE_SUPPORTS_SAVE )
+COMP( 1985, apple2c0,   apple2c, 0,      apple2c_iwm, apple2c,   apple2e_state, empty_init, "Apple Computer",   "Apple //c (UniDisk 3.5)", MACHINE_SUPPORTS_SAVE )
+COMP( 1986, apple2c3,   apple2c, 0,      apple2c_mem, apple2c,   apple2e_state, empty_init, "Apple Computer",   "Apple //c (Original Memory Expansion)", MACHINE_SUPPORTS_SAVE )
+COMP( 1986, apple2c4,   apple2c, 0,      apple2c_mem, apple2c,   apple2e_state, empty_init, "Apple Computer",   "Apple //c (rev 4)", MACHINE_SUPPORTS_SAVE )
+COMP( 1987, ceci,       0,       apple2, ceci,        ceci,      apple2e_state, empty_init, "Shaanxi Province Computer Factory", "China Education Computer I", MACHINE_SUPPORTS_SAVE )
+COMP( 1988, apple2cp,   apple2c, 0,      apple2cp,    apple2c,   apple2e_state, empty_init, "Apple Computer",   "Apple //c Plus", MACHINE_NOT_WORKING | MACHINE_SUPPORTS_SAVE )
