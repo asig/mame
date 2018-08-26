@@ -72,7 +72,7 @@ void i8272a_device::map(address_map &map)
 
 void upd72065_device::map(address_map &map)
 {
-	map(0x0, 0x0).r(FUNC(upd72065_device::msr_r));
+	map(0x0, 0x0).rw(FUNC(upd72065_device::msr_r), FUNC(upd72065_device::auxcmd_w));
 	map(0x1, 0x1).rw(FUNC(upd72065_device::fifo_r), FUNC(upd72065_device::fifo_w));
 }
 
@@ -584,6 +584,15 @@ void upd765_family_device::disable_transfer()
 
 void upd765_family_device::fifo_push(uint8_t data, bool internal)
 {
+	// MZ: A bit speculative. These lines help to avoid some FIFO mess-up
+	// with the HX5102 that happens when WRITE DATA fails to find the sector
+	// but the host already starts pushing the sector data. Should not hurt.
+	if (fifo_expected == 0)
+	{
+		LOGFIFO("Fifo not expecting data, discarding\n");
+		return;
+	}
+
 	if(fifo_pos == 16) {
 		if(internal) {
 			if(!(st1 & ST1_OR))
@@ -2978,5 +2987,19 @@ WRITE8_MEMBER(tc8566af_device::cr1_w)
 	if(m_cr1 & 0x02) {
 		// Not sure if this inverted or not
 		tc_w((m_cr1 & 0x01) ? true : false);
+	}
+}
+
+WRITE8_MEMBER(upd72065_device::auxcmd_w)
+{
+	switch(data)
+	{
+		case 0x36: // reset
+			soft_reset();
+			break;
+		case 0x35: // set standby
+			break;
+		case 0x34: // reset standby
+			break;
 	}
 }

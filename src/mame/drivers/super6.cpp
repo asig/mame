@@ -402,10 +402,10 @@ WRITE_LINE_MEMBER( super6_state::fdc_drq_w )
 // no evidence of daisy chain in use - removed for now
 //static const z80_daisy_config super6_daisy_chain[] =
 //{
-//	{ Z80CTC_TAG },
-//	{ Z80DART_TAG },
-//	{ Z80PIO_TAG },
-//	{ nullptr }
+//  { Z80CTC_TAG },
+//  { Z80DART_TAG },
+//  { Z80PIO_TAG },
+//  { nullptr }
 //};
 
 
@@ -501,8 +501,7 @@ MACHINE_CONFIG_START(super6_state::super6)
 	m_brg->ft_handler().set(m_dart, FUNC(z80dart_device::rxtxcb_w));
 
 	// internal ram
-	MCFG_RAM_ADD(RAM_TAG)
-	MCFG_RAM_DEFAULT_SIZE("128K")
+	RAM(config, RAM_TAG).set_default_size("128K");
 
 	// software list
 	MCFG_SOFTWARE_LIST_ADD("flop_list", "super6")

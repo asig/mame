@@ -547,19 +547,19 @@ MACHINE_CONFIG_START(osbexec_state::osbexec)
 	MCFG_DEVICE_ADD(m_speaker, SPEAKER_SOUND)
 	MCFG_SOUND_ROUTE( ALL_OUTPUTS, "mono", 1.00 )
 
-	MCFG_DEVICE_ADD(m_pia[0], PIA6821, 0)
-	MCFG_PIA_READPA_HANDLER(READ8(*this, osbexec_state, osbexec_pia0_a_r))
-	MCFG_PIA_READPB_HANDLER(READ8(*this, osbexec_state, osbexec_pia0_b_r))
-	MCFG_PIA_WRITEPA_HANDLER(WRITE8(*this, osbexec_state, osbexec_pia0_a_w))
-	MCFG_PIA_WRITEPB_HANDLER(WRITE8(*this, osbexec_state, osbexec_pia0_b_w))
-	MCFG_PIA_CA2_HANDLER(WRITELINE(*this, osbexec_state, osbexec_pia0_ca2_w))
-	MCFG_PIA_CB2_HANDLER(WRITELINE(*this, osbexec_state, osbexec_pia0_cb2_w))
-	MCFG_PIA_IRQA_HANDLER(WRITELINE("mainirq", input_merger_device, in_w<0>))
-	MCFG_PIA_IRQB_HANDLER(WRITELINE("mainirq", input_merger_device, in_w<1>))
+	PIA6821(config, m_pia[0], 0);
+	m_pia[0]->readpa_handler().set(FUNC(osbexec_state::osbexec_pia0_a_r));
+	m_pia[0]->readpb_handler().set(FUNC(osbexec_state::osbexec_pia0_b_r));
+	m_pia[0]->writepa_handler().set(FUNC(osbexec_state::osbexec_pia0_a_w));
+	m_pia[0]->writepb_handler().set(FUNC(osbexec_state::osbexec_pia0_b_w));
+	m_pia[0]->ca2_handler().set(FUNC(osbexec_state::osbexec_pia0_ca2_w));
+	m_pia[0]->cb2_handler().set(FUNC(osbexec_state::osbexec_pia0_cb2_w));
+	m_pia[0]->irqa_handler().set("mainirq", FUNC(input_merger_device::in_w<0>));
+	m_pia[0]->irqb_handler().set("mainirq", FUNC(input_merger_device::in_w<1>));
 
 	MCFG_DEVICE_ADD(m_pia[1], PIA6821, 0)
-	MCFG_PIA_IRQA_HANDLER(WRITELINE("mainirq", input_merger_device, in_w<2>))
-	MCFG_PIA_IRQB_HANDLER(WRITELINE("mainirq", input_merger_device, in_w<3>))
+	m_pia[1]->irqa_handler().set("mainirq", FUNC(input_merger_device::in_w<2>));
+	m_pia[1]->irqb_handler().set("mainirq", FUNC(input_merger_device::in_w<3>));
 
 	INPUT_MERGER_ANY_HIGH(config, "mainirq").output_handler().set_inputline(m_maincpu, 0);
 
@@ -604,8 +604,7 @@ MACHINE_CONFIG_START(osbexec_state::osbexec)
 	MCFG_FLOPPY_DRIVE_ADD("mb8877:1", osborne2_floppies, "525ssdd", floppy_image_device::default_floppy_formats)
 
 	/* internal ram */
-	MCFG_RAM_ADD(RAM_TAG)
-	MCFG_RAM_DEFAULT_SIZE("136K")   /* 128KB Main RAM + RAM in ROM bank (8) */
+	RAM(config, RAM_TAG).set_default_size("136K"); /* 128KB Main RAM + RAM in ROM bank (8) */
 
 	/* software lists */
 	MCFG_SOFTWARE_LIST_ADD("flop_list", "osborne2")
