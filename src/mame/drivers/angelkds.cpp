@@ -13,7 +13,7 @@ Both games appear to be joint Sega / Nasco efforts
  but I think that has something to do with Nasco   )
 
 Space Position is encrypted, the main processor is
-D317-0005 (NEC Z80 Custom), see machine/segacrpt.c
+D317-0005 (NEC Z80 Custom), see machine/segacrpt.cpp
 for details on this encryption scheme
 
 */
@@ -519,7 +519,7 @@ void angelkds_state::machine_reset()
 
 MACHINE_CONFIG_START(angelkds_state::angelkds)
 
-	MCFG_DEVICE_ADD("maincpu", Z80, XTAL(6'000'000))
+	MCFG_DEVICE_ADD(m_maincpu, Z80, XTAL(6'000'000))
 	MCFG_DEVICE_PROGRAM_MAP(main_map)
 	MCFG_DEVICE_IO_MAP(main_portmap)
 	MCFG_DEVICE_VBLANK_INT_DRIVER("screen", angelkds_state,  irq0_line_hold)
@@ -528,16 +528,16 @@ MACHINE_CONFIG_START(angelkds_state::angelkds)
 	MCFG_DEVICE_PROGRAM_MAP(sub_map)
 	MCFG_DEVICE_IO_MAP(sub_portmap)
 
-	MCFG_DEVICE_ADD("ppi8255_0", I8255A, 0)
-	MCFG_I8255_IN_PORTA_CB(IOPORT("I40"))
-	MCFG_I8255_IN_PORTB_CB(IOPORT("I41"))
-	MCFG_I8255_IN_PORTC_CB(READ8(*this, angelkds_state, angeklds_ff_r)) // or left inputs don't work
-	MCFG_I8255_OUT_PORTC_CB(WRITE8(*this, angelkds_state, angelkds_cpu_bank_write))
+	i8255_device &ppi0(I8255A(config, "ppi8255_0"));
+	ppi0.in_pa_callback().set_ioport("I40");
+	ppi0.in_pb_callback().set_ioport("I41");
+	ppi0.in_pc_callback().set(FUNC(angelkds_state::angeklds_ff_r)); // or left inputs don't work
+	ppi0.out_pc_callback().set(FUNC(angelkds_state::angelkds_cpu_bank_write));
 
-	MCFG_DEVICE_ADD("ppi8255_1", I8255A, 0)
-	MCFG_I8255_IN_PORTA_CB(IOPORT("I80"))
-	MCFG_I8255_IN_PORTB_CB(IOPORT("I81"))
-	MCFG_I8255_IN_PORTC_CB(IOPORT("I82"))
+	i8255_device &ppi1(I8255A(config, "ppi8255_1"));
+	ppi1.in_pa_callback().set_ioport("I80");
+	ppi1.in_pb_callback().set_ioport("I81");
+	ppi1.in_pc_callback().set_ioport("I82");
 
 	MCFG_QUANTUM_TIME(attotime::from_hz(6000))
 
@@ -571,17 +571,17 @@ MACHINE_CONFIG_START(angelkds_state::angelkds)
 	MCFG_SOUND_ROUTE(3, "mono", 0.45)
 MACHINE_CONFIG_END
 
-MACHINE_CONFIG_START(angelkds_state::spcpostn)
+void angelkds_state::spcpostn(machine_config &config)
+{
 	angelkds(config);
 	/* encryption */
-	MCFG_DEVICE_REPLACE("maincpu", SEGA_317_0005, XTAL(6'000'000))
-	MCFG_DEVICE_PROGRAM_MAP(main_map)
-	MCFG_DEVICE_IO_MAP(main_portmap)
-	MCFG_DEVICE_VBLANK_INT_DRIVER("screen", angelkds_state,  irq0_line_hold)
-	MCFG_DEVICE_OPCODES_MAP(decrypted_opcodes_map)
-	MCFG_SEGAZ80_SET_DECRYPTED_TAG(":decrypted_opcodes")
-
-MACHINE_CONFIG_END
+	sega_317_0005_device &maincpu(SEGA_317_0005(config.replace(), m_maincpu, XTAL(6'000'000)));
+	maincpu.set_addrmap(AS_PROGRAM, &angelkds_state::main_map);
+	maincpu.set_addrmap(AS_IO, &angelkds_state::main_portmap);
+	maincpu.set_vblank_int("screen", FUNC(angelkds_state::irq0_line_hold));
+	maincpu.set_addrmap(AS_OPCODES, &angelkds_state::decrypted_opcodes_map);
+	maincpu.set_decrypted_tag(m_decrypted_opcodes);
+}
 
 /*** Rom Loading
 

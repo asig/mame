@@ -162,10 +162,10 @@ static INPUT_PORTS_START( mastboyo )
 	PORT_DIPSETTING(    0x10, "3" )
 	PORT_DIPSETTING(    0x20, "4" )
 	PORT_DIPSETTING(    0x30, "6" )
-	PORT_DIPNAME( 0x40, 0x40, "Con Reclamo" )
+	PORT_DIPNAME( 0x40, 0x40, "Attract Music" )  // From manual... 'Con Reclamo'
 	PORT_DIPSETTING(    0x40, DEF_STR( Off ) )
 	PORT_DIPSETTING(    0x00, DEF_STR( On ) )
-	PORT_DIPNAME( 0x80, 0x80, "Test Inicial" )
+	PORT_DIPNAME( 0x80, 0x80, "Test Mode" )      // From manual... 'Test Inicial'
 	PORT_DIPSETTING(    0x80, DEF_STR( Off ) )
 	PORT_DIPSETTING(    0x00, DEF_STR( On ) )
 //  PORT_SERVICE( 0x80, IP_ACTIVE_LOW ) <--- Why to mask and hide the test mode???
@@ -223,10 +223,10 @@ MACHINE_CONFIG_START(mastboyo_state::mastboyo)
 	/* sound hardware */
 	SPEAKER(config, "mono").front_center();
 
-	MCFG_DEVICE_ADD("aysnd", AY8910, 20_MHz_XTAL / 4)
-	MCFG_AY8910_PORT_A_READ_CB(IOPORT("DSW")) // DSW
-	MCFG_AY8910_PORT_B_READ_CB(IOPORT("IN0")) // player inputs
-	MCFG_SOUND_ROUTE(ALL_OUTPUTS, "mono", 0.50)
+	ay8910_device &aysnd(AY8910(config, "aysnd", 20_MHz_XTAL / 4));
+	aysnd.port_a_read_callback().set_ioport("DSW"); // DSW
+	aysnd.port_b_read_callback().set_ioport("IN0"); // player inputs
+	aysnd.add_route(ALL_OUTPUTS, "mono", 0.50);
 
 MACHINE_CONFIG_END
 

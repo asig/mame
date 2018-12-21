@@ -18,7 +18,7 @@ Supported games:
 Notes:
         Basically the same video and machine hardware as Flying Shark,
           except for the Main CPU which is a Z80 here.
-        See twincobr.c machine and video drivers to complete the
+        See twincobr.cpp machine and video drivers to complete the
           hardware setup.
         To enter the "test mode", press START1 when the grid is displayed.
         Press 0 (actually P1 button 3) on startup to skip some video RAM tests
@@ -141,9 +141,9 @@ out:
 class wardner_state : public twincobr_state
 {
 public:
-	wardner_state(const machine_config &mconfig, device_type type, const char *tag) :
-		twincobr_state(mconfig, type, tag),
-		m_membank(*this, "membank")
+	wardner_state(const machine_config &mconfig, device_type type, const char *tag)
+		: twincobr_state(mconfig, type, tag)
+		, m_membank(*this, "membank")
 	{
 	}
 
@@ -151,21 +151,22 @@ public:
 
 	void init_wardner();
 
+protected:
+	virtual void driver_start() override;
+	virtual void machine_reset() override;
+
 private:
 	required_device<address_map_bank_device> m_membank;
 
 	DECLARE_WRITE8_MEMBER(wardner_bank_w);
 
-	void DSP_io_map(address_map &map);
-	void DSP_program_map(address_map &map);
+	void dsp_io_map(address_map &map);
+	void dsp_program_map(address_map &map);
 	void main_bank_map(address_map &map);
 	void main_io_map(address_map &map);
 	void main_program_map(address_map &map);
 	void sound_io_map(address_map &map);
 	void sound_program_map(address_map &map);
-
-	virtual void driver_start() override;
-	virtual void machine_reset() override;
 };
 
 
@@ -241,14 +242,14 @@ void wardner_state::sound_io_map(address_map &map)
 
 /***************************** TMS32010 Memory Map **************************/
 
-void wardner_state::DSP_program_map(address_map &map)
+void wardner_state::dsp_program_map(address_map &map)
 {
 	map(0x000, 0x5ff).rom();
 }
 
 	/* $000 - 08F  TMS32010 Internal Data RAM in Data Address Space */
 
-void wardner_state::DSP_io_map(address_map &map)
+void wardner_state::dsp_io_map(address_map &map)
 {
 	map(0x00, 0x00).w(FUNC(wardner_state::wardner_dsp_addrsel_w));
 	map(0x01, 0x01).rw(FUNC(wardner_state::wardner_dsp_r), FUNC(wardner_state::wardner_dsp_w));
@@ -367,7 +368,7 @@ GFXDECODE_END
 
 void wardner_state::driver_start()
 {
-	/* Save-State stuff in src/machine/twincobr.c */
+	/* Save-State stuff in src/machine/twincobr.cpp */
 	twincobr_driver_savestate();
 }
 
@@ -391,11 +392,11 @@ MACHINE_CONFIG_START(wardner_state::wardner)
 	MCFG_DEVICE_PROGRAM_MAP(sound_program_map)
 	MCFG_DEVICE_IO_MAP(sound_io_map)
 
-	MCFG_DEVICE_ADD("dsp", TMS32010, XTAL(14'000'000))       /* 14MHz Crystal CLKin */
-	MCFG_DEVICE_PROGRAM_MAP(DSP_program_map)
+	TMS32010(config, m_dsp, XTAL(14'000'000));       /* 14MHz Crystal CLKin */
+	m_dsp->set_addrmap(AS_PROGRAM, &wardner_state::dsp_program_map);
 	/* Data Map is internal to the CPU */
-	MCFG_DEVICE_IO_MAP(DSP_io_map)
-	MCFG_TMS32010_BIO_IN_CB(READLINE(*this, wardner_state, twincobr_BIO_r))
+	m_dsp->set_addrmap(AS_IO, &wardner_state::dsp_io_map);
+	m_dsp->bio().set(FUNC(wardner_state::twincobr_bio_r));
 
 	MCFG_QUANTUM_TIME(attotime::from_hz(6000))      /* 100 CPU slices per frame */
 
@@ -414,11 +415,14 @@ MACHINE_CONFIG_START(wardner_state::wardner)
 	coinlatch.q_out_cb<7>().set(FUNC(wardner_state::coin_lockout_2_w));
 
 	/* video hardware */
-	MCFG_MC6845_ADD("crtc", HD6845, "screen", XTAL(14'000'000)/4) /* 3.5MHz measured on CLKin */
-	MCFG_MC6845_SHOW_BORDER_AREA(false)
-	MCFG_MC6845_CHAR_WIDTH(2)
+	hd6845_device &crtc(HD6845(config, "crtc", XTAL(14'000'000)/4)); /* 3.5MHz measured on CLKin */
+	crtc.set_screen(m_screen);
+	crtc.set_show_border_area(false);
+	crtc.set_char_width(2);
 
-	MCFG_TOAPLAN_SCU_ADD("scu", "palette", 32, 14)
+	TOAPLAN_SCU(config, m_spritegen, 0);
+	m_spritegen->set_palette(m_palette);
+	m_spritegen->set_xoffsets(32, 14);
 
 	MCFG_DEVICE_ADD("spriteram8", BUFFERED_SPRITERAM8)
 
@@ -431,10 +435,8 @@ MACHINE_CONFIG_START(wardner_state::wardner)
 	m_screen->set_palette(m_palette);
 
 	MCFG_DEVICE_ADD("gfxdecode", GFXDECODE, "palette", gfx_wardner)
-	MCFG_PALETTE_ADD("palette", 1792)
+	MCFG_PALETTE_ADD("palette", 4096)
 	MCFG_PALETTE_FORMAT(xBBBBBGGGGGRRRRR)
-
-	MCFG_VIDEO_START_OVERRIDE(wardner_state,toaplan0)
 
 	/* sound hardware */
 	SPEAKER(config, "mono").front_center();

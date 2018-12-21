@@ -654,11 +654,11 @@ MACHINE_CONFIG_START(kongambl_state::kongambl)
 	MCFG_DEVICE_PROGRAM_MAP(kongamaud_map)
 	MCFG_DEVICE_PERIODIC_INT_DRIVER(kongambl_state, irq2_line_hold,  480)
 
-	MCFG_DEVICE_ADD("k053252", K053252, 25000000)
-	MCFG_K053252_OFFSETS(0, 16) // TBD
-	MCFG_K053252_INT1_ACK_CB(WRITELINE(*this, kongambl_state, vblank_irq_ack_w))
-	MCFG_K053252_INT2_ACK_CB(WRITELINE(*this, kongambl_state, hblank_irq_ack_w))
-	MCFG_VIDEO_SET_SCREEN("screen")
+	K053252(config, m_k053252, 25000000);
+	m_k053252->set_offsets(0, 16); // TBD
+	m_k053252->int1_ack().set(FUNC(kongambl_state::vblank_irq_ack_w));
+	m_k053252->int2_ack().set(FUNC(kongambl_state::hblank_irq_ack_w));
+	m_k053252->set_screen("screen");
 
 	EEPROM_93C46_16BIT(config, "eeprom");
 
@@ -672,21 +672,21 @@ MACHINE_CONFIG_START(kongambl_state::kongambl)
 
 	MCFG_VIDEO_START_OVERRIDE(kongambl_state,kongambl)
 
-	MCFG_K055555_ADD("k055555")
+	K055555(config, m_k055555, 0);
 
-	MCFG_DEVICE_ADD("k055673", K055673, 0)
-	MCFG_K055673_CB(kongambl_state, sprite_callback)
-	MCFG_K055673_CONFIG("gfx2", K055673_LAYOUT_LE2, -48+1, -23)
-	MCFG_K055673_PALETTE("palette")
+	K055673(config, m_k055673, 0);
+	m_k055673->set_sprite_callback(FUNC(kongambl_state::sprite_callback), this);
+	m_k055673->set_config("gfx2", K055673_LAYOUT_LE2, -48+1, -23);
+	m_k055673->set_palette(m_palette);
 
 #if CUSTOM_DRAW
 	MCFG_DEVICE_ADD("gfxdecode", GFXDECODE, "palette", gfx_tasman)
 #endif
 
-	MCFG_DEVICE_ADD("k056832", K056832, 0)
-	MCFG_K056832_CB(kongambl_state, tile_callback)
-	MCFG_K056832_CONFIG("gfx1", K056832_BPP_8TASMAN, 0, 0)
-	MCFG_K056832_PALETTE("palette")
+	K056832(config, m_k056832, 0);
+	m_k056832->set_tile_callback(FUNC(kongambl_state::tile_callback), this);
+	m_k056832->set_config("gfx1", K056832_BPP_8TASMAN, 0, 0);
+	m_k056832->set_palette(m_palette);
 
 	SPEAKER(config, "lspeaker").front_left();
 	SPEAKER(config, "rspeaker").front_right();
