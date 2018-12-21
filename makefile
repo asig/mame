@@ -25,8 +25,8 @@ PROFILER =
 # NOWERROR = 1
 # IGNORE_GIT = 1
 
-# TARGET = mame
-# SUBTARGET = tiny
+TARGET = mame
+SUBTARGET = arcade
 # TOOLS = 1
 # TESTS = 1
 # BENCHMARKS = 1
