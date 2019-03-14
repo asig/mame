@@ -256,12 +256,6 @@ void rungun_state::rungun_sound_map(address_map &map)
 }
 
 
-void rungun_state::k054539_map(address_map &map)
-{
-	map(0x000000, 0x3fffff).rom().region("k054539", 0);
-}
-
-
 static INPUT_PORTS_START( rng )
 	PORT_START("SYSTEM")
 	PORT_BIT( 0x01, IP_ACTIVE_LOW, IPT_COIN1 )
@@ -420,8 +414,7 @@ void rungun_state::rng(machine_config &config)
 	m_screen->set_palette(m_palette);
 	m_screen->set_video_attributes(VIDEO_ALWAYS_UPDATE);
 
-	PALETTE(config, m_palette, 1024);
-	m_palette->set_format(PALETTE_FORMAT_xBBBBBGGGGGRRRRR);
+	PALETTE(config, m_palette).set_format(palette_device::xBGR_555, 1024);
 	m_palette->enable_shadows();
 	m_palette->enable_hilights();
 
@@ -438,10 +431,9 @@ void rungun_state::rng(machine_config &config)
 	m_k053252->set_offsets(9*8, 24);
 	m_k053252->set_screen("screen");
 
-	PALETTE(config, m_palette2, 1024);
-	m_palette2->set_format(PALETTE_FORMAT_xBBBBBGGGGGRRRRR);
-	m_palette2->enable_shadows();
-	m_palette2->enable_hilights();
+	PALETTE(config, m_palette2).set_format(palette_device::xBGR_555, 1024);
+	m_palette->enable_shadows();
+	m_palette->enable_hilights();
 
 	/* sound hardware */
 	SPEAKER(config, "lspeaker").front_left();
@@ -451,14 +443,14 @@ void rungun_state::rng(machine_config &config)
 
 	// SFX
 	K054539(config, m_k054539_1, 18.432_MHz_XTAL);
-	m_k054539_1->set_addrmap(0, &rungun_state::k054539_map);
+	m_k054539_1->set_device_rom_tag("k054539");
 	m_k054539_1->timer_handler().set(FUNC(rungun_state::k054539_nmi_gen));
 	m_k054539_1->add_route(0, "rspeaker", 1.0);
 	m_k054539_1->add_route(1, "lspeaker", 1.0);
 
 	// BGM, volumes handtuned to make SFXs audible (still not 100% right tho)
 	K054539(config, m_k054539_2, 18.432_MHz_XTAL);
-	m_k054539_2->set_addrmap(0, &rungun_state::k054539_map);
+	m_k054539_2->set_device_rom_tag("k054539");
 	m_k054539_2->add_route(0, "rspeaker", 0.6);
 	m_k054539_2->add_route(1, "lspeaker", 0.6);
 }
@@ -469,6 +461,7 @@ void rungun_state::rng(machine_config &config)
 void rungun_state::rng_dual(machine_config &config)
 {
 	rng(config);
+
 	m_screen->set_screen_update(FUNC(rungun_state::screen_update_rng_dual_left));
 
 	screen_device &demultiplex2(SCREEN(config, "demultiplex2", SCREEN_TYPE_RASTER));

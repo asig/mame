@@ -546,11 +546,11 @@ READ8_MEMBER(mac_state::mac_5396_r)
 {
 	if (offset < 0x100)
 	{
-		return m_539x_1->read(space, offset>>4);
+		return m_539x_1->read(offset>>4);
 	}
 	else    // pseudo-DMA: read from the FIFO
 	{
-		return m_539x_1->read(space, 2);
+		return m_539x_1->read(2);
 	}
 
 	// never executed
@@ -561,11 +561,11 @@ WRITE8_MEMBER(mac_state::mac_5396_w)
 {
 	if (offset < 0x100)
 	{
-		m_539x_1->write(space, offset>>4, data);
+		m_539x_1->write(offset>>4, data);
 	}
 	else    // pseudo-DMA: write to the FIFO
 	{
-		m_539x_1->write(space, 2, data);
+		m_539x_1->write(2, data);
 	}
 }
 
@@ -1047,8 +1047,7 @@ void mac_state::mac512ke_base(machine_config &config)
 	m_screen->set_screen_update(FUNC(mac_state::screen_update_mac));
 	m_screen->set_palette(m_palette);
 
-	PALETTE(config, m_palette, 2);
-	m_palette->set_init(DEVICE_SELF, FUNC(mac_state::palette_init_mac));
+	PALETTE(config, m_palette, palette_device::MONOCHROME_INVERTED);
 
 	MCFG_VIDEO_START_OVERRIDE(mac_state,mac)
 
@@ -1056,7 +1055,6 @@ void mac_state::mac512ke_base(machine_config &config)
 	DAC_8BIT_PWM(config, m_dac, 0);
 	m_dac->add_route(ALL_OUTPUTS, "speaker", 0.25); // 2 x ls161
 	voltage_regulator_device &vreg(VOLTAGE_REGULATOR(config, "vref", 0));
-	vreg.set_output(5.0);
 	vreg.add_route(0, "dac", 1.0, DAC_VREF_POS_INPUT);
 	vreg.add_route(0, "dac", -1.0, DAC_VREF_NEG_INPUT);
 
@@ -1097,7 +1095,7 @@ void mac_state::add_macplus_additions(machine_config &config)
 void mac_state::add_nubus(machine_config &config, bool bank1, bool bank2)
 {
 	nubus_device &nubus(NUBUS(config, "nubus", 0));
-	nubus.set_cputag("maincpu");
+	nubus.set_space(m_maincpu, AS_PROGRAM);
 	nubus.out_irq9_callback().set(FUNC(mac_state::nubus_irq_9_w));
 	nubus.out_irqa_callback().set(FUNC(mac_state::nubus_irq_a_w));
 	nubus.out_irqb_callback().set(FUNC(mac_state::nubus_irq_b_w));
@@ -1121,7 +1119,7 @@ void mac_state::add_nubus(machine_config &config, bool bank1, bool bank2)
 template <typename T> void mac_state::add_nubus_pds(machine_config &config, const char *slot_tag, T &&opts)
 {
 	nubus_device &nubus(NUBUS(config, "pds", 0));
-	nubus.set_cputag("maincpu");
+	nubus.set_space(m_maincpu, AS_PROGRAM);
 	nubus.out_irq9_callback().set(FUNC(mac_state::nubus_irq_9_w));
 	nubus.out_irqa_callback().set(FUNC(mac_state::nubus_irq_a_w));
 	nubus.out_irqb_callback().set(FUNC(mac_state::nubus_irq_b_w));
@@ -1181,8 +1179,7 @@ void mac_state::macprtb(machine_config &config)
 	add_pb1xx_screen(config);
 	m_screen->set_screen_update(FUNC(mac_state::screen_update_macprtb));
 
-	PALETTE(config, m_palette, 2);
-	m_palette->set_init(DEVICE_SELF, FUNC(mac_state::palette_init_mac));
+	PALETTE(config, m_palette, palette_device::MONOCHROME_INVERTED);
 
 	MCFG_VIDEO_START_OVERRIDE(mac_state,macprtb)
 
@@ -1213,7 +1210,7 @@ void mac_state::macii(machine_config &config, bool cpu, asc_device::asc_type asc
 		m_maincpu->set_dasm_override(FUNC(mac_state::mac_dasm_override));
 	}
 
-	PALETTE(config, m_palette, 256);
+	PALETTE(config, m_palette).set_entries(256);
 
 	add_asc(config, asc_type);
 	add_base_devices(config);
@@ -1407,8 +1404,7 @@ void mac_state::macse30(machine_config &config)
 	m_screen->set_screen_update(FUNC(mac_state::screen_update_macse30));
 	m_screen->set_palette(m_palette);
 
-	PALETTE(config, m_palette, 2);
-	m_palette->set_init(DEVICE_SELF, FUNC(mac_state::palette_init_mac));
+	PALETTE(config, m_palette, palette_device::MONOCHROME_INVERTED);
 
 	MCFG_VIDEO_START_OVERRIDE(mac_state,mac)
 
@@ -1437,8 +1433,7 @@ void mac_state::macpb140(machine_config &config)
 	add_pb1xx_screen(config);
 	m_screen->set_screen_update(FUNC(mac_state::screen_update_macpb140));
 
-	PALETTE(config, m_palette, 2);
-	m_palette->set_init(DEVICE_SELF, FUNC(mac_state::palette_init_mac));
+	PALETTE(config, m_palette, palette_device::MONOCHROME_INVERTED);
 
 	MCFG_VIDEO_START_OVERRIDE(mac_state,macprtb)
 
@@ -1483,8 +1478,7 @@ void mac_state::macpb160(machine_config &config)
 	add_pb1xx_screen(config);
 	m_screen->set_screen_update(FUNC(mac_state::screen_update_macpb160));
 
-	PALETTE(config, m_palette, 16);
-	m_palette->set_init(DEVICE_SELF, FUNC(mac_state::palette_init_macgsc));
+	PALETTE(config, m_palette, FUNC(mac_state::macgsc_palette), 16);
 
 	MCFG_VIDEO_START_OVERRIDE(mac_state,macprtb)
 
@@ -1613,7 +1607,7 @@ void mac_state::pwrmac(machine_config &config)
 	m_screen->set_visarea(0, 640-1, 0, 480-1);
 	m_screen->set_screen_update(FUNC(mac_state::screen_update_macrbv));
 
-	PALETTE(config, m_palette, 256);
+	PALETTE(config, m_palette).set_entries(256);
 
 	MCFG_VIDEO_START_OVERRIDE(mac_state,macsonora)
 	MCFG_VIDEO_RESET_OVERRIDE(mac_state,macrbv)
@@ -1656,7 +1650,7 @@ void mac_state::macqd700(machine_config &config)
 	MCFG_VIDEO_START_OVERRIDE(mac_state,macdafb)
 	MCFG_VIDEO_RESET_OVERRIDE(mac_state,macdafb)
 
-	PALETTE(config, m_palette, 256);
+	PALETTE(config, m_palette).set_entries(256);
 
 	add_asc(config, asc_device::asc_type::EASC);
 	add_base_devices(config, true, false);

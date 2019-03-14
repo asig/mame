@@ -490,7 +490,7 @@ TIMER_DEVICE_CALLBACK_MEMBER(pgm_state::pgm_interrupt)
 {
 	int scanline = param;
 
-// already being generated  by MCFG_DEVICE_VBLANK_INT_DRIVER("screen", pgm_state,  irq6_line_hold)
+// already being generated  by m_maincpu->set_vblank_int("screen", FUNC(pgm_state::irq6_line_hold));
 //  if(scanline == 224)
 //      m_maincpu->set_input_line(6, HOLD_LINE);
 
@@ -538,8 +538,7 @@ void pgm_state::pgmbase(machine_config &config)
 	screen.set_palette(m_palette);
 
 	GFXDECODE(config, m_gfxdecode, m_palette, gfx_pgm);
-	PALETTE(config, m_palette, 0x1200/2);
-	m_palette->set_format(PALETTE_FORMAT_xRRRRRGGGGGBBBBB);
+	PALETTE(config, m_palette).set_format(palette_device::xRGB_555, 0x1200/2);
 
 	MCFG_VIDEO_START_OVERRIDE(pgm_state,pgm)
 

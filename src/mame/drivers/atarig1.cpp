@@ -78,14 +78,14 @@ WRITE16_MEMBER(atarig1_state::mo_command_w)
 WRITE16_MEMBER(atarig1_state::a2d_select_w)
 {
 	if (m_adc.found())
-		m_adc->address_offset_start_w(space, offset, 0);
+		m_adc->address_offset_start_w(offset, 0);
 }
 
 
 READ16_MEMBER(atarig1_state::a2d_data_r)
 {
 	if (m_adc.found())
-		return m_adc->data_r(space, offset) << 8;
+		return m_adc->data_r() << 8;
 	else
 		return m_in1->read();
 }
@@ -410,9 +410,8 @@ MACHINE_CONFIG_START(atarig1_state::atarig1)
 	WATCHDOG_TIMER(config, "watchdog");
 
 	/* video hardware */
-	MCFG_DEVICE_ADD("gfxdecode", GFXDECODE, "palette", gfx_atarig1)
-	MCFG_PALETTE_ADD("palette", 1280)
-	MCFG_PALETTE_FORMAT(IRRRRRGGGGGBBBBB)
+	GFXDECODE(config, m_gfxdecode, "palette", gfx_atarig1);
+	PALETTE(config, "palette").set_format(palette_device::IRGB_1555, 1280);
 
 	/* initialize the playfield */
 	MCFG_TILEMAP_ADD_STANDARD("playfield", "gfxdecode", 2, atarig1_state, get_playfield_tile_info, 8,8, SCAN_ROWS, 64,64)

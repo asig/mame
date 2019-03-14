@@ -1079,7 +1079,6 @@ void equites_state::common_sound(machine_config &config)
 	DAC_6BIT_R2R(config, m_dac_1, 0).add_route(ALL_OUTPUTS, "speaker", 0.5); // unknown DAC
 	DAC_6BIT_R2R(config, m_dac_2, 0).add_route(ALL_OUTPUTS, "speaker", 0.5); // unknown DAC
 	voltage_regulator_device &vref(VOLTAGE_REGULATOR(config, "vref", 0));
-	vref.set_output(5.0);
 	vref.add_route(0, "dac1", 1.0, DAC_VREF_POS_INPUT);
 	vref.add_route(0, "dac1", -1.0, DAC_VREF_NEG_INPUT);
 	vref.add_route(0, "dac2", 1.0, DAC_VREF_POS_INPUT);
@@ -1184,9 +1183,7 @@ void equites_state::equites(machine_config &config)
 	m_screen->set_palette(m_palette);
 
 	GFXDECODE(config, m_gfxdecode, m_palette, gfx_equites);
-	PALETTE(config, m_palette, 0x180);
-	m_palette->set_indirect_entries(0x100);
-	m_palette->set_init(FUNC(equites_state::palette_init_equites));
+	PALETTE(config, m_palette, FUNC(equites_state::equites_palette), 0x180, 0x100);
 
 	MCFG_VIDEO_START_OVERRIDE(equites_state,equites)
 }
@@ -1232,9 +1229,7 @@ void splndrbt_state::splndrbt(machine_config &config)
 	m_screen->set_palette(m_palette);
 
 	GFXDECODE(config, m_gfxdecode, m_palette, gfx_splndrbt);
-	PALETTE(config, m_palette, 0x280);
-	m_palette->set_indirect_entries(0x100);
-	m_palette->set_init(FUNC(splndrbt_state::palette_init_splndrbt));
+	PALETTE(config, m_palette, FUNC(splndrbt_state::splndrbt_palette), 0x280, 0x100);
 
 	MCFG_VIDEO_START_OVERRIDE(splndrbt_state,splndrbt)
 }

@@ -221,7 +221,7 @@ READ8_MEMBER( sbc6510_state::a2_r )
 WRITE8_MEMBER( sbc6510_state::a2_w )
 {
 	m_2 = data;
-	m_terminal->write(space, 0, data);
+	m_terminal->write(data);
 }
 
 void sbc6510_state::machine_start()
@@ -289,7 +289,7 @@ void sbc6510_state::sbc6510(machine_config &config)
 	m_videocpu->set_addrmap(AS_IO, &sbc6510_state::sbc6510_video_io);
 	m_videocpu->set_eeprom_tag("eeprom");
 
-	PALETTE(config, "palette", 2).set_init("palette", FUNC(palette_device::palette_init_monochrome)); // for F4 displayer only
+	PALETTE(config, "palette", palette_device::MONOCHROME); // for F4 displayer only
 	GFXDECODE(config, "gfxdecode", "palette", gfx_sbc6510);
 
 	/* video hardware */

@@ -23,7 +23,7 @@
   FOR AMUSEMENT ONLY.
 
   The ingenious Match Games offers something for everyone. Four captivating themes
-  with brillant graphics, challenging play action, an enticing bonus feature and a
+  with brilliant graphics, challenging play action, an enticing bonus feature and a
   host of options to tailor the game to any location.
 
   Match Games is today's perfect alternative in adult video skill games...
@@ -36,19 +36,19 @@
   and number combinations. Play appeal stays high as new characters are introduced.
 
   "Wild" characters liven the action even more and build special bonus points, co-
-  llected on a 5-way number match. The appeal is irresistable... Players stay hoo-
+  llected on a 5-way number match. The appeal is irresistible... Players stay hoo-
   ked in for lot more action (and more earnings) for you!.
 
 
   GAME THEMES:
 
-  Match Games aknowledges every scoring combination by displaying its own special
+  Match Games acknowledges every scoring combination by displaying its own special
   name keyed to each game theme.
 
   Every time 2 "Wild" characters pop up together, special bonus symbols appear,
   increasing bonus by 5 points.
 
-  * "THE WHITE KNIGHT" features knights in armor with colores plumes and wild
+  * "THE WHITE KNIGHT" features knights in armor with colored plumes and wild
                        'White Knights'.
 
   * "THE FROG POND" stars colorful and humorous frogs perched on top of mushrooms.
@@ -247,7 +247,7 @@ private:
 	DECLARE_WRITE8_MEMBER(outport5_w);
 	DECLARE_WRITE8_MEMBER(outport6_w);
 	DECLARE_WRITE8_MEMBER(outport7_w);
-	DECLARE_PALETTE_INIT(mgames);
+	void mgames_palette(palette_device &palette) const;
 	uint32_t screen_update_mgames(screen_device &screen, bitmap_ind16 &bitmap, const rectangle &cliprect);
 	void main_map(address_map &map);
 
@@ -270,30 +270,25 @@ void mgames_state::video_start()
 
 uint32_t mgames_state::screen_update_mgames(screen_device &screen, bitmap_ind16 &bitmap, const rectangle &cliprect)
 {
-	int y,x;
-	int count;
-	gfx_element *gfx = m_gfxdecode->gfx(0);
+	gfx_element *const gfx = m_gfxdecode->gfx(0);
 
-	count = 0;
-	for (y = 0; y < 32; y++)
+	int count = 0;
+	for (int y = 0; y < 32; y++)
 	{
-		for (x = 0; x < 32; x++)
+		for (int x = 0; x < 32; x++)
 		{
-			uint16_t dat = m_video[count];
-			uint16_t col = m_video[count + 0x400] & 0x7f;
+			uint16_t const dat = m_video[count];
+			uint16_t const col = m_video[count + 0x400] & 0x7f;
 			gfx->opaque(bitmap, cliprect, dat, col, 0, 0, x * 16, y * 16);
 			count++;
 		}
-
 	}
 	return 0;
 }
 
-PALETTE_INIT_MEMBER(mgames_state, mgames)
+void mgames_state::mgames_palette(palette_device &palette) const
 {
-	int i;
-
-	for (i = 0; i < 0x100; i++)
+	for (int i = 0; i < 0x100; i++)
 	{
 		rgb_t color;
 
@@ -644,31 +639,30 @@ static GFXDECODE_START( gfx_mgames )
 GFXDECODE_END
 
 
-MACHINE_CONFIG_START(mgames_state::mgames)
+void mgames_state::mgames(machine_config &config)
+{
 	/* basic machine hardware */
-	MCFG_DEVICE_ADD("maincpu", Z80,MASTER_CLOCK/6)      /* 3 MHz? */
-	MCFG_DEVICE_PROGRAM_MAP(main_map)
-	MCFG_DEVICE_VBLANK_INT_DRIVER("screen", mgames_state, irq0_line_hold)
+	Z80(config, m_maincpu, MASTER_CLOCK/6);      /* 3 MHz? */
+	m_maincpu->set_addrmap(AS_PROGRAM, &mgames_state::main_map);
+	m_maincpu->set_vblank_int("screen", FUNC(mgames_state::irq0_line_hold));
 
 	NVRAM(config, "nvram", nvram_device::DEFAULT_ALL_0);
 
 	/* video hardware */
-	MCFG_SCREEN_ADD("screen", RASTER)
-	MCFG_SCREEN_REFRESH_RATE(60)
-	MCFG_SCREEN_VBLANK_TIME(ATTOSECONDS_IN_USEC(0))
-	MCFG_SCREEN_SIZE(512, 256)
-	MCFG_SCREEN_VISIBLE_AREA(0, 512-1, 0, 256-1)
-	MCFG_SCREEN_UPDATE_DRIVER(mgames_state, screen_update_mgames)
-	MCFG_SCREEN_PALETTE("palette")
+	screen_device &screen(SCREEN(config, "screen", SCREEN_TYPE_RASTER));
+	screen.set_refresh_hz(60);
+	screen.set_vblank_time(ATTOSECONDS_IN_USEC(0));
+	screen.set_size(512, 256);
+	screen.set_visarea(0, 512-1, 0, 256-1);
+	screen.set_screen_update(FUNC(mgames_state::screen_update_mgames));
+	screen.set_palette(m_palette);
 
-	MCFG_DEVICE_ADD("gfxdecode", GFXDECODE, "palette", gfx_mgames)
-	MCFG_PALETTE_ADD("palette", 0x200)
-	MCFG_PALETTE_INIT_OWNER(mgames_state, mgames)
+	GFXDECODE(config, m_gfxdecode, m_palette, gfx_mgames);
+	PALETTE(config, m_palette, FUNC(mgames_state::mgames_palette), 0x200);
 
 	/* sound hardware */
 	//  to do...
-
-MACHINE_CONFIG_END
+}
 
 
 ROM_START( mgames )

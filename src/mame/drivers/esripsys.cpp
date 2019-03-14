@@ -692,7 +692,7 @@ void esripsys_state::esripsys(machine_config &config)
 	/* Video hardware */
 	SCREEN(config, m_screen, SCREEN_TYPE_RASTER);
 	m_screen->set_raw(ESRIPSYS_PIXEL_CLOCK, ESRIPSYS_HTOTAL, ESRIPSYS_HBLANK_END, ESRIPSYS_HBLANK_START,
-	                                        ESRIPSYS_VTOTAL, ESRIPSYS_VBLANK_END, ESRIPSYS_VBLANK_START);
+											ESRIPSYS_VTOTAL, ESRIPSYS_VBLANK_END, ESRIPSYS_VBLANK_START);
 	m_screen->set_screen_update(FUNC(esripsys_state::screen_update_esripsys));
 	m_screen->set_video_attributes(VIDEO_ALWAYS_UPDATE);
 
@@ -704,7 +704,6 @@ void esripsys_state::esripsys(machine_config &config)
 	dacvol.add_route(0, "dac", 1.0, DAC_VREF_POS_INPUT);
 	dacvol.add_route(0, "dac", -1.0, DAC_VREF_NEG_INPUT);
 	voltage_regulator_device &vref(VOLTAGE_REGULATOR(config, "vref", 0));
-	vref.set_output(5.0);
 	vref.add_route(0, "dacvol", 1.0, DAC_VREF_POS_INPUT);
 
 	TMS5220(config, m_tms, 640000).add_route(ALL_OUTPUTS, "speaker", 1.0);

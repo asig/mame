@@ -611,7 +611,7 @@ void route16_state::route16(machine_config &config)
 	m_screen->set_vblank_time(ATTOSECONDS_IN_USEC(2500)); /* not accurate */
 	m_screen->set_screen_update(FUNC(route16_state::screen_update_route16));
 
-	PALETTE(config, m_palette, 8).set_init("palette", FUNC(palette_device::palette_init_3bit_rgb));
+	PALETTE(config, m_palette, palette_device::RGB_3BIT);
 
 	/* sound hardware */
 	SPEAKER(config, "speaker").front_center();
@@ -660,7 +660,6 @@ void route16_state::stratvox(machine_config &config)
 
 	DAC_8BIT_R2R(config, "dac", 0).add_route(ALL_OUTPUTS, "speaker", 0.25); // unknown DAC
 	voltage_regulator_device &vref(VOLTAGE_REGULATOR(config, "vref", 0));
-	vref.set_output(5.0);
 	vref.add_route(0, "dac", 1.0, DAC_VREF_POS_INPUT);
 	vref.add_route(0, "dac", -1.0, DAC_VREF_NEG_INPUT);
 }
@@ -694,7 +693,7 @@ void route16_state::jongpute(machine_config &config)
 	/* video hardware */
 	m_screen->set_screen_update(FUNC(route16_state::screen_update_jongpute));
 
-	PALETTE(config.replace(), m_palette, 8).set_init("palette", FUNC(palette_device::palette_init_3bit_bgr));
+	PALETTE(config.replace(), m_palette, palette_device::BGR_3BIT);
 }
 
 

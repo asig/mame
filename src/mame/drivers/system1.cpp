@@ -835,8 +835,8 @@ void system1_state::sound_map(address_map &map)
 {
 	map(0x0000, 0x7fff).rom();
 	map(0x8000, 0x87ff).mirror(0x1800).ram();
-	map(0xa000, 0xa000).mirror(0x1fff).w("sn1", FUNC(sn76489a_device::command_w));
-	map(0xc000, 0xc000).mirror(0x1fff).w("sn2", FUNC(sn76489a_device::command_w));
+	map(0xa000, 0xa000).mirror(0x1fff).w("sn1", FUNC(sn76489a_device::write));
+	map(0xc000, 0xc000).mirror(0x1fff).w("sn2", FUNC(sn76489a_device::write));
 	map(0xe000, 0xe000).mirror(0x1fff).r(FUNC(system1_state::sound_data_r));
 }
 
@@ -2173,7 +2173,7 @@ void system1_state::sys1ppi(machine_config &config)
 
 	TIMER(config, "soundirq", 0).configure_scanline(FUNC(system1_state::soundirq_gen), "screen", 32, 64);
 
-	MCFG_QUANTUM_TIME(attotime::from_hz(6000))
+	config.m_minimum_quantum = attotime::from_hz(6000);
 
 	I8255A(config, m_ppi8255);
 	m_ppi8255->out_pa_callback().set(FUNC(system1_state::soundport_w));
@@ -2188,8 +2188,7 @@ void system1_state::sys1ppi(machine_config &config)
 	m_screen->set_palette(m_palette);
 
 	GFXDECODE(config, m_gfxdecode, m_palette, gfx_system1);
-
-	PALETTE(config, m_palette, 2048).set_format(PALETTE_FORMAT_BBGGGRRR);
+	PALETTE(config, m_palette).set_format(palette_device::BGR_233, 2048);
 
 	/* sound hardware */
 	SPEAKER(config, "mono").front_center();

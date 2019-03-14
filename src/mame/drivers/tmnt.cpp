@@ -1072,23 +1072,14 @@ void tmnt_state::thndrx2_audio_map(address_map &map)
 }
 
 
-READ8_MEMBER(tmnt_state::k054539_ctrl_r)
-{
-	return m_k054539->read(space, 0x200 + offset, 0xff);
-}
-
-WRITE8_MEMBER(tmnt_state::k054539_ctrl_w)
-{
-	m_k054539->write(space, 0x200 + offset, data, 0xff);
-}
-
 void tmnt_state::prmrsocr_audio_map(address_map &map)
 {
 	map(0x0000, 0x7fff).rom();
 	map(0x8000, 0xbfff).bankr("bank1");
 	map(0xc000, 0xdfff).ram();
-	map(0xe000, 0xe0ff).rw(m_k054539, FUNC(k054539_device::read), FUNC(k054539_device::write));
-	map(0xe100, 0xe12f).rw(FUNC(tmnt_state::k054539_ctrl_r), FUNC(tmnt_state::k054539_ctrl_w));
+	map(0xe000, 0xe12f).lrw8("k054539_rw",
+		[this](offs_t offset) { return m_k054539->read(((offset & 0x100) << 1) | (offset & 0xff)); },
+		[this](offs_t offset, u8 data) { m_k054539->write(((offset & 0x100) << 1) | (offset & 0xff), data); });
 	map(0xf000, 0xf000).w("soundlatch3", FUNC(generic_latch_8_device::write));
 	map(0xf002, 0xf002).r("soundlatch", FUNC(generic_latch_8_device::read));
 	map(0xf003, 0xf003).r("soundlatch2", FUNC(generic_latch_8_device::read));
@@ -1936,8 +1927,7 @@ void tmnt_state::cuebrick(machine_config &config)
 	screen.set_screen_update(FUNC(tmnt_state::screen_update_mia));
 	screen.set_palette(m_palette);
 
-	PALETTE(config, m_palette, 1024);
-	m_palette->set_format(PALETTE_FORMAT_xBBBBBGGGGGRRRRR);
+	PALETTE(config, m_palette).set_format(palette_device::xBGR_555, 1024);
 	m_palette->set_membits(8);
 	m_palette->enable_shadows();
 	m_palette->enable_hilights();
@@ -1989,8 +1979,7 @@ void tmnt_state::mia(machine_config &config)
 	screen.set_screen_update(FUNC(tmnt_state::screen_update_mia));
 	screen.set_palette(m_palette);
 
-	PALETTE(config, m_palette, 1024);
-	m_palette->set_format(PALETTE_FORMAT_xBBBBBGGGGGRRRRR);
+	PALETTE(config, m_palette).set_format(palette_device::xBGR_555, 1024);
 	m_palette->set_membits(8);
 	m_palette->enable_shadows();
 	m_palette->enable_hilights();
@@ -2049,11 +2038,11 @@ void tmnt_state::tmnt(machine_config &config)
 	screen.set_size(64*8, 32*8);
 	screen.set_visarea(12*8, (64-12)*8-1, 2*8, 30*8-1 );
 	// verified against real hardware
+
 	screen.set_screen_update(FUNC(tmnt_state::screen_update_tmnt));
 	screen.set_palette(m_palette);
 
-	PALETTE(config, m_palette, 1024);
-	m_palette->set_format(PALETTE_FORMAT_xBBBBBGGGGGRRRRR);
+	PALETTE(config, m_palette).set_format(palette_device::xBGR_555, 1024);
 	m_palette->set_membits(8);
 	m_palette->enable_shadows();
 	m_palette->enable_hilights();
@@ -2116,8 +2105,7 @@ void tmnt_state::punkshot(machine_config &config)
 	screen.set_screen_update(FUNC(tmnt_state::screen_update_punkshot));
 	screen.set_palette(m_palette);
 
-	PALETTE(config, m_palette, 2048);
-	m_palette->set_format(PALETTE_FORMAT_xBBBBBGGGGGRRRRR);
+	PALETTE(config, m_palette).set_format(palette_device::xBGR_555, 2048);
 	m_palette->enable_shadows();
 	m_palette->enable_hilights();
 
@@ -2166,8 +2154,7 @@ void tmnt_state::lgtnfght(machine_config &config)
 	screen.set_screen_update(FUNC(tmnt_state::screen_update_lgtnfght));
 	screen.set_palette(m_palette);
 
-	PALETTE(config, m_palette, 2048);
-	m_palette->set_format(PALETTE_FORMAT_xBBBBBGGGGGRRRRR);
+	PALETTE(config, m_palette).set_format(palette_device::xBGR_555, 2048);
 	m_palette->enable_shadows();
 	m_palette->enable_hilights();
 
@@ -2223,8 +2210,7 @@ void tmnt_state::blswhstl(machine_config &config)
 	screen.screen_vblank().set(FUNC(tmnt_state::screen_vblank_blswhstl));
 	screen.set_palette(m_palette);
 
-	PALETTE(config, m_palette, 2048);
-	m_palette->set_format(PALETTE_FORMAT_xBBBBBGGGGGRRRRR);
+	PALETTE(config, m_palette).set_format(palette_device::xBGR_555, 2048);
 	m_palette->enable_shadows();
 	m_palette->enable_hilights();
 
@@ -2239,7 +2225,6 @@ void tmnt_state::blswhstl(machine_config &config)
 	m_k053245->set_sprite_callback(FUNC(tmnt_state::blswhstl_sprite_callback), this);
 
 	K053251(config, m_k053251, 0);
-
 	K054000(config, m_k054000, 0);
 
 	/* sound hardware */
@@ -2299,8 +2284,7 @@ void tmnt_state::glfgreat(machine_config &config)
 
 	GFXDECODE(config, m_gfxdecode, m_palette, gfx_glfgreat);
 
-	PALETTE(config, m_palette, 2048);
-	m_palette->set_format(PALETTE_FORMAT_xBBBBBGGGGGRRRRR);
+	PALETTE(config, m_palette).set_format(palette_device::xBGR_555, 2048);
 	m_palette->enable_shadows();
 	m_palette->enable_hilights();
 
@@ -2366,8 +2350,7 @@ void tmnt_state::prmrsocr(machine_config &config)
 
 	GFXDECODE(config, m_gfxdecode, m_palette, gfx_glfgreat);
 
-	PALETTE(config, m_palette, 2048);
-	m_palette->set_format(PALETTE_FORMAT_xBBBBBGGGGGRRRRR);
+	PALETTE(config, m_palette).set_format(palette_device::xBGR_555, 2048);
 	m_palette->enable_shadows();
 	m_palette->enable_hilights();
 
@@ -2431,8 +2414,7 @@ void tmnt_state::tmnt2(machine_config &config)
 	screen.set_screen_update(FUNC(tmnt_state::screen_update_tmnt2));
 	screen.set_palette(m_palette);
 
-	PALETTE(config, m_palette, 2048);
-	m_palette->set_format(PALETTE_FORMAT_xBBBBBGGGGGRRRRR);
+	PALETTE(config, m_palette).set_format(palette_device::xBGR_555, 2048);
 	m_palette->enable_shadows();
 	m_palette->enable_hilights();
 
@@ -2487,8 +2469,7 @@ void tmnt_state::ssriders(machine_config &config)
 	screen.set_screen_update(FUNC(tmnt_state::screen_update_tmnt2));
 	screen.set_palette(m_palette);
 
-	PALETTE(config, m_palette, 2048);
-	m_palette->set_format(PALETTE_FORMAT_xBBBBBGGGGGRRRRR);
+	PALETTE(config, m_palette).set_format(palette_device::xBGR_555, 2048);
 	m_palette->enable_shadows();
 	m_palette->enable_hilights();
 
@@ -2537,8 +2518,7 @@ void tmnt_state::sunsetbl(machine_config &config)
 	screen.set_screen_update(FUNC(tmnt_state::screen_update_tmnt2));
 	screen.set_palette(m_palette);
 
-	PALETTE(config, m_palette, 2048);
-	m_palette->set_format(PALETTE_FORMAT_xBBBBBGGGGGRRRRR);
+	PALETTE(config, m_palette).set_format(palette_device::xBGR_555, 2048);
 	m_palette->enable_shadows();
 	m_palette->enable_hilights();
 
@@ -2586,8 +2566,7 @@ void tmnt_state::thndrx2(machine_config &config)
 	screen.set_screen_update(FUNC(tmnt_state::screen_update_thndrx2));
 	screen.set_palette(m_palette);
 
-	PALETTE(config, m_palette, 2048);
-	m_palette->set_format(PALETTE_FORMAT_xBBBBBGGGGGRRRRR);
+	PALETTE(config, m_palette).set_format(palette_device::xBGR_555, 2048);
 	m_palette->enable_shadows();
 	m_palette->enable_hilights();
 

@@ -56,11 +56,13 @@
 #include "includes/mikromik.h"
 #include "softlist.h"
 
+//#define VERBOSE 1
+#include "logmacro.h"
+
+
 //**************************************************************************
 //  MACROS / CONSTANTS
 //**************************************************************************
-
-#define LOG 0
 
 #define MMU_IOEN    0x01
 #define MMU_RAMEN   0x02
@@ -90,7 +92,7 @@ READ8_MEMBER( mm1_state::read )
 		switch ((offset >> 4) & 0x07)
 		{
 		case 0:
-			data = m_dmac->read(space, offset & 0x0f);
+			data = m_dmac->read(offset & 0x0f);
 			break;
 
 		case 1:
@@ -112,16 +114,16 @@ READ8_MEMBER( mm1_state::read )
 		case 5:
 			if (BIT(offset, 0))
 			{
-				data = m_fdc->fifo_r(space, 0, 0xff);
+				data = m_fdc->fifo_r();
 			}
 			else
 			{
-				data = m_fdc->msr_r(space, 0, 0xff);
+				data = m_fdc->msr_r();
 			}
 			break;
 
 		case 7:
-			data = m_hgdc->read(space, offset & 0x01);
+			data = m_hgdc->read(offset & 0x01);
 			break;
 		}
 	}
@@ -159,7 +161,7 @@ WRITE8_MEMBER( mm1_state::write )
 		switch ((offset >> 4) & 0x07)
 		{
 		case 0:
-			m_dmac->write(space, offset & 0x0f, data);
+			m_dmac->write(offset & 0x0f, data);
 			break;
 
 		case 1:
@@ -181,7 +183,7 @@ WRITE8_MEMBER( mm1_state::write )
 		case 5:
 			if (BIT(offset, 0))
 			{
-				m_fdc->fifo_w(space, 0, data, 0xff);
+				m_fdc->fifo_w(data);
 			}
 			break;
 
@@ -190,7 +192,7 @@ WRITE8_MEMBER( mm1_state::write )
 			break;
 
 		case 7:
-			m_hgdc->write(space, offset & 0x01, data);
+			m_hgdc->write(offset & 0x01, data);
 			break;
 		}
 	}
@@ -215,12 +217,12 @@ WRITE8_MEMBER( mm1_state::ls259_w )
 	switch (offset)
 	{
 	case 0: // IC24 A8
-		if (LOG) logerror("IC24 A8 %u\n", d);
+		LOG("IC24 A8 %u\n", d);
 		m_a8 = d;
 		break;
 
 	case 1: // RECALL
-		if (LOG) logerror("RECALL %u\n", d);
+		LOG("RECALL %u\n", d);
 		m_recall = d;
 		if (d) m_fdc->soft_reset();
 		break;
@@ -242,12 +244,12 @@ WRITE8_MEMBER( mm1_state::ls259_w )
 		break;
 
 	case 6: // LLEN
-		if (LOG) logerror("LLEN %u\n", d);
+		LOG("LLEN %u\n", d);
 		m_llen = d;
 		break;
 
 	case 7: // MOTOR ON
-		if (LOG) logerror("MOTOR %u\n", d);
+		LOG("MOTOR %u\n", d);
 		m_floppy0->mon_w(!d);
 		m_floppy1->mon_w(!d);
 		break;
@@ -454,7 +456,7 @@ void mm1_state::machine_reset()
 //**************************************************************************
 
 //-------------------------------------------------
-//  MACHINE_CONFIG( mm1 )
+//  machine_config( mm1 )
 //-------------------------------------------------
 
 void mm1_state::mm1(machine_config &config)
@@ -478,10 +480,10 @@ void mm1_state::mm1(machine_config &config)
 	m_dmac->in_memr_callback().set(FUNC(mm1_state::read));
 	m_dmac->out_memw_callback().set(FUNC(mm1_state::write));
 	m_dmac->in_ior_callback<2>().set(FUNC(mm1_state::mpsc_dack_r));
-	m_dmac->in_ior_callback<3>().set(m_fdc, FUNC(upd765_family_device::mdma_r));
+	m_dmac->in_ior_callback<3>().set(m_fdc, FUNC(upd765_family_device::dma_r));
 	m_dmac->out_iow_callback<0>().set(m_crtc, FUNC(i8275_device::dack_w));
 	m_dmac->out_iow_callback<1>().set(FUNC(mm1_state::mpsc_dack_w));
-	m_dmac->out_iow_callback<3>().set(m_fdc, FUNC(upd765_family_device::mdma_w));
+	m_dmac->out_iow_callback<3>().set(m_fdc, FUNC(upd765_family_device::dma_w));
 	m_dmac->out_dack_callback<3>().set(FUNC(mm1_state::dack3_w));
 
 	PIT8253(config, m_pit, 0);
@@ -523,7 +525,7 @@ void mm1_state::mm1(machine_config &config)
 
 
 //-------------------------------------------------
-//  MACHINE_CONFIG( mm1m6 )
+//  machine_config( mm1m6 )
 //-------------------------------------------------
 
 void mm1_state::mm1m6(machine_config &config)
@@ -535,7 +537,7 @@ void mm1_state::mm1m6(machine_config &config)
 
 
 //-------------------------------------------------
-//  MACHINE_CONFIG( mm1m7 )
+//  machine_config( mm1m7 )
 //-------------------------------------------------
 
 void mm1_state::mm1m7(machine_config &config)

@@ -65,7 +65,6 @@ void midtunit_state::main_map(address_map &map)
 	map(0x01f00000, 0x01f0001f).w(m_video, FUNC(midtunit_video_device::midtunit_control_w));
 	map(0x02000000, 0x07ffffff).r(m_video, FUNC(midtunit_video_device::midtunit_gfxrom_r)).share("gfxrom");
 	map(0x1f800000, 0x1fffffff).rom().region("maincpu", 0); /* mirror used by MK */
-	map(0xc0000000, 0xc00001ff).rw("maincpu", FUNC(tms34010_device::io_register_r), FUNC(tms34010_device::io_register_w));
 	map(0xff800000, 0xffffffff).rom().region("maincpu", 0);
 }
 
@@ -598,12 +597,12 @@ void midtunit_state::tunit_core(machine_config &config)
 	/* basic machine hardware */
 	TMS34010(config, m_maincpu, CPU_CLOCK);
 	m_maincpu->set_addrmap(AS_PROGRAM, &midtunit_state::main_map);
-	m_maincpu->set_halt_on_reset(false);	 /* halt on reset */
+	m_maincpu->set_halt_on_reset(false);     /* halt on reset */
 	m_maincpu->set_pixel_clock(PIXEL_CLOCK); /* pixel clock */
-	m_maincpu->set_pixels_per_clock(2);		 /* pixels per clock */
-	m_maincpu->set_scanline_ind16_callback("video", FUNC(midtunit_video_device::scanline_update));	/* scanline updater (indexed16) */
-	m_maincpu->set_shiftreg_in_callback("video", FUNC(midtunit_video_device::to_shiftreg));			/* write to shiftreg function */
-	m_maincpu->set_shiftreg_out_callback("video", FUNC(midtunit_video_device::from_shiftreg));		/* read from shiftreg function */
+	m_maincpu->set_pixels_per_clock(2);      /* pixels per clock */
+	m_maincpu->set_scanline_ind16_callback("video", FUNC(midtunit_video_device::scanline_update));  /* scanline updater (indexed16) */
+	m_maincpu->set_shiftreg_in_callback("video", FUNC(midtunit_video_device::to_shiftreg));         /* write to shiftreg function */
+	m_maincpu->set_shiftreg_out_callback("video", FUNC(midtunit_video_device::from_shiftreg));      /* read from shiftreg function */
 	m_maincpu->set_screen("screen");
 
 	NVRAM(config, "nvram", nvram_device::DEFAULT_ALL_0);
@@ -611,7 +610,7 @@ void midtunit_state::tunit_core(machine_config &config)
 	WATCHDOG_TIMER(config, "watchdog");
 
 	/* video hardware */
-	PALETTE(config, m_palette, 32768).set_format(PALETTE_FORMAT_xRRRRRGGGGGBBBBB);
+	PALETTE(config, m_palette).set_format(palette_device::xRGB_555, 32768);
 
 	screen_device &screen(SCREEN(config, "screen", SCREEN_TYPE_RASTER));
 	// from TMS340 registers

@@ -462,7 +462,8 @@ static GFXDECODE_START( gfx_hitpoker )
 	GFXDECODE_ENTRY( "gfx1", 0, hitpoker_layout_8bpp,   0, 8  )
 GFXDECODE_END
 
-MACHINE_CONFIG_START(hitpoker_state::hitpoker)
+void hitpoker_state::hitpoker(machine_config &config)
+{
 	MC68HC11(config, m_maincpu, 1000000);
 	m_maincpu->set_addrmap(AS_PROGRAM, &hitpoker_state::hitpoker_map);
 	m_maincpu->set_addrmap(AS_IO, &hitpoker_state::hitpoker_io);
@@ -486,7 +487,7 @@ MACHINE_CONFIG_START(hitpoker_state::hitpoker)
 	crtc.out_vsync_callback().set(FUNC(hitpoker_state::hitpoker_irq));
 
 	GFXDECODE(config, m_gfxdecode, m_palette, gfx_hitpoker);
-	PALETTE(config, m_palette, 0x800);
+	PALETTE(config, m_palette).set_entries(0x800);
 
 	SPEAKER(config, "mono").front_center();
 

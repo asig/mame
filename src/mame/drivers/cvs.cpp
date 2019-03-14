@@ -990,9 +990,7 @@ void cvs_state::cvs(machine_config &config)
 
 	GFXDECODE(config, m_gfxdecode, m_palette, gfx_cvs);
 
-	PALETTE(config, m_palette, (256+4)*8+8+1);
-	m_palette->set_indirect_entries(16);
-	m_palette->set_init(FUNC(cvs_state::palette_init_cvs));
+	PALETTE(config, m_palette, FUNC(cvs_state::cvs_palette), (256 + 4) * 8 + 8 + 1, 16);
 
 	SCREEN(config, m_screen, SCREEN_TYPE_RASTER);
 	m_screen->set_video_attributes(VIDEO_ALWAYS_UPDATE);
@@ -1021,7 +1019,6 @@ void cvs_state::cvs(machine_config &config)
 	DAC_4BIT_R2R(config, m_dac2, 0).add_route(ALL_OUTPUTS, "speaker", 0.5); // unknown DAC
 	DAC_1BIT(config, m_dac3, 0).add_route(ALL_OUTPUTS, "speaker", 0.99);
 	voltage_regulator_device &vref(VOLTAGE_REGULATOR(config, "vref", 0));
-	vref.set_output(5.0);
 	vref.add_route(0, "dac1", 1.0, DAC_VREF_POS_INPUT);
 	vref.add_route(0, "dac1", -1.0, DAC_VREF_NEG_INPUT);
 	vref.add_route(0, "dac2", 1.0, DAC_VREF_POS_INPUT);

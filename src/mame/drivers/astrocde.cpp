@@ -394,8 +394,8 @@ WRITE8_MEMBER(tenpindx_state::lights_w)
 
 WRITE8_MEMBER(astrocde_state::votrax_speech_w)
 {
-	m_votrax->inflection_w(space, 0, data >> 6);
-	m_votrax->write(space, 0, data);
+	m_votrax->inflection_w(data >> 6);
+	m_votrax->write(data & 0x3f);
 
 	/* Note : We should really also use volume in this as well as frequency */
 }
@@ -1183,7 +1183,7 @@ void astrocde_state::astrocade_base(machine_config &config)
 	/* each game has its own map */
 
 	/* video hardware */
-	PALETTE(config, m_palette, 512).set_init(FUNC(astrocde_state::palette_init_astrocde));
+	PALETTE(config, m_palette, FUNC(astrocde_state::astrocade_palette), 512);
 
 	SCREEN(config, m_screen, SCREEN_TYPE_RASTER);
 	m_screen->set_raw(ASTROCADE_CLOCK, 455, 0, 352, 262, 0, 240);
@@ -1203,7 +1203,7 @@ void astrocde_state::astrocade_16color_base(machine_config &config)
 
 	/* video hardware */
 	m_palette->set_entries(4096);
-	m_palette->set_init(FUNC(astrocde_state::palette_init_profpac));
+	m_palette->set_init(FUNC(astrocde_state::profpac_palette));
 
 	MCFG_VIDEO_START_OVERRIDE(astrocde_state,profpac)
 

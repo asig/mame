@@ -726,9 +726,9 @@ void super80_state::super80(machine_config &config)
 	m_screen->set_screen_update(FUNC(super80_state::screen_update_super80));
 	m_screen->set_palette(m_palette);
 
-	PALETTE(config, m_palette, 32).set_init(FUNC(super80_state::palette_init_super80m));
-
+	PALETTE(config, m_palette, FUNC(super80_state::super80m_palette), 32);
 	GFXDECODE(config, m_gfxdecode, m_palette, gfx_super80);
+
 	config.set_default_layout(layout_super80);
 	MCFG_VIDEO_START_OVERRIDE(super80_state,super80)
 
@@ -751,8 +751,8 @@ void super80_state::super80(machine_config &config)
 	INPUT_BUFFER(config, "cent_status_in", 0);
 
 	/* quickload */
-	quickload_image_device &quickload(QUICKLOAD(config, "quickload", 0));
-	quickload.set_handler(snapquick_load_delegate(&QUICKLOAD_LOAD_NAME(super80_state, super80), this), "bin", 3);
+	quickload_image_device &quickload(QUICKLOAD(config, "quickload"));
+	quickload.set_handler(snapquick_load_delegate(&QUICKLOAD_LOAD_NAME(super80_state, super80), this), "bin", attotime::from_seconds(3));
 
 	/* cassette */
 	CASSETTE(config, m_cassette);
@@ -815,7 +815,8 @@ void super80_state::super80v(machine_config &config)
 	m_screen->set_screen_update(FUNC(super80_state::screen_update_super80v));
 	m_screen->screen_vblank().set(FUNC(super80_state::screen_vblank_super80m));
 
-	PALETTE(config, m_palette, 32).set_init(FUNC(super80_state::palette_init_super80m));
+	PALETTE(config, m_palette, FUNC(super80_state::super80m_palette), 32);
+	GFXDECODE(config, m_gfxdecode, m_palette, gfx_super80v);
 
 	MC6845(config, m_crtc, MASTER_CLOCK / SUPER80V_DOTS);
 	m_crtc->set_screen("screen");
@@ -823,7 +824,6 @@ void super80_state::super80v(machine_config &config)
 	m_crtc->set_char_width(SUPER80V_DOTS);
 	m_crtc->set_update_row_callback(FUNC(super80_state::crtc_update_row), this);
 
-	GFXDECODE(config, m_gfxdecode, m_palette, gfx_super80v);
 	config.set_default_layout(layout_super80);
 
 	/* sound hardware */
@@ -845,8 +845,8 @@ void super80_state::super80v(machine_config &config)
 	INPUT_BUFFER(config, "cent_status_in", 0);
 
 	/* quickload */
-	quickload_image_device &quickload(QUICKLOAD(config, "quickload", 0));
-	quickload.set_handler(snapquick_load_delegate(&QUICKLOAD_LOAD_NAME(super80_state, super80), this), "bin", 3);
+	quickload_image_device &quickload(QUICKLOAD(config, "quickload"));
+	quickload.set_handler(snapquick_load_delegate(&QUICKLOAD_LOAD_NAME(super80_state, super80), this), "bin", attotime::from_seconds(3));
 
 	/* cassette */
 	CASSETTE(config, m_cassette);

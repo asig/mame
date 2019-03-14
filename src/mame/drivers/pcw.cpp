@@ -1242,7 +1242,7 @@ void pcw_state::pcw(machine_config &config)
 	m_keyboard_mcu->t0_in_cb().set(FUNC(pcw_state::mcu_kb_t0_r));
 	m_keyboard_mcu->bus_in_cb().set(FUNC(pcw_state::mcu_kb_data_r));
 
-//  MCFG_QUANTUM_TIME(attotime::from_hz(50))
+//  config.m_minimum_quantum = attotime::from_hz(50);
 	config.m_perfect_cpu_quantum = subtag("maincpu");
 
 	/* video hardware */
@@ -1254,8 +1254,7 @@ void pcw_state::pcw(machine_config &config)
 	m_screen->set_screen_update(FUNC(pcw_state::screen_update_pcw));
 	m_screen->set_palette(m_palette);
 
-	PALETTE(config, m_palette, PCW_NUM_COLOURS);
-	m_palette->set_init(palette_init_delegate(FUNC(pcw_state::palette_init_pcw), this));
+	PALETTE(config, m_palette, FUNC(pcw_state::pcw_colours), PCW_NUM_COLOURS);
 
 	/* sound hardware */
 	SPEAKER(config, "mono").front_center();

@@ -990,7 +990,7 @@ WRITE8_MEMBER( deco32_state::eeprom_w )
 	m_eeprom->di_write(BIT(data, 4));
 	m_eeprom->cs_write(BIT(data, 6) ? ASSERT_LINE : CLEAR_LINE);
 
-	pri_w(data & 0x03, 0xffffffff);
+	pri_w(data & 0x03);
 }
 
 WRITE8_MEMBER( dragngun_state::eeprom_w )
@@ -1130,7 +1130,7 @@ WRITE32_MEMBER( nslasher_state::tattass_control_w )
 	}
 
 	/* Playfield control - Only written in full word memory accesses */
-	pri_w(data & 0x3, 0xffffffff); /* Bit 0 - layer priority toggle, Bit 1 - BG2/3 Joint mode (8bpp) */
+	pri_w(data & 0x3); /* Bit 0 - layer priority toggle, Bit 1 - BG2/3 Joint mode (8bpp) */
 
 	/* Sound board reset control */
 	if (BIT(data, 7))
@@ -1865,7 +1865,7 @@ void captaven_state::captaven(machine_config &config)
 	audiocpu.add_route(ALL_OUTPUTS, "lspeaker", 0); // internal sound unused
 	audiocpu.add_route(ALL_OUTPUTS, "rspeaker", 0);
 
-	INPUT_MERGER_ANY_HIGH(config, "irq_merger").output_handler().set_inputline("maincpu", ARM_IRQ_LINE);
+	INPUT_MERGER_ANY_HIGH(config, "irq_merger").output_handler().set_inputline(m_maincpu, ARM_IRQ_LINE);
 
 	DECO_IRQ(config, m_deco_irq, 0);
 	m_deco_irq->set_screen_tag(m_screen);
@@ -1878,8 +1878,7 @@ void captaven_state::captaven(machine_config &config)
 	m_screen->set_palette(m_palette);
 
 	GFXDECODE(config, m_gfxdecode, m_palette, gfx_captaven);
-	PALETTE(config, m_palette, 2048);
-	m_palette->set_format(PALETTE_FORMAT_XBGR);
+	PALETTE(config, m_palette).set_format(palette_device::xBGR_888, 2048);
 
 	DECO16IC(config, m_deco_tilegen[0], 0);
 	m_deco_tilegen[0]->set_split(0);
@@ -1960,7 +1959,7 @@ void fghthist_state::fghthist(machine_config &config)
 	m_screen->set_screen_update(FUNC(fghthist_state::screen_update));
 
 	GFXDECODE(config, m_gfxdecode, m_palette, gfx_fghthist);
-	PALETTE(config, m_palette, 2048);
+	PALETTE(config, m_palette).set_entries(2048);
 
 	DECO16IC(config, m_deco_tilegen[0], 0);
 	m_deco_tilegen[0]->set_split(0);
@@ -2123,7 +2122,7 @@ void dragngun_state::dragngun(machine_config &config)
 	m_sprgenzoom->set_gfxdecode(m_gfxdecode);
 
 	GFXDECODE(config, m_gfxdecode, m_palette, gfx_dragngun);
-	PALETTE(config, m_palette, 2048);
+	PALETTE(config, m_palette).set_entries(2048);
 
 	DECO146PROT(config, m_ioprot, 0);
 	m_ioprot->port_a_cb().set_ioport("INPUTS");
@@ -2213,7 +2212,7 @@ void dragngun_state::lockload(machine_config &config)
 	BUFFERED_SPRITERAM32(config, m_spriteram);
 
 	GFXDECODE(config, m_gfxdecode, m_palette, gfx_dragngun);
-	PALETTE(config, m_palette, 2048);
+	PALETTE(config, m_palette).set_entries(2048);
 
 	DECO16IC(config, m_deco_tilegen[0], 0);
 	m_deco_tilegen[0]->set_split(0);
@@ -3665,7 +3664,7 @@ ROM_START( tattass )
 	ROM_LOAD16_BYTE( "ob2_c2.b3",  0x700000, 0x80000,  CRC(90fe5f4f) SHA1(2149e9eae152556c632ebd4d0b2de49e40916a77) )
 	ROM_LOAD16_BYTE( "ob2_c3.b3",  0x700001, 0x80000,  CRC(e3517e6e) SHA1(68ac60570423d8f0d7cff3db1901c9c050d0be91) )
 
-	ROM_REGION(0x1000000, "bsmt", 0 ) // are the sample roms 100% confirmed as good? some sounds cause everything to cut out followed by a loud static pop? (did the same before the bsmt decap)
+	ROM_REGION(0x1000000, "bsmt", 0 )
 	ROM_LOAD( "u17.snd",  0x000000, 0x80000,  CRC(b945c18d) SHA1(6556bbb4a7057df3680132f24687fa944006c784) )
 	ROM_LOAD( "u21.snd",  0x080000, 0x80000,  CRC(10b2110c) SHA1(83e5938ed22da2874022e1dc8df76c72d95c448d) )
 	ROM_LOAD( "u36.snd",  0x100000, 0x80000,  CRC(3b73abe2) SHA1(195096e2302e84123b23b4ccd982fb3ab9afe42c) )

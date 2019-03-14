@@ -253,7 +253,6 @@ protected:
 	WRITE_LINE_MEMBER(k054539_irq_gen);
 	double adc0838_callback(uint8_t input);
 
-	void k054539_map(address_map &map);
 	void sharc_memmap(address_map &map);
 	void sound_memmap(address_map &map);
 
@@ -570,11 +569,6 @@ void zr107_state::sound_memmap(address_map &map)
 	map(0x580000, 0x580001).nopw(); // 'NRES' - D2: K056602 /RESET
 }
 
-void zr107_state::k054539_map(address_map &map)
-{
-	map(0x000000, 0x5fffff).rom().region("k054539", 0);
-}
-
 /*****************************************************************************/
 
 
@@ -812,7 +806,7 @@ void zr107_state::zr107(machine_config &config)
 	m_screen->set_visarea(0*8, 64*8-1, 0*8, 48*8-1);
 	m_screen->screen_vblank().set(FUNC(zr107_state::vblank));
 
-	PALETTE(config, m_palette, 65536);
+	PALETTE(config, m_palette).set_entries(65536);
 
 	K001005(config, m_k001005, 0, m_k001006_1);
 
@@ -827,17 +821,17 @@ void zr107_state::zr107(machine_config &config)
 	SPEAKER(config, "rspeaker").front_right();
 
 	k054539_device &k054539_1(K054539(config, "k054539_1", XTAL(18'432'000)));
-	k054539_1.set_addrmap(0, &zr107_state::k054539_map);
+	k054539_1.set_device_rom_tag("k054539");
 	k054539_1.timer_handler().set(FUNC(zr107_state::k054539_irq_gen));
 	k054539_1.add_route(0, "lspeaker", 0.75);
 	k054539_1.add_route(1, "rspeaker", 0.75);
 
 	k054539_device &k054539_2(K054539(config, "k054539_2", XTAL(18'432'000)));
-	k054539_2.set_addrmap(0, &zr107_state::k054539_map);
+	k054539_2.set_device_rom_tag("k054539");
 	k054539_2.add_route(0, "lspeaker", 0.75);
 	k054539_2.add_route(1, "rspeaker", 0.75);
 
-	adc0838_device &adc(ADC0838(config, "adc0838", 0));
+	adc0838_device &adc(ADC0838(config, "adc0838"));
 	adc.set_input_callback(FUNC(zr107_state::adc0838_callback));
 
 	KONPPC(config, m_konppc, 0);

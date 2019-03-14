@@ -557,8 +557,8 @@ void eolith_state::eolith45(machine_config &config)
 		.write_time(attotime::from_usec(250));
 
 //  for testing sound sync
-//  MCFG_QUANTUM_PERFECT_CPU("maincpu")
-//  MCFG_QUANTUM_TIME(attotime::from_hz(6000))
+//  config.m_perfect_cpu_quantum = subtag("maincpu");
+//  config.m_minimum_quantum = attotime::from_hz(6000);
 
 	/* video hardware */
 	SCREEN(config, m_screen, SCREEN_TYPE_RASTER);
@@ -569,7 +569,7 @@ void eolith_state::eolith45(machine_config &config)
 	m_screen->set_screen_update(FUNC(eolith_state::screen_update_eolith));
 	m_screen->set_palette(m_palette);
 
-	PALETTE(config, m_palette, 32768).set_init("palette", FUNC(palette_device::palette_init_RRRRRGGGGGBBBBB));
+	PALETTE(config, m_palette, palette_device::RGB_555);
 
 	MCFG_VIDEO_START_OVERRIDE(eolith_state,eolith)
 

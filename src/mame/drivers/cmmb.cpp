@@ -61,8 +61,8 @@ OSC @ 72.576MHz
 class cmmb_state : public driver_device
 {
 public:
-	cmmb_state(const machine_config &mconfig, device_type type, const char *tag)
-		: driver_device(mconfig, type, tag),
+	cmmb_state(const machine_config &mconfig, device_type type, const char *tag) :
+		driver_device(mconfig, type, tag),
 		m_maincpu(*this, "maincpu"),
 		m_flash(*this, "at29c020" ),
 		m_videoram(*this, "videoram"),
@@ -146,12 +146,12 @@ WRITE8_MEMBER(cmmb_state::cmmb_charram_w)
 
 READ8_MEMBER(cmmb_state::flash_r)
 {
-	return m_flash->read(space, offset + 0x2000);
+	return m_flash->read(offset + 0x2000);
 }
 
 WRITE8_MEMBER(cmmb_state::flash_w)
 {
-	m_flash->write(space, offset + 0x2000, data);
+	m_flash->write(offset + 0x2000, data);
 }
 
 READ8_MEMBER(cmmb_state::cmmb_input_r)
@@ -431,12 +431,11 @@ MACHINE_CONFIG_START(cmmb_state::cmmb)
 	MCFG_SCREEN_ADD("screen", RASTER)
 	MCFG_SCREEN_RAW_PARAMS(MAIN_CLOCK/12, 384, 0, 256, 264, 0, 240) // TBD, not real measurements
 	MCFG_SCREEN_UPDATE_DRIVER(cmmb_state, screen_update_cmmb)
-	MCFG_SCREEN_PALETTE("palette")
+	MCFG_SCREEN_PALETTE(m_palette)
 
-	MCFG_DEVICE_ADD("gfxdecode", GFXDECODE, "palette", gfx_cmmb)
+	GFXDECODE(config, m_gfxdecode, m_palette, gfx_cmmb);
 
-	MCFG_PALETTE_ADD("palette", 512)
-	MCFG_PALETTE_FORMAT(RRRGGGBB_inverted)
+	PALETTE(config, m_palette).set_format(palette_device::RGB_332_inverted, 512);
 
 	/* sound hardware */
 //  SPEAKER(config, "mono").front_center();

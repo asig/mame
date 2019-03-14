@@ -323,8 +323,8 @@ MACHINE_CONFIG_START(dim68k_state::dim68k)
 	MCFG_SCREEN_UPDATE_DEVICE("crtc", mc6845_device, screen_update)
 	MCFG_SCREEN_SIZE(640, 480)
 	MCFG_SCREEN_VISIBLE_AREA(0, 640-1, 0, 250-1)
-	MCFG_PALETTE_ADD_MONOCHROME("palette")
-	MCFG_DEVICE_ADD("gfxdecode", GFXDECODE, "palette", gfx_dim68k)
+	PALETTE(config, m_palette, palette_device::MONOCHROME);
+	GFXDECODE(config, "gfxdecode", m_palette, gfx_dim68k);
 
 	/* sound hardware */
 	SPEAKER(config, "mono").front_center();
@@ -333,8 +333,8 @@ MACHINE_CONFIG_START(dim68k_state::dim68k)
 
 	/* Devices */
 	UPD765A(config, "fdc", 8'000'000, true, true); // these options unknown
-	MCFG_FLOPPY_DRIVE_ADD("fdc:0", dim68k_floppies, "525hd", floppy_image_device::default_floppy_formats)
-	MCFG_FLOPPY_DRIVE_ADD("fdc:1", dim68k_floppies, "525hd", floppy_image_device::default_floppy_formats)
+	FLOPPY_CONNECTOR(config, "fdc:0", dim68k_floppies, "525hd", floppy_image_device::default_floppy_formats);
+	FLOPPY_CONNECTOR(config, "fdc:1", dim68k_floppies, "525hd", floppy_image_device::default_floppy_formats);
 
 	MC6845(config, m_crtc, 1790000);
 	m_crtc->set_screen("screen");
@@ -346,7 +346,7 @@ MACHINE_CONFIG_START(dim68k_state::dim68k)
 	keyboard.set_keyboard_callback(FUNC(dim68k_state::kbd_put));
 
 	// software lists
-	MCFG_SOFTWARE_LIST_ADD("flop_list", "dim68k")
+	SOFTWARE_LIST(config, "flop_list").set_original("dim68k");
 MACHINE_CONFIG_END
 
 /*

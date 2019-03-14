@@ -637,7 +637,7 @@ void scyclone_state::scyclone(machine_config &config)
 	screen.set_video_attributes(VIDEO_ALWAYS_UPDATE); // due to hw collisions
 
 	GFXDECODE(config, m_gfxdecode, m_palette, gfx_scyclone);
-	PALETTE(config, m_palette, 8 + 4*4);
+	PALETTE(config, m_palette).set_entries(8 + 4*4);
 
 	/* sound hardware */
 	SPEAKER(config, "speaker").front_center();
@@ -655,14 +655,12 @@ void scyclone_state::scyclone(machine_config &config)
 	DAC_8BIT_R2R(config, "dac", 0).add_route(ALL_OUTPUTS, "speaker", 0.25); // unknown DAC
 
 	voltage_regulator_device &vref(VOLTAGE_REGULATOR(config, "vref", 0));
-	vref.set_output(5.0);
 	vref.add_route(0, "dac", 1.0, DAC_VREF_POS_INPUT);
 	vref.add_route(0, "dac", -1.0, DAC_VREF_NEG_INPUT);
 
 	DAC_8BIT_R2R(config, "dac2", 0).add_route(ALL_OUTPUTS, "speaker", 0.25); // unknown DAC
 
 	voltage_regulator_device &vref2(VOLTAGE_REGULATOR(config, "vref2", 0));
-	vref2.set_output(5.0);
 	vref2.add_route(0, "dac2", 1.0, DAC_VREF_POS_INPUT);
 	vref2.add_route(0, "dac2", -1.0, DAC_VREF_NEG_INPUT);
 }

@@ -313,7 +313,7 @@ void binbug_state::binbug_base(machine_config &config)
 	screen.set_palette("palette");
 
 	GFXDECODE(config, "gfxdecode", "palette", gfx_dg640);
-	PALETTE(config, "palette", 2).set_init("palette", FUNC(palette_device::palette_init_monochrome));
+	PALETTE(config, "palette", palette_device::MONOCHROME);
 
 	/* Cassette */
 	CASSETTE(config, m_cass);
@@ -336,8 +336,8 @@ void binbug_state::binbug(machine_config &config)
 	RS232_PORT(config, m_rs232, default_rs232_devices, "keyboard").set_option_device_input_defaults("keyboard", DEVICE_INPUT_DEFAULTS_NAME(keyboard));
 
 	/* quickload */
-	quickload_image_device &quickload(QUICKLOAD(config, "quickload", 0));
-	quickload.set_handler(snapquick_load_delegate(&QUICKLOAD_LOAD_NAME(binbug_state, binbug), this), "pgm", 1);
+	quickload_image_device &quickload(QUICKLOAD(config, "quickload"));
+	quickload.set_handler(snapquick_load_delegate(&QUICKLOAD_LOAD_NAME(binbug_state, binbug), this), "pgm", attotime::from_seconds(1));
 }
 
 
@@ -424,7 +424,7 @@ public:
 		: binbug_state(mconfig, type, tag)
 		, m_ctc(*this, "z80ctc")
 		, m_pio(*this, "z80pio")
-		{ }
+	{ }
 
 	DECLARE_READ8_MEMBER(porta_r);
 	DECLARE_READ8_MEMBER(portb_r);
