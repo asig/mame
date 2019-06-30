@@ -2,18 +2,20 @@
 // copyright-holders:Angelo Salese, Robbbert
 /***************************************************************************
 
-    A5105
+A5105
 
-    12/05/2009 Skeleton driver.
+2009-05-12 Skeleton driver.
 
-    http://www.robotrontechnik.de/index.htm?/html/computer/a5105.htm
-    http://www.sax.de/~zander/bic/bic_bw.html
+http://www.robotrontechnik.de/index.htm?/html/computer/a5105.htm
+http://www.sax.de/~zander/bic/bic_bw.html
 
-    - this looks like "somehow" inspired by the MSX1 machine?
+- this looks like "somehow" inspired by the MSX1 machine?
+
+Cassette commands: CSAVE "name" ; CLOAD
 
 
 ToDo:
-- Cassette Load (bit 7 of port 91)
+- Cassette (coded per schematic, but doesn't work)
 
 
 ****************************************************************************/
@@ -69,6 +71,7 @@ private:
 	DECLARE_READ8_MEMBER(a5105_memsel_r);
 	DECLARE_READ8_MEMBER(key_r);
 	DECLARE_READ8_MEMBER(key_mux_r);
+	DECLARE_READ8_MEMBER(pio_pb_r);
 	DECLARE_WRITE8_MEMBER(key_mux_w);
 	DECLARE_WRITE8_MEMBER(a5105_ab_w);
 	DECLARE_WRITE8_MEMBER(a5105_memsel_w);
@@ -162,6 +165,31 @@ void a5105_state::a5105_mem(address_map &map)
 	map(0x4000, 0x7fff).bankr("bank2");
 	map(0x8000, 0xbfff).bankrw("bank3");
 	map(0xc000, 0xffff).bankrw("bank4");
+}
+
+READ8_MEMBER( a5105_state::pio_pb_r )
+{
+	/*
+
+	    PIO Channel B
+
+	    0  R    PAR12
+	    1  W    SER1
+	    2  W    SER2
+	    3  R    SER3
+	    4  R    SER4
+	    5  W    JOY2
+	    6  W    /JOYEN
+	    7  R    Cassette Data
+
+	*/
+
+	uint8_t data = 0x7f;
+
+	// cassette data
+	data |= (m_cass->input() > 0) ? 0x80 : 0;
+
+	return data;
 }
 
 WRITE8_MEMBER( a5105_state::pcg_addr_w )
@@ -560,7 +588,8 @@ static const z80_daisy_config a5105_daisy_chain[] =
 	{ nullptr }
 };
 
-MACHINE_CONFIG_START(a5105_state::a5105)
+void a5105_state::a5105(machine_config &config)
+{
 	/* basic machine hardware */
 	Z80(config, m_maincpu, XTAL(15'000'000) / 4);
 	m_maincpu->set_addrmap(AS_PROGRAM, &a5105_state::a5105_mem);
@@ -568,18 +597,18 @@ MACHINE_CONFIG_START(a5105_state::a5105)
 	m_maincpu->set_daisy_config(a5105_daisy_chain);
 
 	/* video hardware */
-	MCFG_SCREEN_ADD("screen", RASTER)
-	MCFG_SCREEN_REFRESH_RATE(50)
-	MCFG_SCREEN_VBLANK_TIME(ATTOSECONDS_IN_USEC(2500)) /* not accurate */
-	MCFG_SCREEN_UPDATE_DEVICE("upd7220", upd7220_device, screen_update)
-	MCFG_SCREEN_SIZE(40*8, 32*8)
-	MCFG_SCREEN_VISIBLE_AREA(0, 40*8-1, 0, 25*8-1)
+	SCREEN(config, m_screen, SCREEN_TYPE_RASTER);
+	m_screen->set_refresh_hz(50);
+	m_screen->set_vblank_time(ATTOSECONDS_IN_USEC(2500)); /* not accurate */
+	m_screen->set_screen_update("upd7220", FUNC(upd7220_device::screen_update));
+	m_screen->set_size(40*8, 32*8);
+	m_screen->set_visarea(0, 40*8-1, 0, 25*8-1);
 	GFXDECODE(config, m_gfxdecode, m_palette, gfx_a5105);
 	PALETTE(config, m_palette, FUNC(a5105_state::a5105_palette), 16);
 
 	/* sound hardware */
 	SPEAKER(config, "mono").front_center();
-	WAVE(config, "wave", "cassette").add_route(ALL_OUTPUTS, "mono", 0.25);
+	WAVE(config, "wave", "cassette").add_route(ALL_OUTPUTS, "mono", 0.05);
 	BEEP(config, "beeper", 500).add_route(ALL_OUTPUTS, "mono", 0.50);
 
 	/* Devices */
@@ -594,9 +623,11 @@ MACHINE_CONFIG_START(a5105_state::a5105)
 	ctc.zc_callback<2>().set("z80ctc", FUNC(z80ctc_device::trg3));
 
 	z80pio_device& pio(Z80PIO(config, "z80pio", XTAL(15'000'000) / 4));
+	pio.in_pb_callback().set(FUNC(a5105_state::pio_pb_r));
 	pio.out_int_callback().set_inputline(m_maincpu, 0);
 
 	CASSETTE(config, m_cass);
+	m_cass->set_default_state(CASSETTE_STOPPED | CASSETTE_SPEAKER_ENABLED | CASSETTE_MOTOR_ENABLED);
 
 	UPD765A(config, m_fdc, 8'000'000, true, true);
 	FLOPPY_CONNECTOR(config, "upd765a:0", a5105_floppies, "525qd", a5105_state::floppy_formats);
@@ -606,7 +637,7 @@ MACHINE_CONFIG_START(a5105_state::a5105)
 
 	/* internal ram */
 	RAM(config, RAM_TAG).set_default_size("64K");
-MACHINE_CONFIG_END
+}
 
 /* ROM definition */
 ROM_START( a5105 )

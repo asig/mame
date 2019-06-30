@@ -17,12 +17,15 @@ accomm.cpp
 acd.cpp
 aceex.cpp
 aci_boris.cpp
+aci_borisdpl.cpp
+aci_ggm.cpp
 acrnsys1.cpp
 acrnsys.cpp
 acvirus.cpp
 adam.cpp
 adm23.cpp
 adm31.cpp
+adm36.cpp
 advision.cpp
 agat.cpp
 aim65.cpp
@@ -51,7 +54,6 @@ amstr_pc.cpp
 amstrad.cpp
 amust.cpp
 anzterm.cpp
-apbeena.cpp
 apc.cpp
 apexc.cpp
 apf.cpp
@@ -100,6 +102,7 @@ besta.cpp
 beta.cpp
 bigbord2.cpp
 binbug.cpp
+bitel.cpp
 bitgraph.cpp
 bk.cpp
 blw700i.cpp
@@ -138,7 +141,6 @@ cgenie.cpp
 channelf.cpp
 chaos.cpp
 chessmst.cpp
-chesstrv.cpp
 cit101.cpp
 cit220.cpp
 cking_master.cpp
@@ -195,6 +197,7 @@ dms5000.cpp
 dms86.cpp
 dmv.cpp
 dolphunk.cpp
+dpb7000.cpp
 dps1.cpp
 dragon.cpp
 dsb46.cpp
@@ -203,11 +206,14 @@ duet16.cpp
 dvk_kcgd.cpp
 dvk_ksm.cpp
 e100.cpp
+e9161.cpp
 eacc.cpp
 ec184x.cpp
 ec65.cpp
 ec7915.cpp
 einstein.cpp
+elan_eu3a05.cpp
+elan_eu3a14.cpp
 electron.cpp
 elekscmp.cpp
 elektronmono.cpp
@@ -244,6 +250,7 @@ fccpu20.cpp
 fccpu30.cpp
 fidel_as12.cpp
 fidel_card.cpp
+fidel_cc1.cpp
 fidel_cc10.cpp
 fidel_cc7.cpp
 fidel_chesster.cpp
@@ -333,6 +340,7 @@ ht6000.cpp
 ht68k.cpp
 huebler.cpp
 hunter2.cpp
+hunter16.cpp
 hx20.cpp
 hyperscan.cpp
 i7000.cpp
@@ -372,6 +380,7 @@ isbc8030.cpp
 iskr103x.cpp
 itt1700.cpp
 itt3030.cpp
+itt9216.cpp
 jade.cpp
 jazz.cpp
 jensen.cpp
@@ -392,8 +401,10 @@ kdt6.cpp
 kim1.cpp
 konin.cpp
 kramermc.cpp
+krokha.cpp
 kron.cpp
 krz2000.cpp
+ktm3.cpp
 kyocera.cpp
 laser3k.cpp
 lb186.cpp
@@ -423,6 +434,7 @@ mac.cpp
 mac128.cpp
 macpci.cpp
 magnum.cpp
+mattelchess.cpp
 mbc200.cpp
 mbc55x.cpp
 mbee.cpp
@@ -447,6 +459,7 @@ micral.cpp
 micro20.cpp
 microdec.cpp
 microkit.cpp
+micromon.cpp
 micronic.cpp
 microtan.cpp
 microterm.cpp
@@ -458,6 +471,7 @@ mikrosha.cpp
 mightyframe.cpp
 milton6805.cpp
 milwaukee.cpp
+mindset.cpp
 mini2440.cpp
 minicom.cpp
 miniforce.cpp
@@ -465,9 +479,7 @@ miniframe.cpp
 minitel_2_rpic.cpp
 mips.cpp
 mits680b.cpp
-mk1.cpp
 mk14.cpp
-mk2.cpp
 mk85.cpp
 mk90.cpp
 mkit09.cpp
@@ -495,6 +507,7 @@ multi16.cpp
 multi8.cpp
 mupid2.cpp
 mvme147.cpp
+mvme162.cpp
 mx2178.cpp
 myb3k.cpp
 mycom.cpp
@@ -511,7 +524,7 @@ nakajies.cpp
 nanos.cpp
 nascom1.cpp
 nc.cpp
-ncd17c.cpp
+ncd68k.cpp
 ncdmips.cpp
 ncdppc.cpp
 nds.cpp
@@ -528,7 +541,10 @@ notetaker.cpp
 novag_cforte.cpp
 novag_delta1.cpp
 novag_diablo.cpp
+novag_mk1.cpp
+novag_mk2.cpp
 novag_presto.cpp
+novag_savant.cpp
 novag_scon.cpp
 novag_sexpert.cpp
 o2.cpp
@@ -646,8 +662,8 @@ qtsbc.cpp
 qvt70.cpp
 qvt102.cpp
 qvt103.cpp
+qvt190.cpp
 qvt201.cpp
-qvt6800.cpp
 qx10.cpp
 r9751.cpp
 rad_eu3a05.cpp
@@ -683,8 +699,9 @@ saturn.cpp
 savia84.cpp
 sbc6510.cpp
 sbrain.cpp
-sc1.cpp
 sc2.cpp
+scisys_chesstrv.cpp
+scisys_cp2000.cpp
 scopus.cpp
 scorpion.cpp
 scv.cpp
@@ -705,6 +722,7 @@ si5500.cpp
 sitcom.cpp
 sk1.cpp
 slc1.cpp
+slc1a.cpp
 slicer.cpp
 sm1800.cpp
 sm7238.cpp
@@ -734,8 +752,10 @@ sun2.cpp
 sun3.cpp
 sun3x.cpp
 sun4.cpp
+sunplus_gcm394.cpp
 super6.cpp
 super80.cpp
+superga2.cpp
 superslave.cpp
 supracan.cpp
 sv8000.cpp
@@ -750,9 +770,13 @@ symbolics.cpp
 sys2900.cpp
 sys9002.cpp
 systec.cpp
+systel1.cpp
+talkingbb.cpp
+talkingfb.cpp
 tamag1.cpp
 tandy1t.cpp
 tandy2k.cpp
+tasc.cpp
 tavernie.cpp
 tb303.cpp
 tdv2324.cpp
@@ -762,6 +786,9 @@ tek405x.cpp
 tek410x.cpp
 tek440x.cpp
 tekxp33x.cpp
+telex1192.cpp
+telex274.cpp
+telex277d.cpp
 terak.cpp
 terco.cpp
 terminal.cpp
@@ -782,8 +809,8 @@ ti99_4x.cpp
 ti99_8.cpp
 ti990_10.cpp
 ti990_4.cpp
-ticalc1x.cpp
 tiki100.cpp
+titan_soc.cpp
 tim011.cpp
 tim100.cpp
 timex.cpp
@@ -797,6 +824,7 @@ tmc1800.cpp
 tmc2000e.cpp
 tmc600.cpp
 tosh1000.cpp
+tomy_princ.cpp
 tr175.cpp
 tr606.cpp
 tranz330.cpp
@@ -892,7 +920,10 @@ xavix2.cpp
 xbox.cpp
 xerox820.cpp
 xor100.cpp
+ymmu50.cpp
+ymmu80.cpp
 ymmu100.cpp
+ymvl70.cpp
 z100.cpp
 z1013.cpp
 z29.cpp

@@ -24,6 +24,8 @@ Test Paste:
 #include "emu.h"
 #include "cpu/i8085/i8085.h"
 #include "imagedev/cassette.h"
+#include "sound/wave.h"
+#include "speaker.h"
 #include "bob85.lh"
 
 
@@ -132,14 +134,6 @@ READ8_MEMBER(bob85_state::bob85_keyboard_r)
 		else
 			return 0;
 	}
-
-	if (retVal == 0)
-	{
-		m_prev_key = 0;
-		m_count_key = 0;
-	}
-
-	return retVal;
 }
 
 WRITE8_MEMBER(bob85_state::bob85_7seg_w)
@@ -204,7 +198,7 @@ WRITE_LINE_MEMBER( bob85_state::sod_w )
 
 READ_LINE_MEMBER( bob85_state::sid_r )
 {
-	return m_cass->input() > 0.0;
+	return (m_cass->input() > 0.04) ? 1 : 0;
 }
 
 void bob85_state::bob85(machine_config &config)
@@ -220,7 +214,10 @@ void bob85_state::bob85(machine_config &config)
 	config.set_default_layout(layout_bob85);
 
 	// devices
-	CASSETTE(config, m_cass).set_default_state((cassette_state)(CASSETTE_STOPPED | CASSETTE_MOTOR_ENABLED | CASSETTE_SPEAKER_MUTED));
+	CASSETTE(config, m_cass).set_default_state(CASSETTE_STOPPED | CASSETTE_MOTOR_ENABLED | CASSETTE_SPEAKER_ENABLED);
+
+	SPEAKER(config, "mono").front_center();
+	WAVE(config, "wave", m_cass).add_route(ALL_OUTPUTS, "mono", 0.05);
 }
 
 /* ROM definition */

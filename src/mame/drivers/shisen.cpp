@@ -2,7 +2,7 @@
 // copyright-holders:Nicola Salmoria
 /***************************************************************************
 
-Shisen
+Tamtex Shisensho / Match It
 
 driver by Nicola Salmoria
 
@@ -20,35 +20,6 @@ driver by Nicola Salmoria
 #include "speaker.h"
 
 
-READ8_MEMBER(shisen_state::dsw1_r)
-{
-	int ret = ioport("DSW1")->read();
-
-	/* Based on the coin mode fill in the upper bits */
-	if (ioport("DSW2")->read() & 0x04)
-	{
-		/* Mode 1 */
-		ret |= (ioport("DSW1")->read() << 4);
-	}
-	else
-	{
-		/* Mode 2 */
-		ret |= (ioport("DSW1")->read() & 0xf0);
-	}
-
-	return ret;
-}
-
-WRITE8_MEMBER(shisen_state::coin_w)
-{
-	if ((data & 0xf9) != 0x01) logerror("coin ctrl = %02x\n",data);
-
-	machine().bookkeeping().coin_counter_w(0, data & 0x02);
-	machine().bookkeeping().coin_counter_w(1, data & 0x04);
-}
-
-
-
 void shisen_state::shisen_map(address_map &map)
 {
 	map(0x0000, 0x7fff).rom();
@@ -58,15 +29,25 @@ void shisen_state::shisen_map(address_map &map)
 	map(0xe000, 0xffff).ram();
 }
 
+
+WRITE8_MEMBER(shisen_state::coin_w)
+{
+	if ((data & 0xf9) != 0x01) logerror("coin ctrl = %02x\n",data);
+
+	machine().bookkeeping().coin_counter_w(0, data & 0x02);
+	machine().bookkeeping().coin_counter_w(1, data & 0x04);
+}
+
 void shisen_state::shisen_io_map(address_map &map)
 {
 	map.global_mask(0xff);
-	map(0x00, 0x00).rw(FUNC(shisen_state::dsw1_r), FUNC(shisen_state::coin_w));
+	map(0x00, 0x00).portr("DSW1").w(FUNC(shisen_state::coin_w));
 	map(0x01, 0x01).portr("DSW2").w("soundlatch", FUNC(generic_latch_8_device::write));
 	map(0x02, 0x02).portr("P1").w(FUNC(shisen_state::bankswitch_w));
 	map(0x03, 0x03).portr("P2");
 	map(0x04, 0x04).portr("COIN");
 }
+
 
 void shisen_state::shisen_sound_map(address_map &map)
 {
@@ -251,6 +232,7 @@ void shisen_state::shisen(machine_config &config)
 	RST_NEG_BUFFER(config, "soundirq", 0).int_callback().set_inputline("soundcpu", 0);
 
 	IREM_M72_AUDIO(config, m_audio);
+	m_audio->set_dac_tag("dac");
 
 	ym2151_device &ymsnd(YM2151(config, "ymsnd", 3579545));
 	ymsnd.irq_handler().set("soundirq", FUNC(rst_neg_buffer_device::rst28_w));
@@ -298,7 +280,7 @@ ROM_START( sichuan2 )
 	ROM_LOAD( "ic10.06",      0xe0000, 0x10000, CRC(473b349a) SHA1(9f5d08e07c8175bc7ec3854499177af2c398bd76) )
 	ROM_LOAD( "ic11.07",      0xf0000, 0x10000, CRC(d9a60285) SHA1(f8ef211e022e9c8ea25f6d8fb16266867656a591) )
 
-	ROM_REGION( 0x40000, "samples", 0 ) /* samples */
+	ROM_REGION( 0x40000, "m72", 0 ) /* samples */
 	ROM_LOAD( "ic02.02",      0x00000, 0x10000, CRC(92f0093d) SHA1(530b924aa991283045577d03524dfc7eacf1be49) )
 	ROM_LOAD( "ic03.03",      0x10000, 0x10000, CRC(116a049c) SHA1(656c0d1d7f945c5f5637892721a58421b682fd01) )
 	ROM_LOAD( "ic04.04",      0x20000, 0x10000, CRC(6840692b) SHA1(f6f7b063ecf7206e172843515be38376f8845b42) )
@@ -332,7 +314,7 @@ ROM_START( sichuan2a )
 	ROM_LOAD( "ic10.06",      0xe0000, 0x10000, CRC(473b349a) SHA1(9f5d08e07c8175bc7ec3854499177af2c398bd76) )
 	ROM_LOAD( "ic11.07",      0xf0000, 0x10000, CRC(d9a60285) SHA1(f8ef211e022e9c8ea25f6d8fb16266867656a591) )
 
-	ROM_REGION( 0x40000, "samples", 0 ) /* samples */
+	ROM_REGION( 0x40000, "m72", 0 ) /* samples */
 	ROM_LOAD( "ic02.02",      0x00000, 0x10000, CRC(92f0093d) SHA1(530b924aa991283045577d03524dfc7eacf1be49) )
 	ROM_LOAD( "ic03.03",      0x10000, 0x10000, CRC(116a049c) SHA1(656c0d1d7f945c5f5637892721a58421b682fd01) )
 	ROM_LOAD( "ic04.04",      0x20000, 0x10000, CRC(6840692b) SHA1(f6f7b063ecf7206e172843515be38376f8845b42) )
@@ -365,7 +347,7 @@ ROM_START( shisen )
 	ROM_LOAD( "ic10.06",      0xe0000, 0x10000, CRC(473b349a) SHA1(9f5d08e07c8175bc7ec3854499177af2c398bd76) )
 	ROM_LOAD( "ic11.07",      0xf0000, 0x10000, CRC(d9a60285) SHA1(f8ef211e022e9c8ea25f6d8fb16266867656a591) )
 
-	ROM_REGION( 0x40000, "samples", 0 ) /* samples */
+	ROM_REGION( 0x40000, "m72", 0 ) /* samples */
 	ROM_LOAD( "ic02.02",      0x00000, 0x10000, CRC(92f0093d) SHA1(530b924aa991283045577d03524dfc7eacf1be49) )
 	ROM_LOAD( "ic03.03",      0x10000, 0x10000, CRC(116a049c) SHA1(656c0d1d7f945c5f5637892721a58421b682fd01) )
 	ROM_LOAD( "ic04.04",      0x20000, 0x10000, CRC(6840692b) SHA1(f6f7b063ecf7206e172843515be38376f8845b42) )
@@ -438,7 +420,7 @@ ROM_START( matchit )
 	ROM_LOAD( "ic10.06",      0xe0000, 0x10000, CRC(473b349a) SHA1(9f5d08e07c8175bc7ec3854499177af2c398bd76) )
 	ROM_LOAD( "ic11.07",      0xf0000, 0x10000, CRC(d9a60285) SHA1(f8ef211e022e9c8ea25f6d8fb16266867656a591) )
 
-	ROM_REGION( 0x40000, "samples", ROMREGION_ERASE00 ) /* samples */
+	ROM_REGION( 0x40000, "m72", ROMREGION_ERASE00 ) /* samples */
 	/* no samples on this board */
 ROM_END
 

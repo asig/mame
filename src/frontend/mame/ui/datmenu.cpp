@@ -156,7 +156,7 @@ void menu_dats_view::draw(uint32_t flags)
 	float const visible_left = (1.0f - visible_width) * 0.5f;
 	float const extra_height = 2.0f * line_height;
 	float const visible_extra_menu_height = get_customtop() + get_custombottom() + extra_height;
-	int const visible_items = item.size() - 2;
+	int const visible_items = item_count() - 2;
 
 	// determine effective positions taking into account the hilighting arrows
 	float const effective_width = visible_width - 2.0f * gutter_width;
@@ -180,38 +180,38 @@ void menu_dats_view::draw(uint32_t flags)
 	float y2 = visible_top + visible_main_menu_height + UI_BOX_TB_BORDER + extra_height;
 	float line = visible_top + float(m_visible_lines) * line_height;
 
-	ui().draw_outlined_box(container(), x1, y1, x2, y2, UI_BACKGROUND_COLOR);
+	ui().draw_outlined_box(container(), x1, y1, x2, y2, ui().colors().background_color());
 
 	m_visible_lines = (std::min)(visible_items, m_visible_lines);
 	top_line = (std::max)(0, top_line);
 	if (top_line + m_visible_lines >= visible_items)
 		top_line = visible_items - m_visible_lines;
 
-	hover = item.size() + 1;
+	clear_hover();
 	int const n_loop = (std::min)(visible_items, m_visible_lines);
 	for (int linenum = 0; linenum < n_loop; linenum++)
 	{
 		float const line_y = visible_top + (float)linenum * line_height;
 		int const itemnum = top_line + linenum;
-		menu_item const &pitem = item[itemnum];
+		menu_item const &pitem = item(itemnum);
 		char const *const itemtext = pitem.text.c_str();
 		float const line_x0 = x1 + 0.5f * UI_LINE_WIDTH;
 		float const line_y0 = line_y;
 		float const line_x1 = x2 - 0.5f * UI_LINE_WIDTH;
 		float const line_y1 = line_y + line_height;
 
-		rgb_t fgcolor = UI_TEXT_COLOR;
-		rgb_t bgcolor = UI_TEXT_BG_COLOR;
+		rgb_t fgcolor = ui().colors().text_color();
+		rgb_t bgcolor = ui().colors().text_bg_color();
 
 		if (!linenum && top_line)
 		{
 			// if we're on the top line, display the up arrow
 			if (mouse_in_rect(line_x0, line_y0, line_x1, line_y1))
 			{
-				fgcolor = UI_MOUSEOVER_COLOR;
-				bgcolor = UI_MOUSEOVER_BG_COLOR;
+				fgcolor = ui().colors().mouseover_color();
+				bgcolor = ui().colors().mouseover_bg_color();
 				highlight(line_x0, line_y0, line_x1, line_y1, bgcolor);
-				hover = HOVER_ARROW_UP;
+				set_hover(HOVER_ARROW_UP);
 			}
 			draw_arrow(
 					0.5f * (x1 + x2) - 0.5f * ud_arrow_width, line_y + 0.25f * line_height,
@@ -223,10 +223,10 @@ void menu_dats_view::draw(uint32_t flags)
 			// if we're on the bottom line, display the down arrow
 			if (mouse_in_rect(line_x0, line_y0, line_x1, line_y1))
 			{
-				fgcolor = UI_MOUSEOVER_COLOR;
-				bgcolor = UI_MOUSEOVER_BG_COLOR;
+				fgcolor = ui().colors().mouseover_color();
+				bgcolor = ui().colors().mouseover_bg_color();
 				highlight(line_x0, line_y0, line_x1, line_y1, bgcolor);
-				hover = HOVER_ARROW_DOWN;
+				set_hover(HOVER_ARROW_DOWN);
 			}
 			draw_arrow(
 					0.5f * (x1 + x2) - 0.5f * ud_arrow_width, line_y + 0.25f * line_height,
@@ -245,25 +245,25 @@ void menu_dats_view::draw(uint32_t flags)
 		}
 	}
 
-	for (size_t count = visible_items; count < item.size(); count++)
+	for (size_t count = visible_items; count < item_count(); count++)
 	{
-		menu_item const &pitem = item[count];
+		menu_item const &pitem = item(count);
 		char const *const itemtext = pitem.text.c_str();
 		float const line_x0 = x1 + 0.5f * UI_LINE_WIDTH;
 		float const line_y0 = line;
 		float const line_x1 = x2 - 0.5f * UI_LINE_WIDTH;
 		float const line_y1 = line + line_height;
-		rgb_t const fgcolor = UI_SELECTED_COLOR;
-		rgb_t const bgcolor = UI_SELECTED_BG_COLOR;
+		rgb_t const fgcolor = ui().colors().selected_color();
+		rgb_t const bgcolor = ui().colors().selected_bg_color();
 
 		if (mouse_in_rect(line_x0, line_y0, line_x1, line_y1) && is_selectable(pitem))
-			hover = count;
+			set_hover(count);
 
 		if (pitem.type == menu_item_type::SEPARATOR)
 		{
 			container().add_line(
 					visible_left, line + 0.5f * line_height, visible_left + visible_width, line + 0.5f * line_height,
-					UI_LINE_WIDTH, UI_TEXT_COLOR, PRIMFLAG_BLENDMODE(BLENDMODE_ALPHA));
+					UI_LINE_WIDTH, ui().colors().text_color(), PRIMFLAG_BLENDMODE(BLENDMODE_ALPHA));
 		}
 		else
 		{
@@ -315,7 +315,7 @@ void menu_dats_view::custom_render(void *selectedref, float top, float bottom, f
 	y1 += UI_BOX_TB_BORDER;
 
 	ui().draw_text_full(container(), driver.c_str(), x1, y1, x2 - x1, ui::text_layout::CENTER, ui::text_layout::NEVER,
-		mame_ui_manager::NORMAL, UI_TEXT_COLOR, UI_TEXT_BG_COLOR, nullptr, nullptr);
+		mame_ui_manager::NORMAL, ui().colors().text_color(), ui().colors().text_bg_color(), nullptr, nullptr);
 
 	maxwidth = 0;
 	for (auto & elem : m_items_list)
@@ -334,7 +334,7 @@ void menu_dats_view::custom_render(void *selectedref, float top, float bottom, f
 	y2 += ui().get_line_height() + 2.0f * UI_BOX_TB_BORDER;
 
 	// draw a box
-	ui().draw_outlined_box(container(), x1, y1, x2, y2, UI_BACKGROUND_COLOR);
+	ui().draw_outlined_box(container(), x1, y1, x2, y2, ui().colors().background_color());
 
 	// take off the borders
 	y1 += UI_BOX_TB_BORDER;
@@ -344,11 +344,11 @@ void menu_dats_view::custom_render(void *selectedref, float top, float bottom, f
 	for (auto & elem : m_items_list)
 	{
 		x1 += space;
-		rgb_t fcolor = (m_actual == x) ? rgb_t(0xff, 0xff, 0xff, 0x00) : UI_TEXT_COLOR;
-		rgb_t bcolor = (m_actual == x) ? rgb_t(0xff, 0xff, 0xff, 0xff) : UI_TEXT_BG_COLOR;
+		rgb_t fcolor = (m_actual == x) ? rgb_t(0xff, 0xff, 0xff, 0x00) : ui().colors().text_color();
+		rgb_t bcolor = (m_actual == x) ? rgb_t(0xff, 0xff, 0xff, 0xff) : ui().colors().text_bg_color();
 		ui().draw_text_full(container(), elem.label.c_str(), x1, y1, 1.0f, ui::text_layout::LEFT, ui::text_layout::NEVER, mame_ui_manager::NONE, fcolor, bcolor, &width, nullptr);
 
-		if (bcolor != UI_TEXT_BG_COLOR)
+		if (bcolor != ui().colors().text_bg_color())
 			ui().draw_textured_box(container(), x1 - (space / 2), y1, x1 + width + (space / 2), y2, bcolor, rgb_t(255, 43, 43, 43),
 				hilight_main_texture(), PRIMFLAG_BLENDMODE(BLENDMODE_ALPHA) | PRIMFLAG_TEXWRAP(1));
 
@@ -380,7 +380,7 @@ void menu_dats_view::custom_render(void *selectedref, float top, float bottom, f
 
 	// draw the text within it
 	ui().draw_text_full(container(), revision.c_str(), x1, y1, x2 - x1, ui::text_layout::CENTER, ui::text_layout::TRUNCATE,
-		mame_ui_manager::NORMAL, UI_TEXT_COLOR, UI_TEXT_BG_COLOR, nullptr, nullptr);
+		mame_ui_manager::NORMAL, ui().colors().text_color(), ui().colors().text_bg_color(), nullptr, nullptr);
 }
 
 //-------------------------------------------------

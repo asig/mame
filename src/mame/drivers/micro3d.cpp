@@ -268,7 +268,7 @@ void micro3d_state::drmath_data(address_map &map)
 	map(0x01400000, 0x01400003).rw(FUNC(micro3d_state::micro3d_pipe_r), FUNC(micro3d_state::micro3d_fifo_w));
 	map(0x01600000, 0x01600003).w(FUNC(micro3d_state::drmath_intr2_ack));
 	map(0x01800000, 0x01800003).w(FUNC(micro3d_state::micro3d_alt_fifo_w));
-	map(0x03fffff0, 0x03ffffff).rw("scc", FUNC(z80scc_device::ba_cd_inv_r), FUNC(z80scc_device::ba_cd_inv_w)).umask32(0x000000ff);
+	map(0x03fffff0, 0x03ffffff).rw("scc", FUNC(z80scc_device::ab_dc_r), FUNC(z80scc_device::ab_dc_w)).umask32(0x000000ff);
 }
 
 /*************************************
@@ -291,6 +291,12 @@ void micro3d_state::soundmem_io(address_map &map)
 	map(0xff01, 0xff01).w(FUNC(micro3d_state::micro3d_snd_dac_b));
 }
 
+void micro3d_state::cpu_space_map(address_map &map)
+{
+	map(0xfffff0, 0xffffff).m(m_maincpu, FUNC(m68000_base_device::autovectors_map));
+	map(0xfffff6, 0xfffff7).lr16("duart irq", [this]() -> u16 { return m_duart->get_irq_vector(); });
+}
+
 
 /*************************************
  *
@@ -303,6 +309,7 @@ void micro3d_state::micro3d(machine_config &config)
 	M68000(config, m_maincpu, 32_MHz_XTAL / 2);
 	m_maincpu->set_addrmap(AS_PROGRAM, &micro3d_state::hostmem);
 	m_maincpu->set_vblank_int("screen", FUNC(micro3d_state::micro3d_vblank));
+	m_maincpu->set_addrmap(m68000_base_device::AS_CPU_SPACE, &micro3d_state::cpu_space_map);
 
 	TMS34010(config, m_vgb, 40_MHz_XTAL);
 	m_vgb->set_addrmap(AS_PROGRAM, &micro3d_state::vgbmem);

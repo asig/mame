@@ -4,26 +4,38 @@
 
     SunPlus SPG2xx-series SoC peripheral emulation (Audio)
 
+    This is also used for SPG110, although that should be limited to
+    just 8 channels and has some things shifted around (phase appears
+    to be in the regular register set instead, formats might be fixed
+    or at least not per-channel)
+
+    SPG110 Beat interrupt frequency might be different too, seems to
+    trigger an FIQ, but music is very slow in jak_spdmo
+
+    GCM394 has 32 channels, and potentially a different register layout
+    it looks close but might be different enough to split off
+
 **********************************************************************/
 
 #include "emu.h"
 #include "spg2xx_audio.h"
 
-DEFINE_DEVICE_TYPE(SPG2XX_AUDIO, spg2xx_audio_device, "spg2xx", "SPG2xx-series System-on-a-Chip Audio")
+DEFINE_DEVICE_TYPE(SPG2XX_AUDIO, spg2xx_audio_device, "spg2xx_audio", "SPG2xx-series System-on-a-Chip Audio")
+DEFINE_DEVICE_TYPE(SPG110_AUDIO, spg110_audio_device, "spg110_audio", "SPG110-series System-on-a-Chip Audio")
+DEFINE_DEVICE_TYPE(SUNPLUS_GCM394_AUDIO, sunplus_gcm394_audio_device, "gcm394_audio", "SunPlus GCM394 System-on-a-Chip (Audio)")
 
-#define LOG_SPU_READS       (1U << 13)
-#define LOG_SPU_WRITES      (1U << 14)
-#define LOG_UNKNOWN_SPU     (1U << 15)
-#define LOG_CHANNEL_READS   (1U << 16)
-#define LOG_CHANNEL_WRITES  (1U << 17)
-#define LOG_ENVELOPES       (1U << 18)
-#define LOG_SAMPLES         (1U << 19)
-#define LOG_RAMPDOWN        (1U << 20)
-#define LOG_BEAT            (1U << 21)
+#define LOG_SPU_READS       (1U << 0)
+#define LOG_SPU_WRITES      (1U << 1)
+#define LOG_UNKNOWN_SPU     (1U << 2)
+#define LOG_CHANNEL_READS   (1U << 3)
+#define LOG_CHANNEL_WRITES  (1U << 4)
+#define LOG_ENVELOPES       (1U << 5)
+#define LOG_SAMPLES         (1U << 6)
+#define LOG_RAMPDOWN        (1U << 7)
+#define LOG_BEAT            (1U << 8)
 
-#define LOG_SPU             (LOG_SPU_READS | LOG_SPU_WRITES | LOG_UNKNOWN_SPU | LOG_CHANNEL_READS | LOG_CHANNEL_WRITES \
+#define LOG_ALL             (LOG_SPU_READS | LOG_SPU_WRITES | LOG_UNKNOWN_SPU | LOG_CHANNEL_READS | LOG_CHANNEL_WRITES \
 							| LOG_ENVELOPES | LOG_SAMPLES | LOG_RAMPDOWN | LOG_BEAT)
-#define LOG_ALL             (LOG_SPU)
 
 #define VERBOSE             (0)
 #include "logmacro.h"
@@ -41,6 +53,16 @@ spg2xx_audio_device::spg2xx_audio_device(const machine_config &mconfig, device_t
 
 spg2xx_audio_device::spg2xx_audio_device(const machine_config &mconfig, const char *tag, device_t *owner, uint32_t clock)
 	: spg2xx_audio_device(mconfig, SPG2XX_AUDIO, tag, owner, clock)
+{
+}
+
+spg110_audio_device::spg110_audio_device(const machine_config &mconfig, const char *tag, device_t *owner, uint32_t clock)
+	: spg2xx_audio_device(mconfig, SPG110_AUDIO, tag, owner, clock)
+{
+}
+
+sunplus_gcm394_audio_device::sunplus_gcm394_audio_device(const machine_config &mconfig, const char *tag, device_t *owner, uint32_t clock)
+	: spg2xx_audio_device(mconfig, SUNPLUS_GCM394_AUDIO, tag, owner, clock)
 {
 }
 
@@ -273,7 +295,7 @@ READ16_MEMBER(spg2xx_audio_device::audio_ctrl_r)
 
 READ16_MEMBER(spg2xx_audio_device::audio_r)
 {
-	const uint16_t channel = (offset & 0x00f0) >> 4;
+	const uint16_t channel = (offset & 0x01f0) >> 4;
 	uint16_t data = m_audio_regs[offset];
 
 
@@ -351,7 +373,7 @@ READ16_MEMBER(spg2xx_audio_device::audio_r)
 
 READ16_MEMBER(spg2xx_audio_device::audio_phase_r)
 {
-	const uint16_t channel = (offset & 0x00f0) >> 4;
+	const uint16_t channel = (offset & 0x01f0) >> 4;
 	uint16_t data = m_audio_phase_regs[offset];
 
 	switch (offset & AUDIO_CHAN_OFFSET_MASK)
@@ -661,7 +683,7 @@ WRITE16_MEMBER(spg2xx_audio_device::audio_ctrl_w)
 
 WRITE16_MEMBER(spg2xx_audio_device::audio_phase_w)
 {
-	const uint16_t channel = (offset & 0x00f0) >> 4;
+	const uint16_t channel = (offset & 0x01f0) >> 4;
 
 	switch (offset & AUDIO_CHAN_OFFSET_MASK)
 	{
@@ -720,7 +742,7 @@ WRITE16_MEMBER(spg2xx_audio_device::audio_phase_w)
 
 WRITE16_MEMBER(spg2xx_audio_device::audio_w)
 {
-	const uint16_t channel = (offset & 0x00f0) >> 4;
+	const uint16_t channel = (offset & 0x01f0) >> 4;
 
 	switch (offset & AUDIO_CHAN_OFFSET_MASK)
 	{
@@ -923,47 +945,35 @@ bool spg2xx_audio_device::advance_channel(const uint32_t channel)
 
 	bool playing = true;
 
-	if (get_adpcm_bit(channel))
+	for (uint32_t sample = 0; sample < samples_to_advance; sample++)
 	{
-		// ADPCM mode
-		for (uint32_t sample = 0; sample < samples_to_advance && playing; sample++)
+		playing = fetch_sample(channel);
+		if (!playing)
+			break;
+
+		if (get_adpcm_bit(channel))
 		{
-			playing = fetch_sample(channel);
-			if (playing)
+			// ADPCM mode
+			m_sample_shift[channel] += 4;
+			if (m_sample_shift[channel] >= 16)
 			{
-				m_sample_shift[channel] += 4;
-				if (m_sample_shift[channel] == 16)
-				{
-					m_sample_shift[channel] = 0;
-					m_sample_addr[channel]++;
-				}
+				m_sample_shift[channel] = 0;
+				m_sample_addr[channel]++;
 			}
 		}
-	}
-	else if (get_16bit_bit(channel))
-	{
-		// 16-bit mode
-		for (uint32_t sample = 0; sample < samples_to_advance && playing; sample++)
+		else if (get_16bit_bit(channel))
 		{
-			playing = fetch_sample(channel);
-			if (playing)
-				m_sample_addr[channel]++;
+			// 16-bit mode
+			m_sample_addr[channel]++;
 		}
-	}
-	else
-	{
-		// 8-bit mode
-		for (uint32_t sample = 0; sample < samples_to_advance && playing; sample++)
+		else
 		{
-			playing = fetch_sample(channel);
-			if (playing)
+			// 8-bit mode
+			m_sample_shift[channel] += 8;
+			if (m_sample_shift[channel] >= 16)
 			{
-				m_sample_shift[channel] += 8;
-				if (m_sample_shift[channel] == 16)
-				{
-					m_sample_shift[channel] = 0;
-					m_sample_addr[channel]++;
-				}
+				m_sample_shift[channel] = 0;
+				m_sample_addr[channel]++;
 			}
 		}
 	}
@@ -1044,6 +1054,7 @@ bool spg2xx_audio_device::fetch_sample(const uint32_t channel)
 	else
 	{
 		// 8-bit mode
+		LOGMASKED(LOG_SAMPLES, "Channel %d: Processing as 8-bit sample, tone_mode is %d, sample_shift is %d\n", channel, tone_mode, m_sample_shift[channel]);
 		if (tone_mode != 0)
 		{
 			if (m_sample_shift[channel])
@@ -1267,4 +1278,58 @@ bool spg2xx_audio_device::audio_envelope_tick(const uint32_t channel)
 	}
 	LOGMASKED(LOG_ENVELOPES, "envelope %d post-tick, count is now %04x, register is %04x\n", channel, new_count, m_audio_regs[(channel << 4) | AUDIO_ENVELOPE_DATA]);
 	return edd_changed;
+}
+
+
+
+WRITE16_MEMBER(spg110_audio_device::audio_w)
+{
+	const uint16_t channel = (offset & 0x00f0) >> 4;
+
+	switch (offset & AUDIO_CHAN_OFFSET_MASK)
+	{
+	case 0x0e:
+		m_audio_regs[offset] = data;
+		m_channel_rate[channel] = ((double)get_phase(channel) * 140625.0 * 2.0) / (double)(1 << 19);
+		m_channel_rate_accum[channel] = 0.0;
+		LOGMASKED(LOG_CHANNEL_WRITES, "spg110_audio_device::audio_w: Channel %d: Phase: %04x (rate: %f)\n", channel, data, m_channel_rate[channel]);
+		return;
+	}
+
+	spg2xx_audio_device::audio_w(space,offset,data,mem_mask);
+}
+
+uint16_t sunplus_gcm394_audio_device::control_group16_r(uint8_t group, uint8_t offset)
+{
+	LOGMASKED(LOG_SPU_WRITES, "sunplus_gcm394_audio_device::control_group16_r (group %d) offset %02x\n", group, offset);
+	return m_control[group][offset];
+}
+
+void sunplus_gcm394_audio_device::control_group16_w(uint8_t group, uint8_t offset, uint16_t data)
+{
+	LOGMASKED(LOG_SPU_WRITES, "sunplus_gcm394_audio_device::control_group16_w (group %d) offset %02x data %04x\n", group, offset, data);
+	m_control[group][offset] = data;
+
+	// offset 0x0b = triggers?
+}
+
+READ16_MEMBER(sunplus_gcm394_audio_device::control_r)
+{
+	return control_group16_r(offset & 0x20 ? 1 : 0, offset & 0x1f);
+}
+
+
+WRITE16_MEMBER(sunplus_gcm394_audio_device::control_w)
+{
+	control_group16_w(offset & 0x20 ? 1 : 0, offset & 0x1f, data);
+}
+
+void sunplus_gcm394_audio_device::device_start()
+{
+	spg2xx_audio_device::device_start();
+
+	for (int i = 0; i < 2; i++)
+		for (int j = 0; j < 0x20; j++)
+			m_control[i][j] = 0x0000;
+
 }

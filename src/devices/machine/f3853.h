@@ -59,7 +59,7 @@
      _I/O B0  20 |_____________| 21  DB0
 
      F38T56 is internal in F3870
-	 note: STROBE is N/C on F3851
+     note: STROBE is N/C on F3851
 */
 
 
@@ -169,6 +169,7 @@ class f38t56_device : public f3856_device
 public:
 	f38t56_device(const machine_config &mconfig, const char *tag, device_t *owner, uint32_t clock);
 
+	virtual DECLARE_READ8_MEMBER(read) override;
 	virtual DECLARE_WRITE8_MEMBER(write) override;
 };
 

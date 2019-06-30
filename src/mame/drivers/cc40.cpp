@@ -598,15 +598,14 @@ MACHINE_CONFIG_START(cc40_state::cc40)
 	NVRAM(config, "sysram.2", nvram_device::DEFAULT_ALL_0);
 
 	/* video hardware */
-	MCFG_SCREEN_ADD("screen", LCD)
-	MCFG_SCREEN_REFRESH_RATE(60) // arbitrary
-	MCFG_SCREEN_VBLANK_TIME(ATTOSECONDS_IN_USEC(2500))
-	MCFG_SCREEN_SIZE(6*31+1, 9*1+1+1)
-	MCFG_SCREEN_VISIBLE_AREA(0, 6*31, 0, 9*1+1)
-	//screen.set_visarea_full();
+	screen_device &screen(SCREEN(config, "screen", SCREEN_TYPE_LCD));
+	screen.set_refresh_hz(60); // arbitrary
+	screen.set_vblank_time(ATTOSECONDS_IN_USEC(2500));
+	screen.set_size(6*31+1, 9*1+1+1);
+	screen.set_visarea_full();
 	config.set_default_layout(layout_cc40);
-	MCFG_SCREEN_UPDATE_DEVICE("hd44780", hd44780_device, screen_update)
-	MCFG_SCREEN_PALETTE("palette")
+	screen.set_screen_update("hd44780", FUNC(hd44780_device::screen_update));
+	screen.set_palette("palette");
 
 	PALETTE(config, "palette", FUNC(cc40_state::cc40_palette), 3);
 
@@ -616,9 +615,8 @@ MACHINE_CONFIG_START(cc40_state::cc40)
 
 	/* sound hardware */
 	SPEAKER(config, "speaker").front_center();
-	DAC_1BIT(config, "dac", 0).add_route(ALL_OUTPUTS, "speaker", 0.25);
-	voltage_regulator_device &vref(VOLTAGE_REGULATOR(config, "vref", 0));
-	vref.add_route(0, "dac", 1.0, DAC_VREF_POS_INPUT);
+	DAC_1BIT(config, "dac").add_route(ALL_OUTPUTS, "speaker", 0.25);
+	VOLTAGE_REGULATOR(config, "vref").add_route(0, "dac", 1.0, DAC_VREF_POS_INPUT);
 
 	/* cartridge */
 	MCFG_GENERIC_CARTSLOT_ADD("cartslot", generic_plain_slot, "cc40_cart")

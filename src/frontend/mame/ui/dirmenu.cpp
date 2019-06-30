@@ -118,7 +118,7 @@ void menu_directory::custom_render(void *selectedref, float top, float bottom, f
 			std::begin(toptext), std::end(toptext),
 			origx1, origx2, origy1 - top, origy1 - UI_BOX_TB_BORDER,
 			ui::text_layout::CENTER, ui::text_layout::TRUNCATE, false,
-			UI_TEXT_COLOR, UI_GREEN_COLOR, 1.0f);
+			ui().colors().text_color(), UI_GREEN_COLOR, 1.0f);
 }
 
 /**************************************************
@@ -196,12 +196,12 @@ void menu_display_actual::custom_render(void *selectedref, float top, float bott
 			std::begin(m_folders), std::end(m_folders),
 			origx1, origx2, origy1 - (3.0f * UI_BOX_TB_BORDER) - (m_folders.size() * lineheight), origy1 - UI_BOX_TB_BORDER,
 			ui::text_layout::CENTER, ui::text_layout::TRUNCATE, false,
-			UI_TEXT_COLOR, UI_BACKGROUND_COLOR, 1.0f));
+			ui().colors().text_color(), ui().colors().background_color(), 1.0f));
 	draw_text_box(
 			std::begin(m_heading), std::end(m_heading),
 			0.5f * (1.0f - maxwidth), 0.5f * (1.0f + maxwidth), origy1 - top, origy1 - top + lineheight + (2.0f * UI_BOX_TB_BORDER),
 			ui::text_layout::CENTER, ui::text_layout::TRUNCATE, false,
-			UI_TEXT_COLOR, UI_GREEN_COLOR, 1.0f);
+			ui().colors().text_color(), UI_GREEN_COLOR, 1.0f);
 }
 
 /**************************************************
@@ -250,7 +250,7 @@ void menu_add_change_folder::handle()
 		if (menu_event->iptkey == IPT_UI_SELECT)
 		{
 			int index = (uintptr_t)menu_event->itemref - 1;
-			const menu_item &pitem = item[index];
+			const menu_item &pitem = item(index);
 
 			// go up to the parent path
 			if (!strcmp(pitem.text.c_str(), ".."))
@@ -330,39 +330,39 @@ void menu_add_change_folder::handle()
 				int entry, bestmatch = 0;
 
 				// from current item to the end
-				for (entry = cur_selected; entry < item.size(); entry++)
-					if (item[entry].ref != nullptr && !m_search.empty())
+				for (entry = cur_selected; entry < item_count(); entry++)
+					if (item(entry).ref != nullptr && !m_search.empty())
 					{
 						int match = 0;
 						for (int i = 0; i < m_search.size() + 1; i++)
 						{
-							if (core_strnicmp(item[entry].text.c_str(), m_search.data(), i) == 0)
+							if (core_strnicmp(item(entry).text.c_str(), m_search.data(), i) == 0)
 								match = i;
 						}
 
 						if (match > bestmatch)
 						{
 							bestmatch = match;
-							selected = entry;
+							set_selected_index(entry);
 						}
 					}
 
 				// and from the first item to current one
 				for (entry = 0; entry < cur_selected; entry++)
 				{
-					if (item[entry].ref != nullptr && !m_search.empty())
+					if (item(entry).ref != nullptr && !m_search.empty())
 					{
 						int match = 0;
 						for (int i = 0; i < m_search.size() + 1; i++)
 						{
-							if (core_strnicmp(item[entry].text.c_str(), m_search.data(), i) == 0)
+							if (core_strnicmp(item(entry).text.c_str(), m_search.data(), i) == 0)
 								match = i;
 						}
 
 						if (match > bestmatch)
 						{
 							bestmatch = match;
-							selected = entry;
+							set_selected_index(entry);
 						}
 					}
 				}
@@ -423,7 +423,7 @@ void menu_add_change_folder::custom_render(void *selectedref, float top, float b
 			std::begin(toptext), std::end(toptext),
 			origx1, origx2, origy1 - top, origy1 - UI_BOX_TB_BORDER,
 			ui::text_layout::CENTER, ui::text_layout::NEVER, false,
-			UI_TEXT_COLOR, UI_GREEN_COLOR, 1.0f);
+			ui().colors().text_color(), UI_GREEN_COLOR, 1.0f);
 
 	// bottom text
 	char const *const bottomtext[] = { _("Press TAB to set") };
@@ -431,7 +431,7 @@ void menu_add_change_folder::custom_render(void *selectedref, float top, float b
 			std::begin(bottomtext), std::end(bottomtext),
 			origx1, origx2, origy2 + UI_BOX_TB_BORDER, origy2 + bottom,
 			ui::text_layout::CENTER, ui::text_layout::TRUNCATE, false,
-			UI_TEXT_COLOR, UI_RED_COLOR, 1.0f);
+			ui().colors().text_color(), UI_RED_COLOR, 1.0f);
 }
 
 /**************************************************
@@ -515,7 +515,7 @@ void menu_remove_folder::custom_render(void *selectedref, float top, float botto
 			std::begin(toptext), std::end(toptext),
 			origx1, origx2, origy1 - top, origy1 - UI_BOX_TB_BORDER,
 			ui::text_layout::CENTER, ui::text_layout::TRUNCATE, false,
-			UI_TEXT_COLOR, UI_GREEN_COLOR, 1.0f);
+			ui().colors().text_color(), UI_GREEN_COLOR, 1.0f);
 }
 
 } // namespace ui

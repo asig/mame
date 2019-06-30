@@ -115,6 +115,7 @@ Hardware:   PPIA 8255
 #include "emu.h"
 #include "includes/atom.h"
 #include "formats/imageutl.h"
+#include "sound/wave.h"
 #include "screen.h"
 #include "softlist.h"
 #include "speaker.h"
@@ -710,8 +711,8 @@ FLOPPY_FORMATS_END0
 
 MACHINE_CONFIG_START(atom_state::atom)
 	/* basic machine hardware */
-	MCFG_DEVICE_ADD(SY6502_TAG, M6502, X2/4)
-	MCFG_DEVICE_PROGRAM_MAP(atom_mem)
+	M6502(config, m_maincpu, X2/4);
+	m_maincpu->set_addrmap(AS_PROGRAM, &atom_state::atom_mem);
 
 	/* video hardware */
 	SCREEN(config, SCREEN_TAG, SCREEN_TYPE_RASTER);
@@ -722,8 +723,8 @@ MACHINE_CONFIG_START(atom_state::atom)
 
 	/* sound hardware */
 	SPEAKER(config, "mono").front_center();
-	MCFG_DEVICE_ADD("speaker", SPEAKER_SOUND)
-	MCFG_SOUND_ROUTE(ALL_OUTPUTS, "mono", 1.00)
+	SPEAKER_SOUND(config, m_speaker).add_route(ALL_OUTPUTS, "mono", 1.00);
+	WAVE(config, "wave", m_cassette).add_route(ALL_OUTPUTS, "mono", 0.05);
 
 	/* devices */
 	TIMER(config, "hz2400").configure_periodic(FUNC(atom_state::cassette_output_tick), attotime::from_hz(4806));
@@ -754,7 +755,7 @@ MACHINE_CONFIG_START(atom_state::atom)
 
 	CASSETTE(config, m_cassette);
 	m_cassette->set_formats(atom_cassette_formats);
-	m_cassette->set_default_state(CASSETTE_STOPPED | CASSETTE_MOTOR_ENABLED | CASSETTE_SPEAKER_MUTED);
+	m_cassette->set_default_state(CASSETTE_STOPPED | CASSETTE_MOTOR_ENABLED | CASSETTE_SPEAKER_ENABLED);
 	m_cassette->set_interface("atom_cass");
 
 	MCFG_QUICKLOAD_ADD("quickload", atom_state, atom_atm, "atm")
@@ -784,8 +785,7 @@ MACHINE_CONFIG_END
 
 MACHINE_CONFIG_START(atomeb_state::atomeb)
 	atom(config);
-	MCFG_DEVICE_MODIFY(SY6502_TAG)
-	MCFG_DEVICE_PROGRAM_MAP(atomeb_mem)
+	m_maincpu->set_addrmap(AS_PROGRAM, &atomeb_state::atomeb_mem);
 
 	/* cartridges */
 	config.device_remove("cartslot");
@@ -866,11 +866,11 @@ void atom_state::atombb(machine_config &config)
     MACHINE_DRIVER( prophet2 )
 -------------------------------------------------*/
 
-//static MACHINE_CONFIG_START( prophet2 )
+//void atom_state::prophet2(machine_config &config)
+//{
 //  atom(config);
 //  /* basic machine hardware */
-//  MCFG_DEVICE_MODIFY(SY6502_TAG)
-//  MCFG_DEVICE_PROGRAM_MAP(prophet_mem)
+//  m_maincpu->set_addrmap(AS_PROGRAM, &atom_state::prophet_mem);
 //
 //  /* fdc */
 //  config.device_remove(I8271_TAG);
@@ -878,31 +878,29 @@ void atom_state::atombb(machine_config &config)
 //  config.device_remove(I8271_TAG ":1");
 //
 //  /* internal ram */
-//  MCFG_RAM_MODIFY(RAM_TAG)
-//  MCFG_RAM_DEFAULT_SIZE("32K")
+//  subdevice<ram_device>(RAM_TAG)->set_default_size("32K");
 
 //  /* Software lists */
 //  config.device_remove("rom_list");
 //  config.device_remove("flop_list");
-//MACHINE_CONFIG_END
+//}
 
 /*-------------------------------------------------
     MACHINE_DRIVER( prophet3 )
 -------------------------------------------------*/
 
-//static MACHINE_CONFIG_START( prophet3 )
+//void atom_state::prophet3(machine_config &config)
+//{
 //  atom(config);
 //  /* basic machine hardware */
-//  MCFG_DEVICE_MODIFY(SY6502_TAG)
-//  MCFG_DEVICE_PROGRAM_MAP(prophet_mem)
+//  m_maincpu->set_addrmap(AS_PROGRAM, &atom_state::prophet_mem);
 //
 //  /* internal ram */
-//  MCFG_RAM_MODIFY(RAM_TAG)
-//  MCFG_RAM_DEFAULT_SIZE("32K")
+//  subdevice<ram_device>(RAM_TAG)->set_default_size("32K");
 
 //  /* Software lists */
 //  config.device_remove("rom_list");
-//MACHINE_CONFIG_END
+//}
 
 /*-------------------------------------------------
     MACHINE_DRIVER( atommc )

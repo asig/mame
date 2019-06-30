@@ -53,9 +53,9 @@ To Do:
 
 
 /* Read 4 ten bit dip switches */
-READ16_MEMBER(realbrk_state::realbrk_dsw_r)
+u16 realbrk_state::realbrk_dsw_r()
 {
-	uint16_t sel = ~m_dsw_select[0];
+	const u16 sel = ~m_dsw_select[0];
 	if (sel & 0x01) return  (m_dsw_io[0]->read() & 0x00ff) << 8;      // DSW1 low bits
 	if (sel & 0x02) return  (m_dsw_io[1]->read() & 0x00ff) << 8;      // DSW2 low bits
 	if (sel & 0x04) return  (m_dsw_io[2]->read() & 0x00ff) << 8;      // DSW3 low bits
@@ -70,7 +70,7 @@ READ16_MEMBER(realbrk_state::realbrk_dsw_r)
 	return 0xffff;
 }
 
-READ16_MEMBER(realbrk_state::pkgnsh_input_r)
+u16 realbrk_state::pkgnsh_input_r(offs_t offset)
 {
 	switch(offset)
 	{
@@ -88,9 +88,9 @@ READ16_MEMBER(realbrk_state::pkgnsh_input_r)
 	return 0xffff;
 }
 
-READ16_MEMBER(realbrk_state::pkgnshdx_input_r)
+u16 realbrk_state::pkgnshdx_input_r(offs_t offset)
 {
-	uint16_t sel = ~m_dsw_select[0];
+	const u16 sel = ~m_dsw_select[0];
 
 	switch(offset)
 	{
@@ -122,7 +122,7 @@ READ16_MEMBER(realbrk_state::pkgnshdx_input_r)
 }
 
 
-READ16_MEMBER(realbrk_state::backup_ram_r)
+u16 realbrk_state::backup_ram_r(offs_t offset)
 {
 	/*TODO: understand the format & cmds of the backup-ram,maybe it's an
 	        unemulated tmp68301 feature?*/
@@ -133,7 +133,7 @@ READ16_MEMBER(realbrk_state::backup_ram_r)
 }
 
 
-READ16_MEMBER(realbrk_state::backup_ram_dx_r)
+u16 realbrk_state::backup_ram_dx_r(offs_t offset)
 {
 	/*TODO: understand the format & cmds of the backup-ram,maybe it's an
 	        unemulated tmp68301 feature?*/
@@ -143,13 +143,13 @@ READ16_MEMBER(realbrk_state::backup_ram_dx_r)
 		return m_backup_ram[offset];
 }
 
-WRITE16_MEMBER(realbrk_state::backup_ram_w)
+void realbrk_state::backup_ram_w(offs_t offset, u16 data, u16 mem_mask)
 {
 	COMBINE_DATA(&m_backup_ram[offset]);
 }
 
 template<int Layer>
-WRITE16_MEMBER(realbrk_state::vram_w)
+void realbrk_state::vram_w(offs_t offset, u16 data, u16 mem_mask)
 {
 	COMBINE_DATA(&m_vram[Layer][offset]);
 	m_tilemap[Layer]->mark_tile_dirty(offset/2);
@@ -170,11 +170,11 @@ void realbrk_state::base_mem(address_map &map)
 	map(0x600000, 0x601fff).ram().w(FUNC(realbrk_state::vram_w<0>)).share("vram_0");  // Background   (0)
 	map(0x602000, 0x603fff).ram().w(FUNC(realbrk_state::vram_w<1>)).share("vram_1");  // Background   (1)
 	map(0x604000, 0x604fff).ram().w(FUNC(realbrk_state::vram_2_w)).share("vram_2");  // Text         (2)
-	map(0x605000, 0x61ffff).ram();                                         //
+	map(0x605000, 0x605fff).ram();                                         //
 	map(0x606000, 0x60600f).ram().w(FUNC(realbrk_state::vregs_w)).share("vregs");    // Scroll + Video Regs
+	map(0x606010, 0x61ffff).ram();                                         //
 	map(0x800000, 0x800003).rw("ymz", FUNC(ymz280b_device::read), FUNC(ymz280b_device::write)).umask16(0xff00);   // YMZ280
 	map(0xfe0000, 0xfeffff).ram();                                         // RAM
-	map(0xfffc00, 0xffffff).rw(m_tmp68301, FUNC(tmp68301_device::regs_r), FUNC(tmp68301_device::regs_w));  // TMP68301 Registers
 }
 
 /*realbrk specific memory map*/
@@ -218,7 +218,6 @@ void realbrk_state::dai2kaku_mem(address_map &map)
 	map(0xc00002, 0xc00003).portr("IN1");                            // Coins
 	map(0xc00004, 0xc00005).ram().r(FUNC(realbrk_state::realbrk_dsw_r)).share("dsw_select");  // DSW select
 	map(0xff0000, 0xfffbff).ram();                                         // RAM
-	map(0xfffd0a, 0xfffd0b).w(FUNC(realbrk_state::dai2kaku_flipscreen_w));   // Hack! Parallel port data register
 }
 
 /***************************************************************************
@@ -764,19 +763,15 @@ WRITE_LINE_MEMBER(realbrk_state::vblank_irq)
 {
 	/* VBlank is connected to INT1 (external interrupts pin 1) */
 	if (state)
-		m_tmp68301->external_interrupt_1();
+		m_maincpu->external_interrupt_1();
 }
 
 void realbrk_state::realbrk(machine_config &config)
 {
 	/* basic machine hardware */
-	M68000(config, m_maincpu, XTAL(32'000'000) / 2);          /* !! TMP68301 !! */
+	TMP68301(config, m_maincpu, XTAL(32'000'000) / 2);
 	m_maincpu->set_addrmap(AS_PROGRAM, &realbrk_state::realbrk_mem);
-	m_maincpu->set_irq_acknowledge_callback("tmp68301", FUNC(tmp68301_device::irq_callback));
-
-	TMP68301(config, m_tmp68301, 0);
-	m_tmp68301->set_cputag(m_maincpu);
-	m_tmp68301->out_parallel_callback().set(FUNC(realbrk_state::realbrk_flipscreen_w));
+	m_maincpu->out_parallel_callback().set(FUNC(realbrk_state::realbrk_flipscreen_w));
 
 	/* video hardware */
 	SCREEN(config, m_screen, SCREEN_TYPE_RASTER);
@@ -809,8 +804,7 @@ void realbrk_state::pkgnsh(machine_config &config)
 	realbrk(config);
 
 	m_maincpu->set_addrmap(AS_PROGRAM, &realbrk_state::pkgnsh_mem);
-
-	m_tmp68301->out_parallel_callback().set_nop();
+	m_maincpu->out_parallel_callback().set_nop();
 }
 
 void realbrk_state::pkgnshdx(machine_config &config)
@@ -825,6 +819,7 @@ void realbrk_state::dai2kaku(machine_config &config)
 	realbrk(config);
 
 	m_maincpu->set_addrmap(AS_PROGRAM, &realbrk_state::dai2kaku_mem);
+	m_maincpu->out_parallel_callback().set(FUNC(realbrk_state::dai2kaku_flipscreen_w));
 
 	m_gfxdecode->set_info(gfx_dai2kaku);
 	m_screen->set_screen_update(FUNC(realbrk_state::screen_update_dai2kaku));

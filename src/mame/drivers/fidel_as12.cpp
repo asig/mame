@@ -2,7 +2,7 @@
 // copyright-holders:hap
 // thanks-to:yoyo_chessboard
 /******************************************************************************
-*
+
 * fidel_as12.cpp, subdriver of machine/fidelbase.cpp, machine/chessbase.cpp
 
 *******************************************************************************
@@ -45,7 +45,7 @@ private:
 	void main_map(address_map &map);
 
 	// I/O handlers
-	void prepare_display();
+	void update_display();
 	DECLARE_WRITE8_MEMBER(control_w);
 	DECLARE_WRITE8_MEMBER(led_w);
 	DECLARE_READ8_MEMBER(input_r);
@@ -58,7 +58,7 @@ private:
 
 // TTL/generic
 
-void as12_state::prepare_display()
+void as12_state::update_display()
 {
 	// 8*8(+1) chessboard leds
 	display_matrix(8, 9, m_led_data, m_inp_mux);
@@ -70,7 +70,7 @@ WRITE8_MEMBER(as12_state::control_w)
 	// 74245 Q0-Q8: input mux, led select
 	u16 sel = 1 << (data & 0xf) & 0x3ff;
 	m_inp_mux = bitswap<9>(sel,5,8,7,6,4,3,1,0,2);
-	prepare_display();
+	update_display();
 
 	// 74245 Q9: speaker out
 	m_dac->write(BIT(sel, 9));
@@ -83,7 +83,7 @@ WRITE8_MEMBER(as12_state::led_w)
 {
 	// a0-a2,d0: led data via NE591N
 	m_led_data = (data & 1) << offset;
-	prepare_display();
+	update_display();
 }
 
 READ8_MEMBER(as12_state::input_r)
@@ -144,8 +144,6 @@ void as12_state::as12(machine_config &config)
 	R65C02(config, m_maincpu, 4_MHz_XTAL); // R65C02P4
 	m_maincpu->set_addrmap(AS_PROGRAM, &as12_state::div_trampoline);
 	ADDRESS_MAP_BANK(config, m_mainmap).set_map(&as12_state::main_map).set_options(ENDIANNESS_LITTLE, 8, 16);
-
-	TIMER(config, "dummy_timer").configure_periodic(timer_device::expired_delegate(), attotime::from_hz(4_MHz_XTAL));
 
 	const attotime irq_period = attotime::from_hz(585); // from 556 timer (22nF, 110K, 1K)
 	TIMER(config, m_irq_on).configure_periodic(FUNC(as12_state::irq_on<M6502_IRQ_LINE>), irq_period);

@@ -4,8 +4,6 @@
 
     XBOX (c) 2001 Microsoft
 
-    Skeleton driver
-
 ***************************************************************************/
 
 
@@ -33,15 +31,14 @@ class xbox_state : public xbox_base_state
 public:
 	xbox_state(const machine_config &mconfig, device_type type, const char *tag)
 		: xbox_base_state(mconfig, type, tag)
-		, m_ide(*this, "pci:09.0:ide")
-		, m_devh(*this, "pci:09.0:ide:0:hdd")
-		, m_devc(*this, "pci:09.0:ide:1:cdrom")
+		, m_ide(*this, "pci:09.0:ide1")
+		, m_devh(*this, "pci:09.0:ide1:0:hdd")
+		, m_devc(*this, "pci:09.0:ide1:1:cdrom")
 	{ }
 
 	void xbox(machine_config &config);
 protected:
 	void xbox_map(address_map &map);
-	void xbox_map_io(address_map &map);
 
 	// driver_device overrides
 	virtual void machine_start() override;
@@ -62,13 +59,7 @@ void xbox_state::video_start()
 
 void xbox_state::xbox_map(address_map &map)
 {
-	xbox_base_map(map);
 	map(0xff000000, 0xff0fffff).rom().region("bios", 0).mirror(0x00f00000);
-}
-
-void xbox_state::xbox_map_io(address_map &map)
-{
-	xbox_base_map_io(map);
 }
 
 static INPUT_PORTS_START( xbox )
@@ -170,26 +161,23 @@ void xbox_ata_devices(device_slot_interface &device)
 	device.option_add("cdrom", ATAPI_CDROM);
 }
 
-MACHINE_CONFIG_START(xbox_state::xbox)
+void xbox_state::xbox(machine_config &config)
+{
 	xbox_base(config);
 	m_maincpu->set_addrmap(AS_PROGRAM, &xbox_state::xbox_map);
-	m_maincpu->set_addrmap(AS_IO, &xbox_state::xbox_map_io);
 
-	MCFG_DEVICE_MODIFY(":pci:09.0:ide:0")
-	MCFG_DEVICE_SLOT_INTERFACE(xbox_ata_devices, "hdd", true)
-	MCFG_DEVICE_MODIFY(":pci:09.0:ide:1")
-	MCFG_DEVICE_SLOT_INTERFACE(xbox_ata_devices, "cdrom", true)
+	subdevice<ide_controller_32_device>(":pci:09.0:ide1")->options(xbox_ata_devices, "hdd", "cdrom", true);
 
 	OHCI_USB_CONNECTOR(config, ":pci:02.0:port1", usb_xbox, nullptr, false);
 	OHCI_USB_CONNECTOR(config, ":pci:02.0:port2", usb_xbox, nullptr, false);
 	OHCI_USB_CONNECTOR(config, ":pci:02.0:port3", usb_xbox, "xbox_controller", false);
 	OHCI_USB_CONNECTOR(config, ":pci:02.0:port4", usb_xbox, nullptr, false);
 
-/* sound hardware */
+	/* sound hardware */
 	SPEAKER(config, "mono").front_center();
 
 	OHCI_GAME_CONTROLLER(config, "ohci_gamepad", 0);
-MACHINE_CONFIG_END
+}
 
 
 /***************************************************************************

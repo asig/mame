@@ -358,7 +358,7 @@ private:
 					std::begin(text), std::end(text),
 					x, x2, y - top, y - UI_BOX_TB_BORDER,
 					ui::text_layout::CENTER, ui::text_layout::NEVER, false,
-					UI_TEXT_COLOR, UI_GREEN_COLOR, 1.0f);
+					ui().colors().text_color(), UI_GREEN_COLOR, 1.0f);
 		}
 
 	private:
@@ -506,7 +506,7 @@ void composite_filter_impl_base<Impl, Base, Type>::menu_configure::populate(floa
 	{
 		item_append(util::string_format(_("Filter %1$u"), i + 1), m_parent.m_filters[i]->display_name(), get_arrow_flags(i), (void *)(FILTER_FIRST + i));
 		if (m_added)
-			selected = item.size() - 2;
+			set_selected_index(item_count() - 2);
 		if (m_parent.m_filters[i]->wants_adjuster())
 		{
 			std::string name("^!");
@@ -968,7 +968,7 @@ private:
 					std::begin(text), std::end(text),
 					x, x2, y - top, y - UI_BOX_TB_BORDER,
 					ui::text_layout::CENTER, ui::text_layout::NEVER, false,
-					UI_TEXT_COLOR, UI_GREEN_COLOR, 1.0f);
+					ui().colors().text_color(), UI_GREEN_COLOR, 1.0f);
 		}
 
 	private:

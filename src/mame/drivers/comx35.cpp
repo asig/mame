@@ -9,6 +9,11 @@
     - serial printer
     - thermal printer
 
+
+    Cassette: PSAVE works, and the result can be loaded into Emma02 emulator.
+              PLOAD works, but it may be necessary to unplug all slots to get
+              a reliable load. This is the same as real hardware.
+
 */
 
 #include "emu.h"
@@ -460,7 +465,7 @@ READ_LINE_MEMBER( comx35_state::ef2_r )
 
 READ_LINE_MEMBER( comx35_state::ef4_r )
 {
-	return m_exp->ef4_r(); // | (m_cassette->input() > 0.0f);
+	return m_exp->ef4_r() | (m_cassette->input() > 0.0f);
 }
 
 WRITE_LINE_MEMBER( comx35_state::q_w )
@@ -592,7 +597,7 @@ void comx35_state::machine_reset()
 //**************************************************************************
 
 //-------------------------------------------------
-//  MACHINE_CONFIG( pal )
+//  machine_config( pal )
 //-------------------------------------------------
 
 void comx35_state::base(machine_config &config, const XTAL clock)
@@ -628,7 +633,7 @@ void comx35_state::base(machine_config &config, const XTAL clock)
 	quickload_image_device &quickload(QUICKLOAD(config, "quickload"));
 	quickload.set_handler(snapquick_load_delegate(&QUICKLOAD_LOAD_NAME(comx35_state, comx), this), "comx");
 
-	CASSETTE(config, m_cassette).set_default_state((cassette_state) (CASSETTE_STOPPED | CASSETTE_MOTOR_ENABLED | CASSETTE_SPEAKER_ENABLED));
+	CASSETTE(config, m_cassette).set_default_state(CASSETTE_STOPPED | CASSETTE_MOTOR_ENABLED | CASSETTE_SPEAKER_ENABLED);
 
 	// expansion bus
 	COMX_EXPANSION_SLOT(config, m_exp, 0, comx_expansion_cards, "eb").irq_callback().set(FUNC(comx35_state::irq_w));
