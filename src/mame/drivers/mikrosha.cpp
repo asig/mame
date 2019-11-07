@@ -15,7 +15,6 @@
 #include "imagedev/cassette.h"
 #include "machine/i8255.h"
 #include "machine/pit8253.h"
-#include "sound/wave.h"
 
 #include "screen.h"
 #include "softlist.h"
@@ -45,7 +44,7 @@ private:
 void mikrosha_state::machine_reset()
 {
 	if (m_cart->exists())
-		m_maincpu->space(AS_PROGRAM).install_read_handler(0x8000, 0x8000+m_cart->get_rom_size()-1, read8sm_delegate(FUNC(generic_slot_device::read_rom),(generic_slot_device*)m_cart));
+		m_maincpu->space(AS_PROGRAM).install_read_handler(0x8000, 0x8000 + m_cart->get_rom_size() - 1, read8sm_delegate(*m_cart, FUNC(generic_slot_device::read_rom)));
 	radio86_state::machine_reset();
 }
 
@@ -221,7 +220,7 @@ void mikrosha_state::mikrosha(machine_config &config)
 
 	i8275_device &i8275(I8275(config, "i8275", XTAL(16'000'000) / 12));
 	i8275.set_character_width(6);
-	i8275.set_display_callback(FUNC(mikrosha_state::display_pixels), this);
+	i8275.set_display_callback(FUNC(mikrosha_state::display_pixels));
 	i8275.drq_wr_callback().set(m_dma8257, FUNC(i8257_device::dreq2_w));
 
 	pit8253_device &pit8253(PIT8253(config, "pit8253", 0));
@@ -241,7 +240,6 @@ void mikrosha_state::mikrosha(machine_config &config)
 	PALETTE(config, m_palette, FUNC(mikrosha_state::radio86_palette), 3);
 
 	SPEAKER(config, "mono").front_center();
-	WAVE(config, "wave", "cassette").add_route(ALL_OUTPUTS, "mono", 0.05);
 
 	I8257(config, m_dma8257, XTAL(16'000'000) / 9);
 	m_dma8257->out_hrq_cb().set(FUNC(radio86_state::hrq_w));
@@ -253,6 +251,7 @@ void mikrosha_state::mikrosha(machine_config &config)
 	CASSETTE(config, m_cassette);
 	m_cassette->set_formats(rkm_cassette_formats);
 	m_cassette->set_default_state(CASSETTE_STOPPED | CASSETTE_SPEAKER_ENABLED | CASSETTE_MOTOR_ENABLED);
+	m_cassette->add_route(ALL_OUTPUTS, "mono", 0.05);
 	m_cassette->set_interface("mikrosha_cass");
 
 	GENERIC_CARTSLOT(config, m_cart, generic_plain_slot, "mikrosha_cart", "bin,rom");

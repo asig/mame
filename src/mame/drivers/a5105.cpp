@@ -30,7 +30,6 @@ ToDo:
 #include "machine/z80ctc.h"
 #include "machine/z80pio.h"
 #include "sound/beep.h"
-#include "sound/wave.h"
 #include "video/upd7220.h"
 
 #include "emupal.h"
@@ -389,10 +388,10 @@ void a5105_state::a5105_io(address_map &map)
 	map(0x98, 0x99).rw(m_hgdc, FUNC(upd7220_device::read), FUNC(upd7220_device::write));
 
 	map(0x9c, 0x9c).w(FUNC(a5105_state::pcg_val_w));
-//  AM_RANGE(0x9d, 0x9d) crtc area (ff-based), palette routes here
+//  map(0x9d, 0x9d) crtc area (ff-based), palette routes here
 	map(0x9e, 0x9e).w(FUNC(a5105_state::pcg_addr_w));
 
-//  AM_RANGE(0xa0, 0xa1) ay8910?
+//  map(0xa0, 0xa1) ay8910?
 	map(0xa8, 0xa8).rw(FUNC(a5105_state::a5105_memsel_r), FUNC(a5105_state::a5105_memsel_w));
 	map(0xa9, 0xa9).r(FUNC(a5105_state::key_r));
 	map(0xaa, 0xaa).rw(FUNC(a5105_state::key_mux_r), FUNC(a5105_state::key_mux_w));
@@ -608,7 +607,6 @@ void a5105_state::a5105(machine_config &config)
 
 	/* sound hardware */
 	SPEAKER(config, "mono").front_center();
-	WAVE(config, "wave", "cassette").add_route(ALL_OUTPUTS, "mono", 0.05);
 	BEEP(config, "beeper", 500).add_route(ALL_OUTPUTS, "mono", 0.50);
 
 	/* Devices */
@@ -628,6 +626,7 @@ void a5105_state::a5105(machine_config &config)
 
 	CASSETTE(config, m_cass);
 	m_cass->set_default_state(CASSETTE_STOPPED | CASSETTE_SPEAKER_ENABLED | CASSETTE_MOTOR_ENABLED);
+	m_cass->add_route(ALL_OUTPUTS, "mono", 0.05);
 
 	UPD765A(config, m_fdc, 8'000'000, true, true);
 	FLOPPY_CONNECTOR(config, "upd765a:0", a5105_floppies, "525qd", a5105_state::floppy_formats);

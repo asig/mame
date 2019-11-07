@@ -1338,6 +1338,13 @@ static INPUT_PORTS_START( mysticm )
 INPUT_PORTS_END
 
 
+template <int P>
+CUSTOM_INPUT_MEMBER(tshoot_state::gun_r)
+{
+	int data = m_gun[P]->read();
+	return (data & 0x3f) ^ ((data & 0x3f) >> 1);
+}
+
 static INPUT_PORTS_START( tshoot )
 	PORT_START("IN1")
 	PORT_BIT( 0x01, IP_ACTIVE_HIGH, IPT_BUTTON2 ) PORT_NAME("Grenade")
@@ -1357,12 +1364,12 @@ static INPUT_PORTS_START( tshoot )
 	PORT_BIT( 0x80, IP_ACTIVE_HIGH, IPT_UNUSED )
 
 	PORT_START("INP1")
-	PORT_BIT( 0x3f, IP_ACTIVE_HIGH, IPT_CUSTOM ) PORT_CUSTOM_MEMBER(DEVICE_SELF, tshoot_state, gun_r, (uintptr_t)0)
+	PORT_BIT( 0x3f, IP_ACTIVE_HIGH, IPT_CUSTOM ) PORT_CUSTOM_MEMBER(tshoot_state, gun_r<0>)
 	PORT_BIT( 0x40, IP_ACTIVE_LOW,  IPT_UNUSED )
 	PORT_BIT( 0x80, IP_ACTIVE_LOW,  IPT_BUTTON1 ) PORT_NAME("Fire")
 
 	PORT_START("INP2")
-	PORT_BIT( 0x3f, IP_ACTIVE_HIGH, IPT_CUSTOM ) PORT_CUSTOM_MEMBER(DEVICE_SELF, tshoot_state, gun_r, (uintptr_t)1)
+	PORT_BIT( 0x3f, IP_ACTIVE_HIGH, IPT_CUSTOM ) PORT_CUSTOM_MEMBER(tshoot_state, gun_r<1>)
 	PORT_BIT( 0xc0, IP_ACTIVE_LOW,  IPT_UNUSED )
 
 	PORT_START("GUNX")
@@ -3185,7 +3192,7 @@ void williams_state::init_mayday()
 	CONFIGURE_BLITTER(WILLIAMS_BLITTER_NONE, 0x0000);
 
 	/* install a handler to catch protection checks */
-	m_maincpu->space(AS_PROGRAM).install_read_handler(0xa190, 0xa191, read8sm_delegate(FUNC(williams_state::mayday_protection_r),this));
+	m_maincpu->space(AS_PROGRAM).install_read_handler(0xa190, 0xa191, read8sm_delegate(*this, FUNC(williams_state::mayday_protection_r)));
 	m_mayday_protection = m_videoram + 0xa190;
 }
 
@@ -3220,7 +3227,7 @@ void williams_state::init_bubbles()
 	CONFIGURE_BLITTER(WILLIAMS_BLITTER_SC1, 0xc000);
 
 	/* bubbles has a full 8-bit-wide CMOS */
-	m_maincpu->space(AS_PROGRAM).install_write_handler(0xcc00, 0xcfff, write8sm_delegate(FUNC(williams_state::bubbles_cmos_w),this));
+	m_maincpu->space(AS_PROGRAM).install_write_handler(0xcc00, 0xcfff, write8sm_delegate(*this, FUNC(williams_state::bubbles_cmos_w)));
 }
 
 

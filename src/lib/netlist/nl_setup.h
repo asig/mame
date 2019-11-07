@@ -1,14 +1,14 @@
 // license:GPL-2.0+
 // copyright-holders:Couriersud
-/*
- * nlsetup.h
- *
- */
+
+///
+/// \file nl_setup.h
+///
 
 #ifndef NLSETUP_H_
 #define NLSETUP_H_
 
-#include "plib/pparser.h"
+#include "plib/ppreprocessor.h"
 #include "plib/pstream.h"
 #include "plib/pstring.h"
 #include "plib/putil.h"
@@ -79,7 +79,8 @@ void NETLIST_NAME(name)(netlist::nlparse_t &setup)                             \
 
 #define SUBMODEL(model, name)                                                  \
 		setup.namespace_push(# name);                                          \
-		NETLIST_NAME(model)(setup);                                            \
+		setup.include(# model);                                                \
+		/*NETLIST_NAME(model)(setup);*/                                        \
 		setup.namespace_pop();
 
 #define OPTIMIZE_FRONTIER(attach, r_in, r_out)                                 \
@@ -166,42 +167,38 @@ namespace netlist
 	};
 
 	// ----------------------------------------------------------------------------------------
-	// A Generic netlist sources implementation
+	// Specific netlist psource_t implementations
 	// ----------------------------------------------------------------------------------------
 
-	class source_t
+	class source_netlist_t : public plib::psource_t
 	{
 	public:
 
 		friend class setup_t;
 
-		enum type_t
-		{
-			SOURCE,
-			DATA
-		};
-
-		using list_t = std::vector<plib::unique_ptr<source_t>>;
-
-		source_t(const type_t type = SOURCE)
-		: m_type(type)
+		source_netlist_t()
+		: plib::psource_t()
 		{}
 
-		COPYASSIGNMOVE(source_t, delete)
-
-		virtual ~source_t() noexcept = default;
+		COPYASSIGNMOVE(source_netlist_t, delete)
+		~source_netlist_t() noexcept override = default;
 
 		virtual bool parse(nlparse_t &setup, const pstring &name);
-
-		type_t type() const { return m_type; }
-
-	protected:
-		virtual plib::unique_ptr<plib::pistream> stream(const pstring &name) = 0;
-
-	private:
-		const type_t m_type;
 	};
 
+	class source_data_t : public plib::psource_t
+	{
+	public:
+
+		friend class setup_t;
+
+		source_data_t()
+		: plib::psource_t()
+		{}
+
+		COPYASSIGNMOVE(source_data_t, delete)
+		~source_data_t() noexcept override = default;
+	};
 
 	// ----------------------------------------------------------------------------------------
 	// Collection of models
@@ -215,7 +212,7 @@ namespace netlist
 
 		pstring value_str(const pstring &model, const pstring &entity);
 
-		nl_double value(const pstring &model, const pstring &entity);
+		nl_fptype value(const pstring &model, const pstring &entity);
 
 		pstring type(const pstring &model) { return value_str(model, "COREMODEL"); }
 
@@ -223,7 +220,7 @@ namespace netlist
 		using model_map_t = std::unordered_map<pstring, pstring>;
 
 		void model_parse(const pstring &model, model_map_t &map);
-		pstring model_string(model_map_t &map);
+		pstring model_string(const model_map_t &map) const;
 
 		std::unordered_map<pstring, pstring> m_models;
 		std::unordered_map<pstring, model_map_t> m_cache;
@@ -247,14 +244,31 @@ namespace netlist
 		void register_link(const pstring &sin, const pstring &sout);
 		void register_link_arr(const pstring &terms);
 		void register_param(const pstring &param, const pstring &value);
-		void register_param(const pstring &param, const double value);
+
+		// FIXME: quick hack
+		void register_param_x(const pstring &param, const nl_fptype value);
+
+		template <typename T>
+		typename std::enable_if<std::is_floating_point<T>::value || std::is_integral<T>::value>::type
+		register_param(const pstring &param, T value)
+		{
+			register_param_x(param, static_cast<nl_fptype>(value));
+		}
+
+#if PUSE_FLOAT128
+		void register_param(const pstring &param, __float128 value)
+		{
+			register_param_x(param, static_cast<nl_fptype>(value));
+		}
+#endif
+
 		void register_lib_entry(const pstring &name, const pstring &sourcefile);
-		void register_frontier(const pstring &attach, const double r_IN, const double r_OUT);
+		void register_frontier(const pstring &attach, const nl_fptype r_IN, const nl_fptype r_OUT);
 
 		/* register a source */
-		void register_source(plib::unique_ptr<source_t> &&src)
+		void register_source(plib::unique_ptr<plib::psource_t> &&src)
 		{
-			m_sources.push_back(std::move(src));
+			m_sources.add_source(std::move(src));
 		}
 
 		void tt_factory_create(tt_desc &desc, const pstring &sourcefile);
@@ -278,7 +292,12 @@ namespace netlist
 		bool device_exists(const pstring &name) const;
 
 		/* FIXME: used by source_t - need a different approach at some time */
-		bool parse_stream(plib::unique_ptr<plib::pistream> &&istrm, const pstring &name);
+		bool parse_stream(plib::psource_t::stream_ptr &&istrm, const pstring &name);
+
+		void add_include(plib::unique_ptr<plib::psource_t> &&inc)
+		{
+			m_includes.add_source(std::move(inc));
+		}
 
 		void add_define(const pstring &def, const pstring &val)
 		{
@@ -313,7 +332,7 @@ namespace netlist
 		std::vector<link_t>                         m_links;
 		std::unordered_map<pstring, pstring>        m_param_values;
 
-		source_t::list_t                            m_sources;
+		plib::psource_collection_t<>                m_sources;
 
 		factory::list_t                             m_factory;
 
@@ -323,6 +342,7 @@ namespace netlist
 
 	private:
 		plib::ppreprocessor::defines_map_type       m_defines;
+		plib::psource_collection_t<>                m_includes;
 
 		setup_t  &m_setup;
 		log_type &m_log;
@@ -338,7 +358,7 @@ namespace netlist
 	public:
 
 		explicit setup_t(netlist_state_t &nlstate);
-		~setup_t() noexcept;
+		~setup_t() noexcept = default;
 
 		COPYASSIGNMOVE(setup_t, delete)
 
@@ -349,9 +369,9 @@ namespace netlist
 
 		pstring get_initial_param_val(const pstring &name, const pstring &def) const;
 
-		void register_term(detail::core_terminal_t &obj);
+		void register_term(detail::core_terminal_t &term);
 
-		void remove_connections(const pstring &attach);
+		void remove_connections(const pstring &pin);
 
 		bool connect(detail::core_terminal_t &t1, detail::core_terminal_t &t2);
 
@@ -363,7 +383,7 @@ namespace netlist
 		void register_dynamic_log_devices();
 		void resolve_inputs();
 
-		plib::unique_ptr<plib::pistream> get_data_stream(const pstring &name);
+		plib::psource_t::stream_ptr get_data_stream(const pstring &name);
 
 		factory::list_t &factory() { return m_factory; }
 		const factory::list_t &factory() const { return m_factory; }
@@ -380,7 +400,7 @@ namespace netlist
 
 		/* needed by proxy */
 		detail::core_terminal_t *find_terminal(const pstring &outname_in, const detail::terminal_type atype, bool required = true) const;
-		detail::core_terminal_t *find_terminal(const pstring &outname_in, bool required = true) const;
+		detail::core_terminal_t *find_terminal(const pstring &terminal_in, bool required = true) const;
 
 		/* core net handling */
 
@@ -392,13 +412,20 @@ namespace netlist
 
 		/* validation */
 
-		void enable_validation() { m_validation = true; }
-		bool is_validation() const { return m_validation; }
+		/* The extended validation mode is not intended for running.
+		 * The intention is to identify power pins which are not properly
+		 * connected. The downside is that this mode creates a netlist which
+		 * is different (and not able to run).
+		 *
+		 * Extended validation is supported by nltool validate option.
+		 */
+		void set_extended_validation(bool val) { m_validation = val; }
+		bool is_extended_validation() const { return m_validation; }
 	private:
 
 		void merge_nets(detail::net_t &thisnet, detail::net_t &othernet);
 
-		void connect_terminals(detail::core_terminal_t &in, detail::core_terminal_t &out);
+		void connect_terminals(detail::core_terminal_t &t1, detail::core_terminal_t &t2);
 		void connect_input_output(detail::core_terminal_t &in, detail::core_terminal_t &out);
 		void connect_terminal_output(terminal_t &in, detail::core_terminal_t &out);
 		void connect_terminal_input(terminal_t &term, detail::core_terminal_t &inp);
@@ -424,58 +451,58 @@ namespace netlist
 	// base sources
 	// ----------------------------------------------------------------------------------------
 
-	class source_string_t : public source_t
+	class source_string_t : public source_netlist_t
 	{
 	public:
 
-		source_string_t(const pstring &source)
-		: source_t(), m_str(source)
+		explicit source_string_t(const pstring &source)
+		: source_netlist_t(), m_str(source)
 		{
 		}
 
 	protected:
-		plib::unique_ptr<plib::pistream> stream(const pstring &name) override;
+		stream_ptr stream(const pstring &name) override;
 
 	private:
 		pstring m_str;
 	};
 
-	class source_file_t : public source_t
+	class source_file_t : public source_netlist_t
 	{
 	public:
 
-		source_file_t(const pstring &filename)
-		: source_t(), m_filename(filename)
+		explicit source_file_t(const pstring &filename)
+		: source_netlist_t(), m_filename(filename)
 		{
 		}
 
 	protected:
-		plib::unique_ptr<plib::pistream> stream(const pstring &name) override;
+		stream_ptr stream(const pstring &name) override;
 
 	private:
 		pstring m_filename;
 	};
 
-	class source_mem_t : public source_t
+	class source_mem_t : public source_netlist_t
 	{
 	public:
-		source_mem_t(const char *mem)
-		: source_t(), m_str(mem)
+		explicit source_mem_t(const char *mem)
+		: source_netlist_t(), m_str(mem)
 		{
 		}
 
 	protected:
-		plib::unique_ptr<plib::pistream> stream(const pstring &name) override;
+		stream_ptr stream(const pstring &name) override;
 
 	private:
 		pstring m_str;
 	};
 
-	class source_proc_t : public source_t
+	class source_proc_t : public source_netlist_t
 	{
 	public:
 		source_proc_t(const pstring &name, void (*setup_func)(nlparse_t &))
-		: source_t(),
+		: source_netlist_t(),
 			m_setup_func(setup_func),
 			m_setup_func_name(name)
 		{
@@ -484,7 +511,7 @@ namespace netlist
 		bool parse(nlparse_t &setup, const pstring &name) override;
 
 	protected:
-		plib::unique_ptr<plib::pistream> stream(const pstring &name) override;
+		stream_ptr stream(const pstring &name) override;
 
 	private:
 		void (*m_setup_func)(nlparse_t &);

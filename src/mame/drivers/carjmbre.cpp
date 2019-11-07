@@ -49,6 +49,7 @@
 #include "emupal.h"
 #include "screen.h"
 #include "speaker.h"
+#include "tilemap.h"
 
 class carjmbre_state : public driver_device
 {
@@ -168,7 +169,7 @@ TILE_GET_INFO_MEMBER(carjmbre_state::get_tile_info)
 
 void carjmbre_state::video_start()
 {
-	m_tilemap = &machine().tilemap().create(*m_gfxdecode, tilemap_get_info_delegate(FUNC(carjmbre_state::get_tile_info),this), TILEMAP_SCAN_ROWS, 8, 8, 32, 32);
+	m_tilemap = &machine().tilemap().create(*m_gfxdecode, tilemap_get_info_delegate(*this, FUNC(carjmbre_state::get_tile_info)), TILEMAP_SCAN_ROWS, 8, 8, 32, 32);
 	m_tilemap->set_transparent_pen(0);
 }
 

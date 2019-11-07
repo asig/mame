@@ -2639,7 +2639,7 @@ static const c140_device::C140_TYPE c140_bank_type(uint8_t vgm_type)
 	}
 }
 
-QUICKLOAD_LOAD_MEMBER(vgmplay_state, load_file)
+QUICKLOAD_LOAD_MEMBER(vgmplay_state::load_file)
 {
 	m_vgmplay->stop();
 
@@ -3133,7 +3133,7 @@ INPUT_CHANGED_MEMBER(vgmplay_state::key_pressed)
 	if (!newval)
 		return;
 
-	int val = (uint8_t)(uintptr_t)param;
+	int val = (uint8_t)param;
 	switch (val)
 	{
 	case VGMPLAY_STOP:
@@ -3226,11 +3226,11 @@ void vgmplay_state::soundchips_map(address_map &map)
 	map(vgmplay_device::A_MULTIPCM_1 + 4, vgmplay_device::A_MULTIPCM_1 + 7).w("vgmplay", FUNC(vgmplay_device::multipcm_bank_hi_w<1>));
 	map(vgmplay_device::A_MULTIPCM_1 + 8, vgmplay_device::A_MULTIPCM_1 + 11).w("vgmplay", FUNC(vgmplay_device::multipcm_bank_lo_w<1>));
 	map(vgmplay_device::A_UPD7759_0 + 0, vgmplay_device::A_UPD7759_0 + 0).w(FUNC(vgmplay_state::upd7759_reset_w<0>));
-	map(vgmplay_device::A_UPD7759_0 + 1, vgmplay_device::A_UPD7759_0 + 1).lw8("upd7759.0.start", [this](uint8_t data) {m_upd7759[0]->start_w(data != 0); });
+	map(vgmplay_device::A_UPD7759_0 + 1, vgmplay_device::A_UPD7759_0 + 1).lw8(NAME([this](uint8_t data) {m_upd7759[0]->start_w(data != 0); }));
 	map(vgmplay_device::A_UPD7759_0 + 2, vgmplay_device::A_UPD7759_0 + 2).w(FUNC(vgmplay_state::upd7759_data_w<0>));
 	map(vgmplay_device::A_UPD7759_0 + 3, vgmplay_device::A_UPD7759_0 + 3).w("vgmplay", FUNC(vgmplay_device::upd7759_bank_w<0>));
 	map(vgmplay_device::A_UPD7759_1 + 0, vgmplay_device::A_UPD7759_1 + 0).w(FUNC(vgmplay_state::upd7759_reset_w<1>));
-	map(vgmplay_device::A_UPD7759_1 + 1, vgmplay_device::A_UPD7759_1 + 1).lw8("upd7759.1.start", [this](uint8_t data) {m_upd7759[1]->start_w(data != 0); });
+	map(vgmplay_device::A_UPD7759_1 + 1, vgmplay_device::A_UPD7759_1 + 1).lw8(NAME([this](uint8_t data) {m_upd7759[1]->start_w(data != 0); }));
 	map(vgmplay_device::A_UPD7759_1 + 2, vgmplay_device::A_UPD7759_1 + 2).w(FUNC(vgmplay_state::upd7759_data_w<1>));
 	map(vgmplay_device::A_UPD7759_1 + 3, vgmplay_device::A_UPD7759_1 + 3).w("vgmplay", FUNC(vgmplay_device::upd7759_bank_w<1>));
 	map(vgmplay_device::A_OKIM6258_0 + 0x0, vgmplay_device::A_OKIM6258_0 + 0x0).w(m_okim6258[0], FUNC(okim6258_device::ctrl_w));
@@ -3448,14 +3448,16 @@ void vgmplay_state::rf5c164_map(address_map &map)
 	map(0, 0xffff).ram().share("rf5c164_ram");
 }
 
-MACHINE_CONFIG_START(vgmplay_state::vgmplay)
+void vgmplay_state::vgmplay(machine_config &config)
+{
 	VGMPLAY(config, m_vgmplay, 44100);
 	m_vgmplay->set_addrmap(AS_PROGRAM, &vgmplay_state::file_map);
 	m_vgmplay->set_addrmap(AS_IO, &vgmplay_state::soundchips_map);
 	m_vgmplay->set_addrmap(AS_IO16, &vgmplay_state::soundchips16_map);
 
-	MCFG_QUICKLOAD_ADD("quickload", vgmplay_state, load_file, "vgm,vgz")
-	MCFG_QUICKLOAD_INTERFACE("vgm_quik")
+	quickload_image_device &quickload(QUICKLOAD(config, "quickload", "vgm,vgz"));
+	quickload.set_load_callback(FUNC(vgmplay_state::load_file));
+	quickload.set_interface("vgm_quik");
 
 	SOFTWARE_LIST(config, "vgm_list").set_original("vgmplay");
 
@@ -3642,6 +3644,8 @@ MACHINE_CONFIG_START(vgmplay_state::vgmplay)
 
 	/// TODO: rewrite to generate audio without using DAC devices
 	SEGA_32X_NTSC(config, m_sega32x, 0, "sega32x_maincpu", "sega32x_scanline_timer");
+	m_sega32x->add_route(0, "lspeaker", 1.00);
+	m_sega32x->add_route(1, "rspeaker", 1.00);
 
 	auto& sega32x_maincpu(M68000(config, "sega32x_maincpu", 0));
 	sega32x_maincpu.set_disable();
@@ -3878,7 +3882,7 @@ MACHINE_CONFIG_START(vgmplay_state::vgmplay)
 
 	SPEAKER(config, m_lspeaker).front_left();
 	SPEAKER(config, m_rspeaker).front_right();
-MACHINE_CONFIG_END
+}
 
 ROM_START( vgmplay )
 	// TODO: split up 32x to remove dependencies

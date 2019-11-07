@@ -210,6 +210,7 @@ void gaelco2_state::maniacsq_d5002fp(machine_config &config)
 {
 	maniacsq(config);
 	GAELCO_DS5002FP(config, "gaelco_ds5002fp", XTAL(24'000'000) / 2).set_addrmap(0, &gaelco2_state::mcu_hostmem_map); // clock unknown
+	config.set_perfect_quantum("gaelco_ds5002fp:mcu");
 }
 
 
@@ -617,7 +618,7 @@ ROM_END
   SW1 = 4 dipswitches (default all open)
   J6 = 12V out for fan
   J5 = 6 pin connector (unused)
-  MCU-1 = ST62T15C6 labeled as "1"
+  MCU-1 = ST62T15B6-HWD labeled as "1"
 */
 ROM_START( sltpstep )
 	ROM_REGION( 0x040000, "maincpu", 0 )    /* 68000 code */
@@ -632,7 +633,7 @@ ROM_START( sltpstep )
 	ROM_FILL(                              0x0200000, 0x0080000, 0x00 )         /* to decode GFX as 5bpp */
 
 	ROM_REGION( 0x0800, "iomcu", 0 ) // on IO board
-	ROM_LOAD( "cpu_6022-1-st62t15c6.ic4", 0x0000, 0x0800, NO_DUMP ) // 2KBytes internal ROM
+	ROM_LOAD( "cpu_6022-1-st62t15b6.ic4", 0x0000, 0x0800, NO_DUMP ) // 2KBytes internal ROM
 
 	ROM_REGION( 0x0104, "pals", 0 )
 	ROM_LOAD( "6.pal16l8.u12", 0x0000, 0x0104, NO_DUMP )
@@ -686,7 +687,7 @@ void gaelco2_state::play2000_map(address_map &map)
 	map(0x218000, 0x218003).ram();                                                                                         /* Written to, but unused? */
 	map(0x218004, 0x218009).ram().w(FUNC(gaelco2_state::vregs_w)).share("vregs");                                          /* Video Registers */
 	map(0x21800a, 0x218fff).ram();                                                                                         /* Written to, but unused? */
-	// AM_RANGE(0x843100, 0x84315e)  ?
+	// map(0x843100, 0x84315e)  ?
 	map(0xfe0000, 0xfe7fff).ram();                                                                                         /* Work RAM */
 	map(0xfe8000, 0xfeffff).ram().share("shareram");                                                                       /* Work RAM */
 }
@@ -1968,6 +1969,50 @@ ROM_END
                             WORLD RALLY 2
   ============================================================================*/
 
+/***************************************************************************
+
+    World Rally 2 analog controls
+    - added by Mirko Mattioli <els@fastwebnet.it>
+    ---------------------------------------------------------------
+    WR2 pcb has two ADC, one for each player. The ADCs have in common
+    the clock signal line (adc_clk) and the chip enable signal line
+    (adc_cs) and, of course,  two different data out signal lines.
+    When "Pot Wheel" option is selected via dip-switch, then the gear
+    is enabled (low/high shifter); the gear is disabled in joy mode by
+    the CPU program code. No brakes are present in this game.
+    Analog controls routines come from modified code wrote by Aaron
+    Giles for gaelco3d driver.
+
+***************************************************************************/
+
+template <int N>
+READ_LINE_MEMBER(wrally2_state::wrally2_analog_bit_r)
+{
+	return (m_analog_ports[N] >> 7) & 0x01;
+}
+
+
+WRITE_LINE_MEMBER(wrally2_state::wrally2_adc_clk)
+{
+	/* a zero/one combo is written here to clock the next analog port bit */
+	if (!state)
+	{
+		m_analog_ports[0] <<= 1;
+		m_analog_ports[1] <<= 1;
+	}
+}
+
+
+WRITE_LINE_MEMBER(wrally2_state::wrally2_adc_cs)
+{
+	/* a zero is written here to read the analog ports, and a one is written when finished */
+	if (!state)
+	{
+		m_analog_ports[0] = m_analog0->read();
+		m_analog_ports[1] = m_analog1->read();
+	}
+}
+
 void wrally2_state::wrally2_map(address_map &map)
 {
 	map(0x000000, 0x0fffff).rom();                                                                                         /* ROM */
@@ -1994,7 +2039,7 @@ static INPUT_PORTS_START( wrally2 )
 	PORT_BIT( 0x0008, IP_ACTIVE_LOW, IPT_JOYSTICK_LEFT ) PORT_8WAY PORT_PLAYER(1)
 	PORT_BIT( 0x0010, IP_ACTIVE_LOW, IPT_BUTTON1 ) PORT_PLAYER(1) PORT_NAME("P1 Acc.")
 	PORT_BIT( 0x0020, IP_ACTIVE_HIGH, IPT_BUTTON2 ) PORT_PLAYER(1) PORT_NAME("P1 Gear") PORT_TOGGLE
-	PORT_BIT( 0x0040, IP_ACTIVE_HIGH, IPT_CUSTOM) PORT_CUSTOM_MEMBER(DEVICE_SELF, wrally2_state,wrally2_analog_bit_r, (void *)0x00)   /* ADC_1 serial input */
+	PORT_BIT( 0x0040, IP_ACTIVE_HIGH, IPT_CUSTOM) PORT_READ_LINE_MEMBER(wrally2_state, wrally2_analog_bit_r<0>)   /* ADC_1 serial input */
 	PORT_BIT( 0x0080, IP_ACTIVE_LOW, IPT_START1 )
 	PORT_SERVICE_DIPLOC(  0x0100, IP_ACTIVE_LOW, "SW2:1" )
 	PORT_DIPNAME( 0x0200, 0x0000, "Coin mechanism" ) PORT_DIPLOCATION("SW2:2")
@@ -2052,7 +2097,7 @@ static INPUT_PORTS_START( wrally2 )
 	PORT_BIT( 0x0008, IP_ACTIVE_LOW, IPT_JOYSTICK_LEFT ) PORT_8WAY PORT_PLAYER(2)
 	PORT_BIT( 0x0010, IP_ACTIVE_LOW, IPT_BUTTON1 ) PORT_PLAYER(2) PORT_NAME("P2 Acc.")
 	PORT_BIT( 0x0020, IP_ACTIVE_HIGH, IPT_BUTTON2 ) PORT_PLAYER(2) PORT_NAME("P2 Gear") PORT_TOGGLE
-	PORT_BIT( 0x0040, IP_ACTIVE_HIGH, IPT_CUSTOM) PORT_CUSTOM_MEMBER(DEVICE_SELF, wrally2_state,wrally2_analog_bit_r, (void *)0x01)   /* ADC_2 serial input */
+	PORT_BIT( 0x0040, IP_ACTIVE_HIGH, IPT_CUSTOM) PORT_READ_LINE_MEMBER(wrally2_state, wrally2_analog_bit_r<1>)   /* ADC_2 serial input */
 	PORT_BIT( 0x0080, IP_ACTIVE_LOW, IPT_START2 )
 	PORT_BIT( 0x0100, IP_ACTIVE_LOW, IPT_COIN1 )
 	PORT_BIT( 0x0400, IP_ACTIVE_LOW, IPT_COIN2 )

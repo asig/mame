@@ -16,11 +16,11 @@
 ****************************************************************************/
 
 #include "emu.h"
+#include "bus/nscsi/hd.h"
 #include "cpu/i386/i386.h"
 #include "cpu/tms32031/tms32031.h"
 #include "machine/53c7xx.h"
 #include "machine/mc146818.h"
-#include "machine/nscsi_hd.h"
 #include "machine/nvram.h"
 #include "machine/timer.h"
 #include "sound/dac.h"
@@ -186,8 +186,8 @@ void rastersp_state::machine_start()
 		m_tms_tx_timer = machine().scheduler().timer_alloc(timer_expired_delegate(FUNC(rastersp_state::tms_tx_timer), this));
 
 #if USE_SPEEDUP_HACK
-	m_dsp->space(AS_PROGRAM).install_read_handler(0x809923, 0x809923, read32_delegate(FUNC(rastersp_state::dsp_speedup_r), this));
-	m_dsp->space(AS_PROGRAM).install_write_handler(0x809923, 0x809923, write32_delegate(FUNC(rastersp_state::dsp_speedup_w), this));
+	m_dsp->space(AS_PROGRAM).install_read_handler(0x809923, 0x809923, read32_delegate(*this, FUNC(rastersp_state::dsp_speedup_r)));
+	m_dsp->space(AS_PROGRAM).install_write_handler(0x809923, 0x809923, write32_delegate(*this, FUNC(rastersp_state::dsp_speedup_w)));
 #endif
 }
 

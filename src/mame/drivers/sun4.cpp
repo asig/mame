@@ -411,6 +411,8 @@
 
 #include "emu.h"
 
+#include "bus/nscsi/cd.h"
+#include "bus/nscsi/hd.h"
 #include "bus/rs232/rs232.h"
 #include "bus/sunkbd/sunkbd.h"
 #include "bus/sunmouse/sunmouse.h"
@@ -422,8 +424,6 @@
 #include "machine/bankdev.h"
 #include "machine/ncr5390.h"
 #include "machine/nscsi_bus.h"
-#include "machine/nscsi_cd.h"
-#include "machine/nscsi_hd.h"
 #include "machine/nvram.h"
 #include "machine/ram.h"
 #include "machine/sun4c_mmu.h"
@@ -1850,7 +1850,7 @@ void sun4_state::sun4(machine_config &config)
 {
 	/* basic machine hardware */
 	MB86901(config, m_maincpu, 16'670'000);
-		m_maincpu->add_asi_desc([](sparc_disassembler *dasm) { dasm->add_asi_desc(sun4_asi_desc); });
+	m_maincpu->add_asi_desc([](sparc_disassembler *dasm) { dasm->add_asi_desc(sun4_asi_desc); });
 	m_maincpu->set_addrmap(0, &sun4_state::sun4c_debugger_map);
 
 	// TODO: MMU for sun4 hardware
@@ -2007,12 +2007,12 @@ void sun4_state::sun4c(machine_config &config)
 
 	NSCSI_BUS(config, "scsibus");
 	NSCSI_CONNECTOR(config, "scsibus:0", sun_scsi_devices, "harddisk");
-	NSCSI_CONNECTOR(config, "scsibus:1", sun_scsi_devices, "cdrom");
+	NSCSI_CONNECTOR(config, "scsibus:1", sun_scsi_devices, nullptr);
 	NSCSI_CONNECTOR(config, "scsibus:2", sun_scsi_devices, nullptr);
 	NSCSI_CONNECTOR(config, "scsibus:3", sun_scsi_devices, nullptr);
 	NSCSI_CONNECTOR(config, "scsibus:4", sun_scsi_devices, nullptr);
 	NSCSI_CONNECTOR(config, "scsibus:5", sun_scsi_devices, nullptr);
-	NSCSI_CONNECTOR(config, "scsibus:6", sun_scsi_devices, nullptr);
+	NSCSI_CONNECTOR(config, "scsibus:6", sun_scsi_devices, "cdrom");
 	NSCSI_CONNECTOR(config, "scsibus:7", sun_scsi_devices, "ncr53c90a", true).set_option_machine_config("ncr53c90a", [this] (device_t *device) { ncr53c90a(device); });
 
 	// SBus

@@ -66,21 +66,20 @@ using namespace Windows::UI::Popups;
 class winui_output_error : public osd_output
 {
 public:
-	virtual void output_callback(osd_output_channel channel, const char *msg, va_list args) override
+	virtual void output_callback(osd_output_channel channel, const util::format_argument_pack<std::ostream> &args) override
 	{
 		if (channel == OSD_OUTPUT_CHANNEL_ERROR)
 		{
-			char buffer[1024];
-
 			// if we are in fullscreen mode, go to windowed mode
 			if ((video_config.windowed == 0) && !osd_common_t::s_window_list.empty())
 				winwindow_toggle_full_screen();
 
-			vsnprintf(buffer, ARRAY_LENGTH(buffer), msg, args);
-			win_message_box_utf8(!osd_common_t::s_window_list.empty() ? std::static_pointer_cast<win_window_info>(osd_common_t::s_window_list.front())->platform_window() : nullptr, buffer, emulator_info::get_appname(), MB_OK);
+			std::ostringstream buffer;
+			util::stream_format(buffer, args);
+			win_message_box_utf8(!osd_common_t::s_window_list.empty() ? std::static_pointer_cast<win_window_info>(osd_common_t::s_window_list.front())->platform_window() : nullptr, buffer.str().c_str(), emulator_info::get_appname(), MB_OK);
 		}
 		else
-			chain_output(channel, msg, args);
+			chain_output(channel, args);
 	}
 };
 
@@ -165,6 +164,7 @@ const options_entry windows_options::s_option_entries[] =
 	// video options
 	{ nullptr,                                        nullptr,    OPTION_HEADER,     "WINDOWS VIDEO OPTIONS" },
 	{ WINOPTION_MENU,                                 "0",        OPTION_BOOLEAN,    "enables menu bar if available by UI implementation" },
+	{ WINOPTION_ATTACH_WINDOW,                        "",         OPTION_STRING,     "attach to arbitrary window" },
 
 	// post-processing options
 	{ nullptr,                                                  nullptr,             OPTION_HEADER,     "DIRECT3D POST-PROCESSING OPTIONS" },

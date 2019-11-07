@@ -89,7 +89,7 @@ enum
 
 // ======================> device_md_cart_interface
 
-class device_md_cart_interface : public device_slot_card_interface
+class device_md_cart_interface : public device_interface
 {
 	friend class base_md_cart_slot_device;
 public:
@@ -106,8 +106,8 @@ public:
 
 	virtual int read_test() { return 0; }   // used by Virtua Racing test
 
-	/* this probably should do more, like make Genesis V2 'die' if the SEGA string is not written promptly */
-	virtual DECLARE_WRITE16_MEMBER(write_tmss_bank) { m_device.logerror("Write to TMSS bank: offset %x data %x\n", 0xa14000 + (offset << 1), data); };
+	// this probably should do more, like make Genesis V2 'die' if the SEGA string is not written promptly
+	virtual DECLARE_WRITE16_MEMBER(write_tmss_bank) { device().logerror("Write to TMSS bank: offset %x data %x\n", 0xa14000 + (offset << 1), data); };
 
 	virtual void rom_alloc(size_t size, const char *tag);
 	virtual void nvram_alloc(size_t size);
@@ -148,7 +148,7 @@ protected:
 
 class base_md_cart_slot_device : public device_t,
 								public device_image_interface,
-								public device_slot_interface
+								public device_single_card_slot_interface<device_md_cart_interface>
 {
 public:
 	// construction/destruction

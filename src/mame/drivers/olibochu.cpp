@@ -61,6 +61,7 @@ $7004 writes, related to $7000 reads
 #include "emupal.h"
 #include "screen.h"
 #include "speaker.h"
+#include "tilemap.h"
 
 class olibochu_state : public driver_device
 {
@@ -181,7 +182,7 @@ TILE_GET_INFO_MEMBER(olibochu_state::get_bg_tile_info)
 
 void olibochu_state::video_start()
 {
-	m_bg_tilemap = &machine().tilemap().create(*m_gfxdecode, tilemap_get_info_delegate(FUNC(olibochu_state::get_bg_tile_info),this), TILEMAP_SCAN_ROWS, 8, 8, 32, 32);
+	m_bg_tilemap = &machine().tilemap().create(*m_gfxdecode, tilemap_get_info_delegate(*this, FUNC(olibochu_state::get_bg_tile_info)), TILEMAP_SCAN_ROWS, 8, 8, 32, 32);
 }
 
 void olibochu_state::draw_sprites( bitmap_ind16 &bitmap, const rectangle &cliprect )

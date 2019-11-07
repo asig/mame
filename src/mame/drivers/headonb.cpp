@@ -32,6 +32,7 @@ Other outs:
 #include "cpu/i8085/i8085.h"
 #include "emupal.h"
 #include "screen.h"
+#include "tilemap.h"
 
 
 class headonb_state : public driver_device
@@ -80,7 +81,7 @@ TILE_GET_INFO_MEMBER(headonb_state::get_tile_info)
 
 void headonb_state::video_start()
 {
-	m_tilemap = &machine().tilemap().create(*m_gfxdecode, tilemap_get_info_delegate(FUNC(headonb_state::get_tile_info),this), TILEMAP_SCAN_ROWS, 8, 8, 32, 32);
+	m_tilemap = &machine().tilemap().create(*m_gfxdecode, tilemap_get_info_delegate(*this, FUNC(headonb_state::get_tile_info)), TILEMAP_SCAN_ROWS, 8, 8, 32, 32);
 }
 
 uint32_t headonb_state::screen_update(screen_device &screen, bitmap_ind16 &bitmap, const rectangle &cliprect)

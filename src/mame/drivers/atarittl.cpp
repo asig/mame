@@ -348,7 +348,6 @@ void stuntcyc_state::stuntcyc(machine_config &config)
 	/* basic machine hardware */
 	NETLIST_CPU(config, m_maincpu, STUNTCYC_NL_CLOCK).set_source(netlist_stuntcyc);
 
-	//MCFG_NETLIST_ANALOG_OUTPUT("maincpu", "vid0", "VIDEO_OUT", fixedfreq_device, update_vid, "fixfreq")
 	NETLIST_LOGIC_OUTPUT(config, "maincpu:probe_bit0", 0).set_params("probe_bit0", FUNC(stuntcyc_state::probe_bit0_cb));
 	NETLIST_LOGIC_OUTPUT(config, "maincpu:probe_bit1", 0).set_params("probe_bit1", FUNC(stuntcyc_state::probe_bit1_cb));
 	NETLIST_LOGIC_OUTPUT(config, "maincpu:probe_bit2", 0).set_params("probe_bit2", FUNC(stuntcyc_state::probe_bit2_cb));
@@ -375,7 +374,7 @@ void gtrak10_state::gtrak10(machine_config &config)
 	/* basic machine hardware */
 	NETLIST_CPU(config, "maincpu", NETLIST_CLOCK).set_source(netlist_gtrak10);
 
-	NETLIST_ANALOG_OUTPUT(config, "maincpu:vid0", 0).set_params("VIDEO_OUT", FUNC(fixedfreq_device::update_composite_monochrome), "fixfreq");
+	NETLIST_ANALOG_OUTPUT(config, "maincpu:vid0", 0).set_params("VIDEO_OUT", "fixfreq", FUNC(fixedfreq_device::update_composite_monochrome));
 
 	/* video hardware */
 

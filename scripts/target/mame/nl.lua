@@ -57,6 +57,7 @@ SOUNDS["SPEAKER"] = true
 --------------------------------------------------
 
 VIDEOS["FIXFREQ"] = true
+VIDEOS["PWM_DISPLAY"] = true
 
 --------------------------------------------------
 -- specify available machine cores
@@ -108,7 +109,7 @@ function createProjects_mame_nl(_target, _subtarget)
 	kind (LIBTYPE)
 	uuid (os.uuid("drv-mame-nl"))
 	addprojectflags()
-	precompiledheaders()
+	precompiledheaders_novs()
 
 	includedirs {
 		MAME_DIR .. "src/osd",
@@ -125,10 +126,10 @@ function createProjects_mame_nl(_target, _subtarget)
 
 files{
 	MAME_DIR .. "src/mame/drivers/pong.cpp",
-	MAME_DIR .. "src/mame/machine/nl_pong.cpp",
-	MAME_DIR .. "src/mame/machine/nl_pong.h",
-	MAME_DIR .. "src/mame/machine/nl_pongd.cpp",
-	MAME_DIR .. "src/mame/machine/nl_pongd.h",
+	MAME_DIR .. "src/mame/machine/nl_pongf.cpp",
+	MAME_DIR .. "src/mame/machine/nl_pongf.h",
+	MAME_DIR .. "src/mame/machine/nl_pongdoubles.cpp",
+	MAME_DIR .. "src/mame/machine/nl_pongdoubles.h",
 	MAME_DIR .. "src/mame/machine/nl_breakout.cpp",
 	MAME_DIR .. "src/mame/machine/nl_breakout.h",
 	MAME_DIR .. "src/mame/machine/nl_rebound.cpp",
@@ -139,29 +140,31 @@ files{
 	MAME_DIR .. "src/mame/drivers/atarittl.cpp",
 	MAME_DIR .. "src/mame/machine/nl_stuntcyc.cpp",
 	MAME_DIR .. "src/mame/machine/nl_stuntcyc.h",
-  MAME_DIR .. "src/mame/machine/nl_gtrak10.cpp",
-  MAME_DIR .. "src/mame/machine/nl_gtrak10.h",
-
-	MAME_DIR .. "src/mame/drivers/prodigy.cpp",
-	MAME_DIR .. "src/mame/machine/nl_prodigy.cpp",
-	MAME_DIR .. "src/mame/machine/nl_prodigy.h",
+	MAME_DIR .. "src/mame/machine/nl_gtrak10.cpp",
+	MAME_DIR .. "src/mame/machine/nl_gtrak10.h",
 
 	MAME_DIR .. "src/mame/drivers/hazeltin.cpp",
 
 	MAME_DIR .. "src/mame/drivers/1942.cpp",
 	MAME_DIR .. "src/mame/includes/1942.h",
 	MAME_DIR .. "src/mame/video/1942.cpp",
+	MAME_DIR .. "src/mame/audio/nl_1942.cpp",
+  MAME_DIR .. "src/mame/audio/nl_1942.h",
 
-  MAME_DIR .. "src/mame/drivers/gamemachine.cpp",
+	MAME_DIR .. "src/mame/drivers/gamemachine.cpp",
+  MAME_DIR .. "src/mame/audio/nl_gamemachine.h",
+  MAME_DIR .. "src/mame/audio/nl_gamemachine.cpp",
 
 	MAME_DIR .. "src/mame/drivers/popeye.cpp",
 	MAME_DIR .. "src/mame/includes/popeye.h",
 	MAME_DIR .. "src/mame/video/popeye.cpp",
+  MAME_DIR .. "src/mame/audio/nl_popeye.cpp",
+  MAME_DIR .. "src/mame/audio/nl_popeye.h",
 
-  MAME_DIR .. "src/mame/drivers/mario.cpp",
+	MAME_DIR .. "src/mame/drivers/mario.cpp",
 	MAME_DIR .. "src/mame/includes/mario.h",
-  MAME_DIR .. "src/mame/audio/nl_mario.cpp",
-  MAME_DIR .. "src/mame/audio/nl_mario.h",
+	MAME_DIR .. "src/mame/audio/nl_mario.cpp",
+	MAME_DIR .. "src/mame/audio/nl_mario.h",
 	MAME_DIR .. "src/mame/video/mario.cpp",
 	MAME_DIR .. "src/mame/audio/mario.cpp",
 
@@ -173,49 +176,51 @@ files{
 	MAME_DIR .. "src/mame/audio/nl_kidniki.cpp",
 	MAME_DIR .. "src/mame/audio/nl_kidniki.h",
 
-  MAME_DIR .. "src/mame/audio/cheekyms.cpp",
-  MAME_DIR .. "src/mame/audio/cheekyms.h",
-  MAME_DIR .. "src/mame/audio/nl_cheekyms.cpp",
-  MAME_DIR .. "src/mame/audio/nl_cheekyms.h",
-  MAME_DIR .. "src/mame/drivers/cheekyms.cpp",
-  MAME_DIR .. "src/mame/includes/cheekyms.h",
-  MAME_DIR .. "src/mame/video/cheekyms.cpp",
+	MAME_DIR .. "src/mame/audio/cheekyms.cpp",
+	MAME_DIR .. "src/mame/audio/cheekyms.h",
+	MAME_DIR .. "src/mame/audio/nl_cheekyms.cpp",
+	MAME_DIR .. "src/mame/audio/nl_cheekyms.h",
+	MAME_DIR .. "src/mame/drivers/cheekyms.cpp",
+	MAME_DIR .. "src/mame/includes/cheekyms.h",
+	MAME_DIR .. "src/mame/video/cheekyms.cpp",
 
-  MAME_DIR .. "src/mame/audio/nl_zac1b11142.cpp",
-  MAME_DIR .. "src/mame/audio/nl_zacc1b11142.h",
-  MAME_DIR .. "src/mame/audio/zaccaria.cpp",
-  MAME_DIR .. "src/mame/audio/zaccaria.h",
-  MAME_DIR .. "src/mame/drivers/zaccaria.cpp",
-  MAME_DIR .. "src/mame/includes/zaccaria.h",
-  MAME_DIR .. "src/mame/video/zaccaria.cpp",
+	MAME_DIR .. "src/mame/audio/nl_zac1b11142.cpp",
+	MAME_DIR .. "src/mame/audio/nl_zacc1b11142.h",
+	MAME_DIR .. "src/mame/audio/zaccaria.cpp",
+	MAME_DIR .. "src/mame/audio/zaccaria.h",
+	MAME_DIR .. "src/mame/drivers/zaccaria.cpp",
+	MAME_DIR .. "src/mame/includes/zaccaria.h",
+	MAME_DIR .. "src/mame/video/zaccaria.cpp",
 
-  MAME_DIR .. "src/mame/drivers/cocoloco.cpp",
+	MAME_DIR .. "src/mame/drivers/cocoloco.cpp",
+  MAME_DIR .. "src/mame/audio/nl_cocoloco.h",
+  MAME_DIR .. "src/mame/audio/nl_cocoloco.cpp",
 
-  MAME_DIR .. "src/mame/drivers/palestra.cpp",
-  MAME_DIR .. "src/mame/machine/nl_palestra.cpp",
-  MAME_DIR .. "src/mame/machine/nl_palestra.h",
+	MAME_DIR .. "src/mame/drivers/palestra.cpp",
+	MAME_DIR .. "src/mame/machine/nl_palestra.cpp",
+	MAME_DIR .. "src/mame/machine/nl_palestra.h",
 
-  MAME_DIR .. "src/mame/drivers/testpat.cpp",
-  MAME_DIR .. "src/mame/machine/nl_tp1983.cpp",
-  MAME_DIR .. "src/mame/machine/nl_tp1983.h",
-  MAME_DIR .. "src/mame/machine/nl_tp1985.cpp",
-  MAME_DIR .. "src/mame/machine/nl_tp1985.h",
+	MAME_DIR .. "src/mame/drivers/testpat.cpp",
+	MAME_DIR .. "src/mame/machine/nl_tp1983.cpp",
+	MAME_DIR .. "src/mame/machine/nl_tp1983.h",
+	MAME_DIR .. "src/mame/machine/nl_tp1985.cpp",
+	MAME_DIR .. "src/mame/machine/nl_tp1985.h",
 
-  -- Skeletons ...
-  MAME_DIR .. "src/mame/drivers/a1supply.cpp",
-  MAME_DIR .. "src/mame/drivers/aleisttl.cpp",
-  MAME_DIR .. "src/mame/drivers/bailey.cpp",
-  MAME_DIR .. "src/mame/drivers/chicago.cpp",
-  MAME_DIR .. "src/mame/drivers/electra.cpp",
-  MAME_DIR .. "src/mame/drivers/exidyttl.cpp",
-  MAME_DIR .. "src/mame/drivers/fungames.cpp",
-  MAME_DIR .. "src/mame/drivers/meadwttl.cpp",
-  MAME_DIR .. "src/mame/drivers/monacogp.cpp",
-  MAME_DIR .. "src/mame/drivers/pse.cpp",
-  MAME_DIR .. "src/mame/drivers/ramtek.cpp",
-  MAME_DIR .. "src/mame/drivers/segattl.cpp",
-  MAME_DIR .. "src/mame/drivers/taitottl.cpp",
-  MAME_DIR .. "src/mame/drivers/usbilliards.cpp",
+	-- Skeletons ...
+	MAME_DIR .. "src/mame/drivers/a1supply.cpp",
+	MAME_DIR .. "src/mame/drivers/aleisttl.cpp",
+	MAME_DIR .. "src/mame/drivers/bailey.cpp",
+	MAME_DIR .. "src/mame/drivers/chicago.cpp",
+	MAME_DIR .. "src/mame/drivers/electra.cpp",
+	MAME_DIR .. "src/mame/drivers/exidyttl.cpp",
+	MAME_DIR .. "src/mame/drivers/fungames.cpp",
+	MAME_DIR .. "src/mame/drivers/meadwttl.cpp",
+	MAME_DIR .. "src/mame/drivers/monacogp.cpp",
+	MAME_DIR .. "src/mame/drivers/pse.cpp",
+	MAME_DIR .. "src/mame/drivers/ramtek.cpp",
+	MAME_DIR .. "src/mame/drivers/segattl.cpp",
+	MAME_DIR .. "src/mame/drivers/taitottl.cpp",
+	MAME_DIR .. "src/mame/drivers/usbilliards.cpp",
 }
 end
 

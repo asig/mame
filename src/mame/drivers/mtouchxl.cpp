@@ -30,6 +30,8 @@
 //#define REAL_PCI_CHIPSET
 
 #include "emu.h"
+#include "bus/ata/atapicdr.h"
+#include "bus/ata/idehd.h"
 #include "bus/isa/isa_cards.h"
 #include "cpu/i386/i386.h"
 #include "machine/at.h"
@@ -38,8 +40,6 @@
 #include "machine/nvram.h"
 #include "machine/ins8250.h"
 #include "machine/microtch.h"
-#include "machine/atapicdr.h"
-#include "machine/idehd.h"
 #include "machine/bankdev.h"
 #include "machine/intelfsh.h"
 #include "machine/ds128x.h"
@@ -259,7 +259,7 @@ void mtxl_state::at486(machine_config &config)
 	config.device_remove("mb:keybc");
 	config.device_remove("mb:pc_kbdc");
 	kbdc8042_device &kbdc(KBDC8042(config, "kbdc"));
-	kbdc.set_keyboard_type(kbdc8042_device::KBDC8042_AT386);
+	kbdc.set_keyboard_type(kbdc8042_device::KBDC8042_STANDARD);
 	kbdc.system_reset_callback().set_inputline(m_maincpu, INPUT_LINE_RESET);
 	kbdc.gate_a20_callback().set_inputline(m_maincpu, INPUT_LINE_A20);
 	kbdc.input_buffer_full_callback().set("mb:pic8259_master", FUNC(pic8259_device::ir1_w));
@@ -319,7 +319,7 @@ void mtxl_state::at486hd(machine_config &config)
 	config.device_remove("mb:keybc");
 	config.device_remove("mb:pc_kbdc");
 	kbdc8042_device &kbdc(KBDC8042(config, "kbdc"));
-	kbdc.set_keyboard_type(kbdc8042_device::KBDC8042_AT386);
+	kbdc.set_keyboard_type(kbdc8042_device::KBDC8042_STANDARD);
 	kbdc.system_reset_callback().set_inputline(m_maincpu, INPUT_LINE_RESET);
 	kbdc.gate_a20_callback().set_inputline(m_maincpu, INPUT_LINE_A20);
 	kbdc.input_buffer_full_callback().set("mb:pic8259_master", FUNC(pic8259_device::ir1_w));

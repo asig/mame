@@ -100,7 +100,7 @@ public:
 	{
 	}
 
-	DECLARE_CUSTOM_INPUT_MEMBER(igs_hopper_r);
+	DECLARE_READ_LINE_MEMBER(igs_hopper_r);
 
 	void init_lhbv33c();
 	void init_drgnwrldv21j();
@@ -641,7 +641,7 @@ void igs011_state::machine_start()
 // Inputs
 
 
-CUSTOM_INPUT_MEMBER(igs011_state::igs_hopper_r)
+READ_LINE_MEMBER(igs011_state::igs_hopper_r)
 {
 	return (m_igs_hopper && ((m_screen->frame_number()/5)&1)) ? 0x0000 : 0x0001;
 }
@@ -1211,8 +1211,8 @@ void igs011_state::prot_mem_range_set()
 	address_space &sp = m_maincpu->space(AS_PROGRAM);
 
 	// Add protection memory range
-	sp.install_write_handler(m_prot1_addr + 0, m_prot1_addr + 7, write8sm_delegate(FUNC(igs011_state::igs011_prot1_w), this), 0xff00);
-	sp.install_read_handler (m_prot1_addr + 8, m_prot1_addr + 9, read16smo_delegate(FUNC(igs011_state::igs011_prot1_r), this));
+	sp.install_write_handler(m_prot1_addr + 0, m_prot1_addr + 7, write8sm_delegate(*this, FUNC(igs011_state::igs011_prot1_w)), 0xff00);
+	sp.install_read_handler (m_prot1_addr + 8, m_prot1_addr + 9, read16smo_delegate(*this, FUNC(igs011_state::igs011_prot1_r)));
 }
 /*
 READ16_MEMBER(igs011_state::igs011_prot_fake_r)
@@ -2179,7 +2179,7 @@ void igs011_state::init_drgnwrldv21()
 
 	drgnwrld_type2_decrypt();
 	drgnwrld_gfx_decrypt();
-	m_maincpu->space(AS_PROGRAM).install_read_handler(0xd4c0, 0xd4ff, read16smo_delegate(FUNC(igs011_state::drgnwrldv21_igs011_prot2_r), this));
+	m_maincpu->space(AS_PROGRAM).install_read_handler(0xd4c0, 0xd4ff, read16smo_delegate(*this, FUNC(igs011_state::drgnwrldv21_igs011_prot2_r)));
 /*
     // PROTECTION CHECKS
     // bp 32ee; bp 11ca8; bp 23d5e; bp 23fd0; bp 24170; bp 24348; bp 2454e; bp 246cc; bp 24922; bp 24b66; bp 24de2; bp 2502a; bp 25556; bp 269de; bp 2766a; bp 2a830
@@ -2263,7 +2263,7 @@ void igs011_state::init_drgnwrldv40k()
 	drgnwrldv40k_decrypt();
 	drgnwrld_gfx_decrypt();
 
-	m_maincpu->space(AS_PROGRAM).install_read_handler(0xd4c0, 0xd4ff, read16smo_delegate(FUNC(igs011_state::drgnwrldv40k_igs011_prot2_r), this));
+	m_maincpu->space(AS_PROGRAM).install_read_handler(0xd4c0, 0xd4ff, read16smo_delegate(*this, FUNC(igs011_state::drgnwrldv40k_igs011_prot2_r)));
 }
 
 void igs011_state::init_drgnwrldv11h()
@@ -2327,7 +2327,7 @@ void igs011_state::init_dbc()
 
 	dbc_decrypt();
 
-	m_maincpu->space(AS_PROGRAM).install_read_handler(0x10600, 0x107ff, read16smo_delegate(FUNC(igs011_state::dbc_igs011_prot2_r), this));
+	m_maincpu->space(AS_PROGRAM).install_read_handler(0x10600, 0x107ff, read16smo_delegate(*this, FUNC(igs011_state::dbc_igs011_prot2_r)));
 /*
     // PROTECTION CHECKS
     rom[0x04c42/2]  =   0x602e;     // 004C42: 6604         bne 4c48  (rom test error otherwise)
@@ -2357,7 +2357,7 @@ void igs011_state::init_ryukobou()
 
 	ryukobou_decrypt();
 
-	m_maincpu->space(AS_PROGRAM).install_read_handler(0x10600, 0x107ff, read16smo_delegate(FUNC(igs011_state::ryukobou_igs011_prot2_r), this));
+	m_maincpu->space(AS_PROGRAM).install_read_handler(0x10600, 0x107ff, read16smo_delegate(*this, FUNC(igs011_state::ryukobou_igs011_prot2_r)));
 
 	// PROTECTION CHECKS
 //  rom[0x2df68/2]  =   0x4e75;     // 02DF68: 4E56 FE00    link A6, #-$200  (fills palette with pink otherwise)
@@ -3275,7 +3275,7 @@ static INPUT_PORTS_START( lhb2 )
 	PORT_BIT( 0x01, IP_ACTIVE_LOW, IPT_COIN1    )
 	PORT_BIT( 0x02, IP_ACTIVE_LOW, IPT_SERVICE1 )   // data clear
 	PORT_SERVICE_NO_TOGGLE( 0x04, IP_ACTIVE_LOW )   // keep pressed while booting
-	PORT_BIT( 0x08, IP_ACTIVE_HIGH, IPT_CUSTOM ) PORT_CUSTOM_MEMBER(DEVICE_SELF, igs011_state, igs_hopper_r, nullptr) // hopper switch
+	PORT_BIT( 0x08, IP_ACTIVE_HIGH, IPT_CUSTOM ) PORT_READ_LINE_MEMBER(igs011_state, igs_hopper_r) // hopper switch
 	PORT_BIT( 0x10, IP_ACTIVE_LOW, IPT_SERVICE2 )   // stats
 	PORT_BIT( 0x20, IP_ACTIVE_LOW, IPT_OTHER    ) PORT_NAME("Pay Out") PORT_CODE(KEYCODE_O) // clear coin
 	PORT_BIT( 0x40, IP_ACTIVE_LOW, IPT_UNKNOWN  )
@@ -3405,7 +3405,7 @@ static INPUT_PORTS_START( nkishusp )
 	PORT_BIT( 0x01, IP_ACTIVE_LOW, IPT_COIN1    )
 	PORT_BIT( 0x02, IP_ACTIVE_LOW, IPT_SERVICE1 )   // data clear
 	PORT_SERVICE_NO_TOGGLE( 0x04, IP_ACTIVE_LOW )   // keep pressed while booting
-	PORT_BIT( 0x08, IP_ACTIVE_HIGH, IPT_CUSTOM ) PORT_CUSTOM_MEMBER(DEVICE_SELF, igs011_state,igs_hopper_r, nullptr) // hopper switch
+	PORT_BIT( 0x08, IP_ACTIVE_HIGH, IPT_CUSTOM ) PORT_READ_LINE_MEMBER(igs011_state, igs_hopper_r) // hopper switch
 	PORT_BIT( 0x10, IP_ACTIVE_LOW, IPT_SERVICE2 )   // stats
 	PORT_BIT( 0x20, IP_ACTIVE_LOW, IPT_OTHER    ) PORT_NAME("Pay Out") PORT_CODE(KEYCODE_O) // clear coin
 	PORT_BIT( 0x40, IP_ACTIVE_LOW, IPT_UNKNOWN  )
@@ -3534,7 +3534,7 @@ static INPUT_PORTS_START( wlcc )
 	PORT_BIT( 0x10, IP_ACTIVE_LOW,  IPT_SERVICE2  ) // shown in test mode
 	PORT_BIT( 0x20, IP_ACTIVE_LOW,  IPT_UNKNOWN   )
 	PORT_BIT( 0x40, IP_ACTIVE_LOW,  IPT_OTHER     ) PORT_NAME("Pay Out") PORT_CODE(KEYCODE_O)   // clear coin
-	PORT_BIT( 0x80, IP_ACTIVE_HIGH, IPT_CUSTOM   ) PORT_CUSTOM_MEMBER(DEVICE_SELF, igs011_state,igs_hopper_r, nullptr)   // hopper switch
+	PORT_BIT( 0x80, IP_ACTIVE_HIGH, IPT_CUSTOM   ) PORT_READ_LINE_MEMBER(igs011_state, igs_hopper_r)   // hopper switch
 
 	PORT_START("IN0")
 	PORT_BIT( 0x01, IP_ACTIVE_LOW, IPT_START1 )
@@ -3663,7 +3663,7 @@ static INPUT_PORTS_START( lhb )
 	PORT_DIPUNKNOWN( 0x80, 0x80 )
 
 	PORT_START("COIN")
-	PORT_BIT( 0x01, IP_ACTIVE_HIGH, IPT_CUSTOM ) PORT_CUSTOM_MEMBER(DEVICE_SELF, igs011_state,igs_hopper_r, nullptr) // hopper switch
+	PORT_BIT( 0x01, IP_ACTIVE_HIGH, IPT_CUSTOM ) PORT_READ_LINE_MEMBER(igs011_state, igs_hopper_r) // hopper switch
 	PORT_BIT( 0x02, IP_ACTIVE_LOW, IPT_SERVICE2 )   // system reset
 	PORT_SERVICE_NO_TOGGLE( 0x04, IP_ACTIVE_LOW )   // keep pressed while booting
 	PORT_BIT( 0x08, IP_ACTIVE_LOW, IPT_SERVICE1 )   // stats
@@ -3964,7 +3964,7 @@ static INPUT_PORTS_START( xymg )
 	PORT_DIPUNKNOWN( 0x80, 0x80 )
 
 	PORT_START("COIN")
-	PORT_BIT( 0x01, IP_ACTIVE_HIGH, IPT_CUSTOM ) PORT_CUSTOM_MEMBER(DEVICE_SELF, igs011_state,igs_hopper_r, nullptr) // hopper switch
+	PORT_BIT( 0x01, IP_ACTIVE_HIGH, IPT_CUSTOM ) PORT_READ_LINE_MEMBER(igs011_state, igs_hopper_r) // hopper switch
 	PORT_BIT( 0x02, IP_ACTIVE_LOW, IPT_UNKNOWN )
 	PORT_SERVICE_NO_TOGGLE( 0x04, IP_ACTIVE_LOW )   // keep pressed while booting
 	PORT_BIT( 0x08, IP_ACTIVE_LOW, IPT_SERVICE1 )   // stats

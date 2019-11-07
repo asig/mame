@@ -5,8 +5,6 @@
  *
  */
 
-#pragma once
-
 #ifndef PMAIN_H_
 #define PMAIN_H_
 
@@ -16,10 +14,10 @@
 #include "pstring.h"
 #include "putil.h"
 
-#include <cwchar>
 #include <memory>
 
 #ifdef _WIN32
+#include <cwchar>
 #define PMAIN(appclass) \
 extern "C" int wmain(int argc, wchar_t *argv[]) { return plib::app::mainrun<appclass, wchar_t>(argc, argv); }
 #else
@@ -44,9 +42,6 @@ namespace plib {
 
 		virtual pstring usage() = 0;
 		virtual int execute() = 0;
-
-		plib::pstdout pout_strm;
-		plib::pstderr perr_strm;
 
 		plib::putf8_fmt_writer pout;
 		plib::putf8_fmt_writer perr;

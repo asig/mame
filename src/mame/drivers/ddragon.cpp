@@ -332,7 +332,7 @@ WRITE8_MEMBER(ddragon_state::ddragonba_port_w)
  *
  *************************************/
 
-CUSTOM_INPUT_MEMBER(ddragon_state::subcpu_bus_free)
+READ_LINE_MEMBER(ddragon_state::subcpu_bus_free_r)
 {
 	// Corresponds to BA (Bus Available) on the HD63701
 	if (m_subcpu)
@@ -680,7 +680,7 @@ static INPUT_PORTS_START( ddragon )
 	PORT_BIT( 0x02, IP_ACTIVE_LOW, IPT_BUTTON3 )
 	PORT_BIT( 0x04, IP_ACTIVE_LOW, IPT_BUTTON3 ) PORT_PLAYER(2)
 	PORT_BIT( 0x08, IP_ACTIVE_HIGH, IPT_CUSTOM ) PORT_VBLANK("screen")
-	PORT_BIT( 0x10, IP_ACTIVE_LOW, IPT_CUSTOM ) PORT_CUSTOM_MEMBER(DEVICE_SELF, ddragon_state, subcpu_bus_free, nullptr)
+	PORT_BIT( 0x10, IP_ACTIVE_LOW, IPT_CUSTOM ) PORT_READ_LINE_MEMBER(ddragon_state, subcpu_bus_free_r)
 	PORT_BIT( 0xe0, IP_ACTIVE_HIGH, IPT_UNUSED )
 INPUT_PORTS_END
 
@@ -954,7 +954,7 @@ void ddragon_state::ddragon(machine_config &config)
 	MC6809(config, m_soundcpu, MAIN_CLOCK / 2); /* HD68A09P, 6 MHz / 4 internally */
 	m_soundcpu->set_addrmap(AS_PROGRAM, &ddragon_state::sound_map);
 
-	config.m_minimum_quantum = attotime::from_hz(60000); /* heavy interleaving to sync up sprite<->main CPUs */
+	config.set_maximum_quantum(attotime::from_hz(60000)); /* heavy interleaving to sync up sprite<->main CPUs */
 
 	MCFG_MACHINE_START_OVERRIDE(ddragon_state,ddragon)
 	MCFG_MACHINE_RESET_OVERRIDE(ddragon_state,ddragon)
@@ -1025,7 +1025,7 @@ void ddragon_state::ddragon6809(machine_config &config)
 	MC6809E(config, m_soundcpu, MAIN_CLOCK / 8);    /* 1.5 MHz */
 	m_soundcpu->set_addrmap(AS_PROGRAM, &ddragon_state::sound_map);
 
-	config.m_minimum_quantum = attotime::from_hz(60000); /* heavy interleaving to sync up sprite<->main CPUs */
+	config.set_maximum_quantum(attotime::from_hz(60000)); /* heavy interleaving to sync up sprite<->main CPUs */
 
 	MCFG_MACHINE_START_OVERRIDE(ddragon_state,ddragon)
 	MCFG_MACHINE_RESET_OVERRIDE(ddragon_state,ddragon)
@@ -1076,7 +1076,7 @@ void ddragon_state::ddragon2(machine_config &config)
 	Z80(config, m_soundcpu, 3579545);
 	m_soundcpu->set_addrmap(AS_PROGRAM, &ddragon_state::dd2_sound_map);
 
-	config.m_minimum_quantum = attotime::from_hz(60000); /* heavy interleaving to sync up sprite<->main CPUs */
+	config.set_maximum_quantum(attotime::from_hz(60000)); /* heavy interleaving to sync up sprite<->main CPUs */
 
 	MCFG_MACHINE_START_OVERRIDE(ddragon_state,ddragon)
 	MCFG_MACHINE_RESET_OVERRIDE(ddragon_state,ddragon)

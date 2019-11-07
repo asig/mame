@@ -200,7 +200,7 @@ uint8_t calchase_state::mtxc_config_r(int function, int reg)
 
 void calchase_state::mtxc_config_w(int function, int reg, uint8_t data)
 {
-//  osd_printf_debug("%s:MTXC: write %d, %02X, %02X\n", machine().describe_context().c_str(), function, reg, data);
+//  osd_printf_debug("%s:MTXC: write %d, %02X, %02X\n", machine().describe_context(), function, reg, data);
 
 	/*
 	memory banking with North Bridge:
@@ -294,7 +294,7 @@ uint8_t calchase_state::piix4_config_r(int function, int reg)
 
 void calchase_state::piix4_config_w(int function, int reg, uint8_t data)
 {
-//  osd_printf_debug("%s:PIIX4: write %d, %02X, %02X\n", machine().describe_context().c_str(), function, reg, data);
+//  osd_printf_debug("%s:PIIX4: write %d, %02X, %02X\n", machine().describe_context(), function, reg, data);
 	m_piix4_config_reg[function][reg] = data;
 }
 
@@ -429,7 +429,7 @@ void calchase_state::calchase_io(address_map &map)
 	map(0x01f0, 0x01f7).rw("ide", FUNC(ide_controller_32_device::cs0_r), FUNC(ide_controller_32_device::cs0_w));
 	map(0x0200, 0x021f).noprw(); //To debug
 	map(0x0260, 0x026f).noprw(); //To debug
-	map(0x0278, 0x027b).nopw();//AM_WRITE(pnp_config_w)
+	map(0x0278, 0x027b).nopw();//.w(FUNC(calchase_state::pnp_config_w));
 	map(0x0280, 0x0287).noprw(); //To debug
 	map(0x02a0, 0x02a7).noprw(); //To debug
 	map(0x02c0, 0x02c7).noprw(); //To debug
@@ -446,7 +446,7 @@ void calchase_state::calchase_io(address_map &map)
 	// map(0x03b0, 0x03df).noprw();
 	map(0x03f0, 0x03f7).rw("ide", FUNC(ide_controller_32_device::cs1_r), FUNC(ide_controller_32_device::cs1_w));
 	map(0x03f8, 0x03ff).noprw(); // To debug Serial Port COM1:
-	map(0x0a78, 0x0a7b).nopw();//AM_WRITE(pnp_data_w)
+	map(0x0a78, 0x0a7b).nopw();//.w(FUNC(calchase_state::pnp_data_w));
 	map(0x0cf8, 0x0cff).rw("pcibus", FUNC(pci_bus_legacy_device::read), FUNC(pci_bus_legacy_device::write));
 	map(0x42e8, 0x43ef).noprw(); //To debug
 	map(0x43c4, 0x43cb).rw("vga", FUNC(trident_vga_device::port_43c6_r), FUNC(trident_vga_device::port_43c6_w));  // Trident Memory and Video Clock register
@@ -677,7 +677,8 @@ void calchase_state::machine_reset()
 	membank("bios_ext")->set_base(memregion("bios")->base() + 0);
 }
 
-MACHINE_CONFIG_START(calchase_state::calchase)
+void calchase_state::calchase(machine_config &config)
+{
 	PENTIUM(config, m_maincpu, 133000000); // Cyrix 686MX-PR200 CPU
 	m_maincpu->set_addrmap(AS_PROGRAM, &calchase_state::calchase_map);
 	m_maincpu->set_addrmap(AS_IO, &calchase_state::calchase_io);
@@ -688,9 +689,9 @@ MACHINE_CONFIG_START(calchase_state::calchase)
 	ide_controller_32_device &ide(IDE_CONTROLLER_32(config, "ide").options(ata_devices, "hdd", nullptr, true));
 	ide.irq_handler().set("pic8259_2", FUNC(pic8259_device::ir6_w));
 
-	MCFG_PCI_BUS_LEGACY_ADD("pcibus", 0)
-	MCFG_PCI_BUS_LEGACY_DEVICE(0, DEVICE_SELF, calchase_state, intel82439tx_pci_r, intel82439tx_pci_w)
-	MCFG_PCI_BUS_LEGACY_DEVICE(7, DEVICE_SELF, calchase_state, intel82371ab_pci_r, intel82371ab_pci_w)
+	pci_bus_legacy_device &pcibus(PCI_BUS_LEGACY(config, "pcibus", 0, 0));
+	pcibus.set_device(0, FUNC(calchase_state::intel82439tx_pci_r), FUNC(calchase_state::intel82439tx_pci_w));
+	pcibus.set_device(7, FUNC(calchase_state::intel82371ab_pci_r), FUNC(calchase_state::intel82371ab_pci_w));
 
 	/* video hardware */
 	pcvideo_trident_vga(config);
@@ -707,9 +708,10 @@ MACHINE_CONFIG_START(calchase_state::calchase)
 	voltage_regulator_device &vref(VOLTAGE_REGULATOR(config, "vref"));
 	vref.add_route(0, "ldac", 1.0, DAC_VREF_POS_INPUT); vref.add_route(0, "ldac", -1.0, DAC_VREF_NEG_INPUT);
 	vref.add_route(0, "rdac", 1.0, DAC_VREF_POS_INPUT); vref.add_route(0, "rdac", -1.0, DAC_VREF_NEG_INPUT);
-MACHINE_CONFIG_END
+}
 
-MACHINE_CONFIG_START(calchase_state::hostinv)
+void calchase_state::hostinv(machine_config &config)
+{
 	PENTIUM(config, m_maincpu, 133000000); // Cyrix 686MX-PR200 CPU
 	m_maincpu->set_addrmap(AS_PROGRAM, &calchase_state::calchase_map);
 	m_maincpu->set_addrmap(AS_IO, &calchase_state::calchase_io);
@@ -720,9 +722,9 @@ MACHINE_CONFIG_START(calchase_state::hostinv)
 	ide_controller_32_device &ide(IDE_CONTROLLER_32(config, "ide").options(ata_devices, "cdrom", nullptr, true));
 	ide.irq_handler().set("pic8259_2", FUNC(pic8259_device::ir6_w));
 
-	MCFG_PCI_BUS_LEGACY_ADD("pcibus", 0)
-	MCFG_PCI_BUS_LEGACY_DEVICE(0, DEVICE_SELF, calchase_state, intel82439tx_pci_r, intel82439tx_pci_w)
-	MCFG_PCI_BUS_LEGACY_DEVICE(7, DEVICE_SELF, calchase_state, intel82371ab_pci_r, intel82371ab_pci_w)
+	pci_bus_legacy_device &pcibus(PCI_BUS_LEGACY(config, "pcibus", 0, 0));
+	pcibus.set_device(0, FUNC(calchase_state::intel82439tx_pci_r), FUNC(calchase_state::intel82439tx_pci_w));
+	pcibus.set_device(7, FUNC(calchase_state::intel82371ab_pci_r), FUNC(calchase_state::intel82371ab_pci_w));
 
 	/* video hardware */
 	pcvideo_trident_vga(config);
@@ -735,7 +737,7 @@ MACHINE_CONFIG_START(calchase_state::hostinv)
 	voltage_regulator_device &vref(VOLTAGE_REGULATOR(config, "vref"));
 	vref.add_route(0, "ldac", 1.0, DAC_VREF_POS_INPUT); vref.add_route(0, "ldac", -1.0, DAC_VREF_NEG_INPUT);
 	vref.add_route(0, "rdac", 1.0, DAC_VREF_POS_INPUT); vref.add_route(0, "rdac", -1.0, DAC_VREF_NEG_INPUT);
-MACHINE_CONFIG_END
+}
 
 
 READ32_MEMBER(calchase_state::calchase_idle_skip_r)
@@ -757,7 +759,7 @@ void calchase_state::init_calchase()
 
 	intel82439tx_init();
 
-	m_maincpu->space(AS_PROGRAM).install_readwrite_handler(0x3f0b160, 0x3f0b163, read32_delegate(FUNC(calchase_state::calchase_idle_skip_r),this), write32_delegate(FUNC(calchase_state::calchase_idle_skip_w),this));
+	m_maincpu->space(AS_PROGRAM).install_readwrite_handler(0x3f0b160, 0x3f0b163, read32_delegate(*this, FUNC(calchase_state::calchase_idle_skip_r)), write32_delegate(*this, FUNC(calchase_state::calchase_idle_skip_w)));
 }
 
 void calchase_state::init_hostinv()

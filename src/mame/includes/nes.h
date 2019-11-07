@@ -60,8 +60,8 @@ public:
 	{ }
 
 	required_device<cpu_device> m_maincpu;
-	required_device<nes_control_port_device> m_ctrl1;
-	required_device<nes_control_port_device> m_ctrl2;
+	optional_device<nes_control_port_device> m_ctrl1;
+	optional_device<nes_control_port_device> m_ctrl2;
 
 	DECLARE_READ8_MEMBER(nes_in0_r);
 	DECLARE_READ8_MEMBER(nes_in1_r);
@@ -93,6 +93,7 @@ public:
 	virtual void video_start() override;
 	virtual void video_reset() override;
 	uint32_t screen_update_nes(screen_device &screen, bitmap_rgb32 &bitmap, const rectangle &cliprect);
+	void screen_vblank_nes(int state);
 
 	void init_famicom();
 

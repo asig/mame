@@ -255,7 +255,7 @@ protected:
 	DECLARE_READ_LINE_MEMBER( ef3_r );
 	DECLARE_READ_LINE_MEMBER( ef4_r );
 	DECLARE_WRITE_LINE_MEMBER( q_w );
-	DECLARE_DEVICE_IMAGE_LOAD_MEMBER( studio2_cart_load );
+	DECLARE_DEVICE_IMAGE_LOAD_MEMBER( cart_load );
 
 	/* keyboard state */
 	uint8_t m_keylatch;
@@ -530,9 +530,9 @@ void studio2_state::machine_start()
 	if (m_cart->exists())
 	{
 		// these have to be installed only if a cart is present, because they partially overlap the built-in game
-		m_maincpu->space(AS_PROGRAM).install_read_handler(0x0400, 0x07ff, read8_delegate(FUNC(studio2_state::cart_400), this));
-		m_maincpu->space(AS_PROGRAM).install_read_handler(0x0a00, 0x0bff, read8_delegate(FUNC(studio2_state::cart_a00), this));
-		m_maincpu->space(AS_PROGRAM).install_read_handler(0x0e00, 0x0fff, read8_delegate(FUNC(studio2_state::cart_e00), this));
+		m_maincpu->space(AS_PROGRAM).install_read_handler(0x0400, 0x07ff, read8_delegate(*this, FUNC(studio2_state::cart_400)));
+		m_maincpu->space(AS_PROGRAM).install_read_handler(0x0a00, 0x0bff, read8_delegate(*this, FUNC(studio2_state::cart_a00)));
+		m_maincpu->space(AS_PROGRAM).install_read_handler(0x0e00, 0x0fff, read8_delegate(*this, FUNC(studio2_state::cart_e00)));
 	}
 
 	// register for state saving
@@ -544,8 +544,8 @@ void mpt02_state::machine_start()
 	if (m_cart->exists())
 	{
 		// these have to be installed only if a cart is present, because they partially overlap the built-in game
-		m_maincpu->space(AS_PROGRAM).install_read_handler(0x0400, 0x07ff, read8_delegate(FUNC(studio2_state::cart_400), this));
-		m_maincpu->space(AS_PROGRAM).install_read_handler(0x0c00, 0x0fff, read8_delegate(FUNC(mpt02_state::cart_c00), this));
+		m_maincpu->space(AS_PROGRAM).install_read_handler(0x0400, 0x07ff, read8_delegate(*this, FUNC(studio2_state::cart_400)));
+		m_maincpu->space(AS_PROGRAM).install_read_handler(0x0c00, 0x0fff, read8_delegate(*this, FUNC(mpt02_state::cart_c00)));
 	}
 
 	// register for state saving
@@ -562,7 +562,7 @@ void mpt02_state::machine_reset()
 	m_cti->reset();
 }
 
-DEVICE_IMAGE_LOAD_MEMBER( studio2_state, studio2_cart_load )
+DEVICE_IMAGE_LOAD_MEMBER( studio2_state::cart_load )
 {
 	uint32_t size;
 
@@ -645,14 +645,13 @@ DEVICE_IMAGE_LOAD_MEMBER( studio2_state, studio2_cart_load )
 
 /* Machine Drivers */
 
-MACHINE_CONFIG_START(studio2_state::studio2_cartslot)
-	MCFG_GENERIC_CARTSLOT_ADD("cartslot", generic_plain_slot, "studio2_cart")
-	MCFG_GENERIC_EXTENSIONS("st2,bin,rom")
-	MCFG_GENERIC_LOAD(studio2_state, studio2_cart_load)
+void studio2_state::studio2_cartslot(machine_config &config)
+{
+	GENERIC_CARTSLOT(config, "cartslot", generic_plain_slot, "studio2_cart", "st2,bin,rom").set_device_load(FUNC(studio2_state::cart_load));
 
 	/* software lists */
 	SOFTWARE_LIST(config, "cart_list").set_original("studio2");
-MACHINE_CONFIG_END
+}
 
 void studio2_state::studio2(machine_config &config)
 {

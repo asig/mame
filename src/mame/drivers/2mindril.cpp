@@ -143,7 +143,7 @@ void _2mindril_state::device_timer(emu_timer &timer, device_timer_id id, int par
 			m_defender_sensor = param;
 			break;
 	default:
-			assert_always(false, "Unknown id in _2mindril_state::device_timer");
+			throw emu_fatalerror("Unknown id in _2mindril_state::device_timer");
 	}
 }
 #endif
@@ -355,7 +355,6 @@ void _2mindril_state::drill(machine_config &config)
 	M68000(config, m_maincpu, 16000000);
 	m_maincpu->set_addrmap(AS_PROGRAM, &_2mindril_state::drill_map);
 	m_maincpu->set_vblank_int("screen", FUNC(_2mindril_state::vblank_irq));
-	//MCFG_DEVICE_PERIODIC_INT_DRIVER(_2mindril_state, drill_device_irq, 60)
 	GFXDECODE(config, m_gfxdecode, m_palette, gfx_2mindril);
 
 	tc0510nio_device &tc0510nio(TC0510NIO(config, "tc0510nio", 0));

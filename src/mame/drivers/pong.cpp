@@ -59,9 +59,9 @@ TODO: Volleyball...
 #include "netlist/devices/net_lib.h"
 
 #include "machine/nl_breakout.h"
-#include "machine/nl_pong.h"
-#include "machine/nl_pongd.h"
 #include "machine/nl_rebound.h"
+#include "machine/nl_pongf.h"
+#include "machine/nl_pongdoubles.h"
 
 #include "screen.h"
 #include "speaker.h"
@@ -299,17 +299,6 @@ public:
 
 	void rebound(machine_config &config);
 
-	NETLIST_START(rebound)
-
-		//MEMREGION_SOURCE("maincpu")
-		LOCAL_SOURCE(rebound_schematics)
-		PARAM(NETLIST.USE_DEACTIVATE, 1)
-		//FIXME: unknown name causes segmentation fault
-		//INCLUDE(rebound)
-		INCLUDE(rebound_schematics)
-
-	NETLIST_END()
-
 protected:
 
 	// driver_device overrides
@@ -324,7 +313,7 @@ private:
 
 INPUT_CHANGED_MEMBER(pong_state::input_changed)
 {
-	int numpad = uintptr_t(param);
+	int numpad = param;
 
 	switch (numpad)
 	{
@@ -337,7 +326,7 @@ INPUT_CHANGED_MEMBER(pong_state::input_changed)
 
 INPUT_CHANGED_MEMBER(rebound_state::input_changed)
 {
-	int numpad = uintptr_t(param);
+	int numpad = param;
 
 	switch (numpad)
 	{
@@ -470,10 +459,6 @@ INPUT_PORTS_END
 void pong_state::pong(machine_config &config)
 {
 	/* basic machine hardware */
-	//MCFG_DEVICE_ADD("maincpu", NETLIST_CPU, NETLIST_CLOCK)
-	//MCFG_NETLIST_SETUP(pong)
-	//MCFG_NETLIST_SETUP_MEMBER(this, &pong_state::NETLIST_NAME(pong))
-
 	NETLIST_CPU(config, "maincpu", NETLIST_CLOCK).set_source(this, &pong_state::NETLIST_NAME(pong));
 
 	NETLIST_ANALOG_INPUT(config, "maincpu:vr0", "ic_b9_R.R").set_mult_offset(1.0 / 100.0 * RES_K(50), RES_K(56) );
@@ -485,8 +470,8 @@ void pong_state::pong(machine_config &config)
 	NETLIST_LOGIC_INPUT(config, "maincpu:coinsw", "coinsw.POS", 0);
 	NETLIST_LOGIC_INPUT(config, "maincpu:antenna", "antenna.IN", 0);
 
-	NETLIST_ANALOG_OUTPUT(config, "maincpu:snd0", 0).set_params("sound", FUNC(pong_state::sound_cb), "");
-	NETLIST_ANALOG_OUTPUT(config, "maincpu:vid0", 0).set_params("videomix", FUNC(fixedfreq_device::update_composite_monochrome), "fixfreq");
+	NETLIST_ANALOG_OUTPUT(config, "maincpu:snd0", 0).set_params("sound", FUNC(pong_state::sound_cb));
+	NETLIST_ANALOG_OUTPUT(config, "maincpu:vid0", 0).set_params("videomix", "fixfreq", FUNC(fixedfreq_device::update_composite_monochrome));
 
 	/* video hardware */
 	SCREEN(config, "screen", SCREEN_TYPE_RASTER);
@@ -529,15 +514,15 @@ void breakout_state::breakout(machine_config &config)
 
 	NETLIST_LOGIC_INPUT(config, "maincpu:antenna", "antenna.IN", 0);
 
-	NETLIST_ANALOG_OUTPUT(config, "maincpu:snd0", 0).set_params("sound", FUNC(breakout_state::sound_cb), "");
-	NETLIST_ANALOG_OUTPUT(config, "maincpu:vid0", 0).set_params("videomix", FUNC(fixedfreq_device::update_composite_monochrome), "fixfreq");
+	NETLIST_ANALOG_OUTPUT(config, "maincpu:snd0", 0).set_params("sound", FUNC(breakout_state::sound_cb));
+	NETLIST_ANALOG_OUTPUT(config, "maincpu:vid0", 0).set_params("videomix", "fixfreq", FUNC(fixedfreq_device::update_composite_monochrome));
 
 	// Leds and lamps
 
-	NETLIST_ANALOG_OUTPUT(config, "maincpu:led_serve", 0).set_params("CON_P", FUNC(breakout_state::serve_cb), "");
-	NETLIST_ANALOG_OUTPUT(config, "maincpu:lamp_credit1", 0).set_params("CON_CREDIT1", FUNC(breakout_state::credit1_cb), "");
-	NETLIST_ANALOG_OUTPUT(config, "maincpu:lamp_credit2", 0).set_params("CON_CREDIT2", FUNC(breakout_state::credit2_cb), "");
-	NETLIST_ANALOG_OUTPUT(config, "maincpu:coin_counter", 0).set_params("CON_T", FUNC(breakout_state::coin_counter_cb), "");
+	NETLIST_ANALOG_OUTPUT(config, "maincpu:led_serve", 0).set_params("CON_P", FUNC(breakout_state::serve_cb));
+	NETLIST_ANALOG_OUTPUT(config, "maincpu:lamp_credit1", 0).set_params("CON_CREDIT1", FUNC(breakout_state::credit1_cb));
+	NETLIST_ANALOG_OUTPUT(config, "maincpu:lamp_credit2", 0).set_params("CON_CREDIT2", FUNC(breakout_state::credit2_cb));
+	NETLIST_ANALOG_OUTPUT(config, "maincpu:coin_counter", 0).set_params("CON_T", FUNC(breakout_state::coin_counter_cb));
 
 	/* video hardware */
 	SCREEN(config, "screen", SCREEN_TYPE_RASTER);
@@ -567,7 +552,7 @@ void pong_state::pongf(machine_config &config)
 
 	/* basic machine hardware */
 
-	subdevice<netlist_mame_device>("maincpu")->set_setup_func(NETLIST_NAME(pong_fast));
+	subdevice<netlist_mame_device>("maincpu")->set_setup_func(NETLIST_NAME(pongf));
 }
 
 void pong_state::pongd(machine_config &config)
@@ -588,8 +573,8 @@ void pong_state::pongd(machine_config &config)
 	NETLIST_LOGIC_INPUT(config, "maincpu:antenna", "antenna.IN", 0, 0x01)
 #endif
 
-	NETLIST_ANALOG_OUTPUT(config, "maincpu:snd0", 0).set_params("AUDIO", FUNC(pong_state::sound_cb), "");
-	NETLIST_ANALOG_OUTPUT(config, "maincpu:vid0", 0).set_params("videomix", FUNC(fixedfreq_device::update_composite_monochrome), "fixfreq");
+	NETLIST_ANALOG_OUTPUT(config, "maincpu:snd0", 0).set_params("AUDIO", FUNC(pong_state::sound_cb));
+	NETLIST_ANALOG_OUTPUT(config, "maincpu:vid0", 0).set_params("videomix", "fixfreq", FUNC(fixedfreq_device::update_composite_monochrome));
 
 	/* video hardware */
 	SCREEN(config, "screen", SCREEN_TYPE_RASTER);
@@ -611,7 +596,7 @@ void pong_state::pongd(machine_config &config)
 void rebound_state::rebound(machine_config &config)
 {
 	/* basic machine hardware */
-	NETLIST_CPU(config, "maincpu", NETLIST_CLOCK).set_source(NETLIST_NAME(rebound_schematics));
+	NETLIST_CPU(config, "maincpu", NETLIST_CLOCK).set_source(NETLIST_NAME(rebound));
 
 	// FIXME: Later
 	NETLIST_ANALOG_INPUT(config, "maincpu:pot1", "POTP1.DIAL");
@@ -624,11 +609,11 @@ void rebound_state::rebound(machine_config &config)
 	NETLIST_LOGIC_INPUT(config, "maincpu:dsw1b", "DSW1b.POS", 0);
 	NETLIST_LOGIC_INPUT(config, "maincpu:dsw2", "DSW2.POS", 0);
 
-	NETLIST_ANALOG_OUTPUT(config, "maincpu:snd0", 0).set_params("sound", FUNC(rebound_state::sound_cb), "");
-	NETLIST_ANALOG_OUTPUT(config, "maincpu:vid0", 0).set_params("videomix", FUNC(fixedfreq_device::update_composite_monochrome), "fixfreq");
+	NETLIST_ANALOG_OUTPUT(config, "maincpu:snd0", 0).set_params("sound", FUNC(rebound_state::sound_cb));
+	NETLIST_ANALOG_OUTPUT(config, "maincpu:vid0", 0).set_params("videomix", "fixfreq", FUNC(fixedfreq_device::update_composite_monochrome));
 
-	NETLIST_ANALOG_OUTPUT(config, "maincpu:led_credit", 0).set_params("CON11", FUNC(rebound_state::led_credit_cb), "");
-	NETLIST_ANALOG_OUTPUT(config, "maincpu:coin_counter", 0).set_params("CON10", FUNC(rebound_state::coin_counter_cb), "");
+	NETLIST_ANALOG_OUTPUT(config, "maincpu:led_credit", 0).set_params("CON11", FUNC(rebound_state::led_credit_cb));
+	NETLIST_ANALOG_OUTPUT(config, "maincpu:coin_counter", 0).set_params("CON10", FUNC(rebound_state::coin_counter_cb));
 
 	/* video hardware */
 	SCREEN(config, "screen", SCREEN_TYPE_RASTER);

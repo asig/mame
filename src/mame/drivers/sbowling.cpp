@@ -49,6 +49,7 @@ PROMs : NEC B406 (1kx4) x2
 #include "emupal.h"
 #include "screen.h"
 #include "speaker.h"
+#include "tilemap.h"
 
 
 class sbowling_state : public driver_device
@@ -152,7 +153,7 @@ uint32_t sbowling_state::screen_update(screen_device &screen, bitmap_ind16 &bitm
 void sbowling_state::video_start()
 {
 	m_tmpbitmap = std::make_unique<bitmap_ind16>(32*8,32*8);
-	m_tilemap = &machine().tilemap().create(*m_gfxdecode, tilemap_get_info_delegate(FUNC(sbowling_state::get_tile_info),this), TILEMAP_SCAN_ROWS, 8, 8, 32, 32);
+	m_tilemap = &machine().tilemap().create(*m_gfxdecode, tilemap_get_info_delegate(*this, FUNC(sbowling_state::get_tile_info)), TILEMAP_SCAN_ROWS, 8, 8, 32, 32);
 
 	save_item(NAME(m_bgmap));
 	save_item(NAME(m_system));

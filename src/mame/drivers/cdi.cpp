@@ -48,8 +48,9 @@ TODO:
 
 #define LOG_SERVO       (1 << 0)
 #define LOG_SLAVE       (1 << 1)
+#define LOG_ALL         (LOG_SERVO | LOG_SLAVE)
 
-#define VERBOSE         (0)
+#define VERBOSE         (LOG_ALL)
 #include "logmacro.h"
 
 #define ENABLE_UART_PRINTING (0)
@@ -84,16 +85,16 @@ void cdi_state::cdimono2_mem(address_map &map)
 #if ENABLE_UART_PRINTING
 	map(0x00301400, 0x00301403).r(m_maincpu, FUNC(scc68070_device::uart_loopback_enable));
 #endif
-	//AM_RANGE(0x00300000, 0x00303bff) AM_DEVREADWRITE("cdic", cdicdic_device, ram_r, ram_w)
-	//AM_RANGE(0x00303c00, 0x00303fff) AM_DEVREADWRITE("cdic", cdicdic_device, regs_r, regs_w)
-	//AM_RANGE(0x00310000, 0x00317fff) AM_DEVREADWRITE("slave", cdislave_device, slave_r, slave_w)
-	//AM_RANGE(0x00318000, 0x0031ffff) AM_NOP
+	//map(0x00300000, 0x00303bff).rw("cdic", FUNC(cdicdic_device::ram_r), FUNC(cdicdic_device::ram_w));
+	//map(0x00303c00, 0x00303fff).rw("cdic", FUNC(cdicdic_device::regs_r), FUNC(cdicdic_device::regs_w));
+	//map(0x00310000, 0x00317fff).rw("slave", FUNC(cdislave_device::slave_r), FUNC(cdicdic_device::slave_w));
+	//map(0x00318000, 0x0031ffff).noprw();
 	map(0x00320000, 0x00323fff).rw("mk48t08", FUNC(timekeeper_device::read), FUNC(timekeeper_device::write)).umask16(0xff00);    /* nvram (only low bytes used) */
 	map(0x00400000, 0x0047ffff).rom().region("maincpu", 0);
 	map(0x004fffe0, 0x004fffff).rw(m_mcd212, FUNC(mcd212_device::regs_r), FUNC(mcd212_device::regs_w));
-	//AM_RANGE(0x00500000, 0x0057ffff) AM_RAM
+	//map(0x00500000, 0x0057ffff).ram();
 	map(0x00500000, 0x00ffffff).noprw();
-	//AM_RANGE(0x00e00000, 0x00efffff) AM_RAM // DVC
+	//map(0x00e00000, 0x00efffff).ram(); // DVC
 }
 
 void cdi_state::cdi910_mem(address_map &map)
@@ -105,30 +106,15 @@ void cdi_state::cdi910_mem(address_map &map)
 #if ENABLE_UART_PRINTING
 	map(0x00301400, 0x00301403).r(m_maincpu, FUNC(scc68070_device::uart_loopback_enable));
 #endif
-//  AM_RANGE(0x00300000, 0x00303bff) AM_DEVREADWRITE("cdic", cdicdic_device, ram_r, ram_w)
-//  AM_RANGE(0x00303c00, 0x00303fff) AM_DEVREADWRITE("cdic", cdicdic_device, regs_r, regs_w)
-//  AM_RANGE(0x00310000, 0x00317fff) AM_DEVREADWRITE("slave_hle", cdislave_device, slave_r, slave_w)
-//  AM_RANGE(0x00318000, 0x0031ffff) AM_NOP
+//  map(0x00300000, 0x00303bff).rw("cdic", FUNC(cdicdic_device::ram_r), FUNC(cdicdic_device::ram_w));
+//  map(0x00303c00, 0x00303fff).rw("cdic", FUNC(cdicdic_device::regs_r), FUNC(cdicdic_device::regs_w));
+//  map(0x00310000, 0x00317fff).rw("slave_hle", FUNC(cdislave_device::slave_r), FUNC(cdicdic_device::slave_w));
+//  map(0x00318000, 0x0031ffff).noprw();
 	map(0x00320000, 0x00323fff).rw("mk48t08", FUNC(timekeeper_device::read), FUNC(timekeeper_device::write)).umask16(0xff00);    /* nvram (only low bytes used) */
 	map(0x004fffe0, 0x004fffff).rw(m_mcd212, FUNC(mcd212_device::regs_r), FUNC(mcd212_device::regs_w));
-//  AM_RANGE(0x00500000, 0x0057ffff) AM_RAM
+//  map(0x00500000, 0x0057ffff).ram();
 	map(0x00500000, 0x00ffffff).noprw();
-//  AM_RANGE(0x00e00000, 0x00efffff) AM_RAM // DVC
-}
-
-
-void cdi_state::cdimono2_servo_mem(address_map &map)
-{
-	map(0x0000, 0x001f).rw(FUNC(cdi_state::servo_io_r), FUNC(cdi_state::servo_io_w));
-	map(0x0050, 0x00ff).ram();
-	map(0x0100, 0x1fff).rom().region("servo", 0x100);
-}
-
-void cdi_state::cdimono2_slave_mem(address_map &map)
-{
-	map(0x0000, 0x001f).rw(FUNC(cdi_state::slave_io_r), FUNC(cdi_state::slave_io_w));
-	map(0x0050, 0x00ff).ram();
-	map(0x0100, 0x1fff).rom().region("slave", 0x100);
+//  map(0x00e00000, 0x00efffff).ram(); // DVC
 }
 
 
@@ -140,7 +126,7 @@ INPUT_CHANGED_MEMBER(cdi_state::mcu_input)
 {
 	bool send = false;
 
-	switch((uintptr_t)param)
+	switch (param)
 	{
 		case 0x39:
 			if (m_input1.read_safe(0) & 0x01) send = true;
@@ -177,8 +163,8 @@ INPUT_CHANGED_MEMBER(cdi_state::mcu_input)
 
 	if(send)
 	{
-		uint8_t data = (uint8_t)((uintptr_t)param & 0x000000ff);
-		m_maincpu->quizard_rx(data);
+		uint8_t data = uint8_t(param & 0x000000ff);
+		quizard_rx(data);
 	}
 }
 
@@ -247,35 +233,38 @@ static INPUT_PORTS_START( quizard )
 	PORT_INCLUDE( cdi )
 
 	PORT_START("INPUT1")
-	PORT_BIT(0x01, IP_ACTIVE_HIGH, IPT_COIN1) PORT_NAME("Coin 1") PORT_CHANGED_MEMBER(DEVICE_SELF, cdi_state,mcu_input, (void*)0x39)
-	PORT_BIT(0x02, IP_ACTIVE_HIGH, IPT_START1) PORT_NAME("Start 1") PORT_CHANGED_MEMBER(DEVICE_SELF, cdi_state,mcu_input, (void*)0x37)
-	PORT_BIT(0x04, IP_ACTIVE_HIGH, IPT_BUTTON3) PORT_NAME("Player 1 A") PORT_CHANGED_MEMBER(DEVICE_SELF, cdi_state,mcu_input, (void*)0x31)
-	PORT_BIT(0x08, IP_ACTIVE_HIGH, IPT_BUTTON4) PORT_NAME("Player 1 B") PORT_CHANGED_MEMBER(DEVICE_SELF, cdi_state,mcu_input, (void*)0x32)
-	PORT_BIT(0x10, IP_ACTIVE_HIGH, IPT_BUTTON5) PORT_NAME("Player 1 C") PORT_CHANGED_MEMBER(DEVICE_SELF, cdi_state,mcu_input, (void*)0x33)
+	PORT_BIT(0x01, IP_ACTIVE_HIGH, IPT_COIN1) PORT_NAME("Coin 1") PORT_CHANGED_MEMBER(DEVICE_SELF, cdi_state,mcu_input, 0x39)
+	PORT_BIT(0x02, IP_ACTIVE_HIGH, IPT_START1) PORT_NAME("Start 1") PORT_CHANGED_MEMBER(DEVICE_SELF, cdi_state,mcu_input, 0x37)
+	PORT_BIT(0x04, IP_ACTIVE_HIGH, IPT_BUTTON3) PORT_NAME("Player 1 A") PORT_CHANGED_MEMBER(DEVICE_SELF, cdi_state,mcu_input, 0x31)
+	PORT_BIT(0x08, IP_ACTIVE_HIGH, IPT_BUTTON4) PORT_NAME("Player 1 B") PORT_CHANGED_MEMBER(DEVICE_SELF, cdi_state,mcu_input, 0x32)
+	PORT_BIT(0x10, IP_ACTIVE_HIGH, IPT_BUTTON5) PORT_NAME("Player 1 C") PORT_CHANGED_MEMBER(DEVICE_SELF, cdi_state,mcu_input, 0x33)
 	PORT_BIT(0xe0, IP_ACTIVE_HIGH, IPT_UNUSED)
 
 	PORT_START("INPUT2")
-	PORT_BIT(0x01, IP_ACTIVE_HIGH, IPT_SERVICE1) PORT_NAME("Service") PORT_CHANGED_MEMBER(DEVICE_SELF, cdi_state,mcu_input, (void*)0x30)
-	PORT_BIT(0x02, IP_ACTIVE_HIGH, IPT_START2) PORT_NAME("Start 2") PORT_CHANGED_MEMBER(DEVICE_SELF, cdi_state,mcu_input, (void*)0x38)
-	PORT_BIT(0x04, IP_ACTIVE_HIGH, IPT_BUTTON6) PORT_NAME("Player 2 A") PORT_CHANGED_MEMBER(DEVICE_SELF, cdi_state,mcu_input, (void*)0x34)
-	PORT_BIT(0x08, IP_ACTIVE_HIGH, IPT_BUTTON7) PORT_NAME("Player 2 B") PORT_CHANGED_MEMBER(DEVICE_SELF, cdi_state,mcu_input, (void*)0x35)
-	PORT_BIT(0x10, IP_ACTIVE_HIGH, IPT_BUTTON8) PORT_NAME("Player 2 C") PORT_CHANGED_MEMBER(DEVICE_SELF, cdi_state,mcu_input, (void*)0x36)
+	PORT_BIT(0x01, IP_ACTIVE_HIGH, IPT_SERVICE1) PORT_NAME("Service") PORT_CHANGED_MEMBER(DEVICE_SELF, cdi_state,mcu_input, 0x30)
+	PORT_BIT(0x02, IP_ACTIVE_HIGH, IPT_START2) PORT_NAME("Start 2") PORT_CHANGED_MEMBER(DEVICE_SELF, cdi_state,mcu_input, 0x38)
+	PORT_BIT(0x04, IP_ACTIVE_HIGH, IPT_BUTTON6) PORT_NAME("Player 2 A") PORT_CHANGED_MEMBER(DEVICE_SELF, cdi_state,mcu_input, 0x34)
+	PORT_BIT(0x08, IP_ACTIVE_HIGH, IPT_BUTTON7) PORT_NAME("Player 2 B") PORT_CHANGED_MEMBER(DEVICE_SELF, cdi_state,mcu_input, 0x35)
+	PORT_BIT(0x10, IP_ACTIVE_HIGH, IPT_BUTTON8) PORT_NAME("Player 2 C") PORT_CHANGED_MEMBER(DEVICE_SELF, cdi_state,mcu_input, 0x36)
 	PORT_BIT(0xe0, IP_ACTIVE_HIGH, IPT_UNUSED)
 INPUT_PORTS_END
 
 
-INTERRUPT_GEN_MEMBER( cdi_state::mcu_frame )
-{
-	m_maincpu->mcu_frame();
-}
+/***************************
+*  Machine Initialization  *
+***************************/
 
 MACHINE_RESET_MEMBER( cdi_state, cdimono1 )
 {
 	uint16_t *src   = (uint16_t*)memregion("maincpu")->base();
 	uint16_t *dst   = m_planea;
 	memcpy(dst, src, 0x8);
-	memset(m_servo_io_regs, 0, 0x20);
-	memset(m_slave_io_regs, 0, 0x20);
+
+	// Quizard Protection HLE data
+	memset(m_seeds, 0, 10 * sizeof(uint16_t));
+	memset(m_state, 0, 8 * sizeof(uint8_t));
+	m_mcu_value = 0;
+	m_mcu_ack = 0;
 }
 
 MACHINE_RESET_MEMBER( cdi_state, cdimono2 )
@@ -291,8 +280,8 @@ MACHINE_RESET_MEMBER( cdi_state, quizard1 )
 {
 	MACHINE_RESET_CALL_MEMBER( cdimono1 );
 
-	m_maincpu->set_quizard_mcu_value(0x021f);
-	m_maincpu->set_quizard_mcu_ack(0x5a);
+	set_quizard_mcu_value(0x021f);
+	set_quizard_mcu_ack(0x5a);
 }
 
 MACHINE_RESET_MEMBER( cdi_state, quizard2 )
@@ -303,431 +292,194 @@ MACHINE_RESET_MEMBER( cdi_state, quizard2 )
 	// 0x001: French
 	// 0x188: German
 
-	m_maincpu->set_quizard_mcu_value(0x188);
-	m_maincpu->set_quizard_mcu_ack(0x59);
+	set_quizard_mcu_value(0x188);
+	set_quizard_mcu_ack(0x59);
 }
-
-
 
 MACHINE_RESET_MEMBER( cdi_state, quizard3 )
 {
 	MACHINE_RESET_CALL_MEMBER( cdimono1 );
 
-	m_maincpu->set_quizard_mcu_value(0x00ae);
-	m_maincpu->set_quizard_mcu_ack(0x58);
+	set_quizard_mcu_value(0x00ae);
+	set_quizard_mcu_ack(0x58);
 }
 
 MACHINE_RESET_MEMBER( cdi_state, quizard4 )
 {
 	MACHINE_RESET_CALL_MEMBER( cdimono1 );
 
-	//m_maincpu->set_quizard_mcu_value(0x0139);
-	m_maincpu->set_quizard_mcu_value(0x011f);
-	m_maincpu->set_quizard_mcu_ack(0x57);
+	set_quizard_mcu_value(0x011f);
+	set_quizard_mcu_ack(0x57);
 }
 
 
+/***************************
+*  Quizard Protection HLE  *
+***************************/
 
-/**************************
-*     68HC05 Handlers     *
-**************************/
-
-READ8_MEMBER( cdi_state::servo_io_r )
+void cdi_state::set_quizard_mcu_ack(uint8_t ack)
 {
-	if (machine().side_effects_disabled())
-	{
-		return 0;
-	}
-
-	uint8_t ret = m_servo_io_regs[offset];
-
-	switch(offset)
-	{
-		case m68hc05eg_io_reg_t::PORT_A_DATA:
-			LOGMASKED(LOG_SERVO, "SERVO Port A Data read (%02x)\n", ret);
-			break;
-		case m68hc05eg_io_reg_t::PORT_B_DATA:
-			ret = 0x08;
-			LOGMASKED(LOG_SERVO, "SERVO Port B Data read (%02x)\n", ret);
-			break;
-		case m68hc05eg_io_reg_t::PORT_C_DATA:
-			ret |= INV_CADDYSWITCH_IN;
-			LOGMASKED(LOG_SERVO, "SERVO Port C Data read (%02x)\n", ret);
-			break;
-		case m68hc05eg_io_reg_t::PORT_D_INPUT:
-			LOGMASKED(LOG_SERVO, "SERVO Port D Input read (%02x)\n", ret);
-			break;
-		case m68hc05eg_io_reg_t::PORT_A_DDR:
-			LOGMASKED(LOG_SERVO, "SERVO Port A DDR read (%02x)\n", ret);
-			break;
-		case m68hc05eg_io_reg_t::PORT_B_DDR:
-			LOGMASKED(LOG_SERVO, "SERVO Port B DDR read (%02x)\n", ret);
-			break;
-		case m68hc05eg_io_reg_t::PORT_C_DDR:
-			LOGMASKED(LOG_SERVO, "SERVO Port C DDR read (%02x)\n", ret);
-			break;
-		case m68hc05eg_io_reg_t::SPI_CTRL:
-			LOGMASKED(LOG_SERVO, "SERVO SPI Control read (%02x)\n", ret);
-			break;
-		case m68hc05eg_io_reg_t::SPI_STATUS:
-			LOGMASKED(LOG_SERVO, "SERVO SPI Status read (%02x)\n", ret);
-			break;
-		case m68hc05eg_io_reg_t::SPI_DATA:
-			LOGMASKED(LOG_SERVO, "SERVO SPI Data read (%02x)\n", ret);
-			break;
-		case m68hc05eg_io_reg_t::SCC_BAUD:
-			LOGMASKED(LOG_SERVO, "SERVO SCC Baud Rate read (%02x)\n", ret);
-			break;
-		case m68hc05eg_io_reg_t::SCC_CTRL1:
-			LOGMASKED(LOG_SERVO, "SERVO SCC Control 1 read (%02x)\n", ret);
-			break;
-		case m68hc05eg_io_reg_t::SCC_CTRL2:
-			LOGMASKED(LOG_SERVO, "SERVO SCC Control 2 read (%02x)\n", ret);
-			break;
-		case m68hc05eg_io_reg_t::SCC_STATUS:
-			LOGMASKED(LOG_SERVO, "SERVO SCC Status read (%02x)\n", ret);
-			break;
-		case m68hc05eg_io_reg_t::SCC_DATA:
-			LOGMASKED(LOG_SERVO, "SERVO SCC Data read (%02x)\n", ret);
-			break;
-		case m68hc05eg_io_reg_t::TIMER_CTRL:
-			LOGMASKED(LOG_SERVO, "SERVO Timer Control read (%02x)\n", ret);
-			break;
-		case m68hc05eg_io_reg_t::TIMER_STATUS:
-			LOGMASKED(LOG_SERVO, "SERVO Timer Status read (%02x)\n", ret);
-			break;
-		case m68hc05eg_io_reg_t::ICAP_HI:
-			LOGMASKED(LOG_SERVO, "SERVO Input Capture Hi read (%02x)\n", ret);
-			break;
-		case m68hc05eg_io_reg_t::ICAP_LO:
-			LOGMASKED(LOG_SERVO, "SERVO Input Capture Lo read (%02x)\n", ret);
-			break;
-		case m68hc05eg_io_reg_t::OCMP_HI:
-			LOGMASKED(LOG_SERVO, "SERVO Output Compare Hi read (%02x)\n", ret);
-			break;
-		case m68hc05eg_io_reg_t::OCMP_LO:
-			LOGMASKED(LOG_SERVO, "SERVO Output Compare Lo read (%02x)\n", ret);
-			break;
-		case m68hc05eg_io_reg_t::COUNT_HI:
-		{
-			const uint16_t count = (m_servo->total_cycles() / 4) & 0x0000ffff;
-			ret = count >> 8;
-			LOGMASKED(LOG_SERVO, "SERVO Count Hi read (%02x)\n", ret);
-			break;
-		}
-		case m68hc05eg_io_reg_t::COUNT_LO:
-		{
-			const uint16_t count = (m_servo->total_cycles() / 4) & 0x0000ffff;
-			ret = count & 0x00ff;
-			LOGMASKED(LOG_SERVO, "SERVO Count Lo read (%02x)\n", ret);
-			break;
-		}
-		case m68hc05eg_io_reg_t::ACOUNT_HI:
-		{
-			const uint16_t count = (m_servo->total_cycles() / 4) & 0x0000ffff;
-			ret = count >> 8;
-			LOGMASKED(LOG_SERVO, "SERVO Alternate Count Hi read (%02x)\n", ret);
-			break;
-		}
-		case m68hc05eg_io_reg_t::ACOUNT_LO:
-		{
-			const uint16_t count = (m_servo->total_cycles() / 4) & 0x0000ffff;
-			ret = count & 0x00ff;
-			LOGMASKED(LOG_SERVO, "SERVO Alternate Count Lo read (%02x)\n", ret);
-			break;
-		}
-		default:
-			logerror("Unknown SERVO I/O read (%02x)\n", offset);
-			break;
-	}
-
-	return ret;
+	m_mcu_ack = ack;
 }
 
-
-WRITE8_MEMBER( cdi_state::servo_io_w )
+void cdi_state::set_quizard_mcu_value(uint16_t value)
 {
-	switch(offset)
-	{
-		case m68hc05eg_io_reg_t::PORT_A_DATA:
-			LOGMASKED(LOG_SERVO, "SERVO Port A Data write (%02x)\n", data);
-			return;
-		case m68hc05eg_io_reg_t::PORT_B_DATA:
-			LOGMASKED(LOG_SERVO, "SERVO Port B Data write (%02x)\n", data);
-			return;
-		case m68hc05eg_io_reg_t::PORT_C_DATA:
-			LOGMASKED(LOG_SERVO, "SERVO Port C Data write (%02x)\n", data);
-			return;
-		case m68hc05eg_io_reg_t::PORT_D_INPUT:
-			LOGMASKED(LOG_SERVO, "SERVO Port D Input write (%02x)\n", data);
-			return;
-		case m68hc05eg_io_reg_t::PORT_A_DDR:
-			LOGMASKED(LOG_SERVO, "SERVO Port A DDR write (%02x)\n", data);
-			break;
-		case m68hc05eg_io_reg_t::PORT_B_DDR:
-			LOGMASKED(LOG_SERVO, "SERVO Port B DDR write (%02x)\n", data);
-			break;
-		case m68hc05eg_io_reg_t::PORT_C_DDR:
-			LOGMASKED(LOG_SERVO, "SERVO Port C DDR write (%02x)\n", data);
-			break;
-		case m68hc05eg_io_reg_t::SPI_CTRL:
-			LOGMASKED(LOG_SERVO, "SERVO SPI Control write (%02x)\n", data);
-			break;
-		case m68hc05eg_io_reg_t::SPI_STATUS:
-			LOGMASKED(LOG_SERVO, "SERVO SPI Status write (%02x)\n", data);
-			break;
-		case m68hc05eg_io_reg_t::SPI_DATA:
-			LOGMASKED(LOG_SERVO, "SERVO SPI Data write (%02x)\n", data);
-			break;
-		case m68hc05eg_io_reg_t::SCC_BAUD:
-			LOGMASKED(LOG_SERVO, "SERVO SCC Baud Rate write (%02x)\n", data);
-			break;
-		case m68hc05eg_io_reg_t::SCC_CTRL1:
-			LOGMASKED(LOG_SERVO, "SERVO SCC Control 1 write (%02x)\n", data);
-			break;
-		case m68hc05eg_io_reg_t::SCC_CTRL2:
-			LOGMASKED(LOG_SERVO, "SERVO SCC Control 2 write (%02x)\n", data);
-			break;
-		case m68hc05eg_io_reg_t::SCC_STATUS:
-			LOGMASKED(LOG_SERVO, "SERVO SCC Status write (%02x)\n", data);
-			break;
-		case m68hc05eg_io_reg_t::SCC_DATA:
-			LOGMASKED(LOG_SERVO, "SERVO SCC Data write (%02x)\n", data);
-			break;
-		case m68hc05eg_io_reg_t::TIMER_CTRL:
-			LOGMASKED(LOG_SERVO, "SERVO Timer Control write (%02x)\n", data);
-			break;
-		case m68hc05eg_io_reg_t::TIMER_STATUS:
-			LOGMASKED(LOG_SERVO, "SERVO Timer Status write (%02x)\n", data);
-			break;
-		case m68hc05eg_io_reg_t::ICAP_HI:
-			LOGMASKED(LOG_SERVO, "SERVO Input Capture Hi write (%02x)\n", data);
-			break;
-		case m68hc05eg_io_reg_t::ICAP_LO:
-			LOGMASKED(LOG_SERVO, "SERVO Input Capture Lo write (%02x)\n", data);
-			break;
-		case m68hc05eg_io_reg_t::OCMP_HI:
-			LOGMASKED(LOG_SERVO, "SERVO Output Compare Hi write (%02x)\n", data);
-			break;
-		case m68hc05eg_io_reg_t::OCMP_LO:
-			LOGMASKED(LOG_SERVO, "SERVO Output Compare Lo write (%02x)\n", data);
-			break;
-		case m68hc05eg_io_reg_t::COUNT_HI:
-			LOGMASKED(LOG_SERVO, "SERVO Count Hi write (%02x)\n", data);
-			break;
-		case m68hc05eg_io_reg_t::COUNT_LO:
-			LOGMASKED(LOG_SERVO, "SERVO Count Lo write (%02x)\n", data);
-			break;
-		case m68hc05eg_io_reg_t::ACOUNT_HI:
-			LOGMASKED(LOG_SERVO, "SERVO Alternate Count Hi write (%02x)\n", data);
-			break;
-		case m68hc05eg_io_reg_t::ACOUNT_LO:
-			LOGMASKED(LOG_SERVO, "SERVO Alternate Count Lo write (%02x)\n", data);
-			break;
-		default:
-			logerror("Unknown SERVO I/O write (%02x = %02x)\n", offset, data);
-			break;
-	}
-
-	m_servo_io_regs[offset] = data;
+	m_mcu_value = value;
 }
 
-READ8_MEMBER( cdi_state::slave_io_r )
+void cdi_state::quizard_rx(uint8_t data)
 {
-	if (machine().side_effects_disabled())
-	{
-		return 0;
-	}
-
-	uint8_t ret = m_slave_io_regs[offset];
-
-	switch(offset)
-	{
-		case m68hc05eg_io_reg_t::PORT_A_DATA:
-			LOGMASKED(LOG_SLAVE, "SLAVE Port A Data read (%02x)\n", ret);
-			break;
-		case m68hc05eg_io_reg_t::PORT_B_DATA:
-			LOGMASKED(LOG_SLAVE, "SLAVE Port B Data read (%02x)\n", ret);
-			break;
-		case m68hc05eg_io_reg_t::PORT_C_DATA:
-			LOGMASKED(LOG_SLAVE, "SLAVE Port C Data read (%02x)\n", ret);
-			break;
-		case m68hc05eg_io_reg_t::PORT_D_INPUT:
-			LOGMASKED(LOG_SLAVE, "SLAVE Port D Input read (%02x)\n", ret);
-			break;
-		case m68hc05eg_io_reg_t::PORT_A_DDR:
-			LOGMASKED(LOG_SLAVE, "SLAVE Port A DDR read (%02x)\n", ret);
-			break;
-		case m68hc05eg_io_reg_t::PORT_B_DDR:
-			LOGMASKED(LOG_SLAVE, "SLAVE Port B DDR read (%02x)\n", ret);
-			break;
-		case m68hc05eg_io_reg_t::PORT_C_DDR:
-			LOGMASKED(LOG_SLAVE, "SLAVE Port C DDR read (%02x)\n", ret);
-			break;
-		case m68hc05eg_io_reg_t::SPI_CTRL:
-			LOGMASKED(LOG_SLAVE, "SLAVE SPI Control read (%02x)\n", ret);
-			break;
-		case m68hc05eg_io_reg_t::SPI_STATUS:
-			LOGMASKED(LOG_SLAVE, "SLAVE SPI Status read (%02x)\n", ret);
-			break;
-		case m68hc05eg_io_reg_t::SPI_DATA:
-			LOGMASKED(LOG_SLAVE, "SLAVE SPI Data read (%02x)\n", ret);
-			break;
-		case m68hc05eg_io_reg_t::SCC_BAUD:
-			LOGMASKED(LOG_SLAVE, "SLAVE SCC Baud Rate read (%02x)\n", ret);
-			break;
-		case m68hc05eg_io_reg_t::SCC_CTRL1:
-			LOGMASKED(LOG_SLAVE, "SLAVE SCC Control 1 read (%02x)\n", ret);
-			break;
-		case m68hc05eg_io_reg_t::SCC_CTRL2:
-			LOGMASKED(LOG_SLAVE, "SLAVE SCC Control 2 read (%02x)\n", ret);
-			break;
-		case m68hc05eg_io_reg_t::SCC_STATUS:
-			LOGMASKED(LOG_SLAVE, "SLAVE SCC Status read (%02x)\n", ret);
-			break;
-		case m68hc05eg_io_reg_t::SCC_DATA:
-			LOGMASKED(LOG_SLAVE, "SLAVE SCC Data read (%02x)\n", ret);
-			break;
-		case m68hc05eg_io_reg_t::TIMER_CTRL:
-			LOGMASKED(LOG_SLAVE, "SLAVE Timer Control read (%02x)\n", ret);
-			break;
-		case m68hc05eg_io_reg_t::TIMER_STATUS:
-			LOGMASKED(LOG_SLAVE, "SLAVE Timer Status read (%02x)\n", ret);
-			break;
-		case m68hc05eg_io_reg_t::ICAP_HI:
-			LOGMASKED(LOG_SLAVE, "SLAVE Input Capture Hi read (%02x)\n", ret);
-			break;
-		case m68hc05eg_io_reg_t::ICAP_LO:
-			LOGMASKED(LOG_SLAVE, "SLAVE Input Capture Lo read (%02x)\n", ret);
-			break;
-		case m68hc05eg_io_reg_t::OCMP_HI:
-			LOGMASKED(LOG_SLAVE, "SLAVE Output Compare Hi read (%02x)\n", ret);
-			break;
-		case m68hc05eg_io_reg_t::OCMP_LO:
-			LOGMASKED(LOG_SLAVE, "SLAVE Output Compare Lo read (%02x)\n", ret);
-			break;
-		case m68hc05eg_io_reg_t::COUNT_HI:
-		{
-			const uint16_t count = (m_slave->total_cycles() / 4) & 0x0000ffff;
-			ret = count >> 8;
-			LOGMASKED(LOG_SLAVE, "SLAVE Count Hi read (%02x)\n", ret);
-			break;
-		}
-		case m68hc05eg_io_reg_t::COUNT_LO:
-		{
-			const uint16_t count = (m_slave->total_cycles() / 4) & 0x0000ffff;
-			ret = count & 0x00ff;
-			LOGMASKED(LOG_SLAVE, "SLAVE Count Lo read (%02x)\n", ret);
-			break;
-		}
-		case m68hc05eg_io_reg_t::ACOUNT_HI:
-		{
-			const uint16_t count = (m_slave->total_cycles() / 4) & 0x0000ffff;
-			ret = count >> 8;
-			LOGMASKED(LOG_SLAVE, "SLAVE Alternate Count Hi read (%02x)\n", ret);
-			break;
-		}
-		case m68hc05eg_io_reg_t::ACOUNT_LO:
-		{
-			const uint16_t count = (m_slave->total_cycles() / 4) & 0x0000ffff;
-			ret = count & 0x00ff;
-			LOGMASKED(LOG_SLAVE, "SLAVE Alternate Count Lo read (%02x)\n", ret);
-			break;
-		}
-		default:
-			logerror("Unknown SLAVE I/O read (%02x)\n", offset);
-			break;
-	}
-
-	return ret;
+	m_maincpu->uart_rx(0x5a);
+	m_maincpu->uart_rx(data);
 }
 
-WRITE8_MEMBER( cdi_state::slave_io_w )
+void cdi_state::quizard_set_seeds(uint8_t *rx)
 {
-	switch(offset)
+	m_seeds[0] = (rx[1] << 8) | rx[0];
+	m_seeds[1] = (rx[3] << 8) | rx[2];
+	m_seeds[2] = (rx[5] << 8) | rx[4];
+	m_seeds[3] = (rx[7] << 8) | rx[6];
+	m_seeds[4] = (rx[9] << 8) | rx[8];
+	m_seeds[5] = (rx[11] << 8) | rx[10];
+	m_seeds[6] = (rx[13] << 8) | rx[12];
+	m_seeds[7] = (rx[15] << 8) | rx[14];
+	m_seeds[8] = (rx[17] << 8) | rx[16];
+	m_seeds[9] = (rx[19] << 8) | rx[18];
+}
+
+void cdi_state::quizard_calculate_state()
+{
+	//const uint16_t desired_bitfield = mcu_value;
+	const uint16_t field0 = 0x00ff;
+	const uint16_t field1 = m_mcu_value ^ 0x00ff;
+
+	uint16_t total0 = 0;
+	uint16_t total1 = 0;
+
+	for(int index = 0; index < 10; index++)
 	{
-		case m68hc05eg_io_reg_t::PORT_A_DATA:
-			LOGMASKED(LOG_SLAVE, "SLAVE Port A Data write (%02x)\n", data);
-			return;
-		case m68hc05eg_io_reg_t::PORT_B_DATA:
-			LOGMASKED(LOG_SLAVE, "SLAVE Port B Data write (%02x)\n", data);
-			return;
-		case m68hc05eg_io_reg_t::PORT_C_DATA:
-			LOGMASKED(LOG_SLAVE, "SLAVE Port C Data write (%02x)\n", data);
-			return;
-		case m68hc05eg_io_reg_t::PORT_D_INPUT:
-			LOGMASKED(LOG_SLAVE, "SLAVE Port D Input write (%02x)\n", data);
-			return;
-		case m68hc05eg_io_reg_t::PORT_A_DDR:
-			LOGMASKED(LOG_SLAVE, "SLAVE Port A DDR write (%02x)\n", data);
-			break;
-		case m68hc05eg_io_reg_t::PORT_B_DDR:
-			LOGMASKED(LOG_SLAVE, "SLAVE Port B DDR write (%02x)\n", data);
-			break;
-		case m68hc05eg_io_reg_t::PORT_C_DDR:
-			LOGMASKED(LOG_SLAVE, "SLAVE Port C DDR write (%02x)\n", data);
-			break;
-		case m68hc05eg_io_reg_t::SPI_CTRL:
-			LOGMASKED(LOG_SLAVE, "SLAVE SPI Control write (%02x)\n", data);
-			break;
-		case m68hc05eg_io_reg_t::SPI_STATUS:
-			LOGMASKED(LOG_SLAVE, "SLAVE SPI Status write (%02x)\n", data);
-			break;
-		case m68hc05eg_io_reg_t::SPI_DATA:
-			LOGMASKED(LOG_SLAVE, "SLAVE SPI Data write (%02x)\n", data);
-			break;
-		case m68hc05eg_io_reg_t::SCC_BAUD:
-			LOGMASKED(LOG_SLAVE, "SLAVE SCC Baud Rate write (%02x)\n", data);
-			break;
-		case m68hc05eg_io_reg_t::SCC_CTRL1:
-			LOGMASKED(LOG_SLAVE, "SLAVE SCC Control 1 write (%02x)\n", data);
-			break;
-		case m68hc05eg_io_reg_t::SCC_CTRL2:
-			LOGMASKED(LOG_SLAVE, "SLAVE SCC Control 2 write (%02x)\n", data);
-			break;
-		case m68hc05eg_io_reg_t::SCC_STATUS:
-			LOGMASKED(LOG_SLAVE, "SLAVE SCC Status write (%02x)\n", data);
-			break;
-		case m68hc05eg_io_reg_t::SCC_DATA:
-			LOGMASKED(LOG_SLAVE, "SLAVE SCC Data write (%02x)\n", data);
-			break;
-		case m68hc05eg_io_reg_t::TIMER_CTRL:
-			LOGMASKED(LOG_SLAVE, "SLAVE Timer Control write (%02x)\n", data);
-			break;
-		case m68hc05eg_io_reg_t::TIMER_STATUS:
-			LOGMASKED(LOG_SLAVE, "SLAVE Timer Status write (%02x)\n", data);
-			break;
-		case m68hc05eg_io_reg_t::ICAP_HI:
-			LOGMASKED(LOG_SLAVE, "SLAVE Input Capture Hi write (%02x)\n", data);
-			break;
-		case m68hc05eg_io_reg_t::ICAP_LO:
-			LOGMASKED(LOG_SLAVE, "SLAVE Input Capture Lo write (%02x)\n", data);
-			break;
-		case m68hc05eg_io_reg_t::OCMP_HI:
-			LOGMASKED(LOG_SLAVE, "SLAVE Output Compare Hi write (%02x)\n", data);
-			break;
-		case m68hc05eg_io_reg_t::OCMP_LO:
-			LOGMASKED(LOG_SLAVE, "SLAVE Output Compare Lo write (%02x)\n", data);
-			break;
-		case m68hc05eg_io_reg_t::COUNT_HI:
-			LOGMASKED(LOG_SLAVE, "SLAVE Count Hi write (%02x)\n", data);
-			break;
-		case m68hc05eg_io_reg_t::COUNT_LO:
-			LOGMASKED(LOG_SLAVE, "SLAVE Count Lo write (%02x)\n", data);
-			break;
-		case m68hc05eg_io_reg_t::ACOUNT_HI:
-			LOGMASKED(LOG_SLAVE, "SLAVE Alternate Count Hi write (%02x)\n", data);
-			break;
-		case m68hc05eg_io_reg_t::ACOUNT_LO:
-			LOGMASKED(LOG_SLAVE, "SLAVE Alternate Count Lo write (%02x)\n", data);
-			break;
-		default:
-			logerror("Unknown SLAVE I/O write (%02x = %02x)\n", offset, data);
-			break;
+		if (field0 & (1 << index))
+		{
+			total0 += m_seeds[index];
+		}
+		if (field1 & (1 << index))
+		{
+			total1 += m_seeds[index];
+		}
 	}
 
-	m_slave_io_regs[offset] = data;
+	uint16_t hi0 = (total0 >> 8) + 0x40;
+	m_state[2] = hi0 / 2;
+	m_state[3] = hi0 - m_state[2];
+
+	uint16_t lo0 = (total0 & 0x00ff) + 0x40;
+	m_state[0] = lo0 / 2;
+	m_state[1] = lo0 - m_state[0];
+
+	uint16_t hi1 = (total1 >> 8) + 0x40;
+	m_state[6] = hi1 / 2;
+	m_state[7] = hi1 - m_state[6];
+
+	uint16_t lo1 = (total1 & 0x00ff) + 0x40;
+	m_state[4] = lo1 / 2;
+	m_state[5] = lo1 - m_state[4];
 }
+
+void cdi_state::quizard_handle_byte_tx(uint8_t data)
+{
+	static int state = 0;
+	static uint8_t rx[0x100];
+	static uint8_t rx_ptr = 0xff;
+
+	switch (state)
+	{
+		case 0: // Waiting for a leadoff byte
+			if (data == m_mcu_ack) // Sequence end
+			{
+				//scc68070_uart_rx(machine, scc68070, 0x5a);
+				//scc68070_uart_rx(machine, scc68070, 0x42);
+			}
+			else
+			{
+				switch (data)
+				{
+					case 0x44: // DATABASEPATH = **_DATABASE/
+						rx[0] = 0x44;
+						rx_ptr = 1;
+						state = 3;
+						break;
+					case 0x2e: // Unknown; ignored
+						break;
+					case 0x56: // Seed start
+						rx_ptr = 0;
+						state = 1;
+						break;
+					default:
+						//printf("Unknown leadoff byte: %02x\n", data);
+						break;
+				}
+			}
+			break;
+
+		case 1: // Receiving the seed
+			rx[rx_ptr] = data;
+			rx_ptr++;
+			if (rx_ptr == 20)
+			{
+				//printf("Calculating seeds\n");
+				quizard_set_seeds(rx);
+				quizard_calculate_state();
+				state = 2;
+			}
+			break;
+
+		case 2: // Receiving the seed acknowledge
+		case 4:
+			if (data == m_mcu_ack)
+			{
+				if (state == 2)
+				{
+					state = 4;
+				}
+				else
+				{
+					state = 0;
+				}
+				//printf("Sending seed ack\n");
+				m_maincpu->uart_rx(0x5a);
+				m_maincpu->uart_rx(m_state[0]);
+				m_maincpu->uart_rx(m_state[1]);
+				m_maincpu->uart_rx(m_state[2]);
+				m_maincpu->uart_rx(m_state[3]);
+				m_maincpu->uart_rx(m_state[4]);
+				m_maincpu->uart_rx(m_state[5]);
+				m_maincpu->uart_rx(m_state[6]);
+				m_maincpu->uart_rx(m_state[7]);
+			}
+			break;
+
+		case 3: // Receiving the database path
+			rx[rx_ptr] = data;
+			rx_ptr++;
+			if (data == 0x0a)
+			{
+				/*rx[rx_ptr] = 0;
+				//printf("Database path: %s\n", rx);
+				scc68070_uart_rx(machine, scc68070, 0x5a);
+				scc68070_uart_rx(machine, scc68070, g_state[0]);
+				scc68070_uart_rx(machine, scc68070, g_state[1]);
+				scc68070_uart_rx(machine, scc68070, g_state[2]);
+				scc68070_uart_rx(machine, scc68070, g_state[3]);
+				scc68070_uart_rx(machine, scc68070, g_state[4]);
+				scc68070_uart_rx(machine, scc68070, g_state[5]);
+				scc68070_uart_rx(machine, scc68070, g_state[6]);
+				scc68070_uart_rx(machine, scc68070, g_state[7]);*/
+				state = 0;
+			}
+			break;
+	}
+}
+
 
 /*************************
 *       LCD screen       *
@@ -887,10 +639,8 @@ void cdi_state::cdimono2(machine_config &config)
 
 	MCFG_MACHINE_RESET_OVERRIDE( cdi_state, cdimono2 )
 
-	M68HC05EG(config, m_servo, 4_MHz_XTAL); // FIXME: actually MC68HC05C8
-	m_servo->set_addrmap(AS_PROGRAM, &cdi_state::cdimono2_servo_mem);
-	M68HC05EG(config, m_slave, 4_MHz_XTAL); // FIXME: actually MC68HC05C8
-	m_slave->set_addrmap(AS_PROGRAM, &cdi_state::cdimono2_slave_mem);
+	M68HC05C8(config, m_servo, 4_MHz_XTAL);
+	M68HC05C8(config, m_slave, 4_MHz_XTAL);
 
 	CDROM(config, "cdrom").set_interface("cdi_cdrom");
 	SOFTWARE_LIST(config, "cd_list").set_original("cdi").set_filter("!DVC");
@@ -942,10 +692,8 @@ void cdi_state::cdi910(machine_config &config)
 
 	MCFG_MACHINE_RESET_OVERRIDE( cdi_state, cdimono2 )
 
-	M68HC05EG(config, m_servo, 4_MHz_XTAL); // FIXME: actually MC68HSC05C8
-	m_servo->set_addrmap(AS_PROGRAM, &cdi_state::cdimono2_servo_mem);
-	M68HC05EG(config, m_slave, 4_MHz_XTAL); // FIXME: actually MC68HSC05C8
-	m_slave->set_addrmap(AS_PROGRAM, &cdi_state::cdimono2_slave_mem);
+	M68HC05C8(config, m_servo, 4_MHz_XTAL);
+	M68HC05C8(config, m_slave, 4_MHz_XTAL);
 
 	CDROM(config, "cdrom").set_interface("cdi_cdrom");
 	SOFTWARE_LIST(config, "cd_list").set_original("cdi").set_filter("!DVC");
@@ -981,13 +729,14 @@ void cdi_state::quizard(machine_config &config)
 {
 	cdimono1_base(config);
 	m_maincpu->set_addrmap(AS_PROGRAM, &cdi_state::cdimono1_mem);
-	m_maincpu->set_vblank_int("screen", FUNC(cdi_state::mcu_frame));
+	m_maincpu->uart_tx_callback().set(FUNC(cdi_state::quizard_handle_byte_tx));
 }
 
 
 READ8_MEMBER( cdi_state::quizard_mcu_p1_r )
 {
-	return machine().rand();
+	LOG("%s: MCU Port 1 Read\n", machine().describe_context());
+	return 0;
 }
 
 void cdi_state::quizard1(machine_config &config)

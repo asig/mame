@@ -1395,7 +1395,7 @@ ROM_END
 void tsamurai_state::init_the26thz()
 {
 	m_maincpu->space(AS_PROGRAM).unmap_read(0xd803, 0xd803);
-	m_maincpu->space(AS_PROGRAM).install_read_handler(0xd803, 0xd803, read8_delegate(FUNC(tsamurai_state::tsamurai_unknown_d803_r), this));
+	m_maincpu->space(AS_PROGRAM).install_read_handler(0xd803, 0xd803, read8_delegate(*this, FUNC(tsamurai_state::tsamurai_unknown_d803_r)));
 }
 
 GAME( 1984, vsgongf,   0,        vsgongf,  vsgongf,   tsamurai_state, empty_init,    ROT90, "Kaneko", "VS Gong Fight", MACHINE_IMPERFECT_COLORS | MACHINE_SUPPORTS_SAVE | MACHINE_UNEMULATED_PROTECTION )
@@ -1412,8 +1412,8 @@ GAME( 1985, nunchaku,  ladymstr, tsamurai, nunchaku,  tsamurai_state, empty_init
 
 GAME( 1985, yamagchi,  0,        tsamurai, yamagchi,  tsamurai_state, empty_init,    ROT90, "Kaneko / Taito", "Go Go Mr. Yamaguchi / Yuke Yuke Yamaguchi-kun", MACHINE_IMPERFECT_COLORS | MACHINE_SUPPORTS_SAVE )
 
-GAME( 1986, m660,      0,        m660,     m660,      tsamurai_state, empty_init,    ROT90, "Wood Place Inc. (Taito America Corporation license)", "Mission 660 (US)", MACHINE_SUPPORTS_SAVE )
-GAME( 1986, m660j,     m660,     m660,     m660,      tsamurai_state, empty_init,    ROT90, "Wood Place Inc. (Taito Corporation license)", "Mission 660 (Japan)", MACHINE_SUPPORTS_SAVE )
+GAME( 1986, m660,      0,        m660,     m660,      tsamurai_state, empty_init,    ROT90, "Wood Place Co. Ltd. (Taito America Corporation license)", "Mission 660 (US)", MACHINE_SUPPORTS_SAVE )
+GAME( 1986, m660j,     m660,     m660,     m660,      tsamurai_state, empty_init,    ROT90, "Wood Place Co. Ltd. (Taito Corporation license)", "Mission 660 (Japan)", MACHINE_SUPPORTS_SAVE )
 GAME( 1986, m660b,     m660,     m660,     m660,      tsamurai_state, empty_init,    ROT90, "bootleg", "Mission 660 (bootleg)", MACHINE_SUPPORTS_SAVE )
-GAME( 1986, alphaxz,   m660,     m660,     m660,      tsamurai_state, empty_init,    ROT90, "Ed Co. Ltd. (Wood Place Inc. license)", "The Alphax Z (Japan)", MACHINE_SUPPORTS_SAVE )
-GAME( 1986, the26thz,  m660,     m660,     m660,      tsamurai_state, init_the26thz, ROT90, "Ed Co. Ltd. (Taito license)", "The 26th Z (Japan, location test)", MACHINE_SUPPORTS_SAVE )
+GAME( 1986, alphaxz,   m660,     m660,     m660,      tsamurai_state, empty_init,    ROT90, "Ed Co., Ltd. (Wood Place Co., Ltd. license)", "The Alphax Z (Japan)", MACHINE_SUPPORTS_SAVE )
+GAME( 1986, the26thz,  m660,     m660,     m660,      tsamurai_state, init_the26thz, ROT90, "Ed Co., Ltd. (Taito license)", "The 26th Z (Japan, location test)", MACHINE_SUPPORTS_SAVE )

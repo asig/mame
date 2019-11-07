@@ -40,7 +40,7 @@
     1994  Ichidant-R (World)         Sega              ?                C2
     1994  Ichidant-R (Korea)         Sega              ?                C2
     1994  Puyo Puyo 2                Compile           317-0228         C2
-    1994  Zunzunkyou no Yabou        Sega              ?                C2
+    1994  Zunzunkyou no Yabou        Sega              317-0221         C2
 
     1995  Print Club (Vol.1)         Atlus             ?                C2
     1995  Print Club (Vol.2)         Atlus             ?                C2
@@ -105,6 +105,7 @@ public:
 		: md_base_state(mconfig, type, tag)
 		, m_paletteram(*this, "paletteram")
 		, m_upd_region(*this, "upd")
+		, m_prot_func(*this)
 		, m_upd7759(*this, "upd")
 		, m_screen(*this, "screen")
 		, m_palette(*this, "palette")
@@ -1541,7 +1542,12 @@ WRITE_LINE_MEMBER(segac2_state::vdp_lv4irqline_callback_c2)
 		m_maincpu->set_input_line(4, CLEAR_LINE);
 }
 
-
+/*
+    sound output balance (tfrceac)
+    reference : https://youtu.be/AOmeWp9qe5E
+    reference 2 : https://youtu.be/Tq8VkJYmij8
+    reference 3: https://youtu.be/VId_HWdNuyA
+*/
 void segac2_state::segac(machine_config &config)
 {
 	/* basic machine hardware */
@@ -1572,12 +1578,14 @@ void segac2_state::segac(machine_config &config)
 	m_vdp->lv4_irq().set(FUNC(segac2_state::vdp_lv4irqline_callback_c2));
 	m_vdp->set_alt_timing(1);
 	m_vdp->set_screen("megadriv");
-	m_vdp->add_route(ALL_OUTPUTS, "mono", 0.5);
+	m_vdp->add_route(ALL_OUTPUTS, "mono", 0.50);
+	m_vdp->set_palette(m_palette);
 
 	TIMER(config, "scantimer").configure_scanline("gen_vdp", FUNC(sega315_5313_device::megadriv_scanline_timer_callback_alt_timing), "megadriv", 0, 1);
 
 	screen_device &screen(SCREEN(config, "megadriv", SCREEN_TYPE_RASTER));
-	screen.set_refresh_hz(60);
+	screen.set_refresh_hz(double(XL2_CLOCK.value()) / 10.0 / 262.0 / 342.0); // same as SMS?
+//  screen.set_refresh_hz(double(XL2_CLOCK.value()) / 8.0 / 262.0 / 427.0); // or 427 Htotal?
 	screen.set_size(512, 262);
 	screen.set_visarea(0, 32*8-1, 0, 28*8-1);
 	screen.set_screen_update(FUNC(segac2_state::screen_update_segac2_new));
@@ -1897,7 +1905,7 @@ ROM_START( puyo ) /* Puyo Puyo  (c)1992 Sega / Compile */
 ROM_END
 
 
-ROM_START( puyoj ) /* Puyo Puyo (Rev B)  (c)1992 Sega / Compile */
+ROM_START( puyoj ) /* Puyo Puyo (Rev B)  (c)1992 Sega / Compile - 834-9029 (EMP5032 labeled 317-0203) */
 	ROM_REGION( 0x200000, "maincpu", 0 )
 	ROM_LOAD16_BYTE( "epr-15036b.ic32", 0x000000, 0x020000, CRC(5310ca1b) SHA1(dcfe2bf7476b640dfb790e8716e75b483d535e48) )
 	ROM_LOAD16_BYTE( "epr-15035b.ic31", 0x000001, 0x020000, CRC(bc62e400) SHA1(12bb6031574838a28889f6edb31dbb689265287c) )
@@ -1916,7 +1924,7 @@ ROM_START( puyoj ) /* Puyo Puyo (Rev B)  (c)1992 Sega / Compile */
 ROM_END
 
 
-ROM_START( puyoja ) /* Puyo Puyo (Rev A)  (c)1992 Sega / Compile */
+ROM_START( puyoja ) /* Puyo Puyo (Rev A)  (c)1992 Sega / Compile - 834-9029 (EMP5032 labeled 317-0203) */
 	ROM_REGION( 0x200000, "maincpu", 0 )
 	ROM_LOAD16_BYTE( "epr-15036a.ic32", 0x000000, 0x020000, CRC(61b35257) SHA1(e09a7e992999befc88fc7928a478d1e2d14d7b08) )
 	ROM_LOAD16_BYTE( "epr-15035a.ic31", 0x000001, 0x020000, CRC(dfebb6d9) SHA1(6f685729ef4660c2eba409c5236c6d2f313eef5b) )
@@ -2019,7 +2027,7 @@ ROM_START( puyopuy2 ) /* Puyo Puyo 2  (c)1994 Compile */
 ROM_END
 
 
-ROM_START( potopoto ) /* Poto Poto  (c)1994 Sega */
+ROM_START( potopoto ) /* Poto Poto  (c)1994 Sega - 834-10778 (EMP5032 labeled 317-0218) */
 	ROM_REGION( 0x200000, "maincpu", 0 )
 	ROM_LOAD16_BYTE( "epr-16662a.ic32", 0x000000, 0x040000, CRC(bbd305d6) SHA1(1a4f4869fefac188c69bc67df0b625e43a0c3f1f) )
 	ROM_LOAD16_BYTE( "epr-16661a.ic31", 0x000001, 0x040000, CRC(5a7d14f4) SHA1(a615b5f481256366db7b1c6302a8dcb69708102b) )
@@ -2029,7 +2037,7 @@ ROM_START( potopoto ) /* Poto Poto  (c)1994 Sega */
 ROM_END
 
 
-ROM_START( zunkyou ) /* Zunzunkyou no Yabou  (c)1994 Sega */
+ROM_START( zunkyou ) /* Zunzunkyou no Yabou  (c)1994 Sega - 834-9029 (EMP5032 labeled 317-0221)  */
 	ROM_REGION( 0x200000, "maincpu", 0 )
 	ROM_LOAD16_BYTE( "epr-16812.ic32", 0x000000, 0x080000, CRC(eb088fb0) SHA1(69089a3516ad50f35e81971ef3c33eb3f5d52374) )
 	ROM_LOAD16_BYTE( "epr-16811.ic31", 0x000001, 0x080000, CRC(9ac7035b) SHA1(1803ffbadc1213e04646d483e27da1591e22cd06) )
@@ -2133,7 +2141,7 @@ void segac2_state::segac2_common_init(segac2_prot_delegate prot_func)
 	m_prot_func = prot_func;
 
 	if (m_upd7759 != nullptr)
-		m_maincpu->space(AS_PROGRAM).install_write_handler(0x880000, 0x880001, 0, 0x13fefe, 0, write16_delegate(FUNC(segac2_state::segac2_upd7759_w),this));
+		m_maincpu->space(AS_PROGRAM).install_write_handler(0x880000, 0x880001, 0, 0x13fefe, 0, write16_delegate(*this, FUNC(segac2_state::segac2_upd7759_w)));
 }
 
 int segac2_state::prot_func_dummy(int in)
@@ -2366,94 +2374,94 @@ int segac2_state::prot_func_pclubjv5(int in)
 
 void segac2_state::init_c2boot()
 {
-	segac2_common_init(segac2_prot_delegate(FUNC(segac2_state::prot_func_dummy),this));
+	segac2_common_init(segac2_prot_delegate(*this, FUNC(segac2_state::prot_func_dummy)));
 }
 
 void segac2_state::init_bloxeedc()
 {
-	segac2_common_init(segac2_prot_delegate(FUNC(segac2_state::prot_func_dummy),this));
+	segac2_common_init(segac2_prot_delegate(*this, FUNC(segac2_state::prot_func_dummy)));
 }
 
 void segac2_state::init_columns()
 {
-	segac2_common_init(segac2_prot_delegate(FUNC(segac2_state::prot_func_columns),this));
+	segac2_common_init(segac2_prot_delegate(*this, FUNC(segac2_state::prot_func_columns)));
 }
 
 void segac2_state::init_columns2()
 {
-	segac2_common_init(segac2_prot_delegate(FUNC(segac2_state::prot_func_columns2),this));
+	segac2_common_init(segac2_prot_delegate(*this, FUNC(segac2_state::prot_func_columns2)));
 }
 
 void segac2_state::init_tfrceac()
 {
-	segac2_common_init(segac2_prot_delegate(FUNC(segac2_state::prot_func_tfrceac),this));
+	segac2_common_init(segac2_prot_delegate(*this, FUNC(segac2_state::prot_func_tfrceac)));
 }
 
 void segac2_state::init_tfrceacb()
 {
 	/* disable the palette bank switching from the protection chip */
-	segac2_common_init(segac2_prot_delegate(FUNC(segac2_state::prot_func_dummy),this));
+	segac2_common_init(segac2_prot_delegate(*this, FUNC(segac2_state::prot_func_dummy)));
 	m_maincpu->space(AS_PROGRAM).nop_write(0x800000, 0x800001);
 }
 
 void segac2_state::init_borench()
 {
-	segac2_common_init(segac2_prot_delegate(FUNC(segac2_state::prot_func_borench),this));
+	segac2_common_init(segac2_prot_delegate(*this, FUNC(segac2_state::prot_func_borench)));
 }
 
 void segac2_state::init_twinsqua()
 {
-	segac2_common_init(segac2_prot_delegate(FUNC(segac2_state::prot_func_twinsqua),this));
+	segac2_common_init(segac2_prot_delegate(*this, FUNC(segac2_state::prot_func_twinsqua)));
 }
 
 void segac2_state::init_ribbit()
 {
-	segac2_common_init(segac2_prot_delegate(FUNC(segac2_state::prot_func_ribbit),this));
+	segac2_common_init(segac2_prot_delegate(*this, FUNC(segac2_state::prot_func_ribbit)));
 }
 
 void segac2_state::init_puyo()
 {
-	segac2_common_init(segac2_prot_delegate(FUNC(segac2_state::prot_func_puyo),this));
+	segac2_common_init(segac2_prot_delegate(*this, FUNC(segac2_state::prot_func_puyo)));
 }
 
 void segac2_state::init_tantr()
 {
-	segac2_common_init(segac2_prot_delegate(FUNC(segac2_state::prot_func_tantr),this));
+	segac2_common_init(segac2_prot_delegate(*this, FUNC(segac2_state::prot_func_tantr)));
 }
 
 void segac2_state::init_tantrkor()
 {
-	segac2_common_init(segac2_prot_delegate(FUNC(segac2_state::prot_func_tantrkor),this));
+	segac2_common_init(segac2_prot_delegate(*this, FUNC(segac2_state::prot_func_tantrkor)));
 }
 
 void segac2_state::init_potopoto()
 {
-	segac2_common_init(segac2_prot_delegate(FUNC(segac2_state::prot_func_potopoto),this));
+	segac2_common_init(segac2_prot_delegate(*this, FUNC(segac2_state::prot_func_potopoto)));
 }
 
 void segac2_state::init_stkclmns()
 {
-	segac2_common_init(segac2_prot_delegate(FUNC(segac2_state::prot_func_stkclmns),this));
+	segac2_common_init(segac2_prot_delegate(*this, FUNC(segac2_state::prot_func_stkclmns)));
 }
 
 void segac2_state::init_stkclmnj()
 {
-	segac2_common_init(segac2_prot_delegate(FUNC(segac2_state::prot_func_stkclmnj),this));
+	segac2_common_init(segac2_prot_delegate(*this, FUNC(segac2_state::prot_func_stkclmnj)));
 }
 
 void segac2_state::init_ichir()
 {
-	segac2_common_init(segac2_prot_delegate(FUNC(segac2_state::prot_func_ichir),this));
+	segac2_common_init(segac2_prot_delegate(*this, FUNC(segac2_state::prot_func_ichir)));
 }
 
 void segac2_state::init_ichirk()
 {
-	segac2_common_init(segac2_prot_delegate(FUNC(segac2_state::prot_func_ichirk),this));
+	segac2_common_init(segac2_prot_delegate(*this, FUNC(segac2_state::prot_func_ichirk)));
 }
 
 void segac2_state::init_ichirj()
 {
-	segac2_common_init(segac2_prot_delegate(FUNC(segac2_state::prot_func_ichirj),this));
+	segac2_common_init(segac2_prot_delegate(*this, FUNC(segac2_state::prot_func_ichirj)));
 }
 
 READ16_MEMBER(segac2_state::ichirjbl_prot_r )
@@ -2463,49 +2471,49 @@ READ16_MEMBER(segac2_state::ichirjbl_prot_r )
 
 void segac2_state::init_ichirjbl()
 {
-	segac2_common_init(segac2_prot_delegate(FUNC(segac2_state::prot_func_dummy),this));
+	segac2_common_init(segac2_prot_delegate(*this, FUNC(segac2_state::prot_func_dummy)));
 
-	m_maincpu->space(AS_PROGRAM).install_read_handler(0x840108, 0x840109, read16_delegate(FUNC(segac2_state::ichirjbl_prot_r),this) );
+	m_maincpu->space(AS_PROGRAM).install_read_handler(0x840108, 0x840109, read16_delegate(*this, FUNC(segac2_state::ichirjbl_prot_r)));
 }
 
 void segac2_state::init_puyopuy2()
 {
-	segac2_common_init(segac2_prot_delegate(FUNC(segac2_state::prot_func_puyopuy2),this));
+	segac2_common_init(segac2_prot_delegate(*this, FUNC(segac2_state::prot_func_puyopuy2)));
 }
 
 void segac2_state::init_zunkyou()
 {
-	segac2_common_init(segac2_prot_delegate(FUNC(segac2_state::prot_func_zunkyou),this));
+	segac2_common_init(segac2_prot_delegate(*this, FUNC(segac2_state::prot_func_zunkyou)));
 }
 
 void segac2_state::init_pclub()
 {
-	m_maincpu->space(AS_PROGRAM).install_read_handler(0x880120, 0x880121, read16_delegate(FUNC(segac2_state::printer_r),this) );
-	m_maincpu->space(AS_PROGRAM).install_read_handler(0x880124, 0x880125, read16_delegate(FUNC(segac2_state::printer_r),this) );
-	m_maincpu->space(AS_PROGRAM).install_write_handler(0x880124, 0x880125, write16_delegate(FUNC(segac2_state::print_club_camera_w),this));
+	m_maincpu->space(AS_PROGRAM).install_read_handler(0x880120, 0x880121, read16_delegate(*this, FUNC(segac2_state::printer_r)));
+	m_maincpu->space(AS_PROGRAM).install_read_handler(0x880124, 0x880125, read16_delegate(*this, FUNC(segac2_state::printer_r)));
+	m_maincpu->space(AS_PROGRAM).install_write_handler(0x880124, 0x880125, write16_delegate(*this, FUNC(segac2_state::print_club_camera_w)));
 }
 
 void segac2_state::init_pclubj()
 {
-	segac2_common_init(segac2_prot_delegate(FUNC(segac2_state::prot_func_pclub),this));
+	segac2_common_init(segac2_prot_delegate(*this, FUNC(segac2_state::prot_func_pclub)));
 	init_pclub();
 }
 
 void segac2_state::init_pclubjv2()
 {
-	segac2_common_init(segac2_prot_delegate(FUNC(segac2_state::prot_func_pclubjv2),this));
+	segac2_common_init(segac2_prot_delegate(*this, FUNC(segac2_state::prot_func_pclubjv2)));
 	init_pclub();
 }
 
 void segac2_state::init_pclubjv4()
 {
-	segac2_common_init(segac2_prot_delegate(FUNC(segac2_state::prot_func_pclubjv4),this));
+	segac2_common_init(segac2_prot_delegate(*this, FUNC(segac2_state::prot_func_pclubjv4)));
 	init_pclub();
 }
 
 void segac2_state::init_pclubjv5()
 {
-	segac2_common_init(segac2_prot_delegate(FUNC(segac2_state::prot_func_pclubjv5),this));
+	segac2_common_init(segac2_prot_delegate(*this, FUNC(segac2_state::prot_func_pclubjv5)));
 	init_pclub();
 }
 

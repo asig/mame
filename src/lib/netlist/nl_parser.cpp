@@ -16,19 +16,16 @@ namespace netlist
 // A netlist parser
 // ----------------------------------------------------------------------------------------
 
-void parser_t::verror(const pstring &msg, int line_num, const pstring &line)
+void parser_t::verror(const pstring &msg)
 {
-	m_setup.log().fatal("line {1}: error: {2}\n\t\t{3}\n", line_num,
-			msg, line);
-
-	//throw error;
+	m_setup.log().fatal("{1}", msg);
+	plib::pthrow<nl_exception>(plib::pfmt("{1}")(msg));
 }
 
 bool parser_t::parse(const pstring &nlname)
 {
 	this->identifier_chars("abcdefghijklmnopqrstuvwvxyzABCDEFGHIJKLMNOPQRSTUVWXYZ01234567890_.-")
 		.number_chars(".0123456789", "0123456789eE-.") //FIXME: processing of numbers
-		//set_whitespace(pstring("").cat(' ').cat(9).cat(10).cat(13));
 		.whitespace(pstring("") + ' ' + static_cast<char>(9) + static_cast<char>(10) + static_cast<char>(13))
 		.comment("/*", "*/", "//");
 	m_tok_param_left = register_token("(");
@@ -144,6 +141,8 @@ void parser_t::parse_netlist(const pstring &nlname)
 void parser_t::net_truthtable_start(const pstring &nlname)
 {
 	pstring name = get_identifier();
+	bool head_found(false);
+
 	require_token(m_tok_comma);
 	long ni = get_number_long();
 	require_token(m_tok_comma);
@@ -169,9 +168,12 @@ void parser_t::net_truthtable_start(const pstring &nlname)
 			require_token(m_tok_param_left);
 			desc.desc.push_back(get_string());
 			require_token(m_tok_param_right);
+			head_found = true;
 		}
 		else if (token.is(m_tok_TT_LINE))
 		{
+			if (!head_found)
+				m_setup.log().error("TT_LINE found without TT_HEAD");
 			require_token(m_tok_param_left);
 			desc.desc.push_back(get_string());
 			require_token(m_tok_param_right);
@@ -233,9 +235,9 @@ void parser_t::frontier()
 	// don't do much
 	pstring attachat = get_identifier();
 	require_token(m_tok_comma);
-	double r_IN = eval_param(get_token());
+	nl_fptype r_IN = eval_param(get_token());
 	require_token(m_tok_comma);
-	double r_OUT = eval_param(get_token());
+	nl_fptype r_OUT = eval_param(get_token());
 	require_token(m_tok_param_right);
 
 	m_setup.register_frontier(attachat, r_IN, r_OUT);
@@ -331,7 +333,7 @@ void parser_t::netdev_param()
 	}
 	else
 	{
-		nl_double val = eval_param(tok);
+		nl_fptype val = eval_param(tok);
 		m_setup.log().debug("Parser: Param: {1} {2}\n", param, val);
 		m_setup.register_param(param, val);
 	}
@@ -391,7 +393,7 @@ void parser_t::device(const pstring &dev_type)
 			}
 			else
 			{
-				nl_double val = eval_param(tok);
+				nl_fptype val = eval_param(tok);
 				m_setup.register_param(paramfq, val);
 			}
 		}
@@ -407,12 +409,20 @@ void parser_t::device(const pstring &dev_type)
 // ----------------------------------------------------------------------------------------
 
 
-nl_double parser_t::eval_param(const token_t &tok)
+nl_fptype parser_t::eval_param(const token_t &tok)
 {
-	static std::array<pstring, 6> macs = {"", "RES_K", "RES_M", "CAP_U", "CAP_N", "CAP_P"};
-	static std::array<nl_double, 6> facs = {1, 1e3, 1e6, 1e-6, 1e-9, 1e-12};
+	static std::array<pstring, 7> macs = {"", "RES_R", "RES_K", "RES_M", "CAP_U", "CAP_N", "CAP_P"};
+	static std::array<nl_fptype, 7> facs = {
+		nlconst::magic(1.0),
+		nlconst::magic(1.0),
+		nlconst::magic(1e3),
+		nlconst::magic(1e6),
+		nlconst::magic(1e-6),
+		nlconst::magic(1e-9),
+		nlconst::magic(1e-12)
+	};
 	std::size_t f=0;
-	nl_double ret;
+	nl_fptype ret(0);
 
 	for (std::size_t i=1; i<macs.size();i++)
 		if (tok.str() == macs[i])
@@ -420,15 +430,15 @@ nl_double parser_t::eval_param(const token_t &tok)
 	if (f>0)
 	{
 		require_token(m_tok_param_left);
-		ret = get_number_double();
+		ret = static_cast<nl_fptype>(get_number_double());
 		require_token(m_tok_param_right);
 	}
 	else
 	{
-		bool err;
-		ret = plib::pstonum_ne<nl_double, true>(tok.str(), err);
+		bool err(false);
+		ret = plib::pstonum_ne<nl_fptype>(tok.str(), err);
 		if (err)
-			error(plib::pfmt("Parameter value <{1}> not double \n")(tok.str()));
+			error(plib::pfmt("Parameter value <{1}> not floating point \n")(tok.str()));
 	}
 	return ret * facs[f];
 

@@ -22,10 +22,10 @@ TODO:
 
 #include "emu.h"
 #include "cpu/mcs48/mcs48.h"
-#include "video/pwm.h"
 #include "machine/sensorboard.h"
 #include "sound/dac.h"
 #include "sound/volt_reg.h"
+#include "video/pwm.h"
 #include "speaker.h"
 
 // internal artwork
@@ -45,7 +45,7 @@ public:
 		m_display(*this, "display"),
 		m_board(*this, "board"),
 		m_dac(*this, "dac"),
-		m_keypad(*this, "IN.0")
+		m_inputs(*this, "IN.0")
 	{ }
 
 	// machine drivers
@@ -53,12 +53,14 @@ public:
 	void octo(machine_config &config);
 
 protected:
+	virtual void machine_start() override;
+
 	// devices/pointers
 	required_device<mcs48_cpu_device> m_maincpu;
 	required_device<pwm_display_device> m_display;
 	required_device<sensorboard_device> m_board;
 	optional_device<dac_bit_interface> m_dac;
-	required_ioport m_keypad;
+	required_ioport m_inputs;
 
 	// I/O handlers
 	void update_display();
@@ -69,8 +71,6 @@ protected:
 	bool m_kp_select;
 	u8 m_inp_mux;
 	u8 m_led_select;
-
-	virtual void machine_start() override;
 };
 
 void presto_state::machine_start()
@@ -117,7 +117,7 @@ void octo_state::octo_set_cpu_freq()
 
 
 /******************************************************************************
-    Devices, I/O
+    I/O
 ******************************************************************************/
 
 // MCU ports/generic
@@ -159,7 +159,7 @@ READ8_MEMBER(presto_state::input_r)
 
 	// read sidepanel keypad
 	if (m_kp_select)
-		data |= m_keypad->read();
+		data |= m_inputs->read();
 
 	return ~data;
 }
@@ -186,7 +186,7 @@ static INPUT_PORTS_START( octo )
 	PORT_INCLUDE( presto )
 
 	PORT_START("FAKE")
-	PORT_CONFNAME( 0x01, 0x00, "CPU Frequency" ) PORT_CHANGED_MEMBER(DEVICE_SELF, octo_state, octo_cpu_freq, nullptr) // factory set
+	PORT_CONFNAME( 0x01, 0x00, "CPU Frequency" ) PORT_CHANGED_MEMBER(DEVICE_SELF, octo_state, octo_cpu_freq, 0) // factory set
 	PORT_CONFSETTING(    0x00, "12MHz" )
 	PORT_CONFSETTING(    0x01, "15MHz" )
 INPUT_PORTS_END

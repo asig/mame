@@ -134,6 +134,7 @@ vga_device::vga_device(const machine_config &mconfig, device_type type, const ch
 	: device_t(mconfig, type, tag, owner, clock)
 	, device_video_interface(mconfig, *this)
 	, device_palette_interface(mconfig, *this)
+	, vga(*this)
 {
 }
 
@@ -252,7 +253,7 @@ void vga_device::device_start()
 
 
 	// copy over interfaces
-	vga.read_dipswitch = read8_delegate(); //read_dipswitch;
+	vga.read_dipswitch.set(nullptr); //read_dipswitch;
 	vga.svga_intf.seq_regcount = 0x05;
 	vga.svga_intf.crtc_regcount = 0x19;
 	vga.svga_intf.vram_size = 0x100000;
@@ -2721,6 +2722,9 @@ uint8_t s3_vga_device::s3_crtc_reg_read(uint8_t index)
 				res = (vga.crtc.start_addr_latch & 0x0c0000) >> 18;
 				res |= ((svga.bank_w & 0x30) >> 2);
 				res |= ((vga.crtc.offset & 0x0300) >> 4);
+				break;
+			case 0x53:
+				res = s3.cr53;
 				break;
 			case 0x55:
 				res = s3.extended_dac_ctrl;

@@ -357,6 +357,7 @@ Notes:
 #include "cpu/m68000/m68000.h"
 #include "cpu/m6809/m6809.h"
 #include "cpu/tms32031/tms32031.h"
+#include "machine/input_merger.h"
 #include "machine/nvram.h"
 #include "machine/watchdog.h"
 
@@ -425,9 +426,7 @@ void itech32_state::machine_start()
 	save_item(NAME(m_xint_state));
 	save_item(NAME(m_qint_state));
 	save_item(NAME(m_irq_base));
-	save_item(NAME(m_sound_data));
 	save_item(NAME(m_sound_return));
-	save_item(NAME(m_sound_int_state));
 	save_item(NAME(m_special_result));
 	save_item(NAME(m_p1_effx));
 	save_item(NAME(m_p1_effy));
@@ -443,9 +442,7 @@ void itech32_state::machine_start()
 void itech32_state::machine_reset()
 {
 	m_vint_state = m_xint_state = m_qint_state = 0;
-	m_sound_data = 0;
 	m_sound_return = 0;
-	m_sound_int_state = 0;
 }
 
 void drivedge_state::machine_start()
@@ -491,9 +488,9 @@ void itech32_state::color_w(u8 data)
  *************************************/
 
 
-CUSTOM_INPUT_MEMBER(itech32_state::special_port_r)
+READ_LINE_MEMBER(itech32_state::special_port_r)
 {
-	if (m_sound_int_state)
+	if (m_soundlatch->pending_r())
 		m_special_result ^= 1;
 
 	return m_special_result;
@@ -670,31 +667,19 @@ void itech32_state::sound_bank_w(u8 data)
  *
  *************************************/
 
-TIMER_CALLBACK_MEMBER(itech32_state::delayed_sound_data_w)
-{
-	m_sound_data = param;
-	m_sound_int_state = 1;
-	m_soundcpu->set_input_line(M6809_IRQ_LINE, ASSERT_LINE);
-}
-
-
 void itech32_state::sound_data_w(u8 data)
 {
-	machine().scheduler().synchronize(timer_expired_delegate(FUNC(itech32_state::delayed_sound_data_w),this), data & 0xff);
+	// seems hacky, but sound CPU should lose fewer bytes this way
+	if (m_soundlatch2.found() && m_soundlatch->pending_r())
+		m_soundlatch2->write(data);
+	else
+		m_soundlatch->write(data);
 }
 
 
 u8 itech32_state::sound_return_r()
 {
 	return m_sound_return;
-}
-
-
-u8 itech32_state::sound_data_r()
-{
-	m_soundcpu->set_input_line(M6809_IRQ_LINE, CLEAR_LINE);
-	m_sound_int_state = 0;
-	return m_sound_data;
 }
 
 
@@ -706,7 +691,12 @@ void itech32_state::sound_return_w(u8 data)
 
 u8 itech32_state::sound_data_buffer_r()
 {
-	return 0;
+	return m_soundlatch->pending_r() << 7;
+}
+
+
+void itech32_state::sound_control_w(u8 data)
+{
 }
 
 
@@ -963,7 +953,7 @@ map(0x000c00, 0x007fff).mirror(0x40000).rw(FUNC(itech32_state::test2_r), FUNC(it
 	map(0x080000, 0x080003).portr("80000");
 	map(0x082000, 0x082003).portr("82000");
 	map(0x084001, 0x084001).rw(FUNC(drivedge_state::sound_return_r), FUNC(drivedge_state::sound_data_w));
-//  AM_RANGE(0x086000, 0x08623f) AM_RAM -- networking -- first 0x40 bytes = our data, next 0x40*8 bytes = their data, r/w on IRQ2
+//  map(0x086000, 0x08623f).ram(); -- networking -- first 0x40 bytes = our data, next 0x40*8 bytes = their data, r/w on IRQ2
 	map(0x088000, 0x088001).r(FUNC(drivedge_state::steering_r));
 	map(0x08a000, 0x08a001).r(FUNC(drivedge_state::gas_r));
 	map(0x08a000, 0x08a003).nopw();
@@ -979,7 +969,7 @@ map(0x000c00, 0x007fff).mirror(0x40000).rw(FUNC(itech32_state::test2_r), FUNC(it
 	map(0x200000, 0x200003).portr("200000");
 	map(0x280000, 0x280fff).ram().w(FUNC(drivedge_state::tms1_68k_ram_w)).share("tms1_ram");
 	map(0x300000, 0x300fff).ram().w(FUNC(drivedge_state::tms2_68k_ram_w)).share("tms2_ram");
-	map(0x380000, 0x380003).nopw(); // AM_DEVWRITE("watchdog", watchdog_timer_device, reset16_w)
+	map(0x380000, 0x380003).nopw(); // .w("watchdog", FUNC(watchdog_timer_device::reset16_w));
 	map(0x600000, 0x607fff).rom().region("user1", 0).share("main_rom");
 }
 
@@ -1034,11 +1024,11 @@ void itech32_state::itech020_map(address_map &map)
 void itech32_state::sound_map(address_map &map)
 {
 	map(0x0000, 0x0000).w(FUNC(itech32_state::sound_return_w));
-	map(0x0400, 0x0400).r(FUNC(itech32_state::sound_data_r));
+	map(0x0400, 0x0400).r(m_soundlatch, FUNC(generic_latch_8_device::read));
 	map(0x0800, 0x083f).mirror(0x80).rw("ensoniq", FUNC(es5506_device::read), FUNC(es5506_device::write));
 	map(0x0c00, 0x0c00).w(FUNC(itech32_state::sound_bank_w));
 	map(0x1000, 0x1000).nopw();    /* noisy */
-	map(0x1400, 0x140f).rw("via6522_0", FUNC(via6522_device::read), FUNC(via6522_device::write));
+	map(0x1400, 0x140f).m("via6522_0", FUNC(via6522_device::map));
 	map(0x2000, 0x3fff).ram();
 	map(0x4000, 0x7fff).bankr("soundbank");
 	map(0x8000, 0xffff).rom();
@@ -1048,11 +1038,13 @@ void itech32_state::sound_map(address_map &map)
 /*------ Rev 2 sound board memory layout ------*/
 void itech32_state::sound_020_map(address_map &map)
 {
-	map(0x0000, 0x0000).mirror(0x400).r(FUNC(itech32_state::sound_data_r));
+	map(0x0000, 0x0000).r(m_soundlatch, FUNC(generic_latch_8_device::read));
+	map(0x0400, 0x0400).r(m_soundlatch2, FUNC(generic_latch_8_device::read));
 	map(0x0800, 0x083f).mirror(0x80).rw("ensoniq", FUNC(es5506_device::read), FUNC(es5506_device::write));
 	map(0x0c00, 0x0c00).w(FUNC(itech32_state::sound_bank_w));
 	map(0x1400, 0x1400).w(FUNC(itech32_state::firq_clear_w));
 	map(0x1800, 0x1800).r(FUNC(itech32_state::sound_data_buffer_r)).nopw();
+	map(0x1c00, 0x1c00).w(FUNC(itech32_state::sound_control_w));
 	map(0x2000, 0x3fff).ram();
 	map(0x4000, 0x7fff).bankr("soundbank");
 	map(0x8000, 0xffff).rom();
@@ -1101,7 +1093,7 @@ static INPUT_PORTS_START( timekill )
 	PORT_SERVICE_NO_TOGGLE( 0x0001, IP_ACTIVE_LOW )
 	PORT_BIT( 0x0002, IP_ACTIVE_LOW, IPT_SERVICE1 )
 	PORT_BIT( 0x0004, IP_ACTIVE_LOW, IPT_CUSTOM ) PORT_VBLANK("screen")
-	PORT_BIT( 0x0008, IP_ACTIVE_HIGH, IPT_CUSTOM ) PORT_CUSTOM_MEMBER(DEVICE_SELF, itech32_state,special_port_r, nullptr)
+	PORT_BIT( 0x0008, IP_ACTIVE_HIGH, IPT_CUSTOM ) PORT_READ_LINE_MEMBER(itech32_state, special_port_r)
 	PORT_DIPNAME( 0x0010, 0x0000, "Video Sync" )     PORT_DIPLOCATION("SW1:1")
 	PORT_DIPSETTING(      0x0000, "-" )
 	PORT_DIPSETTING(      0x0010, "+" )
@@ -1146,7 +1138,7 @@ static INPUT_PORTS_START( itech32_base_16bit )
 	PORT_SERVICE_NO_TOGGLE( 0x0001, IP_ACTIVE_LOW )
 	PORT_BIT( 0x0002, IP_ACTIVE_LOW, IPT_SERVICE1 )
 	PORT_BIT( 0x0004, IP_ACTIVE_LOW, IPT_CUSTOM ) PORT_VBLANK("screen")
-	PORT_BIT( 0x0008, IP_ACTIVE_HIGH, IPT_CUSTOM ) PORT_CUSTOM_MEMBER(DEVICE_SELF, itech32_state,special_port_r, nullptr)
+	PORT_BIT( 0x0008, IP_ACTIVE_HIGH, IPT_CUSTOM ) PORT_READ_LINE_MEMBER(itech32_state, special_port_r)
 	PORT_DIPNAME( 0x0010, 0x0000, "Video Sync" )     PORT_DIPLOCATION("SW1:4")
 	PORT_DIPSETTING(      0x0000, "-" )
 	PORT_DIPSETTING(      0x0010, "+" )
@@ -1365,7 +1357,7 @@ static INPUT_PORTS_START( itech32_base_32bit )
 	PORT_SERVICE_NO_TOGGLE( 0x00010000, IP_ACTIVE_LOW )
 	PORT_BIT( 0x00020000, IP_ACTIVE_LOW, IPT_SERVICE1 )
 	PORT_BIT( 0x00040000, IP_ACTIVE_LOW, IPT_CUSTOM ) PORT_VBLANK("screen")
-	PORT_BIT( 0x00080000, IP_ACTIVE_LOW, IPT_CUSTOM ) PORT_CUSTOM_MEMBER(DEVICE_SELF, itech32_state,special_port_r, nullptr)
+	PORT_BIT( 0x00080000, IP_ACTIVE_LOW, IPT_CUSTOM ) PORT_READ_LINE_MEMBER(itech32_state, special_port_r)
 	PORT_DIPNAME( 0x00100000, 0x00000000, "Video Sync" )     PORT_DIPLOCATION("SW1:4")
 	PORT_DIPSETTING(          0x00000000, "-" )
 	PORT_DIPSETTING(          0x00100000, "+" )
@@ -1665,6 +1657,8 @@ void itech32_state::base_devices(machine_config &config)
 	MC6809E(config, m_soundcpu, SOUND_CLOCK/8); // EF68B09EP
 	m_soundcpu->set_addrmap(AS_PROGRAM, &itech32_state::sound_map);
 
+	GENERIC_LATCH_8(config, m_soundlatch).data_pending_callback().set_inputline(m_soundcpu, INPUT_LINE_IRQ0);
+
 	nvram_device &nvram(NVRAM(config, "nvram"));
 	nvram.set_custom_handler(FUNC(itech32_state::nvram_init));
 
@@ -1726,8 +1720,6 @@ void itech32_state::bloodstm(machine_config &config)
 
 void drivedge_state::drivedge(machine_config &config)
 {
-	base_devices(config);
-
 	/* basic machine hardware */
 	M68EC020(config, m_maincpu, CPU020_CLOCK);
 	m_maincpu->set_addrmap(AS_PROGRAM, &drivedge_state::main_map);
@@ -1738,6 +1730,7 @@ void drivedge_state::drivedge(machine_config &config)
 	TMS32031(config, m_dsp[1], TMS_CLOCK);
 	m_dsp[1]->set_addrmap(AS_PROGRAM, &drivedge_state::tms2_map);
 
+	base_devices(config);
 	m_palette->set_format(palette_device::xBGR_888, 32768);
 
 	via(config);
@@ -1746,7 +1739,7 @@ void drivedge_state::drivedge(machine_config &config)
 
 //  M6803(config, "comm", 8000000/4); -- network CPU
 
-	config.m_minimum_quantum = attotime::from_hz(6000);
+	config.set_maximum_quantum(attotime::from_hz(6000));
 
 	m_screen->screen_vblank().set_nop(); // interrupt not used?
 
@@ -1760,13 +1753,19 @@ void drivedge_state::drivedge(machine_config &config)
 
 void itech32_state::sftm(machine_config &config)
 {
-	base_devices(config);
-
 	M68EC020(config, m_maincpu, CPU020_CLOCK);
 	m_maincpu->set_addrmap(AS_PROGRAM, &itech32_state::itech020_map);
 
+	base_devices(config);
+
 	m_soundcpu->set_addrmap(AS_PROGRAM, &itech32_state::sound_020_map);
 	m_soundcpu->set_periodic_int(FUNC(itech32_state::irq1_line_assert), attotime::from_hz(4*60));
+
+	INPUT_MERGER_ANY_HIGH(config, "soundirq").output_handler().set_inputline(m_soundcpu, M6809_IRQ_LINE);
+	m_soundlatch->data_pending_callback().set("soundirq", FUNC(input_merger_device::in_w<0>));
+
+	GENERIC_LATCH_8(config, m_soundlatch2);
+	m_soundlatch2->data_pending_callback().set("soundirq", FUNC(input_merger_device::in_w<1>));
 
 	m_palette->set_format(palette_device::xRGB_888, 32768);
 }
@@ -2983,6 +2982,7 @@ ROM_START( sftm110 )   /* Version 1.10, P/N 1064 REV 1 Mainboard, P/N 1073 REV 0
 	ROM_LOAD16_BYTE( "sfm_srom3.srom3", 0x000000, 0x080000, CRC(4f181534) SHA1(e858a33b22558665427146ec79dfba48edc20c2c) )
 ROM_END
 
+/* There is known to exist a PCB with hand written labels shown as V1.23 */
 
 ROM_START( sftmj114 )   /* Version 1.14N (Japan), P/N 1064 REV 1 Mainboard, P/N 1073 REV 0 ROM board, P/N 1066 REV 2 Sound board  */
 	ROM_REGION32_BE( CODE_SIZE, "user1", 0 )
@@ -4448,8 +4448,8 @@ void drivedge_state::driver_init()
 	m_vram_height = 1024;
 	m_planes = 1;
 
-	m_dsp[0]->space(AS_PROGRAM).install_read_handler(0x8382, 0x8382, read32_delegate(FUNC(drivedge_state::tms1_speedup_r),this));
-	m_dsp[1]->space(AS_PROGRAM).install_read_handler(0x8382, 0x8382, read32_delegate(FUNC(drivedge_state::tms2_speedup_r),this));
+	m_dsp[0]->space(AS_PROGRAM).install_read_handler(0x8382, 0x8382, read32_delegate(*this, FUNC(drivedge_state::tms1_speedup_r)));
+	m_dsp[1]->space(AS_PROGRAM).install_read_handler(0x8382, 0x8382, read32_delegate(*this, FUNC(drivedge_state::tms2_speedup_r)));
 }
 
 
@@ -4465,10 +4465,10 @@ void itech32_state::init_wcbowl()
 	m_vram_height = 1024;
 	m_planes = 1;
 
-	m_maincpu->space(AS_PROGRAM).install_read_handler(0x680000, 0x680001, read8smo_delegate(FUNC(itech32_state::trackball_r),this), 0x00ff);
+	m_maincpu->space(AS_PROGRAM).install_read_handler(0x680000, 0x680001, read8smo_delegate(*this, FUNC(itech32_state::trackball_r)), 0x00ff);
 
 	m_maincpu->space(AS_PROGRAM).nop_read(0x578000, 0x57ffff);
-	m_maincpu->space(AS_PROGRAM).install_read_handler(0x680080, 0x680081, read16smo_delegate(FUNC(itech32_state::wcbowl_prot_result_r),this));
+	m_maincpu->space(AS_PROGRAM).install_read_handler(0x680080, 0x680081, read16smo_delegate(*this, FUNC(itech32_state::wcbowl_prot_result_r)));
 	m_maincpu->space(AS_PROGRAM).nop_write(0x680080, 0x680081);
 }
 
@@ -4485,11 +4485,11 @@ void itech32_state::init_wcbowlj()
 	m_vram_height = 1024;
 	m_planes = 1;
 
-	m_maincpu->space(AS_PROGRAM).install_read_handler(0x680000, 0x680001, read8smo_delegate(FUNC(itech32_state::trackball_r),this), 0x00ff);
-	m_maincpu->space(AS_PROGRAM).install_read_handler(0x680040, 0x680041, read8smo_delegate(FUNC(itech32_state::trackball_p2_r),this), 0x00ff);
+	m_maincpu->space(AS_PROGRAM).install_read_handler(0x680000, 0x680001, read8smo_delegate(*this, FUNC(itech32_state::trackball_r)), 0x00ff);
+	m_maincpu->space(AS_PROGRAM).install_read_handler(0x680040, 0x680041, read8smo_delegate(*this, FUNC(itech32_state::trackball_p2_r)), 0x00ff);
 
 	m_maincpu->space(AS_PROGRAM).nop_read(0x578000, 0x57ffff);
-	m_maincpu->space(AS_PROGRAM).install_read_handler(0x680080, 0x680081, read16smo_delegate(FUNC(itech32_state::wcbowl_prot_result_r),this));
+	m_maincpu->space(AS_PROGRAM).install_read_handler(0x680080, 0x680081, read16smo_delegate(*this, FUNC(itech32_state::wcbowl_prot_result_r)));
 	m_maincpu->space(AS_PROGRAM).nop_write(0x680080, 0x680081);
 }
 
@@ -4502,8 +4502,8 @@ void itech32_state::init_sftm_common(int prot_addr)
 
 	m_itech020_prot_address = prot_addr;
 
-	m_maincpu->space(AS_PROGRAM).install_write_handler(0x300000, 0x300003, write8smo_delegate(FUNC(itech32_state::color_w<0>),this), 0x000000ff);
-	m_maincpu->space(AS_PROGRAM).install_write_handler(0x380000, 0x380003, write8smo_delegate(FUNC(itech32_state::color_w<1>),this), 0x000000ff);
+	m_maincpu->space(AS_PROGRAM).install_write_handler(0x300000, 0x300003, write8smo_delegate(*this, FUNC(itech32_state::color_w<0>)), 0x000000ff);
+	m_maincpu->space(AS_PROGRAM).install_write_handler(0x380000, 0x380003, write8smo_delegate(*this, FUNC(itech32_state::color_w<1>)), 0x000000ff);
 }
 
 
@@ -4532,10 +4532,10 @@ void itech32_state::init_shuffle_bowl_common(int prot_addr)
 
 	m_itech020_prot_address = prot_addr;
 
-	m_maincpu->space(AS_PROGRAM).install_write_handler(0x300000, 0x300003, write8smo_delegate(FUNC(itech32_state::color_w<0>),this), 0x000000ff);
-	m_maincpu->space(AS_PROGRAM).install_write_handler(0x380000, 0x380003, write8smo_delegate(FUNC(itech32_state::color_w<1>),this), 0x000000ff);
-	m_maincpu->space(AS_PROGRAM).install_read_handler(0x180800, 0x180803, read32smo_delegate(FUNC(itech32_state::trackball32_4bit_p1_r),this));
-	m_maincpu->space(AS_PROGRAM).install_read_handler(0x181000, 0x181003, read32smo_delegate(FUNC(itech32_state::trackball32_4bit_p2_r),this));
+	m_maincpu->space(AS_PROGRAM).install_write_handler(0x300000, 0x300003, write8smo_delegate(*this, FUNC(itech32_state::color_w<0>)), 0x000000ff);
+	m_maincpu->space(AS_PROGRAM).install_write_handler(0x380000, 0x380003, write8smo_delegate(*this, FUNC(itech32_state::color_w<1>)), 0x000000ff);
+	m_maincpu->space(AS_PROGRAM).install_read_handler(0x180800, 0x180803, read32smo_delegate(*this, FUNC(itech32_state::trackball32_4bit_p1_r)));
+	m_maincpu->space(AS_PROGRAM).install_read_handler(0x181000, 0x181003, read32smo_delegate(*this, FUNC(itech32_state::trackball32_4bit_p2_r)));
 }
 
 
@@ -4553,7 +4553,7 @@ void itech32_state::init_wcbowln()
 
 void itech32_state::install_timekeeper()
 {
-	m_maincpu->space(AS_PROGRAM).install_readwrite_handler(0x681000, 0x6817ff, read8sm_delegate(FUNC(timekeeper_device::read), &(*m_timekeeper)), write8sm_delegate(FUNC(timekeeper_device::write), &(*m_timekeeper)), 0xffffffff);
+	m_maincpu->space(AS_PROGRAM).install_readwrite_handler(0x681000, 0x6817ff, read8sm_delegate(*m_timekeeper, FUNC(timekeeper_device::read)), write8sm_delegate(*m_timekeeper, FUNC(timekeeper_device::write)), 0xffffffff);
 }
 
 void itech32_state::init_wcbowlt()
@@ -4583,7 +4583,7 @@ void itech32_state::init_gt3d()
 	    Hacked versions of this PCB have been found with GT97
 	    through GTClassic. This is _NOT_ a factory modification
 	*/
-	m_maincpu->space(AS_PROGRAM).install_read_handler(0x200000, 0x200003, read16smo_delegate(FUNC(itech32_state::trackball_8bit_r),this), 0x0000ffff);
+	m_maincpu->space(AS_PROGRAM).install_read_handler(0x200000, 0x200003, read16smo_delegate(*this, FUNC(itech32_state::trackball_8bit_r)), 0x0000ffff);
 	init_gt_common();
 }
 
@@ -4596,8 +4596,8 @@ void itech32_state::init_aama()
 	    board share the same sound CPU code and sample ROMs.
 	    This board has all versions of GT for it, GT3D through GTClassic
 	*/
-	m_maincpu->space(AS_PROGRAM).install_read_handler(0x180800, 0x180803, read32smo_delegate(FUNC(itech32_state::trackball32_4bit_p1_r),this));
-	m_maincpu->space(AS_PROGRAM).install_read_handler(0x181000, 0x181003, read32smo_delegate(FUNC(itech32_state::trackball32_4bit_p2_r),this));
+	m_maincpu->space(AS_PROGRAM).install_read_handler(0x180800, 0x180803, read32smo_delegate(*this, FUNC(itech32_state::trackball32_4bit_p1_r)));
+	m_maincpu->space(AS_PROGRAM).install_read_handler(0x181000, 0x181003, read32smo_delegate(*this, FUNC(itech32_state::trackball32_4bit_p2_r)));
 	init_gt_common();
 }
 
@@ -4621,7 +4621,7 @@ void itech32_state::init_s_ver()
 	    board: GT97 v1.21S, GT98, GT99, GT2K & GT Classic Versions 1.00S
 	    Trackball info is read through 200202 (actually 200203).
 	*/
-	m_maincpu->space(AS_PROGRAM).install_read_handler(0x200200, 0x200203, read32smo_delegate(FUNC(itech32_state::trackball32_4bit_p1_r),this));
+	m_maincpu->space(AS_PROGRAM).install_read_handler(0x200200, 0x200203, read32smo_delegate(*this, FUNC(itech32_state::trackball32_4bit_p1_r)));
 	init_gt_common();
 }
 
@@ -4635,7 +4635,7 @@ void itech32_state::init_gt3dl()
 	    Player 1 trackball read through 200003
 	    Player 2 trackball read through 200002
 	*/
-	m_maincpu->space(AS_PROGRAM).install_read_handler(0x200000, 0x200003, read32smo_delegate(FUNC(itech32_state::trackball32_4bit_combined_r),this));
+	m_maincpu->space(AS_PROGRAM).install_read_handler(0x200000, 0x200003, read32smo_delegate(*this, FUNC(itech32_state::trackball32_4bit_combined_r)));
 	init_gt_common();
 }
 
@@ -4643,7 +4643,7 @@ void itech32_state::init_gt3dl()
 void itech32_state::init_gt2kp()
 {
 	/* a little extra protection */
-	m_maincpu->space(AS_PROGRAM).install_read_handler(0x680000, 0x680003, read32smo_delegate(FUNC(itech32_state::gt2kp_prot_result_r),this));
+	m_maincpu->space(AS_PROGRAM).install_read_handler(0x680000, 0x680003, read32smo_delegate(*this, FUNC(itech32_state::gt2kp_prot_result_r)));
 	init_aama();
 
 	/* The protection code is:
@@ -4664,7 +4664,7 @@ Label1  bne.s       Label1          ; Infinite loop if result isn't 0x01
 void itech32_state::init_gtclasscp()
 {
 	/* a little extra protection */
-	m_maincpu->space(AS_PROGRAM).install_read_handler(0x680000, 0x680003, read32smo_delegate(FUNC(itech32_state::gtclass_prot_result_r),this));
+	m_maincpu->space(AS_PROGRAM).install_read_handler(0x680000, 0x680003, read32smo_delegate(*this, FUNC(itech32_state::gtclass_prot_result_r)));
 	init_aama();
 
 	/* The protection code is:

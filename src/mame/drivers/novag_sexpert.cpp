@@ -18,21 +18,18 @@ I/O via TTL, hardware design was very awkward.
 Super Forte is very similar, just a cheaper plastic case and chessboard buttons
 instead of magnet sensors.
 
-TODO:
-- sforte lcd_data_w implementation is wrong, especially led handling
-
 ******************************************************************************/
 
 #include "emu.h"
 #include "bus/rs232/rs232.h"
 #include "cpu/m6502/m65c02.h"
-#include "video/pwm.h"
-#include "video/hd44780.h"
 #include "machine/sensorboard.h"
 #include "machine/mos6551.h"
 #include "machine/nvram.h"
 #include "machine/timer.h"
 #include "sound/beep.h"
+#include "video/hd44780.h"
+#include "video/pwm.h"
 
 #include "emupal.h"
 #include "screen.h"
@@ -73,6 +70,9 @@ public:
 	DECLARE_INPUT_CHANGED_MEMBER(sexpert_cpu_freq) { sexpert_set_cpu_freq(); }
 
 protected:
+	virtual void machine_start() override;
+	virtual void machine_reset() override;
+
 	// devices/pointers
 	required_device<cpu_device> m_maincpu;
 	required_device<timer_device> m_irq_on;
@@ -85,9 +85,6 @@ protected:
 	required_device<rs232_port_device> m_rs232;
 	required_device<beep_device> m_beeper;
 	required_ioport_array<8> m_inputs;
-
-	virtual void machine_start() override;
-	virtual void machine_reset() override;
 
 	void sexpert_set_cpu_freq();
 
@@ -160,6 +157,9 @@ public:
 	// machine drivers
 	void sforte(machine_config &config);
 
+protected:
+	virtual void machine_start() override;
+
 private:
 	// address maps
 	void sforte_map(address_map &map);
@@ -167,12 +167,21 @@ private:
 	// I/O handlers
 	virtual DECLARE_WRITE8_MEMBER(lcd_control_w) override;
 	virtual DECLARE_WRITE8_MEMBER(lcd_data_w) override;
+
+	TIMER_CALLBACK_MEMBER(beep) { m_beeper->set_state(param); }
+	emu_timer *m_beeptimer;
 };
+
+void sforte_state::machine_start()
+{
+	sexpert_state::machine_start();
+	m_beeptimer = machine().scheduler().timer_alloc(timer_expired_delegate(FUNC(sforte_state::beep),this));
+}
 
 
 
 /******************************************************************************
-    Devices, I/O
+    I/O
 ******************************************************************************/
 
 // LCD
@@ -278,23 +287,24 @@ WRITE8_MEMBER(sforte_state::lcd_control_w)
 
 	// LCD pins: same as sexpert
 	sexpert_state::lcd_control_w(space, offset, data);
+	lcd_data_w(space, 0, m_lcd_data); // refresh inp mux
 }
 
 WRITE8_MEMBER(sforte_state::lcd_data_w)
 {
-	// d0-d2: input mux/led select
-	m_inp_mux = 1 << (data & 7);
+	// d0-d2: 74145 to input mux/led select
+	// 74145 D from lcd control d2 (HD44780 E)
+	m_inp_mux = 1 << ((m_lcd_control << 1 & 8) | (data & 7));
 
-	// if lcd is disabled, misc control
-	if (~m_lcd_control & 4)
-	{
-		// d5,d6: led data, but not both at same time?
-		m_led_data = ((data & 0x60) != 0x60) ? (data >> 5 & 3) : 0;
-		update_display();
+	// d5,d6: led data
+	m_led_data = ~data >> 5 & 3;
+	update_display();
 
-		// d7: enable beeper
-		m_beeper->set_state(data >> 7 & 1);
-	}
+	// d7: enable beeper
+	// capacitor for noise filter (sound glitches otherwise)
+	u8 param = data >> 7 & 1;
+	if (param != m_beeptimer->param())
+		m_beeptimer->adjust(attotime::from_msec(1), param);
 
 	// LCD pins: same as sexpert
 	sexpert_state::lcd_data_w(space, offset, data);
@@ -379,7 +389,7 @@ static INPUT_PORTS_START( sexpert )
 	PORT_BIT(0x04, IP_ACTIVE_HIGH, IPT_KEYPAD) PORT_CODE(KEYCODE_8) PORT_NAME("Print Board / Interface")
 
 	PORT_START("FAKE")
-	PORT_CONFNAME( 0x01, 0x00, "CPU Frequency" ) PORT_CHANGED_MEMBER(DEVICE_SELF, sexpert_state, sexpert_cpu_freq, nullptr) // factory set
+	PORT_CONFNAME( 0x01, 0x00, "CPU Frequency" ) PORT_CHANGED_MEMBER(DEVICE_SELF, sexpert_state, sexpert_cpu_freq, 0) // factory set
 	PORT_CONFSETTING(    0x00, "5MHz" )
 	PORT_CONFSETTING(    0x01, "6MHz" )
 INPUT_PORTS_END
@@ -415,7 +425,7 @@ void sexpert_state::sexpert(machine_config &config)
 
 	SENSORBOARD(config, m_board).set_type(sensorboard_device::MAGNETS);
 	m_board->init_cb().set(m_board, FUNC(sensorboard_device::preset_chess));
-	m_board->set_delay(attotime::from_msec(150));
+	m_board->set_delay(attotime::from_msec(200));
 
 	/* video hardware */
 	SCREEN(config, m_screen, SCREEN_TYPE_LCD);
@@ -430,7 +440,7 @@ void sexpert_state::sexpert(machine_config &config)
 
 	HD44780(config, m_lcd, 0);
 	m_lcd->set_lcd_size(2, 8);
-	m_lcd->set_pixel_update_cb(FUNC(sexpert_state::lcd_pixel_update), this);
+	m_lcd->set_pixel_update_cb(FUNC(sexpert_state::lcd_pixel_update));
 
 	PWM_DISPLAY(config, m_display).set_size(8, 8);
 	config.set_default_layout(layout_novag_sexpert);
@@ -447,11 +457,8 @@ void sforte_state::sforte(machine_config &config)
 
 	/* basic machine hardware */
 	m_maincpu->set_addrmap(AS_PROGRAM, &sforte_state::sforte_map);
-
 	m_irq_on->set_start_delay(m_irq_on->period() - attotime::from_usec(10)); // tlow measured between 8us and 12us (unstable)
-
 	m_board->set_type(sensorboard_device::BUTTONS);
-	m_board->set_delay(attotime::from_msec(200));
 
 	config.set_default_layout(layout_novag_sforte);
 }

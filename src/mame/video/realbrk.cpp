@@ -121,11 +121,11 @@ void realbrk_state::vram_2_w(offs_t offset, u16 data, u16 mem_mask)
 void realbrk_state::video_start()
 {
 	/* Backgrounds */
-	m_tilemap[0] = &machine().tilemap().create(*m_gfxdecode, tilemap_get_info_delegate(FUNC(realbrk_state::get_tile_info<0>),this), TILEMAP_SCAN_ROWS, 16, 16, 0x40, 0x20);
-	m_tilemap[1] = &machine().tilemap().create(*m_gfxdecode, tilemap_get_info_delegate(FUNC(realbrk_state::get_tile_info<1>),this), TILEMAP_SCAN_ROWS, 16, 16, 0x40, 0x20);
+	m_tilemap[0] = &machine().tilemap().create(*m_gfxdecode, tilemap_get_info_delegate(*this, FUNC(realbrk_state::get_tile_info<0>)), TILEMAP_SCAN_ROWS, 16, 16, 0x40, 0x20);
+	m_tilemap[1] = &machine().tilemap().create(*m_gfxdecode, tilemap_get_info_delegate(*this, FUNC(realbrk_state::get_tile_info<1>)), TILEMAP_SCAN_ROWS, 16, 16, 0x40, 0x20);
 
 	/* Text */
-	m_tilemap[2] = &machine().tilemap().create(*m_gfxdecode, tilemap_get_info_delegate(FUNC(realbrk_state::get_tile_info_2),this), TILEMAP_SCAN_ROWS,   8,  8, 0x40, 0x20);
+	m_tilemap[2] = &machine().tilemap().create(*m_gfxdecode, tilemap_get_info_delegate(*this, FUNC(realbrk_state::get_tile_info_2)), TILEMAP_SCAN_ROWS,   8,  8, 0x40, 0x20);
 
 	m_tilemap[0]->set_transparent_pen(0);
 	m_tilemap[1]->set_transparent_pen(0);
@@ -288,7 +288,7 @@ void realbrk_state::draw_sprites(bitmap_ind16 &bitmap, const rectangle &cliprect
 								0xffff << 16,
 								1 << 16,
 								0 << 16,
-								0, 0);
+								false, 0);
 
 						currx = (sx - (y + 1) * ydim) / 0x10000;
 						curry = (sy + x * xdim) / 0x10000;
@@ -302,7 +302,7 @@ void realbrk_state::draw_sprites(bitmap_ind16 &bitmap, const rectangle &cliprect
 								0 << 16,
 								0 << 16,
 								0xffff << 16,
-								0, 0);
+								false, 0);
 
 						currx = (sx - (x + 1) * xdim) / 0x10000;
 						curry = (sy - (y + 1) * ydim) / 0x10000;
@@ -316,7 +316,7 @@ void realbrk_state::draw_sprites(bitmap_ind16 &bitmap, const rectangle &cliprect
 								1 << 16,
 								0xffff << 16,
 								0 << 16,
-								0, 0);
+								false, 0);
 
 						currx = (sx + y * ydim) / 0x10000;
 						curry = (sy - (x + 1) * xdim) / 0x10000;

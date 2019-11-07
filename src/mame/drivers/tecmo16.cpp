@@ -321,32 +321,10 @@ INPUT_PORTS_END
 
 /******************************************************************************/
 
-static const gfx_layout charlayout =
-{
-	8,8,    /* 8*8 characters */
-	RGN_FRAC(1,1),   /* 4096 characters */
-	4,  /* 4 bits per pixel */
-	{ STEP4(0,1) }, /* the bitplanes are packed in one nibble */
-	{ STEP8(0,4) },
-	{ STEP8(0,4*8) },
-	4*8*8    /* every char takes 32 consecutive bytes */
-};
-
-static const gfx_layout tilelayout =
-{
-	16,16,  /* 16*16 tiles */
-	RGN_FRAC(1,1),   /* 8192 tiles */
-	4,  /* 4 bits per pixel */
-	{ STEP4(0,1) }, /* the bitplanes are packed in one nibble */
-	{ STEP8(0,4), STEP8(4*8*8,4) },
-	{ STEP8(0,4*8), STEP8(4*8*8*2,4*8) },
-	4*8*8*2*2   /* every tile takes 128 consecutive bytes */
-};
-
 static GFXDECODE_START( gfx_tecmo16 )
-	GFXDECODE_ENTRY( "gfx1", 0, charlayout, 1*16*16,    16 )
-	GFXDECODE_ENTRY( "gfx2", 0, tilelayout,       0, 0x100 )
-	GFXDECODE_ENTRY( "gfx3", 0, charlayout,       0, 0x100 )
+	GFXDECODE_ENTRY( "gfx1", 0, gfx_8x8x4_packed_msb,         1*16*16,    16 )
+	GFXDECODE_ENTRY( "gfx2", 0, gfx_8x8x4_row_2x2_group_packed_msb, 0, 0x100 )
+	GFXDECODE_ENTRY( "gfx3", 0, gfx_8x8x4_packed_msb,               0, 0x100 )
 GFXDECODE_END
 
 /******************************************************************************/
@@ -364,7 +342,7 @@ void tecmo16_state::fstarfrc(machine_config &config)
 	Z80(config, m_audiocpu, MASTER_CLOCK/6);         /* 4MHz */
 	m_audiocpu->set_addrmap(AS_PROGRAM, &tecmo16_state::sound_map);
 								/* NMIs are triggered by the main CPU */
-	config.m_minimum_quantum = attotime::from_hz(600);
+	config.set_maximum_quantum(attotime::from_hz(600));
 
 	/* video hardware */
 	BUFFERED_SPRITERAM16(config, m_spriteram);

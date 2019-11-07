@@ -616,8 +616,8 @@ void menu_select_game::populate(float &customtop, float &custombottom)
 		skip_main_items = 0;
 
 	// configure the custom rendering
-	customtop = 3.0f * ui().get_line_height() + 5.0f * UI_BOX_TB_BORDER;
-	custombottom = 5.0f * ui().get_line_height() + 3.0f * UI_BOX_TB_BORDER;
+	customtop = 3.0f * ui().get_line_height() + 5.0f * ui().box_tb_border();
+	custombottom = 5.0f * ui().get_line_height() + 3.0f * ui().box_tb_border();
 
 	// reselect prior game launched, if any
 	if (old_item_selected != -1)
@@ -1396,7 +1396,7 @@ void menu_select_game::make_topbox_text(std::string &line0, std::string &line1, 
 	line0 = string_format(_("%1$s %2$s ( %3$d / %4$d machines (%5$d BIOS) )"),
 			emulator_info::get_appname(),
 			bare_build_version,
-			visible_items,
+			m_available_items,
 			(driver_list::total() - 1),
 			m_persistent_data.bios_count());
 

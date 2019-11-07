@@ -115,7 +115,7 @@ WRITE8_MEMBER(timeplt_state::chkun_sound_w)
 		m_tc8830f->reset();
 }
 
-CUSTOM_INPUT_MEMBER(timeplt_state::chkun_hopper_status_r)
+READ_LINE_MEMBER(timeplt_state::chkun_hopper_status_r)
 {
 	// temp workaround, needs hopper
 	return machine().rand();
@@ -141,7 +141,7 @@ void timeplt_state::timeplt_main_map(address_map &map)
 	map(0xc000, 0xc000).mirror(0x0cff).r(FUNC(timeplt_state::scanline_r)).w("timeplt_audio", FUNC(timeplt_audio_device::sound_data_w));
 	map(0xc200, 0xc200).mirror(0x0cff).portr("DSW1").w("watchdog", FUNC(watchdog_timer_device::reset_w));
 	map(0xc300, 0xc300).mirror(0x0c9f).portr("IN0");
-	map(0xc300, 0xc30f).lw8("mainlatch_w", [this](offs_t offset, u8 data) { m_mainlatch->write_d0(offset >> 1, data); });
+	map(0xc300, 0xc30f).lw8(NAME([this] (offs_t offset, u8 data) { m_mainlatch->write_d0(offset >> 1, data); }));
 	map(0xc320, 0xc320).mirror(0x0c9f).portr("IN1");
 	map(0xc340, 0xc340).mirror(0x0c9f).portr("IN2");
 	map(0xc360, 0xc360).mirror(0x0c9f).portr("DSW0");
@@ -272,7 +272,7 @@ static INPUT_PORTS_START( chkun )
 
 	PORT_START("IN1")
 	PORT_BIT( 0x01, IP_ACTIVE_LOW, IPT_BUTTON4 ) PORT_NAME("Bet 3B")
-	PORT_BIT( 0x02, IP_ACTIVE_LOW, IPT_CUSTOM ) PORT_CUSTOM_MEMBER(DEVICE_SELF, timeplt_state, chkun_hopper_status_r, nullptr)
+	PORT_BIT( 0x02, IP_ACTIVE_LOW, IPT_CUSTOM ) PORT_READ_LINE_MEMBER(timeplt_state, chkun_hopper_status_r)
 	PORT_BIT( 0x04, IP_ACTIVE_LOW, IPT_BUTTON2 ) PORT_NAME("Bet 1B")
 	PORT_BIT( 0x08, IP_ACTIVE_LOW, IPT_BUTTON3 ) PORT_NAME("Bet 2B")
 	PORT_BIT( 0x10, IP_ACTIVE_LOW, IPT_BUTTON1 )
@@ -321,7 +321,7 @@ static INPUT_PORTS_START( bikkuric )
 
 	PORT_START("IN1")
 	PORT_BIT( 0x01, IP_ACTIVE_LOW, IPT_JOYSTICK_LEFT )
-	PORT_BIT( 0x02, IP_ACTIVE_LOW, IPT_CUSTOM ) PORT_CUSTOM_MEMBER(DEVICE_SELF, timeplt_state, chkun_hopper_status_r, nullptr)
+	PORT_BIT( 0x02, IP_ACTIVE_LOW, IPT_CUSTOM ) PORT_READ_LINE_MEMBER(timeplt_state, chkun_hopper_status_r)
 	PORT_BIT( 0x04, IP_ACTIVE_LOW, IPT_JOYSTICK_UP )
 	PORT_BIT( 0x08, IP_ACTIVE_LOW, IPT_JOYSTICK_DOWN )
 	PORT_BIT( 0x10, IP_ACTIVE_LOW, IPT_BUTTON1 )

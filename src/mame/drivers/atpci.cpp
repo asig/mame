@@ -48,8 +48,8 @@ WRITE8_MEMBER(at586_state::boot_state_w)
 
 void at586_state::tx_config(device_t *device)
 {
-	MCFG_I82439TX_CPU( "maincpu" )
-	MCFG_I82439TX_REGION( "isa" )
+	downcast<i82439tx_device *>(device)->set_cpu("maincpu");
+	downcast<i82439tx_device *>(device)->set_region("isa");
 }
 
 void at586_state::sb_config(device_t *device)
@@ -102,6 +102,7 @@ void at586_state::at_softlists(machine_config &config)
 	SOFTWARE_LIST(config, "pc_disk_list").set_original("ibm5150");
 	SOFTWARE_LIST(config, "at_disk_list").set_original("ibm5170");
 	SOFTWARE_LIST(config, "at_cdrom_list").set_original("ibm5170_cdrom");
+	SOFTWARE_LIST(config, "midi_disk_list").set_compatible("midi_flop");
 }
 
 void at586_state::at586(machine_config &config)

@@ -124,6 +124,9 @@ bool unsp_frontend::describe(opcode_desc &desc, const opcode_desc *prev)
 			{
 				r1++;
 				desc.regout[0] |= 1 << r1;
+				if (r1 == unsp_device::REG_PC) {
+					desc.flags |= OPFLAG_END_SEQUENCE | OPFLAG_IS_UNCONDITIONAL_BRANCH;
+				}
 			}
 			return true;
 		}
@@ -188,6 +191,9 @@ bool unsp_frontend::describe(opcode_desc &desc, const opcode_desc *prev)
 					case 12:
 					case 14:
 					case 37:
+
+					case 4: // should be 1.2 only but jak_care triggers, see notes in non-drc
+					case 5: // ^^
 						return true;
 				}
 				return false;

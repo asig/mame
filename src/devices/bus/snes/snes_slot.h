@@ -40,7 +40,8 @@ enum
 	SNES_OBC1,
 	SNES_SA1,
 	SNES_SDD1,
-	SNES_SFX,
+	SNES_GSU1,
+	SNES_GSU2,
 	SNES_SPC7110,
 	SNES_SPC7110_RTC,
 	SNES_SRTC,
@@ -88,7 +89,8 @@ enum
 	ADDON_OBC1,
 	ADDON_SA1,
 	ADDON_SDD1,
-	ADDON_SFX,
+	ADDON_GSU1,
+	ADDON_GSU2,
 	ADDON_SPC7110,
 	ADDON_SPC7110_RTC,
 	ADDON_ST010,
@@ -102,7 +104,7 @@ class base_sns_cart_slot_device;
 
 // ======================> device_sns_cart_interface
 
-class device_sns_cart_interface : public device_slot_card_interface
+class device_sns_cart_interface : public device_interface
 {
 	friend class base_sns_cart_slot_device;
 
@@ -171,9 +173,6 @@ public:
 	auto irq_callback() { return m_irq_callback.bind(); }
 	auto open_bus_callback() { return m_open_bus_callback.bind(); }
 
-	// device-level overrides
-	virtual void device_start() override;
-
 	// image-level overrides
 	virtual image_init_result call_load() override;
 	virtual void call_unload() override;
@@ -229,6 +228,9 @@ public:
 	device_sns_cart_interface*      m_cart;
 
 protected:
+	// device-level overrides
+	virtual void device_start() override;
+
 	base_sns_cart_slot_device(const machine_config &mconfig, device_type type, const char *tag, device_t *owner, uint32_t clock);
 
 private:

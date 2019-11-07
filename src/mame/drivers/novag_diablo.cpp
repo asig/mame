@@ -19,13 +19,13 @@ Scorpio 68000 hardware is very similar, but with chessboard buttons and side led
 #include "emu.h"
 #include "bus/rs232/rs232.h"
 #include "cpu/m68000/m68000.h"
-#include "video/pwm.h"
-#include "video/hd44780.h"
 #include "machine/sensorboard.h"
 #include "machine/mos6551.h"
 #include "machine/nvram.h"
 #include "machine/timer.h"
 #include "sound/beep.h"
+#include "video/pwm.h"
+#include "video/hd44780.h"
 
 #include "emupal.h"
 #include "screen.h"
@@ -121,7 +121,7 @@ void diablo_state::machine_start()
 
 
 /******************************************************************************
-    Devices, I/O
+    I/O
 ******************************************************************************/
 
 // LCD
@@ -308,6 +308,7 @@ void diablo_state::diablo68k(machine_config &config)
 
 	SENSORBOARD(config, m_board).set_type(sensorboard_device::MAGNETS);
 	m_board->init_cb().set(m_board, FUNC(sensorboard_device::preset_chess));
+	m_board->set_delay(attotime::from_msec(100));
 
 	/* video hardware */
 	SCREEN(config, m_screen, SCREEN_TYPE_LCD);
@@ -322,7 +323,7 @@ void diablo_state::diablo68k(machine_config &config)
 
 	HD44780(config, m_lcd, 0);
 	m_lcd->set_lcd_size(2, 8);
-	m_lcd->set_pixel_update_cb(FUNC(diablo_state::lcd_pixel_update), this);
+	m_lcd->set_pixel_update_cb(FUNC(diablo_state::lcd_pixel_update));
 
 	PWM_DISPLAY(config, m_display).set_size(8, 8+2);
 	config.set_default_layout(layout_novag_diablo68k);
@@ -341,7 +342,7 @@ void diablo_state::scorpio68k(machine_config &config)
 	m_maincpu->set_addrmap(AS_PROGRAM, &diablo_state::scorpio68k_map);
 
 	m_board->set_type(sensorboard_device::BUTTONS);
-	m_board->set_delay(attotime::from_msec(200));
+	m_board->set_delay(attotime::from_msec(150));
 
 	config.set_default_layout(layout_novag_scorpio68k);
 }

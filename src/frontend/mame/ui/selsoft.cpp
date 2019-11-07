@@ -225,12 +225,12 @@ void menu_select_software::handle()
 						if (!mfav.is_favorite_system_software(*swinfo))
 						{
 							mfav.add_favorite_software(*swinfo);
-							machine().popmessage(_("%s\n added to favorites list."), swinfo->longname.c_str());
+							machine().popmessage(_("%s\n added to favorites list."), swinfo->longname);
 						}
 
 						else
 						{
-							machine().popmessage(_("%s\n removed from favorites list."), swinfo->longname.c_str());
+							machine().popmessage(_("%s\n removed from favorites list."), swinfo->longname);
 							mfav.remove_favorite_software(*swinfo);
 						}
 					}
@@ -321,8 +321,8 @@ void menu_select_software::populate(float &customtop, float &custombottom)
 	item_append(menu_item_type::SEPARATOR, flags_ui);
 
 	// configure the custom rendering
-	customtop = 4.0f * ui().get_line_height() + 5.0f * UI_BOX_TB_BORDER;
-	custombottom = 5.0f * ui().get_line_height() + 4.0f * UI_BOX_TB_BORDER;
+	customtop = 4.0f * ui().get_line_height() + 5.0f * ui().box_tb_border();
+	custombottom = 5.0f * ui().get_line_height() + 4.0f * ui().box_tb_border();
 
 	if (old_software != -1)
 	{
@@ -633,7 +633,7 @@ void menu_select_software::get_selection(ui_software_info const *&software, game
 void menu_select_software::make_topbox_text(std::string &line0, std::string &line1, std::string &line2) const
 {
 	// determine the text for the header
-	int vis_item = !m_search.empty() ? visible_items : (m_has_empty_start ? visible_items - 1 : visible_items);
+	int vis_item = !m_search.empty() ? m_available_items : (m_has_empty_start ? m_available_items - 1 : m_available_items);
 	line0 = string_format(_("%1$s %2$s ( %3$d / %4$d software packages )"), emulator_info::get_appname(), bare_build_version, vis_item, m_swinfo.size() - 1);
 	line1 = string_format(_("Driver: \"%1$s\" software list "), m_driver.type.fullname());
 

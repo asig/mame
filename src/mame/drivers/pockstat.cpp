@@ -20,13 +20,13 @@
     Currently, a handful of games run, but some die due to odd hardware
     issues.
 
-	To start a game:
-	- Wait for the set-date screen to appear
-	- Press Down
-	- Set date with directional controls (optional)
-	- Press Button 1, wait, press Button 1, press Right, game starts
+    To start a game:
+    - Wait for the set-date screen to appear
+    - Press Down
+    - Set date with directional controls (optional)
+    - Press Button 1, wait, press Button 1, press Right, game starts
 
-	If you do nothing for about 20 secs, it turns itself off (screen goes white).
+    If you do nothing for about 20 secs, it turns itself off (screen goes white).
 
 ****************************************************************************/
 
@@ -41,19 +41,19 @@
 #include "screen.h"
 #include "speaker.h"
 
-#define LOG_UNKNOWN	(1 << 0)
-#define LOG_FTLB	(1 << 1)
-#define LOG_IRQS	(1 << 2)
-#define LOG_INTC	(1 << 3)
-#define LOG_TIMER	(1 << 4)
-#define LOG_CLOCK	(1 << 5)
-#define LOG_RTC		(1 << 6)
-#define LOG_LCD		(1 << 7)
-#define LOG_AUDIO	(1 << 8)
-#define LOG_ALL		(LOG_UNKNOWN | LOG_FTLB | LOG_IRQS | LOG_INTC | LOG_TIMER | LOG_CLOCK | LOG_RTC | LOG_LCD | LOG_AUDIO)
-#define LOG_DEFAULT	LOG_ALL
+#define LOG_UNKNOWN (1 << 0)
+#define LOG_FTLB    (1 << 1)
+#define LOG_IRQS    (1 << 2)
+#define LOG_INTC    (1 << 3)
+#define LOG_TIMER   (1 << 4)
+#define LOG_CLOCK   (1 << 5)
+#define LOG_RTC     (1 << 6)
+#define LOG_LCD     (1 << 7)
+#define LOG_AUDIO   (1 << 8)
+#define LOG_ALL     (LOG_UNKNOWN | LOG_FTLB | LOG_IRQS | LOG_INTC | LOG_TIMER | LOG_CLOCK | LOG_RTC | LOG_LCD | LOG_AUDIO)
+#define LOG_DEFAULT LOG_ALL
 
-#define VERBOSE		(0)
+#define VERBOSE     (0)
 #include "logmacro.h"
 
 class pockstat_state : public driver_device
@@ -89,7 +89,6 @@ private:
 	memory_region *m_cart_rom;
 
 	static constexpr uint32_t TIMER_COUNT = 3;
-	static constexpr uint32_t DEFAULT_CLOCK = 2000000;
 
 	enum : uint32_t
 	{
@@ -182,7 +181,7 @@ private:
 	DECLARE_WRITE32_MEMBER(audio_w);
 	TIMER_CALLBACK_MEMBER(timer_tick);
 	TIMER_CALLBACK_MEMBER(rtc_tick);
-	DECLARE_DEVICE_IMAGE_LOAD_MEMBER(flash);
+	DECLARE_DEVICE_IMAGE_LOAD_MEMBER(flash_load);
 
 	static const int CPU_FREQ[16];
 };
@@ -958,7 +957,7 @@ uint32_t pockstat_state::screen_update_pockstat(screen_device &screen, bitmap_rg
 	return 0;
 }
 
-DEVICE_IMAGE_LOAD_MEMBER(pockstat_state, flash)
+DEVICE_IMAGE_LOAD_MEMBER(pockstat_state::flash_load)
 {
 	static const char *gme_id = "123-456-STD";
 	char cart_id[0xf40];
@@ -983,6 +982,8 @@ DEVICE_IMAGE_LOAD_MEMBER(pockstat_state, flash)
 
 void pockstat_state::pockstat(machine_config &config)
 {
+	static constexpr uint32_t DEFAULT_CLOCK = 2000000;
+
 	/* basic machine hardware */
 	ARM7(config, m_maincpu, DEFAULT_CLOCK);
 	m_maincpu->set_addrmap(AS_PROGRAM, &pockstat_state::mem_map);
@@ -1007,7 +1008,7 @@ void pockstat_state::pockstat(machine_config &config)
 	GENERIC_CARTSLOT(config, m_cart, generic_plain_slot, "pockstat_cart", "gme");
 	m_cart->set_width(GENERIC_ROM32_WIDTH);
 	m_cart->set_endian(ENDIANNESS_LITTLE);
-	m_cart->set_device_load(device_image_load_delegate(&pockstat_state::device_image_load_flash, this));
+	m_cart->set_device_load(FUNC(pockstat_state::flash_load));
 }
 
 /* ROM definition */

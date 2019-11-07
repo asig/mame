@@ -137,15 +137,8 @@ public:
 	void program_11bit(address_map &map);
 	void program_12bit(address_map &map);
 
-	void set_t0_clk_cb(clock_update_delegate callback) { m_t0_clk_func = callback; }
-	template <class FunctionClass> void set_t0_clk_cb(const char *devname, void (FunctionClass::*callback)(uint32_t), const char *name)
-	{
-		set_t0_clk_cb(clock_update_delegate(callback, name, devname, static_cast<FunctionClass *>(nullptr)));
-	}
-	template <class FunctionClass> void set_t0_clk_cb(void (FunctionClass::*callback)(uint32_t), const char *name)
-	{
-		set_t0_clk_cb(clock_update_delegate(callback, name, nullptr, static_cast<FunctionClass *>(nullptr)));
-	}
+	template <typename... T> void set_t0_clk_cb(T &&... args) { m_t0_clk_func.set(std::forward<T>(args)...); }
+
 protected:
 	typedef int (mcs48_cpu_device::*mcs48_ophandler)();
 
@@ -207,7 +200,8 @@ protected:
 	uint8_t       m_dbbi;               /* 8-bit input data buffer (UPI-41 only) */
 	uint8_t       m_dbbo;               /* 8-bit output data buffer (UPI-41 only) */
 
-	bool          m_irq_state;          /* true if an IRQ is pending */
+	bool          m_irq_state;          /* true if the IRQ line is active */
+	bool          m_irq_polled;         /* true if last instruction was JNI (and not taken) */
 	bool          m_irq_in_progress;    /* true if an IRQ is in progress */
 	bool          m_timer_overflow;     /* true on a timer overflow; cleared by taking interrupt */
 	bool          m_timer_flag;         /* true on a timer overflow; cleared on JTF */

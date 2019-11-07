@@ -207,7 +207,7 @@ void metro_state::device_timer(emu_timer &timer, device_timer_id id, int param, 
 		update_irq_state();
 		break;
 	default:
-		assert_always(false, "Unknown id in metro_state::device_timer");
+		throw emu_fatalerror("Unknown id in metro_state::device_timer");
 	}
 }
 
@@ -322,9 +322,9 @@ READ8_MEMBER(metro_state::soundstatus_r)
 	return (m_busy_sndcpu ? 0x00 : 0x01);
 }
 
-CUSTOM_INPUT_MEMBER(metro_state::custom_soundstatus_r)
+READ_LINE_MEMBER(metro_state::custom_soundstatus_r)
 {
-	return (m_busy_sndcpu ? 0x01 : 0x00);
+	return (m_busy_sndcpu ? 1 : 0);
 }
 
 WRITE8_MEMBER(metro_state::soundstatus_w)
@@ -1373,7 +1373,7 @@ void metro_state::vmetal_map(address_map &map)
 	PORT_BIT(  0x0010, IP_ACTIVE_LOW,  IPT_START1   ) \
 	PORT_BIT(  0x0020, IP_ACTIVE_LOW,  IPT_START2   ) \
 	PORT_BIT(  0x0040, IP_ACTIVE_HIGH, IPT_UNKNOWN  ) \
-	PORT_BIT(  0x0080, IP_ACTIVE_HIGH, IPT_CUSTOM  ) PORT_CUSTOM_MEMBER(DEVICE_SELF, metro_state,custom_soundstatus_r, nullptr)   /* From Sound CPU */
+	PORT_BIT(  0x0080, IP_ACTIVE_HIGH, IPT_CUSTOM  ) PORT_READ_LINE_MEMBER(metro_state, custom_soundstatus_r)   /* From Sound CPU */
 
 
 #define COINAGE_SERVICE_LOC(DIPBANK) \
@@ -3012,7 +3012,6 @@ void metro_state::i4100_config(machine_config &config)
 	m_screen->set_size(320, 240);
 	m_screen->set_visarea(0, 320-1, 0, 240-1);
 	m_screen->set_screen_update("vdp", FUNC(imagetek_i4100_device::screen_update));
-	m_screen->set_palette("vdp:palette");
 }
 
 void metro_state::i4220_config(machine_config &config)
@@ -3026,7 +3025,6 @@ void metro_state::i4220_config(machine_config &config)
 	m_screen->set_size(320, 240);
 	m_screen->set_visarea(0, 320-1, 0, 224-1);
 	m_screen->set_screen_update("vdp2", FUNC(imagetek_i4100_device::screen_update));
-	m_screen->set_palette("vdp2:palette");
 }
 
 void metro_state::i4300_config(machine_config &config)
@@ -3040,7 +3038,6 @@ void metro_state::i4300_config(machine_config &config)
 	m_screen->set_size(320, 240);
 	m_screen->set_visarea(0, 320-1, 0, 224-1);
 	m_screen->set_screen_update("vdp3", FUNC(imagetek_i4100_device::screen_update));
-	m_screen->set_palette("vdp3:palette");
 }
 
 // TODO: these comes from the CRTC inside the i4100
@@ -3129,7 +3126,7 @@ void metro_state::bangball(machine_config &config)
 {
 	msgogo(config);
 	m_maincpu->set_addrmap(AS_PROGRAM, &metro_state::bangball_map);
-	m_maincpu->set_periodic_int(device_interrupt_delegate(), attotime());
+	m_maincpu->remove_periodic_int();
 	TIMER(config, "scantimer").configure_scanline(FUNC(metro_state::bangball_scanline), "screen", 0, 1);
 
 	// doesn't like 58.2 Hz
@@ -3141,7 +3138,7 @@ void metro_state::batlbubl(machine_config &config)
 {
 	msgogo(config);
 	m_maincpu->set_addrmap(AS_PROGRAM, &metro_state::batlbubl_map);
-	m_maincpu->set_periodic_int(device_interrupt_delegate(), attotime());
+	m_maincpu->remove_periodic_int();
 	TIMER(config, "scantimer").configure_scanline(FUNC(metro_state::bangball_scanline), "screen", 0, 1);
 
 	// doesn't like 58.2 Hz
@@ -3203,7 +3200,7 @@ void metro_state::puzzli(machine_config &config)
 {
 	daitorid(config);
 
-	m_maincpu->set_periodic_int(device_interrupt_delegate(), attotime());
+	m_maincpu->remove_periodic_int();
 	TIMER(config, "scantimer").configure_scanline(FUNC(metro_state::bangball_scanline), "screen", 0, 1);
 
 	m_screen->set_video_attributes(VIDEO_UPDATE_SCANLINE);
@@ -3651,7 +3648,6 @@ void metro_state::blzntrnd(machine_config &config)
 	m_screen->set_size(320, 240);
 	m_screen->set_visarea(0, 304-1, 0, 224-1);
 	m_screen->set_screen_update(FUNC(metro_state::screen_update_psac_vdp2_mix));
-	m_screen->set_palette("vdp2:palette");
 	m_screen->screen_vblank().set(FUNC(metro_state::karatour_vblank_irq));
 
 	MCFG_VIDEO_START_OVERRIDE(metro_state,blzntrnd)

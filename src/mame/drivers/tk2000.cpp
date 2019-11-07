@@ -582,7 +582,7 @@ void tk2000_state::tk2000(machine_config &config)
 	m_maincpu->set_addrmap(AS_PROGRAM, &tk2000_state::apple2_map);
 
 	TIMER(config, "scantimer").configure_scanline(FUNC(tk2000_state::apple2_interrupt), "screen", 0, 1);
-	config.m_minimum_quantum = attotime::from_hz(60);
+	config.set_maximum_quantum(attotime::from_hz(60));
 
 	APPLE2_VIDEO(config, m_video, XTAL(14'318'181)).set_screen(m_screen);
 
@@ -614,6 +614,7 @@ void tk2000_state::tk2000(machine_config &config)
 
 	CASSETTE(config, m_cassette);
 	m_cassette->set_default_state(CASSETTE_STOPPED);
+	m_cassette->add_route(ALL_OUTPUTS, "mono", 0.05);
 
 	CENTRONICS(config, m_printer, centronics_devices, nullptr);
 	m_printer->busy_handler().set(FUNC(tk2000_state::printer_busy_w));

@@ -3,6 +3,7 @@
 
 #include "emu.h"
 #include "machine/pci.h"
+#include "machine/idectrl.h"
 #include "includes/xbox_pci.h"
 #include "includes/xbox.h"
 #include "machine/ds128x.h"
@@ -329,6 +330,11 @@ WRITE_LINE_MEMBER(mcpx_isalpc_device::irq14)
 	pic8259_2->ir6_w(state);
 }
 
+WRITE_LINE_MEMBER(mcpx_isalpc_device::irq15)
+{
+	pic8259_2->ir7_w(state);
+}
+
 uint32_t mcpx_isalpc_device::acknowledge()
 {
 	return pic8259_1->acknowledge();
@@ -580,7 +586,7 @@ mcpx_ohci_device::mcpx_ohci_device(const machine_config &mconfig, const char *ta
 	set_ids(0x10de01c2, 0, 0, 0);
 }
 
-void mcpx_ohci_device::plug_usb_device(int port, ohci_function *function)
+void mcpx_ohci_device::plug_usb_device(int port, device_usb_ohci_function_interface *function)
 {
 	function->set_bus_manager(ohci_usb);
 	ohci_usb->usb_ohci_plug(port, function);
@@ -625,7 +631,7 @@ void mcpx_ohci_device::device_config_complete()
 		ohci_usb_connector *conn = downcast<ohci_usb_connector *>(subdevice(id));
 		if (conn)
 		{
-			ohci_function *func = conn->get_device();
+			device_usb_ohci_function_interface *func = conn->get_card_device();
 			if (func)
 			{
 				connecteds[connecteds_count].dev = func;
@@ -1043,6 +1049,8 @@ void mcpx_ide_device::ide_pri_command(address_map &map)
 
 void mcpx_ide_device::ide_pri_control(address_map &map)
 {
+	// 3f6
+	map(2, 2).rw(FUNC(mcpx_ide_device::pri_read_cs1_r), FUNC(mcpx_ide_device::pri_write_cs1_w));
 }
 
 void mcpx_ide_device::ide_sec_command(address_map &map)
@@ -1052,6 +1060,8 @@ void mcpx_ide_device::ide_sec_command(address_map &map)
 
 void mcpx_ide_device::ide_sec_control(address_map &map)
 {
+	// 376
+	map(2, 2).rw(FUNC(mcpx_ide_device::sec_read_cs1_r), FUNC(mcpx_ide_device::sec_write_cs1_w));
 }
 
 void mcpx_ide_device::ide_io(address_map &map)
@@ -1062,6 +1072,8 @@ void mcpx_ide_device::ide_io(address_map &map)
 
 mcpx_ide_device::mcpx_ide_device(const machine_config &mconfig, const char *tag, device_t *owner, uint32_t clock)
 	: pci_device(mconfig, MCPX_IDE, tag, owner, clock),
+	m_pri(*this, "ide1"),
+	m_sec(*this, "ide2"),
 	m_pri_interrupt_handler(*this),
 	m_sec_interrupt_handler(*this)
 {
@@ -1101,20 +1113,79 @@ void mcpx_ide_device::device_add_mconfig(machine_config &config)
 void mcpx_ide_device::map_extra(uint64_t memory_window_start, uint64_t memory_window_end, uint64_t memory_offset, address_space *memory_space,
 	uint64_t io_window_start, uint64_t io_window_end, uint64_t io_offset, address_space *io_space)
 {
-	if (~pclass & 1)
+	if (~pclass & 1) // compatibility mode
+	{
 		io_space->install_device(0x1f0, 0x1f7, *this, &mcpx_ide_device::ide_pri_command);
-	/*if (~pclass & 4)
-	    io_space->install_device(0x3f0, 0x3f7, *this, &mcpx_ide_device::ide_sec_command);*/
+		io_space->install_device(0x3f4, 0x3f7, *this, &mcpx_ide_device::ide_pri_control);
+	}
+	if (~pclass & 4)
+	{
+		io_space->install_device(0x170, 0x177, *this, &mcpx_ide_device::ide_sec_command);
+		io_space->install_device(0x374, 0x377, *this, &mcpx_ide_device::ide_sec_control);
+	}
 }
 
 WRITE32_MEMBER(mcpx_ide_device::class_rev_w)
 {
 	if (ACCESSING_BITS_8_15)
 	{
+		uint32_t old = pclass;
 		// bit 0 specifies if the primary channel is in compatibility or native-pci mode
 		// bit 2 specifies if the secondary channel is in compatibility or native-pci mode
 		pclass = (pclass & 0xfffffffa) | ((data >> 8) & 5);
+		if (old ^ pclass)
+		{
+			if (~pclass & 1) // compatibility mode
+			{
+				bank_infos[0].flags |= M_DISABLED;
+				bank_infos[1].flags |= M_DISABLED;
+			}
+			else
+			{
+				bank_infos[0].flags &= ~M_DISABLED;
+				bank_infos[1].flags &= ~M_DISABLED;
+			}
+			if (~pclass & 1) // compatibility mode
+			{
+				bank_infos[2].flags |= M_DISABLED;
+				bank_infos[3].flags |= M_DISABLED;
+			}
+			else
+			{
+				bank_infos[2].flags &= ~M_DISABLED;
+				bank_infos[3].flags &= ~M_DISABLED;
+			}
+			remap_cb();
+		}
 	}
+}
+
+READ8_MEMBER(mcpx_ide_device::pri_read_cs1_r)
+{
+	if (!(command & 1))
+		return 0xff;
+	return m_pri->read_cs1(1, 0xff0000) >> 16;
+}
+
+WRITE8_MEMBER(mcpx_ide_device::pri_write_cs1_w)
+{
+	if (!(command & 1))
+		return;
+	m_pri->write_cs1(1, data << 16, 0xff0000);
+}
+
+READ8_MEMBER(mcpx_ide_device::sec_read_cs1_r)
+{
+	if (!(command & 1))
+		return 0xff;
+	return m_sec->read_cs1(1, 0xff0000) >> 16;
+}
+
+WRITE8_MEMBER(mcpx_ide_device::sec_write_cs1_w)
+{
+	if (!(command & 1))
+		return;
+	m_sec->write_cs1(1, data << 16, 0xff0000);
 }
 
 WRITE_LINE_MEMBER(mcpx_ide_device::ide_pri_interrupt)
@@ -1133,6 +1204,12 @@ WRITE_LINE_MEMBER(mcpx_ide_device::ide_sec_interrupt)
 
 DEFINE_DEVICE_TYPE(NV2A_AGP, nv2a_agp_device, "nv2a_agp", "NV2A AGP Host to PCI Bridge")
 
+void nv2a_agp_device::config_map(address_map& map)
+{
+	agp_bridge_device::config_map(map);
+	map(0x40, 0xff).rw(FUNC(nv2a_agp_device::unknown_r), FUNC(nv2a_agp_device::unknown_w));
+}
+
 nv2a_agp_device::nv2a_agp_device(const machine_config &mconfig, const char *tag, device_t *owner, uint32_t clock)
 	: agp_bridge_device(mconfig, NV2A_AGP, tag, owner, clock)
 {
@@ -1146,6 +1223,24 @@ void nv2a_agp_device::device_start()
 void nv2a_agp_device::device_reset()
 {
 	agp_bridge_device::device_reset();
+}
+
+READ32_MEMBER(nv2a_agp_device::unknown_r)
+{
+	// 4c 8 or 32
+	// 44 8
+	// 45 8
+	// 46 8
+	// 47 8
+	printf("R %08X %08X\n",0x40+offset*4,mem_mask);
+	if (offset == 3)
+		return 1;
+	return 0;
+}
+
+WRITE32_MEMBER(nv2a_agp_device::unknown_w)
+{
+	printf("W %08X %08X %08X\n", 0x40+offset*4, mem_mask, data);
 }
 
 /*
@@ -1165,7 +1260,7 @@ void nv2a_gpu_device::nv2a_mirror(address_map &map)
 }
 
 nv2a_gpu_device::nv2a_gpu_device(const machine_config &mconfig, const char *tag, device_t *owner, uint32_t clock) :
-	pci_device(mconfig, NV2A_GPU, tag, owner, clock),
+	agp_device(mconfig, NV2A_GPU, tag, owner, clock),
 	nvidia_nv2a(nullptr),
 	cpu(*this, finder_base::DUMMY_TAG),
 	m_interrupt_handler(*this),
@@ -1176,7 +1271,7 @@ nv2a_gpu_device::nv2a_gpu_device(const machine_config &mconfig, const char *tag,
 
 void nv2a_gpu_device::device_start()
 {
-	pci_device::device_start();
+	agp_device::device_start();
 	m_interrupt_handler.resolve_safe();
 	add_map(0x01000000, M_MEM, FUNC(nv2a_gpu_device::nv2a_mmio));
 	bank_infos[0].adr = 0xfd000000;
@@ -1196,7 +1291,7 @@ void nv2a_gpu_device::device_start()
 
 void nv2a_gpu_device::device_reset()
 {
-	pci_device::device_reset();
+	agp_device::device_reset();
 	nvidia_nv2a->set_ram_base(m_program->get_read_ptr(0));
 }
 

@@ -37,7 +37,6 @@ Cassette considerations
 
 #include "emu.h"
 #include "includes/huebler.h"
-#include "sound/wave.h"
 #include "speaker.h"
 #include "screen.h"
 
@@ -113,9 +112,9 @@ void amu880_state::amu880_io(address_map &map)
 {
 	map.unmap_value_high();
 	map.global_mask(0xff);
-//  AM_RANGE(0x00, 0x00) AM_MIRROR(0x03) AM_WRITE(power_off_w)
-//  AM_RANGE(0x04, 0x04) AM_MIRROR(0x02) AM_WRITE(tone_off_w)
-//  AM_RANGE(0x05, 0x05) AM_MIRROR(0x02) AM_WRITE(tone_on_w)
+//  map(0x00, 0x00).mirror(0x03).w(FUNC(amu880_state::power_off_w));
+//  map(0x04, 0x04).mirror(0x02).w(FUNC(amu880_state::tone_off_w));
+//  map(0x05, 0x05).mirror(0x02).w(FUNC(amu880_state::tone_on_w));
 	map(0x08, 0x09).mirror(0x02).r(FUNC(amu880_state::keyboard_r));
 	map(0x0c, 0x0f).rw(Z80PIO2_TAG, FUNC(z80pio_device::read_alt), FUNC(z80pio_device::write_alt));
 	map(0x10, 0x13).rw(Z80PIO1_TAG, FUNC(z80pio_device::read_alt), FUNC(z80pio_device::write_alt));
@@ -365,7 +364,6 @@ void amu880_state::amu880(machine_config &config)
 
 	/* sound hardware */
 	SPEAKER(config, "mono").front_center();
-	WAVE(config, "wave", m_cassette).add_route(ALL_OUTPUTS, "mono", 0.05);
 
 	/* devices */
 	z80ctc_device& ctc(Z80CTC(config, Z80CTC_TAG, XTAL(10'000'000)/4));
@@ -386,6 +384,7 @@ void amu880_state::amu880(machine_config &config)
 
 	CASSETTE(config, m_cassette);
 	m_cassette->set_default_state(CASSETTE_STOPPED | CASSETTE_MOTOR_ENABLED | CASSETTE_SPEAKER_ENABLED);
+	m_cassette->add_route(ALL_OUTPUTS, "mono", 0.05);
 
 	/* internal ram */
 	RAM(config, RAM_TAG).set_default_size("64K");

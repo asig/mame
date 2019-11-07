@@ -44,6 +44,7 @@ PCB:
 #include "emupal.h"
 #include "screen.h"
 #include "speaker.h"
+#include "tilemap.h"
 
 #define MASTER_CLOCK XTAL(12'000'000)
 
@@ -111,7 +112,7 @@ TILE_GET_INFO_MEMBER(albazg_state::y_get_bg_tile_info)
 
 void albazg_state::video_start()
 {
-	m_bg_tilemap = &machine().tilemap().create(*m_gfxdecode, tilemap_get_info_delegate(FUNC(albazg_state::y_get_bg_tile_info),this), TILEMAP_SCAN_ROWS, 8, 8, 32, 32);
+	m_bg_tilemap = &machine().tilemap().create(*m_gfxdecode, tilemap_get_info_delegate(*this, FUNC(albazg_state::y_get_bg_tile_info)), TILEMAP_SCAN_ROWS, 8, 8, 32, 32);
 }
 
 uint32_t albazg_state::screen_update_yumefuda(screen_device &screen, bitmap_rgb32 &bitmap, const rectangle &cliprect)

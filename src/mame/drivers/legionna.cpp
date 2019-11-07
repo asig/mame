@@ -45,11 +45,13 @@ Denjin Makai
 
 - Needs to patch a sound-related comm to make this to work, same as SD Gundam Psycho Salamander No Kyoui (68k never writes to port 6 for whatever reason).
 
-- There are a bunch of unemulated registers, one of them seems to be a brightness control of some sort. Needs a PCB side-by-side test.
-
-- backdrop color is ugly, especially noticeable in the port harbour stage (level 4). It should be dark blue or black but it's currently grey.
-
 - there are some ROM writes from time to time, could be a coding bug or something related to the protection.
+
+- There's a minor gap in one of the transitions during final stage, after the conveyor belt and the horizontal elevator (the one with tons of grenades), this is known to not happen on a real PCB.
+
+- "Mai T Joplin" text in credits is slightly off of screen area even on real HW (btanb)
+
+- Initials can be entered into ranking screen only if player(s) never ever continues (btanb)
 
 Godzilla
 --------
@@ -105,12 +107,17 @@ u8 legionna_state::denjinmk_sound_comms_r(offs_t offset)
 
 void legionna_state::legionna_cop_map(address_map &map)
 {
-	map(0x100400, 0x100401).w(m_raiden2cop, FUNC(raiden2cop_device::cop_sprite_dma_param_lo_w)); // grainbow
-	map(0x100402, 0x100403).w(m_raiden2cop, FUNC(raiden2cop_device::cop_sprite_dma_param_hi_w)); // grainbow
-	map(0x10040c, 0x10040d).w(m_raiden2cop, FUNC(raiden2cop_device::cop_sprite_dma_size_w)); // grainbow
-	map(0x100410, 0x100411).w(m_raiden2cop, FUNC(raiden2cop_device::cop_sprite_dma_inc_w)); // grainbow
-	map(0x100412, 0x100413).w(m_raiden2cop, FUNC(raiden2cop_device::cop_sprite_dma_src_hi_w)); // grainbow
-	map(0x100414, 0x100415).w(m_raiden2cop, FUNC(raiden2cop_device::cop_sprite_dma_src_lo_w)); // grainbow
+	// grainbow sprite DMA
+	// the three NOP writes are initied before every sprite DMA
+	map(0x100400, 0x100401).w(m_raiden2cop, FUNC(raiden2cop_device::cop_sprite_dma_param_lo_w));
+	map(0x100402, 0x100403).w(m_raiden2cop, FUNC(raiden2cop_device::cop_sprite_dma_param_hi_w));
+	map(0x100404, 0x100405).nopw(); // $0002
+	map(0x10040a, 0x10040b).nopw(); // $ffff
+	map(0x10040c, 0x10040d).w(m_raiden2cop, FUNC(raiden2cop_device::cop_sprite_dma_size_w));
+	map(0x10040e, 0x10040f).nopw(); // $0023
+	map(0x100410, 0x100411).w(m_raiden2cop, FUNC(raiden2cop_device::cop_sprite_dma_inc_w));
+	map(0x100412, 0x100413).w(m_raiden2cop, FUNC(raiden2cop_device::cop_sprite_dma_src_hi_w));
+	map(0x100414, 0x100415).w(m_raiden2cop, FUNC(raiden2cop_device::cop_sprite_dma_src_lo_w));
 
 	map(0x10041c, 0x10041d).w(m_raiden2cop, FUNC(raiden2cop_device::cop_angle_target_w)); // angle target (for 0x6200 COP macro)
 	map(0x10041e, 0x10041f).w(m_raiden2cop, FUNC(raiden2cop_device::cop_angle_step_w));   // angle step   (for 0x6200 COP macro)
@@ -153,6 +160,8 @@ void legionna_state::legionna_cop_map(address_map &map)
 	map(0x10047c, 0x10047d).w(m_raiden2cop, FUNC(raiden2cop_device::cop_dma_dst_w));
 	map(0x10047e, 0x10047f).rw(m_raiden2cop, FUNC(raiden2cop_device::cop_dma_mode_r), FUNC(raiden2cop_device::cop_dma_mode_w));
 
+//  map(0x100488, 0x100489).nopw(); grainbow $0010
+//  map(0x10048a, 0x10048b).nopw(); grainbow $0000
 	map(0x10048c, 0x10048d).w(m_raiden2cop, FUNC(raiden2cop_device::cop_sprite_dma_abs_y_w)); // 68k
 	map(0x10048e, 0x10048f).w(m_raiden2cop, FUNC(raiden2cop_device::cop_sprite_dma_abs_x_w)); // 68k
 
@@ -188,9 +197,9 @@ void legionna_state::legionna_map(address_map &map)
 	map(0x100470, 0x100471).nopw(); // toggles 0x2000 / 0x0000, tile bank on some games
 	map(0x100600, 0x10064f).rw(m_crtc, FUNC(seibu_crtc_device::read), FUNC(seibu_crtc_device::write));
 	map(0x100680, 0x100681).nopw(); // irq ack?
-	map(0x100700, 0x10071f).lrw8("seibu_sound_rw",
-								 [this](offs_t offset) { return m_seibu_sound->main_r(offset >> 1); },
-								 [this](offs_t offset, u8 data) { m_seibu_sound->main_w(offset >> 1, data); }).umask16(0x00ff);
+	map(0x100700, 0x10071f).lrw8(
+								 NAME([this](offs_t offset) { return m_seibu_sound->main_r(offset >> 1); }),
+								 NAME([this](offs_t offset, u8 data) { m_seibu_sound->main_w(offset >> 1, data); })).umask16(0x00ff);
 	map(0x100740, 0x100741).portr("DSW1");
 	map(0x100744, 0x100745).portr("PLAYERS12");
 	map(0x100748, 0x100749).portr("PLAYERS34");
@@ -218,9 +227,9 @@ void legionna_state::heatbrl_map(address_map &map)
 	map(0x100744, 0x100745).portr("PLAYERS12");
 	map(0x100748, 0x100749).portr("PLAYERS34");
 	map(0x10074c, 0x10074d).portr("SYSTEM");
-	map(0x1007c0, 0x1007df).lrw8("seibu_sound_rw",
-								 [this](offs_t offset) { return m_seibu_sound->main_r(offset >> 1); },
-								 [this](offs_t offset, u8 data) { m_seibu_sound->main_w(offset >> 1, data); }).umask16(0x00ff);
+	map(0x1007c0, 0x1007df).lrw8(
+								 NAME([this] (offs_t offset) { return m_seibu_sound->main_r(offset >> 1); }),
+								 NAME([this] (offs_t offset, u8 data) { m_seibu_sound->main_w(offset >> 1, data); })).umask16(0x00ff);
 	map(0x100800, 0x100fff).ram(); // .w(FUNC(legionna_state::background_w)).share("back_data");
 	map(0x101000, 0x1017ff).ram(); // .w(FUNC(legionna_state::foreground_w).share("fore_data");
 	map(0x101800, 0x101fff).ram(); // .w(FUNC(legionna_state::midground_w).share("mid_data");
@@ -238,9 +247,9 @@ void legionna_state::godzilla_map(address_map &map)
 	map(0x100470, 0x100471).w(FUNC(legionna_state::heatbrl_setgfxbank));
 	map(0x100600, 0x10064f).rw(m_crtc, FUNC(seibu_crtc_device::read), FUNC(seibu_crtc_device::write));
 	map(0x100680, 0x100681).nopw(); // irq ack?
-	map(0x100700, 0x10071f).lrw8("seibu_sound_rw",
-								 [this](offs_t offset) { return m_seibu_sound->main_r(offset >> 1); },
-								 [this](offs_t offset, u8 data) { m_seibu_sound->main_w(offset >> 1, data); }).umask16(0x00ff);
+	map(0x100700, 0x10071f).lrw8(
+								 NAME([this] (offs_t offset) { return m_seibu_sound->main_r(offset >> 1); }),
+								 NAME([this] (offs_t offset, u8 data) { m_seibu_sound->main_w(offset >> 1, data); })).umask16(0x00ff);
 	map(0x100740, 0x100741).portr("DSW1");
 	map(0x100744, 0x100745).portr("PLAYERS12");
 	map(0x100748, 0x100749).portr("PLAYERS34");
@@ -293,7 +302,7 @@ void legionna_state::denjinmk_map(address_map &map)
 	map(0x100600, 0x10064f).rw(m_crtc, FUNC(seibu_crtc_device::read), FUNC(seibu_crtc_device::write));
 	map(0x100680, 0x100681).nopw(); // irq ack?
 	map(0x100700, 0x10071f).r(FUNC(legionna_state::denjinmk_sound_comms_r))
-		.lw8("seibu_sound_w", [this](offs_t offset, u8 data) { m_seibu_sound->main_w(offset >> 1, data); }).umask16(0x00ff);
+			.lw8(NAME([this] (offs_t offset, u8 data) { m_seibu_sound->main_w(offset >> 1, data); })).umask16(0x00ff);
 	map(0x100740, 0x100741).portr("DSW1");
 	map(0x100744, 0x100745).portr("PLAYERS12");
 	map(0x100748, 0x100749).portr("PLAYERS34");
@@ -320,9 +329,9 @@ void legionna_state::grainbow_map(address_map &map)
 	map(0x100480, 0x100487).w(FUNC(legionna_state::grainbow_layer_config_w)); // probably a COP feature
 	map(0x100600, 0x10064f).rw(m_crtc, FUNC(seibu_crtc_device::read), FUNC(seibu_crtc_device::write));
 	map(0x100680, 0x100681).nopw(); // irq ack?
-	map(0x100700, 0x10071f).lrw8("seibu_sound_rw",
-								 [this](offs_t offset) { return m_seibu_sound->main_r(offset >> 1); },
-								 [this](offs_t offset, u8 data) { m_seibu_sound->main_w(offset >> 1, data); }).umask16(0x00ff);
+	map(0x100700, 0x10071f).lrw8(
+								 NAME([this](offs_t offset) { return m_seibu_sound->main_r(offset >> 1); }),
+								 NAME([this](offs_t offset, u8 data) { m_seibu_sound->main_w(offset >> 1, data); })).umask16(0x00ff);
 	map(0x100740, 0x100741).portr("DSW1");
 	map(0x100744, 0x100745).portr("PLAYERS12");
 	map(0x100748, 0x100749).portr("PLAYERS34");
@@ -347,9 +356,9 @@ void legionna_state::cupsoc_map(address_map &map)
 	map(0x100000, 0x1003ff).ram();
 	map(0x100600, 0x10064f).rw(m_crtc, FUNC(seibu_crtc_device::read), FUNC(seibu_crtc_device::write));
 	map(0x100680, 0x100681).nopw(); // irq ack?
-	map(0x100700, 0x10071f).lrw8("seibu_sound_rw",
-								 [this](offs_t offset) { return m_seibu_sound->main_r(offset >> 1); },
-								 [this](offs_t offset, u8 data) { m_seibu_sound->main_w(offset >> 1, data); }).umask16(0x00ff);
+	map(0x100700, 0x10071f).lrw8(
+								 NAME([this] (offs_t offset) { return m_seibu_sound->main_r(offset >> 1); }),
+								 NAME([this] (offs_t offset, u8 data) { m_seibu_sound->main_w(offset >> 1, data); })).umask16(0x00ff);
 	map(0x100740, 0x100741).portr("DSW1");
 	map(0x100744, 0x100745).portr("PLAYERS12");
 	map(0x100748, 0x100749).portr("PLAYERS34");
@@ -375,22 +384,22 @@ void legionna_state::cupsocs_map(address_map &map)
 	legionna_cop_map(map);
 	map(0x000000, 0x0fffff).rom();
 	map(0x100000, 0x1003ff).ram();
-	map(0x100600, 0x10067f).lrw16("crtc_rw",
-								  [this](address_space &space, offs_t offset, u16 mem_mask) {
+	map(0x100600, 0x10067f).lrw16(
+								  NAME([this](address_space &space, offs_t offset, u16 mem_mask) {
 									  return m_crtc->read(space, offset ^ 0x20, mem_mask);
-								  },
-								  [this](address_space &space, offs_t offset, u16 data, u16 mem_mask) {
+								  }),
+								  NAME([this](address_space &space, offs_t offset, u16 data, u16 mem_mask) {
 									  m_crtc->write(space, offset ^ 0x20, data, mem_mask);
-								  });
+								  }));
 	map(0x100680, 0x100681).nopw(); // irq ack?
 	map(0x100700, 0x100701).portr("DSW1");
 	map(0x100704, 0x100705).portr("PLAYERS12");
 	map(0x100708, 0x100709).portr("PLAYERS34");
 	map(0x10070c, 0x10070d).portr("SYSTEM");
 	map(0x10071c, 0x10071d).portr("DSW2");
-	map(0x100740, 0x10075f).lrw8("seibu_sound_rw",
-								 [this](offs_t offset) { return m_seibu_sound->main_r(offset >> 1); },
-								 [this](offs_t offset, u8 data) { m_seibu_sound->main_w(offset >> 1, data); }).umask16(0x00ff);
+	map(0x100740, 0x10075f).lrw8(
+								 NAME([this] (offs_t offset) { return m_seibu_sound->main_r(offset >> 1); }),
+								 NAME([this] (offs_t offset, u8 data) { m_seibu_sound->main_w(offset >> 1, data); })).umask16(0x00ff);
 	map(0x100800, 0x100fff).ram(); // .w(FUNC(legionna_state::background_w)).share("back_data");
 	map(0x101000, 0x1017ff).ram(); // .w(FUNC(legionna_state::foreground_w).share("fore_data");
 	map(0x101800, 0x101fff).ram(); // .w(FUNC(legionna_state::midground_w).share("mid_data");
@@ -780,9 +789,9 @@ static INPUT_PORTS_START( grainbow )
 	PORT_DIPNAME( 0x0100, 0x0100, DEF_STR( Flip_Screen ) )
 	PORT_DIPSETTING(      0x0100, DEF_STR( Off ) )
 	PORT_DIPSETTING(      0x0000, DEF_STR( On ) )
-	PORT_DIPNAME( 0x0200, 0x0200, DEF_STR( Unknown ) ) // Dead code?
-	PORT_DIPSETTING(      0x0200, DEF_STR( Off ) )
-	PORT_DIPSETTING(      0x0000, DEF_STR( On ) )
+	PORT_DIPNAME( 0x0200, 0x0200, DEF_STR( Demo_Sounds ) )
+	PORT_DIPSETTING(      0x0000, DEF_STR( No ) )
+	PORT_DIPSETTING(      0x0200, DEF_STR( Yes ) )
 	PORT_DIPNAME( 0x0400, 0x0400, DEF_STR( Unknown ) )
 	PORT_DIPSETTING(      0x0400, DEF_STR( Off ) )
 	PORT_DIPSETTING(      0x0000, DEF_STR( On ) )
@@ -2532,8 +2541,8 @@ GAME( 1992, heatbrlu,  heatbrl,  heatbrl,  heatbrl,  legionna_state, empty_init,
 GAME( 1992, heatbrle,  heatbrl,  heatbrl,  heatbrl,  legionna_state, empty_init,     ROT0, "TAD Corporation (Electronic Devices license)", "Heated Barrel (Electronic Devices license)", 0 )
 
 GAME( 1993, godzilla,  0,        godzilla, godzilla, legionna_state, init_godzilla,  ROT0, "Banpresto", "Godzilla (Japan)", 0 )
-GAME( 1993, grainbow,  0,        grainbow, grainbow, legionna_state, empty_init,     ROT0, "Banpresto", "SD Gundam Sangokushi Rainbow Tairiku Senki (Japan)", MACHINE_UNEMULATED_PROTECTION | MACHINE_NOT_WORKING )
-GAME( 1993, grainbowk, grainbow, grainbow, grainbow, legionna_state, empty_init,     ROT0, "Banpresto", "SD Gundam Sangokushi Rainbow Tairiku Senki (Korea)", MACHINE_UNEMULATED_PROTECTION | MACHINE_NOT_WORKING )
+GAME( 1993, grainbow,  0,        grainbow, grainbow, legionna_state, empty_init,     ROT0, "Banpresto", "SD Gundam Sangokushi Rainbow Tairiku Senki (Japan)", 0 )
+GAME( 1993, grainbowk, grainbow, grainbow, grainbow, legionna_state, empty_init,     ROT0, "Banpresto", "SD Gundam Sangokushi Rainbow Tairiku Senki (Korea)", 0 )
 GAME( 1994, denjinmk,  0,        denjinmk, denjinmk, legionna_state, empty_init,     ROT0, "Winkysoft (Banpresto license)", "Denjin Makai", 0 )
 
 GAME( 1992, cupsoc,    0,        cupsoc,   cupsoc,   legionna_state, init_cupsoc,    ROT0, "Seibu Kaihatsu", "Seibu Cup Soccer (set 1)", MACHINE_UNEMULATED_PROTECTION | MACHINE_NOT_WORKING )

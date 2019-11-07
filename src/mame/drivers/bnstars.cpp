@@ -98,6 +98,7 @@ ROMs    : MR96004-10.1  [125661cd] (IC5 - Samples)
 
 #include "rendlay.h"
 #include "speaker.h"
+#include "tilemap.h"
 
 
 class bnstars_state : public ms32_state
@@ -125,7 +126,7 @@ public:
 
 	void init_bnstars();
 
-	DECLARE_CUSTOM_INPUT_MEMBER(mahjong_ctrl_r);
+	template <int P> DECLARE_CUSTOM_INPUT_MEMBER(mahjong_ctrl_r);
 
 private:
 
@@ -488,25 +489,21 @@ void bnstars_state::draw_sprites(screen_device &screen, bitmap_ind16 &bitmap, co
 
 void bnstars_state::video_start()
 {
-	m_ms32_tx_tilemap[0] = &machine().tilemap().create(*m_gfxdecode, tilemap_get_info_delegate(FUNC(bnstars_state::get_ms32_tx0_tile_info),this),TILEMAP_SCAN_ROWS, 8, 8,64,64);
-	m_ms32_tx_tilemap[1] = &machine().tilemap().create(*m_gfxdecode, tilemap_get_info_delegate(FUNC(bnstars_state::get_ms32_tx1_tile_info),this),TILEMAP_SCAN_ROWS, 8, 8,64,64);
+	m_ms32_tx_tilemap[0] = &machine().tilemap().create(*m_gfxdecode, tilemap_get_info_delegate(*this, FUNC(bnstars_state::get_ms32_tx0_tile_info)), TILEMAP_SCAN_ROWS, 8, 8, 64,64);
+	m_ms32_tx_tilemap[1] = &machine().tilemap().create(*m_gfxdecode, tilemap_get_info_delegate(*this, FUNC(bnstars_state::get_ms32_tx1_tile_info)), TILEMAP_SCAN_ROWS, 8, 8, 64,64);
 	m_ms32_tx_tilemap[0]->set_transparent_pen(0);
 	m_ms32_tx_tilemap[1]->set_transparent_pen(0);
 
-	m_ms32_bg_tilemap[0] = &machine().tilemap().create(*m_gfxdecode, tilemap_get_info_delegate(FUNC(bnstars_state::get_ms32_bg0_tile_info),this),TILEMAP_SCAN_ROWS,16,16,64,64);
-	m_ms32_bg_tilemap[1] = &machine().tilemap().create(*m_gfxdecode, tilemap_get_info_delegate(FUNC(bnstars_state::get_ms32_bg1_tile_info),this),TILEMAP_SCAN_ROWS,16,16,64,64);
+	m_ms32_bg_tilemap[0] = &machine().tilemap().create(*m_gfxdecode, tilemap_get_info_delegate(*this, FUNC(bnstars_state::get_ms32_bg0_tile_info)), TILEMAP_SCAN_ROWS, 16,16, 64,64);
+	m_ms32_bg_tilemap[1] = &machine().tilemap().create(*m_gfxdecode, tilemap_get_info_delegate(*this, FUNC(bnstars_state::get_ms32_bg1_tile_info)), TILEMAP_SCAN_ROWS, 16,16, 64,64);
 	m_ms32_bg_tilemap[0]->set_transparent_pen(0);
 	m_ms32_bg_tilemap[1]->set_transparent_pen(0);
 
-	m_ms32_roz_tilemap[0] = &machine().tilemap().create(*m_gfxdecode, tilemap_get_info_delegate(FUNC(bnstars_state::get_ms32_roz0_tile_info),this),TILEMAP_SCAN_ROWS,16,16,128,128);
-	m_ms32_roz_tilemap[1] = &machine().tilemap().create(*m_gfxdecode, tilemap_get_info_delegate(FUNC(bnstars_state::get_ms32_roz1_tile_info),this),TILEMAP_SCAN_ROWS,16,16,128,128);
+	m_ms32_roz_tilemap[0] = &machine().tilemap().create(*m_gfxdecode, tilemap_get_info_delegate(*this, FUNC(bnstars_state::get_ms32_roz0_tile_info)),TILEMAP_SCAN_ROWS, 16,16,128,128);
+	m_ms32_roz_tilemap[1] = &machine().tilemap().create(*m_gfxdecode, tilemap_get_info_delegate(*this, FUNC(bnstars_state::get_ms32_roz1_tile_info)),TILEMAP_SCAN_ROWS, 16,16,128,128);
 	m_ms32_roz_tilemap[0]->set_transparent_pen(0);
 	m_ms32_roz_tilemap[1]->set_transparent_pen(0);
-
-
 }
-
-
 
 
 
@@ -557,7 +554,7 @@ uint32_t bnstars_state::screen_update_bnstars_right(screen_device &screen, bitma
 
 static INPUT_PORTS_START( bnstars )
 	PORT_START("P1")
-	PORT_BIT( 0x000000ff, IP_ACTIVE_HIGH, IPT_CUSTOM ) PORT_CUSTOM_MEMBER(DEVICE_SELF, bnstars_state, mahjong_ctrl_r, (void *)0)
+	PORT_BIT( 0x000000ff, IP_ACTIVE_HIGH, IPT_CUSTOM ) PORT_CUSTOM_MEMBER(bnstars_state, mahjong_ctrl_r<0>)
 	PORT_BIT( 0x0000ff00, IP_ACTIVE_LOW, IPT_UNKNOWN )
 	PORT_BIT( 0x00010000, IP_ACTIVE_LOW, IPT_COIN1 )
 	PORT_BIT( 0x00020000, IP_ACTIVE_LOW, IPT_UNKNOWN )
@@ -600,7 +597,7 @@ static INPUT_PORTS_START( bnstars )
 	PORT_BIT( 0xe0, IP_ACTIVE_LOW, IPT_UNKNOWN )
 
 	PORT_START("P2")
-	PORT_BIT( 0x000000ff, IP_ACTIVE_HIGH, IPT_CUSTOM ) PORT_CUSTOM_MEMBER(DEVICE_SELF, bnstars_state, mahjong_ctrl_r, (void *)1)
+	PORT_BIT( 0x000000ff, IP_ACTIVE_HIGH, IPT_CUSTOM ) PORT_CUSTOM_MEMBER(bnstars_state, mahjong_ctrl_r<1>)
 	PORT_BIT( 0x0000ff00, IP_ACTIVE_LOW, IPT_UNKNOWN )
 	PORT_BIT( 0x00010000, IP_ACTIVE_LOW, IPT_COIN2 )
 	PORT_BIT( 0x00020000, IP_ACTIVE_LOW, IPT_UNKNOWN )
@@ -751,9 +748,10 @@ static GFXDECODE_START( gfx_bnstars )
 	GFXDECODE_ENTRY( "gfx7", 0, txlayout,     0x6000, 0x10 ) /* Tx scr2 */
 GFXDECODE_END
 
+template <int P>
 CUSTOM_INPUT_MEMBER(bnstars_state::mahjong_ctrl_r)
 {
-	required_ioport_array<4> &keys = (((int)(uintptr_t)param) == 0) ? m_p1_keys : m_p2_keys;
+	required_ioport_array<4> &keys = (P == 0) ? m_p1_keys : m_p2_keys;
 
 	switch (m_bnstars1_mahjong_select & 0x2080)
 	{
@@ -855,7 +853,7 @@ void bnstars_state::bnstars(machine_config &config)
 	Z80(config, m_audiocpu, 4000000); // Unverified; it's possibly higher than 4MHz
 	m_audiocpu->set_addrmap(AS_PROGRAM, &bnstars_state::bnstars_sound_map);
 
-	config.m_minimum_quantum = attotime::from_hz(60000);
+	config.set_maximum_quantum(attotime::from_hz(60000));
 
 	GFXDECODE(config, m_gfxdecode, m_palette, gfx_bnstars);
 

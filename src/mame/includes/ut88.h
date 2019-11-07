@@ -5,13 +5,13 @@
  * includes/ut88.h
  *
  ****************************************************************************/
-
 #ifndef MAME_INCLUDES_UT88_H
 #define MAME_INCLUDES_UT88_H
 
+#pragma once
+
 #include "cpu/i8085/i8085.h"
 #include "sound/dac.h"
-#include "sound/wave.h"
 #include "machine/i8255.h"
 #include "imagedev/cassette.h"
 #include "emupal.h"

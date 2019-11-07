@@ -692,7 +692,7 @@ void itech8_state::device_timer(emu_timer &timer, device_timer_id id, int param,
 		delayed_z80_control_w(ptr, param);
 		break;
 	default:
-		assert_always(false, "Unknown id in itech8_state::device_timer");
+		throw emu_fatalerror("Unknown id in itech8_state::device_timer");
 	}
 }
 
@@ -752,7 +752,7 @@ WRITE8_MEMBER(itech8_state::rimrockn_bank_w)
  *
  *************************************/
 
-CUSTOM_INPUT_MEMBER(itech8_state::special_r)
+READ_LINE_MEMBER(itech8_state::special_r)
 {
 	return m_pia_portb_data & 0x01;
 }
@@ -961,7 +961,7 @@ void itech8_state::ninclown_map(address_map &map)
 	map(0x100080, 0x100080).w(m_soundlatch, FUNC(generic_latch_8_device::write));
 	map(0x100100, 0x100100).w(FUNC(itech8_state::grom_bank_w));
 	map(0x100100, 0x100101).portr("40");
-	map(0x100180, 0x100180).lw8("page_inv_w", [this](u8 data){ page_w(~data); } );
+	map(0x100180, 0x100180).lw8(NAME([this](u8 data){ page_w(~data); }));
 	map(0x100180, 0x100181).portr("60");
 	map(0x100240, 0x100240).w(m_tms34061, FUNC(tms34061_device::latch_w));
 	map(0x100280, 0x100281).portr("80").nopw();
@@ -1022,7 +1022,7 @@ void itech8_state::sound3812_external_map(address_map &map)
 	map(0x2000, 0x2001).rw("ymsnd", FUNC(ym3812_device::read), FUNC(ym3812_device::write));
 	map(0x3000, 0x37ff).ram();
 	map(0x4000, 0x4000).rw("oki", FUNC(okim6295_device::read), FUNC(okim6295_device::write));
-	map(0x5000, 0x500f).rw("via6522_0", FUNC(via6522_device::read), FUNC(via6522_device::write));
+	map(0x5000, 0x500f).m("via6522_0", FUNC(via6522_device::map));
 	map(0x8000, 0xffff).rom();
 }
 
@@ -1056,7 +1056,7 @@ void itech8_state::slikz80_io_map(address_map &map)
 
 static INPUT_PORTS_START( wfortune )
 	PORT_START("40")
-	PORT_BIT( 0x01, IP_ACTIVE_HIGH, IPT_CUSTOM ) PORT_CUSTOM_MEMBER(DEVICE_SELF, itech8_state,special_r, nullptr) /* input from sound board */
+	PORT_BIT( 0x01, IP_ACTIVE_HIGH, IPT_CUSTOM ) PORT_READ_LINE_MEMBER(itech8_state, special_r) /* input from sound board */
 	PORT_BIT( 0x06, IP_ACTIVE_LOW, IPT_UNUSED )
 	PORT_DIPNAME( 0x08, 0x08, DEF_STR( Cabinet ) )
 	PORT_DIPSETTING(    0x08, DEF_STR( Upright ) )
@@ -1085,7 +1085,7 @@ INPUT_PORTS_END
 
 static INPUT_PORTS_START( grmatch )
 	PORT_START("40")
-	PORT_BIT( 0x01, IP_ACTIVE_HIGH, IPT_CUSTOM ) PORT_CUSTOM_MEMBER(DEVICE_SELF, itech8_state,special_r, nullptr) /* input from sound board */
+	PORT_BIT( 0x01, IP_ACTIVE_HIGH, IPT_CUSTOM ) PORT_READ_LINE_MEMBER(itech8_state, special_r) /* input from sound board */
 	PORT_BIT( 0x06, IP_ACTIVE_LOW, IPT_UNUSED )
 	PORT_DIPNAME( 0x08, 0x08, "Adjustments Lockout" )
 	PORT_DIPSETTING(    0x08, DEF_STR( Off ) )
@@ -1123,7 +1123,7 @@ INPUT_PORTS_END
 
 static INPUT_PORTS_START( stratab )
 	PORT_START("40")
-	PORT_BIT( 0x01, IP_ACTIVE_HIGH, IPT_CUSTOM ) PORT_CUSTOM_MEMBER(DEVICE_SELF, itech8_state,special_r, nullptr) /* input from sound board */
+	PORT_BIT( 0x01, IP_ACTIVE_HIGH, IPT_CUSTOM ) PORT_READ_LINE_MEMBER(itech8_state, special_r) /* input from sound board */
 	PORT_BIT( 0x06, IP_ACTIVE_LOW, IPT_UNUSED )
 	PORT_DIPNAME( 0x08, 0x08, DEF_STR( Cabinet ) )
 	PORT_DIPSETTING(    0x08, DEF_STR( Upright ) )
@@ -1171,14 +1171,12 @@ INPUT_PORTS_END
 
 CUSTOM_INPUT_MEMBER(itech8_state::gtg_mux)
 {
-	const char *tag1 = (const char *)param;
-	const char *tag2 = tag1 + strlen(tag1) + 1;
-	return ioport(tag1)->read() & ioport(tag2)->read();
+	return m_p1->read() & m_p2->read();
 }
 
 static INPUT_PORTS_START( gtg )
 	PORT_START("40")
-	PORT_BIT( 0x01, IP_ACTIVE_HIGH, IPT_CUSTOM ) PORT_CUSTOM_MEMBER(DEVICE_SELF, itech8_state,special_r, nullptr) /* input from sound board */
+	PORT_BIT( 0x01, IP_ACTIVE_HIGH, IPT_CUSTOM ) PORT_READ_LINE_MEMBER(itech8_state, special_r) /* input from sound board */
 	PORT_BIT( 0x06, IP_ACTIVE_LOW, IPT_UNUSED )
 	PORT_DIPNAME( 0x08, 0x08, DEF_STR( Cabinet ) )
 	PORT_DIPSETTING(    0x08, DEF_STR( Upright ) )
@@ -1189,7 +1187,7 @@ static INPUT_PORTS_START( gtg )
 	PORT_START("60")
 	/* it is still unknown how the second player inputs are muxed in */
 	/* currently we map both sets of controls to the same inputs */
-	PORT_BIT( 0x1f, IP_ACTIVE_HIGH, IPT_CUSTOM ) PORT_CUSTOM_MEMBER(DEVICE_SELF, itech8_state,gtg_mux, "P1\0P2")
+	PORT_BIT( 0x1f, IP_ACTIVE_HIGH, IPT_CUSTOM ) PORT_CUSTOM_MEMBER(itech8_state, gtg_mux)
 	PORT_BIT( 0x20, IP_ACTIVE_LOW, IPT_START1 )
 	PORT_BIT( 0x40, IP_ACTIVE_LOW, IPT_COIN2 )
 	PORT_BIT( 0x80, IP_ACTIVE_LOW, IPT_COIN1 )
@@ -1215,7 +1213,7 @@ INPUT_PORTS_END
 
 static INPUT_PORTS_START( gtgt )
 	PORT_START("40")
-	PORT_BIT( 0x01, IP_ACTIVE_HIGH, IPT_CUSTOM ) PORT_CUSTOM_MEMBER(DEVICE_SELF, itech8_state,special_r, nullptr) /* input from sound board */
+	PORT_BIT( 0x01, IP_ACTIVE_HIGH, IPT_CUSTOM ) PORT_READ_LINE_MEMBER(itech8_state, special_r) /* input from sound board */
 	PORT_BIT( 0x7e, IP_ACTIVE_LOW, IPT_UNKNOWN )
 	PORT_SERVICE_NO_TOGGLE( 0x80, IP_ACTIVE_LOW )
 
@@ -1242,7 +1240,7 @@ INPUT_PORTS_END
 
 static INPUT_PORTS_START( gtg2t )
 	PORT_START("40")
-	PORT_BIT( 0x01, IP_ACTIVE_HIGH, IPT_CUSTOM ) PORT_CUSTOM_MEMBER(DEVICE_SELF, itech8_state,special_r, nullptr) /* input from sound board */
+	PORT_BIT( 0x01, IP_ACTIVE_HIGH, IPT_CUSTOM ) PORT_READ_LINE_MEMBER(itech8_state, special_r) /* input from sound board */
 	PORT_BIT( 0x06, IP_ACTIVE_LOW, IPT_UNUSED )
 	PORT_DIPNAME( 0x08, 0x08, DEF_STR( Cabinet ) )
 	PORT_DIPSETTING(    0x08, DEF_STR( Upright ) )
@@ -1279,7 +1277,7 @@ INPUT_PORTS_END
 
 static INPUT_PORTS_START( slikshot )
 	PORT_START("40")
-	PORT_BIT( 0x01, IP_ACTIVE_HIGH, IPT_CUSTOM ) PORT_CUSTOM_MEMBER(DEVICE_SELF, itech8_state,special_r, nullptr) /* input from sound board */
+	PORT_BIT( 0x01, IP_ACTIVE_HIGH, IPT_CUSTOM ) PORT_READ_LINE_MEMBER(itech8_state, special_r) /* input from sound board */
 	PORT_BIT( 0x7e, IP_ACTIVE_LOW, IPT_UNKNOWN )
 	PORT_SERVICE_NO_TOGGLE( 0x80, IP_ACTIVE_LOW )
 
@@ -1306,7 +1304,7 @@ INPUT_PORTS_END
 
 static INPUT_PORTS_START( dynobop )
 	PORT_START("40")
-	PORT_BIT( 0x01, IP_ACTIVE_HIGH, IPT_CUSTOM ) PORT_CUSTOM_MEMBER(DEVICE_SELF, itech8_state,special_r, nullptr) /* input from sound board */
+	PORT_BIT( 0x01, IP_ACTIVE_HIGH, IPT_CUSTOM ) PORT_READ_LINE_MEMBER(itech8_state, special_r) /* input from sound board */
 	PORT_BIT( 0x7e, IP_ACTIVE_LOW, IPT_UNKNOWN )
 	PORT_SERVICE_NO_TOGGLE( 0x80, IP_ACTIVE_LOW )
 
@@ -1333,7 +1331,7 @@ INPUT_PORTS_END
 
 static INPUT_PORTS_START( sstrike )
 	PORT_START("40")
-	PORT_BIT( 0x01, IP_ACTIVE_HIGH, IPT_CUSTOM ) PORT_CUSTOM_MEMBER(DEVICE_SELF, itech8_state,special_r, nullptr) /* input from sound board */
+	PORT_BIT( 0x01, IP_ACTIVE_HIGH, IPT_CUSTOM ) PORT_READ_LINE_MEMBER(itech8_state, special_r) /* input from sound board */
 	PORT_BIT( 0x7e, IP_ACTIVE_LOW, IPT_UNKNOWN )
 	PORT_SERVICE_NO_TOGGLE( 0x80, IP_ACTIVE_LOW )
 
@@ -1360,7 +1358,7 @@ INPUT_PORTS_END
 
 static INPUT_PORTS_START( pokrdice )
 	PORT_START("40")
-	PORT_BIT( 0x01, IP_ACTIVE_HIGH, IPT_CUSTOM ) PORT_CUSTOM_MEMBER(DEVICE_SELF, itech8_state,special_r, nullptr) /* input from sound board */
+	PORT_BIT( 0x01, IP_ACTIVE_HIGH, IPT_CUSTOM ) PORT_READ_LINE_MEMBER(itech8_state, special_r) /* input from sound board */
 	PORT_BIT( 0x02, IP_ACTIVE_LOW, IPT_BUTTON4 ) PORT_NAME("Lower Right") PORT_CODE(KEYCODE_3_PAD)
 	PORT_BIT( 0x04, IP_ACTIVE_LOW, IPT_UNUSED )
 	PORT_DIPNAME( 0x08, 0x08, DEF_STR( Cabinet ) )
@@ -1389,7 +1387,7 @@ INPUT_PORTS_END
 
 static INPUT_PORTS_START( hstennis )
 	PORT_START("40")
-	PORT_BIT( 0x01, IP_ACTIVE_HIGH, IPT_CUSTOM ) PORT_CUSTOM_MEMBER(DEVICE_SELF, itech8_state,special_r, nullptr) /* input from sound board */
+	PORT_BIT( 0x01, IP_ACTIVE_HIGH, IPT_CUSTOM ) PORT_READ_LINE_MEMBER(itech8_state, special_r) /* input from sound board */
 	PORT_BIT( 0x06, IP_ACTIVE_LOW, IPT_UNUSED )
 	PORT_DIPNAME( 0x08, 0x08, DEF_STR( Cabinet ) )
 	PORT_DIPSETTING(    0x08, DEF_STR( Upright ) )
@@ -1424,7 +1422,7 @@ INPUT_PORTS_END
 
 static INPUT_PORTS_START( arlingtn )
 	PORT_START("40")
-	PORT_BIT( 0x01, IP_ACTIVE_HIGH, IPT_CUSTOM ) PORT_CUSTOM_MEMBER(DEVICE_SELF, itech8_state,special_r, nullptr) /* input from sound board */
+	PORT_BIT( 0x01, IP_ACTIVE_HIGH, IPT_CUSTOM ) PORT_READ_LINE_MEMBER(itech8_state, special_r) /* input from sound board */
 	PORT_BIT( 0x06, IP_ACTIVE_LOW, IPT_UNUSED )
 	PORT_DIPNAME( 0x08, 0x08, DEF_STR( Unknown ) )  /* see code at e23c */
 	PORT_DIPSETTING(    0x00, DEF_STR( Off ) )
@@ -1455,7 +1453,7 @@ INPUT_PORTS_END
 
 static INPUT_PORTS_START( peggle )
 	PORT_START("40")
-	PORT_BIT( 0x01, IP_ACTIVE_HIGH, IPT_CUSTOM ) PORT_CUSTOM_MEMBER(DEVICE_SELF, itech8_state,special_r, nullptr) /* input from sound board */
+	PORT_BIT( 0x01, IP_ACTIVE_HIGH, IPT_CUSTOM ) PORT_READ_LINE_MEMBER(itech8_state, special_r) /* input from sound board */
 	PORT_BIT( 0x7e, IP_ACTIVE_LOW, IPT_UNUSED )
 	PORT_SERVICE_NO_TOGGLE( 0x80, IP_ACTIVE_LOW )
 
@@ -1477,7 +1475,7 @@ INPUT_PORTS_END
 
 static INPUT_PORTS_START( pegglet )
 	PORT_START("40")
-	PORT_BIT( 0x01, IP_ACTIVE_HIGH, IPT_CUSTOM ) PORT_CUSTOM_MEMBER(DEVICE_SELF, itech8_state,special_r, nullptr) /* input from sound board */
+	PORT_BIT( 0x01, IP_ACTIVE_HIGH, IPT_CUSTOM ) PORT_READ_LINE_MEMBER(itech8_state, special_r) /* input from sound board */
 	PORT_BIT( 0x7e, IP_ACTIVE_LOW, IPT_UNUSED )
 	PORT_SERVICE_NO_TOGGLE( 0x80, IP_ACTIVE_LOW )
 
@@ -1499,7 +1497,7 @@ INPUT_PORTS_END
 
 static INPUT_PORTS_START( neckneck )
 	PORT_START("40")
-	PORT_BIT( 0x01, IP_ACTIVE_HIGH, IPT_CUSTOM ) PORT_CUSTOM_MEMBER(DEVICE_SELF, itech8_state,special_r, nullptr) /* input from sound board */
+	PORT_BIT( 0x01, IP_ACTIVE_HIGH, IPT_CUSTOM ) PORT_READ_LINE_MEMBER(itech8_state, special_r) /* input from sound board */
 	PORT_BIT( 0x06, IP_ACTIVE_LOW, IPT_UNUSED )
 	PORT_DIPNAME( 0x08, 0x00, DEF_STR( Unknown ) )  /* see code at e23c */
 	PORT_DIPSETTING(    0x00, DEF_STR( Off ) )
@@ -1540,7 +1538,7 @@ static INPUT_PORTS_START( rimrockn )
 	PORT_BIT( 0x10, IP_ACTIVE_LOW, IPT_COIN3 )
 	PORT_BIT( 0x20, IP_ACTIVE_LOW, IPT_COIN4 )
 	PORT_BIT( 0x40, IP_ACTIVE_LOW, IPT_UNKNOWN )
-	PORT_BIT( 0x80, IP_ACTIVE_HIGH, IPT_CUSTOM ) PORT_CUSTOM_MEMBER(DEVICE_SELF, itech8_state,special_r, nullptr) /* input from sound board */
+	PORT_BIT( 0x80, IP_ACTIVE_HIGH, IPT_CUSTOM ) PORT_READ_LINE_MEMBER(itech8_state, special_r) /* input from sound board */
 
 	PORT_START("80")
 	PORT_BIT( 0xff, IP_ACTIVE_LOW, IPT_UNKNOWN )
@@ -2727,7 +2725,7 @@ GAME( 1990, slikshot16, slikshot,  slikshot_hi,       slikshot, itech8_state, in
 GAME( 1990, dynobop,    0,         slikshot_hi,       dynobop,  itech8_state, init_slikshot, ROT90,  "Grand Products/Incredible Technologies", "Dyno Bop (V1.1)", MACHINE_MECHANICAL )
 GAME( 1990, sstrike,    0,         sstrike,           sstrike,  itech8_state, empty_init,    ROT270, "Strata/Incredible Technologies", "Super Strike Bowling (V1)", MACHINE_MECHANICAL )
 GAME( 1990, stratabs,   stratab,   sstrike,           stratabs, itech8_state, empty_init,    ROT270, "Strata/Incredible Technologies", "Strata Bowling (V1 4T, Super Strike Bowling type PCB)", MACHINE_NOT_WORKING ) // need to figure out the control hookup for this set, service mode indicates it's still a trackball like stratab
-GAME( 1991, pokrdice,   0,         slikshot_lo_noz80, pokrdice, itech8_state, empty_init,    ROT90,  "Strata/Incredible Technologies", "Poker Dice", 0 )
+GAME( 1991, pokrdice,   0,         slikshot_lo_noz80, pokrdice, itech8_state, empty_init,    ROT90,  "Strata/Incredible Technologies", "Poker Dice (V1.7)", 0 )
 
 /* Hot Shots Tennis-style PCB */
 GAME( 1990, hstennis,   0,         hstennis_hi,       hstennis, itech8_state, init_hstennis, ROT90,  "Strata/Incredible Technologies", "Hot Shots Tennis (V1.1)", 0 )

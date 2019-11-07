@@ -305,7 +305,7 @@ void debug_view_memory::view_update()
 
 				if (m_data_format <= 8) {
 					u64 chunkdata;
-					bool ismapped = read(m_bytes_per_chunk, address + chunknum * m_steps_per_chunk, chunkdata);
+					bool ismapped = read_chunk(address, chunknum, chunkdata);
 					dest = destrow + m_section[1].m_pos + 1 + chunkindex * spacing;
 					for (int ch = 0; ch < posdata.m_spacing; ch++, dest++)
 						if (dest >= destmin && dest < destmax)
@@ -323,7 +323,7 @@ void debug_view_memory::view_update()
 					int ch;
 					char valuetext[64];
 					u64 chunkdata = 0;
-					floatx80 chunkdata80 = { 0, 0 };
+					extFloat80_t chunkdata80 = { 0, 0 };
 					bool ismapped;
 
 					if (m_data_format != 11)
@@ -341,8 +341,8 @@ void debug_view_memory::view_update()
 							sprintf(valuetext, "%.24g", u64_to_double(chunkdata));
 							break;
 						case 11:
-							float64 f64 = floatx80_to_float64(chunkdata80);
-							sprintf(valuetext, "%.24g", u64_to_double(f64));
+							float64_t f64 = extF80M_to_f64(&chunkdata80);
+							sprintf(valuetext, "%.24g", u64_to_double(f64.v));
 							break;
 						}
 					else {
@@ -812,24 +812,49 @@ bool debug_view_memory::read(u8 size, offs_t offs, u64 &data)
 //  read - read a 80 bit value
 //-------------------------------------------------
 
-bool debug_view_memory::read(u8 size, offs_t offs, floatx80 &data)
+bool debug_view_memory::read(u8 size, offs_t offs, extFloat80_t &data)
 {
 	u64 t;
 	bool mappedhi, mappedlo;
 	const debug_view_memory_source &source = downcast<const debug_view_memory_source &>(*m_source);
 
 	if (source.m_endianness == ENDIANNESS_LITTLE) {
-		mappedlo = read(8, offs, data.low);
+		mappedlo = read(8, offs, data.signif);
 		mappedhi = read(2, offs+8, t);
-		data.high = (bits16)t;
+		data.signExp = u16(t);
 	}
 	else {
 		mappedhi = read(2, offs, t);
-		data.high = (bits16)t;
-		mappedlo = read(8, offs + 2, data.low);
+		data.signExp = u16(t);
+		mappedlo = read(8, offs + 2, data.signif);
 	}
 
 	return mappedhi && mappedlo;
+}
+
+
+//-------------------------------------------------
+//  read_chunk - memory view data reader helper
+//-------------------------------------------------
+
+bool debug_view_memory::read_chunk(offs_t address, int chunknum, u64 &chunkdata)
+{
+	const debug_view_memory_source &source = downcast<const debug_view_memory_source &>(*m_source);
+	if (source.m_space) {
+		address += source.m_space->byte_to_address(chunknum * m_bytes_per_chunk);
+		if (!source.m_space->byte_to_address(m_bytes_per_chunk)) {
+			// if chunks are too small to be addressable, read a minimal chunk and split it up
+			u8 minbytes = 1 << -source.m_space->addr_shift();
+			bool ismapped = read(minbytes, address, chunkdata);
+			u8 suboffset = (chunknum * m_bytes_per_chunk) & (minbytes - 1);
+			chunkdata >>= 8 * (source.m_space->endianness() == ENDIANNESS_LITTLE ? suboffset : minbytes - m_bytes_per_chunk - suboffset);
+			chunkdata &= ~u64(0) >> (64 - 8 * m_bytes_per_chunk);
+			return ismapped;
+		}
+	}
+	else
+		address += chunknum * m_bytes_per_chunk;
+	return read(m_bytes_per_chunk, address, chunkdata);
 }
 
 

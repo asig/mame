@@ -22,17 +22,16 @@
 #include "plib/ptime.h"
 #include "plib/putil.h"
 
-#include <cstdint>
 #include <unordered_map>
 
 namespace netlist
 {
-	/*! @brief plib::constants struct specialized for nl_double
+	/*! @brief plib::constants struct specialized for nl_fptype
 	 *
-	 *  This may be any of bool, uint8_t, uint16_t, uin32_t and uint64_t.
-	 *  The choice has little to no impact on performance.
 	 */
-	using constants = plib::constants<nl_double>;
+	struct nlconst : public plib::constants<nl_fptype>
+	{
+	};
 
 	/*! @brief netlist_sig_t is the type used for logic signals.
 	 *
@@ -62,22 +61,11 @@ namespace netlist
 		COPYASSIGNMOVE(callbacks_t, default)
 
 		/* logging callback */
-		virtual void vlog(const plib::plog_level &l, const pstring &ls) const = 0;
+		virtual void vlog(const plib::plog_level &l, const pstring &ls) const noexcept = 0;
 
 	};
 
 	using log_type =  plib::plog_base<callbacks_t, NL_DEBUG>;
-
-
-	//============================================================
-	//  Performance tracking
-	//============================================================
-
-	template<bool enabled_>
-	using nperftime_t = plib::chrono::timer<plib::chrono::exact_ticks, enabled_>;
-
-	template<bool enabled_>
-	using nperfcount_t = plib::chrono::counter<enabled_>;
 
 	//============================================================
 	//  Types needed by various includes
@@ -89,7 +77,7 @@ namespace netlist
 	 *
 	 */
 
-#if (USE_MEMPOOL)
+#if (NL_USE_MEMPOOL)
 	using nlmempool = plib::mempool;
 #else
 	using nlmempool = plib::aligned_arena;
@@ -99,7 +87,13 @@ namespace netlist
 	 *
 	 */
 	template <typename T>
-	using pool_owned_ptr = nlmempool::owned_pool_ptr<T>;
+	using owned_pool_ptr = nlmempool::owned_pool_ptr<T>;
+
+	/*! Unique pointer type for pooled allocations.
+	 *
+	 */
+	template <typename T>
+	using unique_pool_ptr = nlmempool::unique_pool_ptr<T>;
 
 	inline nlmempool &pool()
 	{
@@ -110,7 +104,7 @@ namespace netlist
 	namespace detail {
 
 		/*! Enum specifying the type of object */
-		enum terminal_type {
+		enum class terminal_type {
 			TERMINAL = 0, /*!< object is an analog terminal */
 			INPUT    = 1, /*!< object is an input */
 			OUTPUT   = 2, /*!< object is an output */

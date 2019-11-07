@@ -473,8 +473,8 @@ void hp9845_base_state::device_reset()
 
 	// Then, set r/w handlers of all installed I/O cards
 	int sc;
-	read16_delegate rhandler;
-	write16_delegate whandler;
+	read16_delegate rhandler(*this);
+	write16_delegate whandler(*this);
 	for (unsigned i = 0; 4 > i; ++i) {
 		if ((sc = m_io_slot[i]->get_rw_handlers(rhandler , whandler)) >= 0) {
 			logerror("Install R/W handlers for slot %u @ SC = %d\n", i, sc);
@@ -713,7 +713,7 @@ WRITE_LINE_MEMBER(hp9845_base_state::prt_irl_w)
 
 INPUT_CHANGED_MEMBER(hp9845_base_state::togglekey_changed)
 {
-	uintptr_t togglekey = (uintptr_t)param;
+	uint32_t togglekey = param;
 	switch (togglekey) {
 	case 0: // Shift lock
 		{

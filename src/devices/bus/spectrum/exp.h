@@ -53,7 +53,7 @@
 
 class device_spectrum_expansion_interface;
 
-class spectrum_expansion_slot_device : public device_t, public device_slot_interface
+class spectrum_expansion_slot_device : public device_t, public device_single_card_slot_interface<device_spectrum_expansion_interface>
 {
 public:
 	// construction/destruction
@@ -73,7 +73,11 @@ public:
 	auto irq_handler() { return m_irq_handler.bind(); }
 	auto nmi_handler() { return m_nmi_handler.bind(); }
 
-	void opcode_fetch(offs_t offset);
+	void pre_opcode_fetch(offs_t offset);
+	void post_opcode_fetch(offs_t offset);
+	void pre_data_fetch(offs_t offset);
+	void post_data_fetch(offs_t offset);
+
 	uint8_t mreq_r(offs_t offset);
 	void mreq_w(offs_t offset, uint8_t data);
 	uint8_t iorq_r(offs_t offset);
@@ -85,9 +89,7 @@ public:
 
 protected:
 	// device-level overrides
-	virtual void device_validity_check(validity_checker &valid) const override;
 	virtual void device_start() override;
-	virtual void device_reset() override;
 
 	device_spectrum_expansion_interface *m_card;
 
@@ -99,14 +101,14 @@ private:
 
 // ======================> device_spectrum_expansion_interface
 
-class device_spectrum_expansion_interface : public device_slot_card_interface
+class device_spectrum_expansion_interface : public device_interface
 {
 public:
-	// construction/destruction
-	device_spectrum_expansion_interface(const machine_config &mconfig, device_t &device);
-
 	// reading and writing
-	virtual void opcode_fetch(offs_t offset) { };
+	virtual void pre_opcode_fetch(offs_t offset) { };
+	virtual void post_opcode_fetch(offs_t offset) { };
+	virtual void pre_data_fetch(offs_t offset) { };
+	virtual void post_data_fetch(offs_t offset) { };
 	virtual uint8_t mreq_r(offs_t offset) { return 0xff; }
 	virtual void mreq_w(offs_t offset, uint8_t data) { }
 	virtual uint8_t iorq_r(offs_t offset) { return 0xff; }
@@ -114,6 +116,9 @@ public:
 	virtual DECLARE_READ_LINE_MEMBER(romcs) { return 0; }
 
 protected:
+	// construction/destruction
+	device_spectrum_expansion_interface(const machine_config &mconfig, device_t &device);
+
 	spectrum_expansion_slot_device *m_slot;
 };
 

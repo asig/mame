@@ -106,6 +106,7 @@
 #include "speaker.h"
 
 #include "model1io2.lh"
+#include "segabill.lh"
 
 /* Timers - these count down at 25 MHz and pull IRQ2 when they hit 0 */
 READ32_MEMBER(model2_state::timers_r)
@@ -1114,11 +1115,11 @@ void model2_state::model2_base_mem(address_map &map)
 	map(0x00500000, 0x005fffff).ram().share("workram");
 
 	map(0x00800000, 0x00803fff).rw(FUNC(model2_state::geo_r), FUNC(model2_state::geo_w));
-	//AM_RANGE(0x00800010, 0x00800013) AM_WRITENOP
-	//AM_RANGE(0x008000b0, 0x008000b3) AM_WRITENOP
-	//AM_RANGE(0x00804004, 0x0080400f) AM_WRITENOP  // quiet psikyo games
+	//map(0x00800010, 0x00800013).nopw();
+	//map(0x008000b0, 0x008000b3).nopw();
+	//map(0x00804004, 0x0080400f).nopw();  // quiet psikyo games
 
-	//AM_RANGE(0x00880000, 0x00883fff) AM_WRITE(copro_w)
+	//map(0x00880000, 0x00883fff).w(FUNC(model2_state::copro_w));
 
 	map(0x00900000, 0x0091ffff).mirror(0x60000).ram().share("bufferram");
 
@@ -1152,12 +1153,12 @@ void model2_state::model2_base_mem(address_map &map)
 	map(0x06000000, 0x06ffffff).rom().region("main_data", 0x1000000);
 
 	map(0x10000000, 0x101fffff).rw(FUNC(model2_state::render_mode_r), FUNC(model2_state::render_mode_w));
-//  AM_RANGE(0x10200000, 0x103fffff) renderer status register
+//  map(0x10200000, 0x103fffff) renderer status register
 	map(0x10400000, 0x105fffff).r(FUNC(model2_state::polygon_count_r));
-//  AM_RANGE(0x10600000, 0x107fffff) polygon data ping
-//  AM_RANGE(0x10800000, 0x109fffff) polygon data pong
-//  AM_RANGE(0x10a00000, 0x10bfffff) fill memory ping
-//  AM_RANGE(0x10c00000, 0x10dfffff) fill memory pong
+//  map(0x10600000, 0x107fffff) polygon data ping
+//  map(0x10800000, 0x109fffff) polygon data pong
+//  map(0x10a00000, 0x10bfffff) fill memory ping
+//  map(0x10c00000, 0x10dfffff) fill memory pong
 
 	// format is xGGGGGRRRRRBBBBB (512x400)
 	map(0x11600000, 0x1167ffff).rw(FUNC(model2_state::fbvram_bankA_r), FUNC(model2_state::fbvram_bankA_w)); // framebuffer A (last bronx title screen)
@@ -1424,8 +1425,8 @@ void model2b_state::model2b_crx_mem(address_map &map)
 	map(0x00200000, 0x0023ffff).ram();
 
 	map(0x00804000, 0x00807fff).rw(FUNC(model2b_state::geo_prg_r), FUNC(model2b_state::geo_prg_w));
-	//AM_RANGE(0x00804000, 0x00807fff) AM_READWRITE(geo_sharc_fifo_r, geo_sharc_fifo_w)
-	//AM_RANGE(0x00840000, 0x00840fff) AM_WRITE(geo_sharc_iop_w)
+	//map(0x00804000, 0x00807fff).rw(FUNC(model2b_state::geo_sharc_fifo_r), FUNC(model2b_state::geo_sharc_fifo_w));
+	//map(0x00840000, 0x00840fff).w(FUNC(model2b_state::geo_sharc_iop_w));
 
 	map(0x00880000, 0x00883fff).w(FUNC(model2b_state::copro_function_port_w));
 	map(0x00884000, 0x00887fff).rw(FUNC(model2b_state::copro_fifo_r), FUNC(model2b_state::copro_fifo_w));
@@ -1434,7 +1435,7 @@ void model2b_state::model2b_crx_mem(address_map &map)
 	map(0x00980000, 0x00980003).rw(FUNC(model2b_state::copro_ctl1_r), FUNC(model2b_state::copro_ctl1_w));
 	map(0x00980008, 0x0098000b).w(FUNC(model2b_state::geo_ctl1_w));
 	map(0x00980014, 0x00980017).r(FUNC(model2b_state::copro_status_r));
-	//AM_RANGE(0x00980008, 0x0098000b) AM_WRITE(geo_sharc_ctl1_w )
+	//map(0x00980008, 0x0098000b).w(FUNC(model2b_state::geo_sharc_ctl1_w));
 
 	map(0x009c0000, 0x009cffff).rw(FUNC(model2b_state::model2_serial_r), FUNC(model2b_state::model2_serial_w));
 
@@ -1738,7 +1739,7 @@ static INPUT_PORTS_START( daytona )
 	PORT_MODIFY("IN1")
 	PORT_BIT(0x01, IP_ACTIVE_LOW, IPT_BUTTON9)  PORT_NAME("VR4 (Green)")
 	PORT_BIT(0x0e, IP_ACTIVE_LOW, IPT_UNUSED)
-	PORT_BIT(0x70, IP_ACTIVE_HIGH, IPT_CUSTOM)  PORT_CUSTOM_MEMBER(DEVICE_SELF, model2_state, daytona_gearbox_r, nullptr)
+	PORT_BIT(0x70, IP_ACTIVE_HIGH, IPT_CUSTOM)  PORT_CUSTOM_MEMBER(model2_state, daytona_gearbox_r)
 	PORT_BIT(0x80, IP_ACTIVE_LOW, IPT_UNUSED)
 
 	PORT_MODIFY("IN2")
@@ -1877,7 +1878,7 @@ static INPUT_PORTS_START( srallyc )
 
 	PORT_MODIFY("IN1")
 	PORT_BIT(0x0f, IP_ACTIVE_LOW, IPT_UNKNOWN)
-	PORT_BIT(0x70, IP_ACTIVE_HIGH, IPT_CUSTOM) PORT_CUSTOM_MEMBER(DEVICE_SELF, model2_state, daytona_gearbox_r, nullptr)
+	PORT_BIT(0x70, IP_ACTIVE_HIGH, IPT_CUSTOM) PORT_CUSTOM_MEMBER(model2_state, daytona_gearbox_r)
 	PORT_BIT(0x80, IP_ACTIVE_LOW, IPT_UNKNOWN)
 
 	PORT_MODIFY("IN2")
@@ -2531,6 +2532,9 @@ void model2o_state::model2o(machine_config &config)
 
 	NVRAM(config, "backup1", nvram_device::DEFAULT_ALL_1);
 
+	model2_timers(config);
+	model2_screen(config);
+
 	model1io_device &ioboard(SEGA_MODEL1IO(config, "ioboard", 0));
 	ioboard.set_default_bios_tag("epr14869c");
 	ioboard.read_callback().set("dpram", FUNC(mb8421_device::left_r));
@@ -2539,9 +2543,6 @@ void model2o_state::model2o(machine_config &config)
 	ioboard.in_callback<1>().set_ioport("IN1");
 
 	MB8421(config, "dpram", 0);
-
-	model2_timers(config);
-	model2_screen(config);
 
 	SEGAM1AUDIO(config, m_m1audio, 0);
 	m_m1audio->rxd_handler().set(m_uart, FUNC(i8251_device::write_rxd));
@@ -2694,12 +2695,17 @@ void model2a_state::model2a(machine_config &config)
 	io.in_pb_callback().set(FUNC(model2a_state::in0_r));
 	io.in_pc_callback().set_ioport("IN1");
 	io.in_pd_callback().set_ioport("IN2");
+	io.out_pe_callback().set([this] (uint8_t data) { m_billboard->write(data); });
 
 	model2_timers(config);
 	model2_screen(config);
 	model2_scsp(config);
 
 	M2COMM(config, "m2comm", 0);
+
+	SEGA_BILLBOARD(config, m_billboard, 0);
+
+	config.set_default_layout(layout_segabill);
 }
 
 void model2a_state::manxtt(machine_config &config)
@@ -2803,7 +2809,7 @@ void model2b_state::model2b(machine_config &config)
 	//m_dsp2->set_boot_mode(adsp21062_device::BOOT_MODE_HOST);
 	//m_dsp2->set_addrmap(AS_DATA, &model2b_state::geo_sharc_map);
 
-	config.m_minimum_quantum = attotime::from_hz(18000);
+	config.set_maximum_quantum(attotime::from_hz(18000));
 
 	GENERIC_FIFO_U32(config, m_copro_fifo_in, 0);
 	GENERIC_FIFO_U32(config, m_copro_fifo_out, 0);
@@ -2816,12 +2822,17 @@ void model2b_state::model2b(machine_config &config)
 	io.in_pb_callback().set(FUNC(model2b_state::in0_r));
 	io.in_pc_callback().set_ioport("IN1");
 	io.in_pd_callback().set_ioport("IN2");
+	io.out_pe_callback().set([this] (uint8_t data) { m_billboard->write(data); });
 
 	model2_timers(config);
 	model2_screen(config);
 	model2_scsp(config);
 
 	M2COMM(config, "m2comm", 0);
+
+	SEGA_BILLBOARD(config, m_billboard, 0);
+
+	config.set_default_layout(layout_segabill);
 }
 
 void model2b_state::model2b_5881(machine_config &config)
@@ -2852,6 +2863,16 @@ void model2b_state::indy500(machine_config &config)
 	io.an_port_callback<0>().set_ioport("STEER");
 	io.an_port_callback<1>().set_ioport("ACCEL");
 	io.an_port_callback<2>().set_ioport("BRAKE");
+}
+
+void model2b_state::overrev2b(machine_config &config)
+{
+	model2b(config);
+
+	sega_315_5649_device &io(*subdevice<sega_315_5649_device>("io"));
+	io.an_port_callback<0>().set_ioport("STEER");
+	io.an_port_callback<1>().set_ioport("BRAKE");
+	io.an_port_callback<2>().set_ioport("ACCEL");
 }
 
 void model2b_state::powsled(machine_config &config)
@@ -2890,7 +2911,7 @@ void model2b_state::rchase2(machine_config &config)
 	iocpu.set_addrmap(AS_PROGRAM, &model2b_state::rchase2_iocpu_map);
 	iocpu.set_addrmap(AS_IO, &model2b_state::rchase2_ioport_map);
 
-	CXD1095(config, "ioexp", 0);
+	CXD1095(config, "ioexp");
 
 	sega_315_5649_device &io(*subdevice<sega_315_5649_device>("io"));
 	io.in_pd_callback().set(FUNC(model2b_state::rchase2_drive_board_r));
@@ -3033,8 +3054,8 @@ void model2c_state::overrev2c(machine_config &config)
 
 	sega_315_5649_device &io(*subdevice<sega_315_5649_device>("io"));
 	io.an_port_callback<0>().set_ioport("STEER");
-	io.an_port_callback<1>().set_ioport("ACCEL");
-	io.an_port_callback<2>().set_ioport("BRAKE");
+	io.an_port_callback<1>().set_ioport("BRAKE");
+	io.an_port_callback<2>().set_ioport("ACCEL");
 }
 
 void model2c_state::segawski(machine_config &config)
@@ -3623,16 +3644,13 @@ ROM_START( srallycdx ) /* Sega Rally Championship DX Revision A, Model 2A - Sing
 	ROM_LOAD( "epr-16726.bin", 0x000000, 0x020000, CRC(c179b8c7) SHA1(86d3e65c77fb53b1d380b629348f4ab5b3d39228) )
 
 	ROM_REGION( 0x080000, "audiocpu", 0 ) // Sound program
-	ROM_LOAD16_WORD_SWAP( "epr-17763.30", 0x000000, 0x040000, NO_DUMP ) /* Number verified via Sega Rally Champ DX manual */
-	ROM_LOAD16_WORD_SWAP( "epr-17890a.30", 0x000000, 0x040000, CRC(5bac3fa1) SHA1(3635333d36463b6fab25560ed918e05138f964dc) ) /* REMOVE when EPR-17763 & EPR-17758 is dumped & added */
+	ROM_LOAD16_WORD_SWAP( "epr-17763.30",  0x000000, 0x040000, CRC(b490028e) SHA1(e1e7b7f54f0b1072f6344327a8232a0dbbdf27a1) ) /* Number verified via Sega Rally Champ DX manual */
 
 	ROM_REGION16_BE( 0x800000, "samples", 0 ) // Samples
 	ROM_LOAD16_WORD_SWAP( "mpr-17756.31", 0x000000, 0x200000, CRC(7725f111) SHA1(1f1ee3f19a6bcf57bc5a1c7dd64ee83f8b81f084) )
 	ROM_LOAD16_WORD_SWAP( "mpr-17757.32", 0x200000, 0x200000, CRC(1616e649) SHA1(1d3a0e441d150ada0535a9d50e2f69dd4b99c584) )
-	ROM_LOAD16_WORD_SWAP( "mpr-17758.36", 0x400000, 0x200000, NO_DUMP ) /* Number verified via Sega Rally Champ DX manual */
+	ROM_LOAD16_WORD_SWAP( "mpr-17758.36", 0x400000, 0x200000, CRC(47e0fa82) SHA1(f71acecef4f3c8e7d5106a9c160abf8ed4ed01af) ) /* Number verified via Sega Rally Champ DX manual */
 	/* The DX version doesn't have any sound rom at IC37 */
-	ROM_LOAD16_WORD_SWAP( "mpr-17886.36", 0x400000, 0x200000, CRC(54a72923) SHA1(103c4838b27378c834c08d29d6fb6ba95e7f9d03) ) /* REMOVE when EPR-17758 & EPR-17763 is dumped & added */
-	ROM_LOAD16_WORD_SWAP( "mpr-17887.37", 0x600000, 0x200000, CRC(38c31fdd) SHA1(a85f05160b060d9d4a431aaa73cfc03f24214fb9) ) /* REMOVE when EPR-17758 & EPR-17763 is dumped & added */
 
 	MODEL2_CPU_BOARD
 	MODEL2A_VID_BOARD
@@ -3673,16 +3691,13 @@ ROM_START( srallycdxa ) // Sega Rally Championship DX, Model 2A? - Single player
 	ROM_LOAD( "epr-16726.bin", 0x000000, 0x020000, CRC(c179b8c7) SHA1(86d3e65c77fb53b1d380b629348f4ab5b3d39228) )
 
 	ROM_REGION( 0x080000, "audiocpu", 0 ) // Sound program
-	ROM_LOAD16_WORD_SWAP( "epr-17763.30", 0x000000, 0x040000, NO_DUMP ) /* Number verified via Sega Rally Champ DX manual */
-	ROM_LOAD16_WORD_SWAP( "epr-17890a.30", 0x000000, 0x040000, CRC(5bac3fa1) SHA1(3635333d36463b6fab25560ed918e05138f964dc) ) /* REMOVE when EPR-17763 & EPR-17758 is dumped & added */
+	ROM_LOAD16_WORD_SWAP( "epr-17763.30",  0x000000, 0x040000, CRC(b490028e) SHA1(e1e7b7f54f0b1072f6344327a8232a0dbbdf27a1) ) /* Number verified via Sega Rally Champ DX manual */
 
 	ROM_REGION16_BE( 0x800000, "samples", 0 ) // Samples
 	ROM_LOAD16_WORD_SWAP( "mpr-17756.31", 0x000000, 0x200000, CRC(7725f111) SHA1(1f1ee3f19a6bcf57bc5a1c7dd64ee83f8b81f084) )
 	ROM_LOAD16_WORD_SWAP( "mpr-17757.32", 0x200000, 0x200000, CRC(1616e649) SHA1(1d3a0e441d150ada0535a9d50e2f69dd4b99c584) )
-	ROM_LOAD16_WORD_SWAP( "mpr-17758.36", 0x400000, 0x200000, NO_DUMP ) /* Number verified via Sega Rally Champ DX manual */
+	ROM_LOAD16_WORD_SWAP( "mpr-17758.36", 0x400000, 0x200000, CRC(47e0fa82) SHA1(f71acecef4f3c8e7d5106a9c160abf8ed4ed01af) ) /* Number verified via Sega Rally Champ DX manual */
 	/* The DX version doesn't have any sound rom at IC37 */
-	ROM_LOAD16_WORD_SWAP( "mpr-17886.36", 0x400000, 0x200000, CRC(54a72923) SHA1(103c4838b27378c834c08d29d6fb6ba95e7f9d03) ) /* REMOVE when EPR-17758 & EPR-17763 is dumped & added */
-	ROM_LOAD16_WORD_SWAP( "mpr-17887.37", 0x600000, 0x200000, CRC(38c31fdd) SHA1(a85f05160b060d9d4a431aaa73cfc03f24214fb9) ) /* REMOVE when EPR-17758 & EPR-17763 is dumped & added */
 
 	MODEL2_CPU_BOARD
 	MODEL2A_VID_BOARD
@@ -3941,7 +3956,7 @@ ROM_START( motoraiddx ) /* Motor Raid DX, Model 2A, Sega ROM board ID# 834-13231
 	MODEL2A_VID_BOARD
 ROM_END
 
-ROM_START( skytargt ) /* Sky Target, Model 2A */
+ROM_START( skytargt ) /* Sky Target, Model 2A, Sega game ID# 833-12178, Sega ROM board ID# 834-12179 */
 	ROM_REGION( 0x200000, "maincpu", 0 ) // i960 program
 	ROM_LOAD32_WORD( "epr-18406.12", 0x000000, 0x080000, CRC(fde9c00a) SHA1(01cd519daaf6138d9df4940bf8bb5923a1f163df) )
 	ROM_LOAD32_WORD( "epr-18407.13", 0x000002, 0x080000, CRC(35f8b529) SHA1(faf6dcf8f345c1e7968823f2dba60afcd88f37c2) )
@@ -7006,14 +7021,14 @@ GAME( 1996, lastbrnx,  0,        model2b,      vf2,       model2b_state, empty_i
 GAME( 1996, lastbrnxu, lastbrnx, model2b,      vf2,       model2b_state, empty_init,    ROT0, "Sega",   "Last Bronx (USA, Revision A)", MACHINE_NOT_WORKING|MACHINE_IMPERFECT_GRAPHICS )
 GAME( 1996, lastbrnxj, lastbrnx, model2b,      vf2,       model2b_state, empty_init,    ROT0, "Sega",   "Last Bronx (Japan, Revision A)", MACHINE_NOT_WORKING|MACHINE_IMPERFECT_GRAPHICS )
 GAME( 1996, doa,       0,        model2b_0229, doa,       model2b_state, init_doa,      ROT0, "Sega",   "Dead or Alive (Model 2B, Revision B)", MACHINE_NOT_WORKING|MACHINE_IMPERFECT_GRAPHICS )
-GAME( 1996, sgt24h,    0,        indy500,      sgt24h,    model2b_state, init_sgt24h,   ROT0, "Jaleco", "Super GT 24h", MACHINE_NOT_WORKING|MACHINE_IMPERFECT_GRAPHICS )
+GAME( 1996, sgt24h,    0,        overrev2b,    sgt24h,    model2b_state, init_sgt24h,   ROT0, "Jaleco", "Super GT 24h", MACHINE_NOT_WORKING|MACHINE_IMPERFECT_GRAPHICS )
 GAME( 1996, powsled,   0,        powsled,      powsled,   model2b_state, empty_init,    ROT0, "Sega",   "Power Sled (Slave, Revision A)", MACHINE_NOT_WORKING|MACHINE_IMPERFECT_GRAPHICS )
 GAME( 1996, powsledr,  powsled,  powsled,      powsled,   model2b_state, empty_init,    ROT0, "Sega",   "Power Sled (Relay, Revision A)", MACHINE_NOT_WORKING|MACHINE_IMPERFECT_GRAPHICS )
 GAME( 1996, powsledm,  powsled,  powsled,      powsled,   model2b_state, init_powsledm, ROT0, "Sega",   "Power Sled (Main, hack of Relay)", MACHINE_NOT_WORKING|MACHINE_IMPERFECT_GRAPHICS )
 GAME( 1996, dynabb,    0,        dynabb,       dynabb,    model2b_state, empty_init,    ROT0, "Sega",   "Dynamite Baseball", MACHINE_NOT_WORKING|MACHINE_IMPERFECT_GRAPHICS )
 GAME( 1997, dynabb97,  0,        dynabb,       dynabb,    model2b_state, empty_init,    ROT0, "Sega",   "Dynamite Baseball 97 (Revision A)", MACHINE_NOT_WORKING|MACHINE_IMPERFECT_GRAPHICS )
-GAME( 1997, overrevb,  overrev,  indy500,      overrev,   model2b_state, empty_init,    ROT0, "Jaleco", "Over Rev (Model 2B, Revision B)", MACHINE_NOT_WORKING|MACHINE_IMPERFECT_GRAPHICS )
-GAME( 1997, overrevba, overrev,  indy500,      overrev,   model2b_state, empty_init,    ROT0, "Jaleco", "Over Rev (Model 2B, Revision A)", MACHINE_NOT_WORKING|MACHINE_IMPERFECT_GRAPHICS )
+GAME( 1997, overrevb,  overrev,  overrev2b,    overrev,   model2b_state, empty_init,    ROT0, "Jaleco", "Over Rev (Model 2B, Revision B)", MACHINE_NOT_WORKING|MACHINE_IMPERFECT_GRAPHICS )
+GAME( 1997, overrevba, overrev,  overrev2b,    overrev,   model2b_state, empty_init,    ROT0, "Jaleco", "Over Rev (Model 2B, Revision A)", MACHINE_NOT_WORKING|MACHINE_IMPERFECT_GRAPHICS )
 GAME( 1997, zerogun,   0,        zerogun,      zerogun,   model2b_state, init_zerogun,  ROT0, "Psikyo", "Zero Gunner (Export, Model 2B)", MACHINE_NOT_WORKING|MACHINE_IMPERFECT_GRAPHICS )
 GAME( 1997, zerogunj,  zerogun,  zerogun,      zerogun,   model2b_state, init_zerogun,  ROT0, "Psikyo", "Zero Gunner (Japan, Model 2B)", MACHINE_NOT_WORKING|MACHINE_IMPERFECT_GRAPHICS )
 GAME( 1998, dynamcopb, dynamcop, model2b_5881, dynamcop,  model2b_state, empty_init,    ROT0, "Sega",   "Dynamite Cop (Export, Model 2B)", MACHINE_NOT_WORKING|MACHINE_IMPERFECT_GRAPHICS )

@@ -46,7 +46,6 @@ public:
 	void ncrpc4i(machine_config &config);
 	void kaypro16(machine_config &config);
 	void kaypropc(machine_config &config);
-	void epc(machine_config &config);
 	void m15(machine_config &config);
 	void bondwell(machine_config &config);
 	void siemens(machine_config &config);
@@ -86,7 +85,6 @@ private:
 	static void cfg_single_360K(device_t *device);
 	static void cfg_single_720K(device_t *device);
 
-	void epc_io(address_map &map);
 	void ibm5550_io(address_map &map);
 	void pc16_io(address_map &map);
 	void pc16_map(address_map &map);
@@ -176,13 +174,6 @@ static DEVICE_INPUT_DEFAULTS_START( pccga )
 DEVICE_INPUT_DEFAULTS_END
 
 
-#define MCFG_CPU_PC(mem, port, type, clock) \
-	MCFG_DEVICE_ADD("maincpu", type, clock)                \
-	MCFG_DEVICE_PROGRAM_MAP(mem##_map) \
-	MCFG_DEVICE_IO_MAP(port##_io) \
-	MCFG_DEVICE_IRQ_ACKNOWLEDGE_DEVICE("mb:pic8259", pic8259_device, inta_cb)
-
-
 // Floppy configurations
 void pc_state::cfg_dual_720K(device_t *device)
 {
@@ -194,22 +185,28 @@ void pc_state::cfg_single_360K(device_t *device)
 {
 	dynamic_cast<device_slot_interface &>(*device->subdevice("fdc:0")).set_default_option("525dd");
 	dynamic_cast<device_slot_interface &>(*device->subdevice("fdc:0")).set_fixed(true);
-	dynamic_cast<device_slot_interface &>(*device->subdevice("fdc:1")).set_default_option("");
+	dynamic_cast<device_slot_interface &>(*device->subdevice("fdc:1")).set_default_option(nullptr);
 }
 
 void pc_state::cfg_single_720K(device_t *device)
 {
 	dynamic_cast<device_slot_interface &>(*device->subdevice("fdc:0")).set_default_option("35dd");
 	dynamic_cast<device_slot_interface &>(*device->subdevice("fdc:0")).set_fixed(true);
-	dynamic_cast<device_slot_interface &>(*device->subdevice("fdc:1")).set_default_option("");
+	dynamic_cast<device_slot_interface &>(*device->subdevice("fdc:1")).set_default_option(nullptr);
 }
 
-MACHINE_CONFIG_START(pc_state::pccga)
+void pc_state::pccga(machine_config &config)
+{
 	/* basic machine hardware */
-	MCFG_CPU_PC(pc8, pc8, I8088, 4772720)   /* 4,77 MHz */
+	i8088_cpu_device &maincpu(I8088(config, "maincpu", 4772720)); /* 4.77 MHz */
+	maincpu.set_addrmap(AS_PROGRAM, &pc_state::pc8_map);
+	maincpu.set_addrmap(AS_IO, &pc_state::pc8_io);
+	maincpu.set_irq_acknowledge_callback("mb:pic8259", FUNC(pic8259_device::inta_cb));
 
 	ibm5160_mb_device &mb(IBM5160_MOTHERBOARD(config, "mb", 0));
 	mb.set_cputag(m_maincpu);
+	mb.int_callback().set_inputline(m_maincpu, 0);
+	mb.nmi_callback().set_inputline(m_maincpu, INPUT_LINE_NMI);
 	mb.set_input_default(DEVICE_INPUT_DEFAULTS_NAME(pccga));
 
 	// FIXME: determine ISA bus clock
@@ -227,7 +224,7 @@ MACHINE_CONFIG_START(pc_state::pccga)
 
 	/* software lists */
 	SOFTWARE_LIST(config, "disk_list").set_original("ibm5150");
-MACHINE_CONFIG_END
+}
 
 
 /**************************************************************** Atari PC1 ***
@@ -332,11 +329,15 @@ static INPUT_PORTS_START( bondwell )
 	PORT_DIPSETTING(    0x02, "On (12 MHz)" )
 INPUT_PORTS_END
 
-MACHINE_CONFIG_START(pc_state::bondwell)
+void pc_state::bondwell(machine_config &config)
+{
 	pccga(config);
-	config.device_remove("maincpu");
-	MCFG_CPU_PC(pc8, pc8, I8088, 4772720) // turbo?
-MACHINE_CONFIG_END
+
+	i8088_cpu_device &maincpu(I8088(config.replace(), "maincpu", 4772720)); /* turbo? */
+	maincpu.set_addrmap(AS_PROGRAM, &pc_state::pc8_map);
+	maincpu.set_addrmap(AS_IO, &pc_state::pc8_io);
+	maincpu.set_irq_acknowledge_callback("mb:pic8259", FUNC(pic8259_device::inta_cb));
+}
 
 ROM_START( bw230 )
 	ROM_REGION(0x10000,"bios", 0)
@@ -466,11 +467,15 @@ Options: 8087 FPU, EagleNet File server, EightPort serial card, High Resolution 
 
 ******************************************************************************/
 
-MACHINE_CONFIG_START(pc_state::eagle1600)
+void pc_state::eagle1600(machine_config &config)
+{
 	pccga(config);
-	config.device_remove("maincpu");
-	MCFG_CPU_PC(pc16, pc16, I8086, 8000000)
-MACHINE_CONFIG_END
+
+	i8086_cpu_device &maincpu(I8086(config.replace(), "maincpu", 8000000));
+	maincpu.set_addrmap(AS_PROGRAM, &pc_state::pc16_map);
+	maincpu.set_addrmap(AS_IO, &pc_state::pc16_io);
+	maincpu.set_irq_acknowledge_callback("mb:pic8259", FUNC(pic8259_device::inta_cb));
+}
 
 ROM_START( eagle1600 )
 	ROM_REGION(0x10000,"bios", 0)
@@ -481,6 +486,22 @@ ROM_START( eagle1600 )
 	ROM_LOAD("eagle 1600 video char gen u301.bin", 0x00000, 0x1000, CRC(1a7e552f) SHA1(749058783eec9d96a70dc5fdbfccb56196f889dc))
 ROM_END
 
+/*************************************************************** Eagle PC-2 ***
+
+Links: http://www.digibarn.com/collections/systems/eagle-pc/index.html , https://www.atarimagazines.com/creative/v10n2/28_Eagle_PC2.php http://www.old-computers.com/museum/computer.asp?st=1&c=529
+Form Factor: Desktop
+
+Error message: Cannot read boot sector
+******************************************************************************/
+
+ROM_START( eaglepc2 )
+	ROM_REGION16_LE(0x10000,"bios", 0)
+	ROM_LOAD("eagle_pc-2_bios_2.812_1986_u1101.bin", 0xe000, 0x2000, CRC(cd0fc034) SHA1(883cb4808c565f2582873a51cc637ab25b457f88))
+
+	ROM_REGION(0x8000,"gfx1", 0)
+	ROM_LOAD("eagle_pc-2_cga_char_rom_u401.bin", 0x00000, 0x1000, CRC(e85da08d) SHA1(176a7027bd14cc7efbb5cec5c2ac89ba002912d0))
+
+ROM_END
 
 /********************************************************** Eagle PC Spirit ***
 
@@ -509,50 +530,6 @@ ROM_START( mc1702 )
 	ROM_LOAD16_BYTE("2764_2,573rf4.rom", 0xc000,  0x2000, CRC(34a0c8fb) SHA1(88dc247f2e417c2848a2fd3e9b52258ad22a2c07))
 	ROM_LOAD16_BYTE("2764_3,573rf4.rom", 0xc001, 0x2000, CRC(68ab212b) SHA1(f3313f77392877d28ce290ffa3432f0a32fc4619))
 	ROM_LOAD("ba1m,573rf5.rom", 0x0000, 0x0800, CRC(08d938e8) SHA1(957b6c691dbef75c1c735e8e4e81669d056971e4))
-ROM_END
-
-
-/************************************************************** Ericsson PC ***
-
-Links: https://youtu.be/6uilOdMJc24
-Form Factor: Desktop
-CPU: 8088 @ 4.77MHz
-RAM: 256K
-Bus: 6x ISA
-Video: Monchrome or Color 80x25 character mode. 320x200 and 640x400 (CGA?) grahics modes
-Display: Orange Gas Plasma (GP) display
-Mass storage: 2 x 5.25" 360K or 1 20Mb HDD
-On board ports: Beeper,
-Ports: serial, parallel
-Internal Options: Up to 640K RAM through add-on RAM card
-Misc: The hardware was not 100% PC compatible so non BIOS based software would not run. 50.000+ units sold
-
-******************************************************************************/
-
-void pc_state::epc_io(address_map &map)
-{
-	map.unmap_value_high();
-	map(0x0000, 0x00ff).m("mb", FUNC(ibm5160_mb_device::map));
-	map(0x0070, 0x0071).rw("i8251", FUNC(i8251_device::read), FUNC(i8251_device::write));
-}
-
-MACHINE_CONFIG_START(pc_state::epc)
-	pccga(config);
-	config.device_remove("maincpu");
-	MCFG_CPU_PC(pc8, epc, I8088, 4772720)
-	subdevice<isa8_slot_device>("isa1")->set_default_option("ega");
-	I8251(config, "i8251", 0); // clock?
-MACHINE_CONFIG_END
-
-ROM_START( epc )
-	ROM_REGION(0x10000,"bios", 0)
-	ROM_DEFAULT_BIOS("p860110")
-	ROM_SYSTEM_BIOS(0, "p840705", "P840705")
-	ROMX_LOAD("ericsson_8088.bin", 0xe000, 0x2000, CRC(3953c38d) SHA1(2bfc1f1d11d0da5664c3114994fc7aa3d6dd010d), ROM_BIOS(0))
-	ROM_SYSTEM_BIOS(1, "p860110", "P860110")
-	ROMX_LOAD("epcbios1.bin",  0xe000, 0x02000, CRC(79a83706) SHA1(33528c46a24d7f65ef5a860fbed05afcf797fc55), ROM_BIOS(1))
-	ROMX_LOAD("epcbios2.bin",  0xa000, 0x02000, CRC(3ca764ca) SHA1(02232fedef22d31a641f4b65933b9e269afce19e), ROM_BIOS(1))
-	ROMX_LOAD("epcbios3.bin",  0xc000, 0x02000, CRC(70483280) SHA1(b44b09da94d77b0269fc48f07d130b2d74c4bb8f), ROM_BIOS(1))
 ROM_END
 
 
@@ -595,12 +572,18 @@ void pc_state::ibm5550_io(address_map &map)
 	map(0x00a0, 0x00a0).r(FUNC(pc_state::unk_r));
 }
 
-MACHINE_CONFIG_START(pc_state::ibm5550)
+void pc_state::ibm5550(machine_config &config)
+{
 	/* basic machine hardware */
-	MCFG_CPU_PC(pc16, ibm5550, I8086, 8000000)
+	i8086_cpu_device &maincpu(I8086(config, "maincpu", 8000000));
+	maincpu.set_addrmap(AS_PROGRAM, &pc_state::pc16_map);
+	maincpu.set_addrmap(AS_IO, &pc_state::ibm5550_io);
+	maincpu.set_irq_acknowledge_callback("mb:pic8259", FUNC(pic8259_device::inta_cb));
 
 	ibm5160_mb_device &mb(IBM5160_MOTHERBOARD(config, "mb", 0));
 	mb.set_cputag(m_maincpu);
+	mb.int_callback().set_inputline(m_maincpu, 0);
+	mb.nmi_callback().set_inputline(m_maincpu, INPUT_LINE_NMI);
 	mb.set_input_default(DEVICE_INPUT_DEFAULTS_NAME(pccga));
 
 	// FIXME: determine ISA bus clock
@@ -614,7 +597,7 @@ MACHINE_CONFIG_START(pc_state::ibm5550)
 
 	/* internal ram */
 	RAM(config, RAM_TAG).set_default_size("640K").set_extra_options("64K, 128K, 256K, 512K");
-MACHINE_CONFIG_END
+}
 
 ROM_START( ibm5550 )
 	ROM_REGION16_LE(0x10000,"bios", 0)
@@ -741,7 +724,6 @@ Options: 8087 FPU, K101 memory upgrade in 64K steps, 1.2MB floppy and controller
 void pc_state::ncrpc4i(machine_config & config)
 {
 	pccga(config);
-	//MCFG_DEVICE_MODIFY("mb:isa")
 	ISA8_SLOT(config, "isa6", 0, "mb:isa", pc_isa8_cards, nullptr, false); // FIXME: determine ISA bus clock
 	ISA8_SLOT(config, "isa7", 0, "mb:isa", pc_isa8_cards, nullptr, false);
 
@@ -809,15 +791,20 @@ Options: 8087 FPU
 
 ******************************************************************************/
 
-MACHINE_CONFIG_START(pc_state::olytext30)
+void pc_state::olytext30(machine_config &config)
+{
 	pccga(config);
-	config.device_remove("maincpu");
-	MCFG_CPU_PC(pc8, pc8, V20, XTAL(14'318'181)/3) /* 4,77 MHz */
+
+	v20_device &maincpu(V20(config.replace(), "maincpu", XTAL(14'318'181)/3)); /* 4.77 MHz */
+	maincpu.set_addrmap(AS_PROGRAM, &pc_state::pc8_map);
+	maincpu.set_addrmap(AS_IO, &pc_state::pc8_io);
+	maincpu.set_irq_acknowledge_callback("mb:pic8259", FUNC(pic8259_device::inta_cb));
+
 	subdevice<isa8_slot_device>("isa2")->set_option_machine_config("fdc_xt", cfg_single_720K);
-	subdevice<isa8_slot_device>("isa3")->set_default_option("");
+	subdevice<isa8_slot_device>("isa3")->set_default_option(nullptr);
 	subdevice<isa8_slot_device>("isa5")->set_default_option("hdc");
 	subdevice<ram_device>(RAM_TAG)->set_default_size("768K");
-MACHINE_CONFIG_END
+}
 
 ROM_START( olytext30 )
 	ROM_REGION(0x10000, "bios", 0)
@@ -829,12 +816,18 @@ ROM_END
 
 ******************************************************************************/
 
-MACHINE_CONFIG_START(pc_state::poisk2)
+void pc_state::poisk2(machine_config &config)
+{
 	/* basic machine hardware */
-	MCFG_CPU_PC(pc16, pc16, I8086, 4772720)
+	i8086_cpu_device &maincpu(I8086(config, "maincpu", 4772720));
+	maincpu.set_addrmap(AS_PROGRAM, &pc_state::pc16_map);
+	maincpu.set_addrmap(AS_IO, &pc_state::pc16_io);
+	maincpu.set_irq_acknowledge_callback("mb:pic8259", FUNC(pic8259_device::inta_cb));
 
 	ibm5160_mb_device &mb(IBM5160_MOTHERBOARD(config, "mb", 0));
 	mb.set_cputag(m_maincpu);
+	mb.int_callback().set_inputline(m_maincpu, 0);
+	mb.nmi_callback().set_inputline(m_maincpu, INPUT_LINE_NMI);
 	mb.set_input_default(DEVICE_INPUT_DEFAULTS_NAME(pccga));
 
 	ISA8_SLOT(config, "isa1", 0, "mb:isa", pc_isa8_cards, "cga_poisk2", false); // FIXME: determine ISA bus clock
@@ -847,7 +840,7 @@ MACHINE_CONFIG_START(pc_state::poisk2)
 
 	/* internal ram */
 	RAM(config, RAM_TAG).set_default_size("640K").set_extra_options("64K, 128K, 256K, 512K");
-MACHINE_CONFIG_END
+}
 
 ROM_START( poisk2 )
 	ROM_REGION16_LE(0x10000,"bios", 0)
@@ -921,12 +914,18 @@ static DEVICE_INPUT_DEFAULTS_START( iskr3104 )
 	DEVICE_INPUT_DEFAULTS("DSW0", 0x30, 0x00)
 DEVICE_INPUT_DEFAULTS_END
 
-MACHINE_CONFIG_START(pc_state::iskr3104)
+void pc_state::iskr3104(machine_config &config)
+{
 	/* basic machine hardware */
-	MCFG_CPU_PC(pc16, pc16, I8086, 4772720)
+	i8086_cpu_device &maincpu(I8086(config, "maincpu", 4772720));
+	maincpu.set_addrmap(AS_PROGRAM, &pc_state::pc16_map);
+	maincpu.set_addrmap(AS_IO, &pc_state::pc16_io);
+	maincpu.set_irq_acknowledge_callback("mb:pic8259", FUNC(pic8259_device::inta_cb));
 
 	ibm5160_mb_device &mb(IBM5160_MOTHERBOARD(config, "mb", 0));
 	mb.set_cputag(m_maincpu);
+	mb.int_callback().set_inputline(m_maincpu, 0);
+	mb.nmi_callback().set_inputline(m_maincpu, INPUT_LINE_NMI);
 	mb.set_input_default(DEVICE_INPUT_DEFAULTS_NAME(iskr3104));
 
 	ISA8_SLOT(config, "isa1", 0, "mb:isa", pc_isa8_cards, "ega", false).set_option_default_bios("ega", "iskr3104"); // FIXME: determine ISA bus clock
@@ -939,7 +938,7 @@ MACHINE_CONFIG_START(pc_state::iskr3104)
 
 	/* internal ram */
 	RAM(config, RAM_TAG).set_default_size("640K").set_extra_options("64K, 128K, 256K, 512K");
-MACHINE_CONFIG_END
+}
 
 ROM_START( iskr3104 )
 	ROM_REGION16_LE(0x10000,"bios", 0)
@@ -996,12 +995,18 @@ static DEVICE_INPUT_DEFAULTS_START( siemens )
 	DEVICE_INPUT_DEFAULTS("DSW0", 0x30, 0x30)
 DEVICE_INPUT_DEFAULTS_END
 
-MACHINE_CONFIG_START(pc_state::siemens)
+void pc_state::siemens(machine_config &config)
+{
 	/* basic machine hardware */
-	MCFG_CPU_PC(pc8, pc8, I8088, XTAL(14'318'181)/3) /* 4,77 MHz */
+	i8088_cpu_device &maincpu(I8088(config, "maincpu", XTAL(14'318'181)/3)); /* 4.77 MHz */
+	maincpu.set_addrmap(AS_PROGRAM, &pc_state::pc8_map);
+	maincpu.set_addrmap(AS_IO, &pc_state::pc8_io);
+	maincpu.set_irq_acknowledge_callback("mb:pic8259", FUNC(pic8259_device::inta_cb));
 
 	ibm5150_mb_device &mb(IBM5150_MOTHERBOARD(config, "mb", 0));
 	mb.set_cputag(m_maincpu);
+	mb.int_callback().set_inputline(m_maincpu, 0);
+	mb.nmi_callback().set_inputline(m_maincpu, INPUT_LINE_NMI);
 	mb.set_input_default(DEVICE_INPUT_DEFAULTS_NAME(siemens));
 
 	// FIXME: determine ISA bus clock
@@ -1017,7 +1022,7 @@ MACHINE_CONFIG_START(pc_state::siemens)
 
 	/* internal ram */
 	RAM(config, RAM_TAG).set_default_size("640K").set_extra_options("64K, 128K, 256K, 512K");
-MACHINE_CONFIG_END
+}
 
 ROM_START( sicpc1605 )
 	ROM_REGION(0x10000,"bios", 0)
@@ -1041,11 +1046,17 @@ Options: 8087 FPU
 
 ******************************************************************************/
 
-MACHINE_CONFIG_START(pc_state::laser_turbo_xt)
-	MCFG_CPU_PC(pc8, pc8, I8088, XTAL(14'318'181)/3) /* 4,77 MHz */
+void pc_state::laser_turbo_xt(machine_config &config)
+{
+	i8088_cpu_device &maincpu(I8088(config, "maincpu", XTAL(14'318'181)/3)); /* 4.77 MHz */
+	maincpu.set_addrmap(AS_PROGRAM, &pc_state::pc8_map);
+	maincpu.set_addrmap(AS_IO, &pc_state::pc8_io);
+	maincpu.set_irq_acknowledge_callback("mb:pic8259", FUNC(pic8259_device::inta_cb));
 
 	ibm5160_mb_device &mb(IBM5160_MOTHERBOARD(config, "mb", 0));
 	mb.set_cputag(m_maincpu);
+	mb.int_callback().set_inputline(m_maincpu, 0);
+	mb.nmi_callback().set_inputline(m_maincpu, INPUT_LINE_NMI);
 	mb.set_input_default(DEVICE_INPUT_DEFAULTS_NAME(pccga));
 
 	// FIXME: determine ISA bus clock
@@ -1066,7 +1077,7 @@ MACHINE_CONFIG_START(pc_state::laser_turbo_xt)
 
 	/* software lists */
 	SOFTWARE_LIST(config, "disk_list").set_original("ibm5150");
-MACHINE_CONFIG_END
+}
 
 ROM_START( laser_turbo_xt )
 	ROM_REGION(0x10000, "bios", 0)
@@ -1120,12 +1131,18 @@ void pc_state::zenith_map(address_map &map)
 	map(0xf8000, 0xfffff).rom().region("bios", 0x8000);
 }
 
-MACHINE_CONFIG_START(pc_state::zenith)
+void pc_state::zenith(machine_config &config)
+{
 	/* basic machine hardware */
-	MCFG_CPU_PC(zenith, pc8, I8088, XTAL(14'318'181)/3) /* 4,77 MHz */
+	i8088_cpu_device &maincpu(I8088(config, "maincpu", XTAL(14'318'181)/3)); /* 4.77 MHz */
+	maincpu.set_addrmap(AS_PROGRAM, &pc_state::zenith_map);
+	maincpu.set_addrmap(AS_IO, &pc_state::pc8_io);
+	maincpu.set_irq_acknowledge_callback("mb:pic8259", FUNC(pic8259_device::inta_cb));
 
 	ibm5150_mb_device &mb(IBM5150_MOTHERBOARD(config, "mb", 0));
 	mb.set_cputag(m_maincpu);
+	mb.int_callback().set_inputline(m_maincpu, 0);
+	mb.nmi_callback().set_inputline(m_maincpu, INPUT_LINE_NMI);
 	mb.set_input_default(DEVICE_INPUT_DEFAULTS_NAME(pccga));
 
 	ISA8_SLOT(config, "isa1", 0, "mb:isa", pc_isa8_cards, "cga", false); // FIXME: determine ISA bus clock
@@ -1141,7 +1158,7 @@ MACHINE_CONFIG_START(pc_state::zenith)
 
 	/* software lists */
 	SOFTWARE_LIST(config, "disk_list").set_original("ibm5150");
-MACHINE_CONFIG_END
+}
 
 ROM_START( zdsupers )
 	ROM_REGION(0x10000,"bios", 0)
@@ -1161,11 +1178,12 @@ emits a steady beep and waits for F1 to be pressed.
 
 ******************************************************************************/
 
-MACHINE_CONFIG_START(pc_state::cadd810)
+void pc_state::cadd810(machine_config &config)
+{
 	pccga(config);
 	config.device_remove("kbd");
 	PC_KBDC_SLOT(config, "kbd", pc_at_keyboards, STR_KBD_IBM_PC_AT_101).set_pc_kbdc_slot(subdevice("mb:pc_kbdc"));
-MACHINE_CONFIG_END
+}
 
 ROM_START( cadd810 )
 	ROM_REGION(0x10000,"bios", 0) // continuous beep, complains about missing keyboard
@@ -1182,12 +1200,18 @@ http://www.vcfed.org/forum/showthread.php?67127-Juko-nest-n3
 
 ******************************************************************************/
 
-MACHINE_CONFIG_START(pc_state::juko16)
+void pc_state::juko16(machine_config &config)
+{
 	/* basic machine hardware */
-	MCFG_CPU_PC(pc16, pc16, V30, 4772720)
+	v30_device &maincpu(V30(config, "maincpu", 4772720));
+	maincpu.set_addrmap(AS_PROGRAM, &pc_state::pc16_map);
+	maincpu.set_addrmap(AS_IO, &pc_state::pc16_io);
+	maincpu.set_irq_acknowledge_callback("mb:pic8259", FUNC(pic8259_device::inta_cb));
 
 	ibm5160_mb_device &mb(IBM5160_MOTHERBOARD(config, "mb", 0));
 	mb.set_cputag(m_maincpu);
+	mb.int_callback().set_inputline(m_maincpu, 0);
+	mb.nmi_callback().set_inputline(m_maincpu, INPUT_LINE_NMI);
 	mb.set_input_default(DEVICE_INPUT_DEFAULTS_NAME(pccga));
 
 	ISA8_SLOT(config, "isa1", 0, "mb:isa", pc_isa8_cards, "cga", false); // FIXME: determine ISA bus clock
@@ -1200,7 +1224,7 @@ MACHINE_CONFIG_START(pc_state::juko16)
 
 	/* internal ram */
 	RAM(config, RAM_TAG).set_default_size("640K").set_extra_options("64K, 128K, 256K, 512K");
-MACHINE_CONFIG_END
+}
 
 ROM_START( juko16 )
 	ROM_REGION(0x10000,"bios", 0)
@@ -1248,6 +1272,48 @@ ROM_START( nixpc01 )
 	ROM_LOAD( "nx01.bin", 0xc000, 0x4000, CRC(b0a75d1f) SHA1(7c2890eced917969968fc2e7491cda90a9734e03))
 ROM_END
 
+/******************************************************Leading Edge Model M ***
+
+aka the Sperry PC, the "Sperry HT - 4.71 Bios" that can be found online is identical to the v.4.71 below
+E-TD10 - TOD Error
+acording to http://www.o3one.org/hwdocs/bios_doc/dosref22.html this machine had AT-like RTC services
+The "M" stood for a Mitsubishi made machine, the "Leading Edge Model D" was made by Daewoo
+Works with the "siemens" config, so instead of duplicating it until more is known we'll use that.
+
+******************************************************************************/
+
+ROM_START( ledgmodm )
+	ROM_REGION(0x10000, "bios", 0)
+	ROM_SYSTEM_BIOS(0, "v330", "Version 3.30")
+	ROMX_LOAD( "leading_edge-model_m-version_3.30.bin", 0xc000, 0x4000, CRC(386dd187) SHA1(848ccdc8209c24478a4f75dd941760c43d3bc732), ROM_BIOS(0) )
+	ROM_SYSTEM_BIOS(1, "v471", "Version 4.71")
+	ROMX_LOAD( "leading_edge-model_m-version_4.71.bin", 0xc000, 0x4000, CRC(0d5d8bee) SHA1(6c35adf6a8da149e420b5aa8dd0e18e02488cfa0), ROM_BIOS(1) )
+ROM_END
+
+/************************************** CCI Micromint MPX-16 PC Motherboard ***
+
+Circuit Cellar Project
+The ROMs are marked "Micromint MPX16 5/8 PC/Term 3/1/84"
+hangs on boot, maybe they are waiting for a serial connection
+
+******************************************************************************/
+
+ROM_START( mpx16 )
+	ROM_REGION16_LE(0x10000,"bios", 0)
+	ROM_LOAD("mpx16u84.bin", 0xe000, 0x1000, CRC(8a557a25) SHA1(90f8112c094cc0ac44c2d5d43fbb577333dfc165))
+	ROM_LOAD("mpx16u85.bin", 0xf000, 0x1000, CRC(42097571) SHA1(2acaca033242e35e512b30b2233da02bde561cc3))
+ROM_END
+
+/*************************************************** Vendex HeadStart Plus ***
+
+Samsung manufactured - Chipset: Faraday FE2010A - "Keyboard Error or no keyboard present"
+On-board: FDC
+
+******************************************************************************/
+ROM_START( hstrtpls )
+	ROM_REGION(0x10000,"bios", 0)
+	ROM_LOAD("bios.bin",  0xc000, 0x04000, CRC(19d705f8) SHA1(5e607fec6b533bc59d8d804e399bb9d438d6999d))
+ROM_END
 
 /***************************************************************************
 
@@ -1257,7 +1323,6 @@ ROM_END
 
 //    YEAR  NAME            PARENT   COMPAT  MACHINE         INPUT     CLASS     INIT           COMPANY                            FULLNAME                 FLAGS
 COMP( 1984, dgone,          ibm5150, 0,      dgone,          pccga,    pc_state, empty_init,    "Data General",                    "Data General/One" ,     MACHINE_NOT_WORKING )
-COMP( 1985, epc,            ibm5150, 0,      epc,            pccga,    pc_state, empty_init,    "Ericsson Information System",     "Ericsson PC" ,          MACHINE_NOT_WORKING )
 COMP( 1985, eppc,           ibm5150, 0,      pccga,          pccga,    pc_state, empty_init,    "Ericsson Information System",     "Ericsson Portable PC",  MACHINE_NOT_WORKING )
 COMP( 1985, bw230,          ibm5150, 0,      bondwell,       bondwell, pc_state, init_bondwell, "Bondwell Holding",                "BW230 (PRO28 Series)",  0 )
 COMP( 1992, iskr3104,       ibm5150, 0,      iskr3104,       pccga,    pc_state, empty_init,    "Schetmash",                       "Iskra 3104",            MACHINE_NOT_WORKING )
@@ -1290,3 +1355,7 @@ COMP( 198?, juko16,         ibm5150, 0,      juko16,         pccga,    pc_state,
 COMP( 198?, hyo88t,         ibm5150, 0,      pccga,          pccga,    pc_state, empty_init,    "Hyosung",                         "Topstar 88T",           MACHINE_NOT_WORKING )
 COMP( 198?, kyoxt,          ibm5150, 0,      pccga,          pccga,    pc_state, empty_init,    "Kyocera",                         "XT",                    MACHINE_NOT_WORKING )
 COMP( 198?, kaypropc,       ibm5150, 0,      pccga,          pccga,    pc_state, empty_init,    "Kaypro Corporation",              "PC",                    MACHINE_NOT_WORKING )
+COMP( 198?, ledgmodm,       ibm5150, 0,      siemens,        pccga,    pc_state, empty_init,    "Leading Edge",                    "Model M",               MACHINE_NOT_WORKING )
+COMP( 198?, eaglepc2,       ibm5150, 0,      pccga,          pccga,    pc_state, empty_init,    "Eagle",                           "PC-2",                  MACHINE_NOT_WORKING )
+COMP( 198?, mpx16,          ibm5150, 0,      pccga,          pccga,    pc_state, empty_init,    "Micromint",                       "MPX-16",                MACHINE_NOT_WORKING )
+COMP( 198?, hstrtpls,       ibm5150, 0,      pccga,          pccga,    pc_state, empty_init,    "Vendex",                          "HeadStart Plus",        MACHINE_NOT_WORKING )
