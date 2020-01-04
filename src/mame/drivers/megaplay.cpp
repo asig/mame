@@ -698,8 +698,8 @@ void mplay_state::megaplay(machine_config &config)
 	m_vdp->set_lcm_scaling(true);
 
 	/* New update functions to handle the extra layer */
-	subdevice<screen_device>("megadriv")->set_raw((XTAL(10'738'635) * 5)/2, \
-			sega315_5124_device::WIDTH * 5, (sega315_5124_device::LBORDER_START + sega315_5124_device::LBORDER_WIDTH) * 5, (sega315_5124_device::LBORDER_START + sega315_5124_device::LBORDER_WIDTH + 256) * 5, \
+	subdevice<screen_device>("megadriv")->set_raw((XTAL(10'738'635) * 5)/2,
+			sega315_5124_device::WIDTH * 5, (sega315_5124_device::LBORDER_START + sega315_5124_device::LBORDER_WIDTH) * 5, (sega315_5124_device::LBORDER_START + sega315_5124_device::LBORDER_WIDTH + 256) * 5,
 			sega315_5124_device::HEIGHT_NTSC, sega315_5124_device::TBORDER_START + sega315_5124_device::NTSC_224_TBORDER_HEIGHT, sega315_5124_device::TBORDER_START + sega315_5124_device::NTSC_224_TBORDER_HEIGHT + 224);
 	subdevice<screen_device>("megadriv")->set_screen_update(FUNC(mplay_state::screen_update_megplay));
 
@@ -738,7 +738,7 @@ ROM_END
 
    This probably means the maximum 68k rom size is 0x2fffff for MegaPlay
 */
-
+/* pcb  171-5834 */
 ROM_START( mp_sonic ) /* Sonic */
 	ROM_REGION( 0x400000, "maincpu", 0 )
 	ROM_LOAD16_BYTE( "ep15177.ic2", 0x000000, 0x040000, CRC(a389b03b) SHA1(8e9e1cf3dd65ddf08757f5a1ce472130c902ea2c) )
@@ -961,7 +961,7 @@ PCB 171-5834 has locations for 3 ROMs and is dated 1989.
                                                                        |                                                                   |
 Game                 PCB #       Sticker on PCB    Sticker on cart      IC1                     IC2                    IC3
 -------------------------------------------------------------------------------------------------------------------------------------------
-Sonic The Hedgehog                                    -    -01
+Sonic The Hedgehog   171-5834    610-0298-01       610-0297-01          EPR-15176   (27C2001)   EPR-15177    (27C2001) EPR-15175-01 (27C256)
 Golden Axe 2                                          -    -02
 Grand Slam           171-5834    837-9165-03       610-0297-03          EPR-15180   (27C020)    EPR-15181    (27C020)  EPR-15175-03 (27256)
 Tecmo World Cup                                       -    -04

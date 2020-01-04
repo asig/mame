@@ -1,14 +1,14 @@
 // license:GPL-2.0+
 // copyright-holders:Couriersud
-/*
- * nld_ms_gcr.h
- *
- * Gaussian elimination using compressed row format.
- *
- */
 
 #ifndef NLD_MS_GCR_H_
 #define NLD_MS_GCR_H_
+
+///
+/// \file  nld_ms_gcr.h
+///
+/// Gaussian elimination using compressed row format.
+///
 
 #include "plib/mat_cr.h"
 
@@ -41,7 +41,7 @@ namespace solver
 		{
 			const std::size_t iN = this->size();
 
-			/* build the final matrix */
+			// build the final matrix
 
 			std::vector<std::vector<unsigned>> fill(iN);
 
@@ -67,7 +67,7 @@ namespace solver
 			for (mat_index_type k=0; k<iN; k++)
 			{
 				std::size_t cnt(0);
-				/* build pointers into the compressed row format matrix for each terminal */
+				// build pointers into the compressed row format matrix for each terminal
 				for (std::size_t j=0; j< this->m_terms[k].railstart();j++)
 				{
 					int other = this->m_terms[k].m_connected_net_idx[j];
@@ -83,25 +83,29 @@ namespace solver
 				this->m_mat_ptr[k][this->m_terms[k].railstart()] = &mat.A[mat.diag[k]];
 			}
 
-			this->log().verbose("maximum fill: {1}", gr.first);
-			this->log().verbose("Post elimination occupancy ratio: {2} Ops: {1}", gr.second,
+			anetlist.log().verbose("maximum fill: {1}", gr.first);
+			anetlist.log().verbose("Post elimination occupancy ratio: {2} Ops: {1}", gr.second,
 					static_cast<nl_fptype>(mat.nz_num) / static_cast<nl_fptype>(iN * iN));
-			this->log().verbose(" Pre elimination occupancy ratio: {2}",
+			anetlist.log().verbose(" Pre elimination occupancy ratio: {2}",
 					static_cast<nl_fptype>(raw_elements) / static_cast<nl_fptype>(iN * iN));
 
 			// FIXME: Move me
+			//
 
-			if (this->state().lib().isLoaded())
+			// During extended validation there is no reason to check for
+			// differences in the generated code since during
+			// extended validation this will be different (and non-functional)
+			if (!anetlist.is_extended_validation() && anetlist.lib().isLoaded())
 			{
 				pstring symname = static_compile_name();
-				m_proc.load(this->state().lib(), symname);
+				m_proc.load(anetlist.lib(), symname);
 				if (m_proc.resolved())
 				{
-					this->log().info("External static solver {1} found ...", symname);
+					anetlist.log().info("External static solver {1} found ...", symname);
 				}
 				else
 				{
-					this->log().warning("External static solver {1} not found ...", symname);
+					anetlist.log().warning("External static solver {1} not found ...", symname);
 				}
 			}
 		}
@@ -164,7 +168,7 @@ namespace solver
 					strm("\tconst {1} f{2}_{3} = -f{4} * m_A{5};\n", fptype, i, j, i, pj);
 					pj++;
 
-					// subtract row i from j */
+					// subtract row i from j
 					for (std::size_t pii = pi; pii<piie; )
 					{
 						while (mat.col_idx[pj] < mat.col_idx[pii])
@@ -224,11 +228,11 @@ namespace solver
 	template <typename FT, int SIZE>
 	unsigned matrix_solver_GCR_t<FT, SIZE>::vsolve_non_dynamic(const bool newton_raphson)
 	{
-		/* populate matrix */
+		// populate matrix
 		mat.set_scalar(plib::constants<FT>::zero());
 		this->fill_matrix_and_rhs();
 
-		/* now solve it */
+		// now solve it
 
 		if (m_proc.resolved())
 		{
@@ -237,13 +241,11 @@ namespace solver
 		else
 		{
 			// parallel is slow -- very slow
-			//mat.gaussian_elimination_parallel(RHS);
+			// mat.gaussian_elimination_parallel(RHS);
 			mat.gaussian_elimination(this->m_RHS);
-			/* backward substitution */
+			// backward substitution
 			mat.gaussian_back_substitution(this->m_new_V, this->m_RHS);
 		}
-
-		this->m_stat_calculations++;
 
 		bool err(false);
 		if (newton_raphson)
@@ -255,4 +257,4 @@ namespace solver
 } // namespace solver
 } // namespace netlist
 
-#endif /* NLD_MS_GCR_H_ */
+#endif // NLD_MS_GCR_H_

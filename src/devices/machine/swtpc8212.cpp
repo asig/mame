@@ -121,17 +121,17 @@ in mind that it is an ASCII terminal so try an ISO-8859-1 locale, and also that
 it has no tabs so it needs tab to space translation.
 
 swtp|ct8212|southwest technical products ct8212,
-	cols#82, lines#24,
-	bel=^G, civis=^E, clear=^L, cnorm=^U, cr=\r,
-	cub=^\^D%p1%c, cub1=^D, cud=^\^B%p1%c, cud1=^B,
-	cuf1=^R, cup=^K%p2%{32}%+%c%p1%{32}%+%c,
-	cuu=^\^A%p1%c, cuu1=^A, dch1=^\^H, dl1=^Z, ed=^V, el=^F,
-	el1=^\^F, home=^P, hpa=^\^W%p1%{32}%+%c, ich1=^\^X,
-	il1=^\^Y, ind=^N,
-	is2=^_^A$<250>^\^R$<50>^^^D^^^T^_^J\040^^^G^^^O^^^Z^]^W^I^R,
-	kbs=^H, kcub1=^B, kcud1=^N, kcuf1=^F, kcuu1=^P, khome=^A,
-	ll=^C, mc4=^]^G, mc5=^]^K, nel=\r\n, ri=^O, rmir=, rmso=^^^F,
-	smir=, smso=^^^V, vpa=^\^G%p1%{32}%+%c,
+    cols#82, lines#24,
+    bel=^G, civis=^E, clear=^L, cnorm=^U, cr=\r,
+    cub=^\^D%p1%c, cub1=^D, cud=^\^B%p1%c, cud1=^B,
+    cuf1=^R, cup=^K%p2%{32}%+%c%p1%{32}%+%c,
+    cuu=^\^A%p1%c, cuu1=^A, dch1=^\^H, dl1=^Z, ed=^V, el=^F,
+    el1=^\^F, home=^P, hpa=^\^W%p1%{32}%+%c, ich1=^\^X,
+    il1=^\^Y, ind=^N,
+    is2=^_^A$<250>^\^R$<50>^^^D^^^T^_^J\040^^^G^^^O^^^Z^]^W^I^R,
+    kbs=^H, kcub1=^B, kcud1=^N, kcuf1=^F, kcuu1=^P, khome=^A,
+    ll=^C, mc4=^]^G, mc5=^]^K, nel=\r\n, ri=^O, rmir=, rmso=^^^F,
+    smir=, smso=^^^V, vpa=^\^G%p1%{32}%+%c,
 
 ****************************************************************************/
 
@@ -421,7 +421,6 @@ void swtpc8212_device::device_reset()
 
 void swtpc8212_device::mem_map(address_map &map)
 {
-	map(0x0000, 0x007f).ram();
 	map(0x0080, 0x0083).rw("pia0", FUNC(pia6821_device::read), FUNC(pia6821_device::write));
 	map(0x0088, 0x0088).w("crtc", FUNC(mc6845_device::address_w));
 	map(0x0089, 0x0089).rw("crtc", FUNC(mc6845_device::register_r), FUNC(mc6845_device::register_w));

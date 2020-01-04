@@ -1173,7 +1173,7 @@ void apple2gs_state::adb_check_mouse()
 			m_adb_kmstatus &= ~0x02;
 			if (m_adb_kmstatus & 0x40)
 			{
-				//raise_irq(IRQS_ADB);
+				raise_irq(IRQS_ADB);
 			}
 		}
 	}
@@ -2306,6 +2306,12 @@ READ8_MEMBER(apple2gs_state::c000_r)
 		case 0x46:  // INTFLAG
 			return (m_an3 ? INTFLAG_AN3 : 0x00) | m_intflag;
 
+		case 0x47:  // CLRVBLINT
+			m_intflag &= ~(INTFLAG_VBL|INTFLAG_QUARTER);
+			lower_irq(IRQS_VBL);
+			lower_irq(IRQS_QTRSEC);
+			return read_floatingbus();
+
 		case 0x60: // button 3 on IIgs
 			return m_gameio->sw3_r() | uFloatingBus7;
 
@@ -2570,6 +2576,7 @@ WRITE8_MEMBER(apple2gs_state::c000_w)
 			{
 				m_bank0_atc->set_bank(1);
 				m_bank1_atc->set_bank(1);
+
 			}
 			break;
 
@@ -2647,7 +2654,7 @@ WRITE8_MEMBER(apple2gs_state::c000_w)
 			break;
 
 		case 0x47:  // CLRVBLINT
-			m_intflag &= ~INTFLAG_VBL;
+			m_intflag &= ~(INTFLAG_VBL|INTFLAG_QUARTER);
 			lower_irq(IRQS_VBL);
 			lower_irq(IRQS_QTRSEC);
 			break;
@@ -3443,6 +3450,11 @@ WRITE8_MEMBER(apple2gs_state::b1ram4000_w)
 
 READ8_MEMBER(apple2gs_state::bank0_c000_r)
 {
+	if (offset & 0x2000)
+	{
+		offset ^= 0x1000;
+	}
+
 	if (m_ramrd)
 	{
 		return m_ram_ptr[offset + 0x3c000];
@@ -3453,6 +3465,11 @@ READ8_MEMBER(apple2gs_state::bank0_c000_r)
 
 WRITE8_MEMBER(apple2gs_state::bank0_c000_w)
 {
+	if (offset & 0x2000)
+	{
+		offset ^= 0x1000;
+	}
+
 	if (m_ramwrt)
 	{
 		m_ram_ptr[offset + 0x3c000] = data;
@@ -3464,8 +3481,8 @@ WRITE8_MEMBER(apple2gs_state::bank0_c000_w)
 
 READ8_MEMBER(apple2gs_state::bank1_0000_r) { return m_ram_ptr[offset + 0x30000]; }
 WRITE8_MEMBER(apple2gs_state::bank1_0000_w) { m_ram_ptr[offset + 0x30000] = data; }
-READ8_MEMBER(apple2gs_state::bank1_c000_r) { return m_ram_ptr[offset + 0x3c000]; }
-WRITE8_MEMBER(apple2gs_state::bank1_c000_w) { m_ram_ptr[offset + 0x3c000] = data; }
+READ8_MEMBER(apple2gs_state::bank1_c000_r) { if (offset & 0x2000) offset ^= 0x1000; return m_ram_ptr[offset + 0x3c000]; }
+WRITE8_MEMBER(apple2gs_state::bank1_c000_w) { if (offset & 0x2000) offset ^= 0x1000; m_ram_ptr[offset + 0x3c000] = data; }
 WRITE8_MEMBER(apple2gs_state::bank1_0000_sh_w)
 {
 	m_ram_ptr[offset + 0x30000] = data;

@@ -678,7 +678,7 @@ void eag_state::eagv9(machine_config &config)
 	eagv7(config);
 
 	/* basic machine hardware */
-	M68030(config.replace(), m_maincpu, 32_MHz_XTAL/2); // also seen with 40MHz XTAL
+	M68030(config.replace(), m_maincpu, 32_MHz_XTAL); // also seen with 40MHz XTAL
 	m_maincpu->disable_interrupt_mixer();
 	m_maincpu->set_addrmap(AS_PROGRAM, &eag_state::eagv7_map);
 }
@@ -762,11 +762,11 @@ ROM_START( feagv3 )
 ROM_END
 
 ROM_START( feagv5 )
-	ROM_REGION( 0x20000, "maincpu", 0 ) // PCB label 510.1136A01
+	ROM_REGION16_BE( 0x20000, "maincpu", 0 ) // PCB label 510.1136A01
 	ROM_LOAD16_BYTE("master_e", 0x00000, 0x10000, CRC(e424bddc) SHA1(ff03656addfe5c47f06df2efb4602f43a9e19d96) )
 	ROM_LOAD16_BYTE("master_o", 0x00001, 0x10000, CRC(33a00894) SHA1(849460332b1ac10d452ca3631eb99f5597511b73) )
 
-	ROM_REGION( 0x10000, "subcpu", 0 ) // PCB label 510.1138B01
+	ROM_REGION16_BE( 0x10000, "subcpu", 0 ) // PCB label 510.1138B01
 	ROM_LOAD16_BYTE("slave_e", 0x00000, 0x08000, CRC(eea4de52) SHA1(a64ca8a44b431e2fa7f00e44cab7e6aa2d4a9403) )
 	ROM_LOAD16_BYTE("slave_o", 0x00001, 0x08000, CRC(35fe2fdf) SHA1(731da12ee290bad9bc03cffe281c8cc48e555dfb) )
 ROM_END

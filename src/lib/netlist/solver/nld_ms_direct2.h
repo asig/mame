@@ -1,12 +1,12 @@
 // license:GPL-2.0+
 // copyright-holders:Couriersud
-/*
- * nld_ms_direct1.h
- *
- */
 
 #ifndef NLD_MS_DIRECT2_H_
 #define NLD_MS_DIRECT2_H_
+
+///
+/// \file nld_ms_direct2.h
+///
 
 #include "nld_ms_direct.h"
 #include "nld_solver.h"
@@ -47,7 +47,6 @@ namespace solver
 			this->m_new_V[0] = v0;
 			this->m_new_V[1] = v1;
 
-			this->m_stat_calculations++;
 			bool err(false);
 			if (newton_raphson)
 				err = this->check_err();
@@ -60,4 +59,4 @@ namespace solver
 } // namespace solver
 } // namespace netlist
 
-#endif /* NLD_MS_DIRECT2_H_ */
+#endif // NLD_MS_DIRECT2_H_

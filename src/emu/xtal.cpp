@@ -80,6 +80,7 @@ const double XTAL::known_xtals[] = {
 	  2'097'152, /* 2.097152_MHz_XTAL      Icatel 1995 - Brazilian public payphone */
 	  2'457'600, /* 2.4576_MHz_XTAL        Atari ST MFP */
 	  2'500'000, /* 2.5_MHz_XTAL           Janken Man units */
+	  2'600'000, /* 2.6_MHz_XTAL           Sharp PC-1500 */
 	  2'950'000, /* 2.95_MHz_XTAL          Playmatic MPU-C, MPU-III & Sound-3 */
 	  3'000'000, /* 3_MHz_XTAL             Probably only used to drive 68705 or similar MCUs on 80's Taito PCBs */
 	  3'072'000, /* 3.072_MHz_XTAL         INS 8520 input clock rate */
@@ -169,6 +170,7 @@ const double XTAL::known_xtals[] = {
 	 11'059'200, /* 11.0592_MHz_XTAL       Used with MCS-51 to generate common baud rates */
 	 11'200'000, /* 11.2_MHz_XTAL          New York, New York */
 	 11'289'000, /* 11.289_MHz_XTAL        Vanguard */
+	 11'289'600, /* 11.2896_MHz_XTAL       Frantic Fred */
 	 11'400'000, /* 11.4_MHz_XTAL          HP 9845 */
 	 11'668'800, /* 11.6688_MHz_XTAL       Gameplan pixel clock */
 	 11'800'000, /* 11.8_MHz_XTAL          IBM PC Music Feature Card */
@@ -226,6 +228,7 @@ const double XTAL::known_xtals[] = {
 	 15'700'000, /* 15.7_MHz_XTAL          Motogonki */
 	 15'897'600, /* 15.8976_MHz_XTAL       IAI Swyft */
 	 15'920'000, /* 15.92_MHz_XTAL         HP Integral PC */
+	 15'930'000, /* 15.93_MHz_XTAL         ADM 12 */
 	 15'974'400, /* 15.9744_MHz_XTAL       Osborne 1 (9600 * 52 * 32) */
 	 16'000'000, /* 16_MHz_XTAL            Extremely common, used on 100's of PCBs */
 	 16'097'280, /* 16.09728_MHz_XTAL      DEC VT240 (1024 * 262 * 60) */
@@ -283,6 +286,7 @@ const double XTAL::known_xtals[] = {
 	 21'281'370, /* 21.28137_MHz_XTAL      Radica Tetris (PAL) */
 	 21'300'000, /* 21.3_MHz_XTAL          - */
 	 21'477'272, /* 21.477272_MHz_XTAL     BMC bowling, some Data East 90's games, Vtech Socrates; (6x NTSC subcarrier) */
+	 21'667'500, /* 21.6675_MHz_XTAL       AT&T 610 (80-column display clock) */
 	 22'000'000, /* 22_MHz_XTAL            - */
 	 22'032'000, /* 22.032_MHz_XTAL        Intellec Series II I/O controller */
 	 22'096'000, /* 22.096_MHz_XTAL        ADDS Viewpoint 122 */
@@ -322,6 +326,7 @@ const double XTAL::known_xtals[] = {
 	 27'164'000, /* 27.164_MHz_XTAL        Typically used on 90's Taito PCBs to drive the custom chips */
 	 27'210'900, /* 27.2109_MHz_XTAL       LA Girl */
 	 27'562'000, /* 27.562_MHz_XTAL        Visual 220 */
+	 27'720'000, /* 27.72_MHz_XTAL         AT&T 610 (132-column display clock) */
 	 28'000'000, /* 28_MHz_XTAL            - */
 	 28'322'000, /* 28.322_MHz_XTAL        Saitek RISC 2500, Mephisto Montreux */
 	 28'375'160, /* 28.37516_MHz_XTAL      Amiga PAL systems */
@@ -421,6 +426,7 @@ const double XTAL::known_xtals[] = {
 	 99'522'000, /* 99.522_MHz_XTAL        Radius Two Page Display */
 	100'000'000, /* 100_MHz_XTAL           PSX-based Namco System 12, Vegas, Sony ZN1-2-based */
 	101'491'200, /* 101.4912_MHz_XTAL      PSX-based Namco System 10 */
+	105'561'000, /* 105.561_MHz_XTAL       Sun cgsix */
 	108'108'000, /* 108.108_MHz_XTAL       HP 98550 high-res color card */
 	200'000'000  /* 200_MHz_XTAL           Base SH4 CPU (Naomi, Hikaru etc.) */
 };

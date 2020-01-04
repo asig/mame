@@ -8,9 +8,24 @@
 #define NLCONFIG_H_
 
 #include "plib/pconfig.h"
+#include "plib/pexception.h"
 
+///
+/// \brief Version - Major.
+///
+#define NL_VERSION_MAJOR           0
+///
+/// \brief Version - Minor.
+///
+#define NL_VERSION_MINOR  		   4
+///
+/// \brief Version - Patch level.
+///
+#define NL_VERSION_PATCHLEVEL      1
+
+///
 /// \addtogroup compiledefine
-/// @{
+/// \{
 
 //============================================================
 //  GENERAL
@@ -82,6 +97,22 @@
 #define NL_USE_FLOAT128 PUSE_FLOAT128
 #endif
 
+/// \brief Support float type for matrix calculations.
+///
+/// Defaults to off to provide faster build times
+
+#ifndef NL_USE_FLOAT_MATRIX
+#define NL_USE_FLOAT_MATRIX (0)
+#endif
+
+/// \brief Support long double type for matrix calculations.
+///
+/// Defaults to off to provide faster build times
+
+#ifndef NL_USE_LONG_DOUBLE_MATRIX
+#define NL_USE_LONG_DOUBLE_MATRIX (0)
+#endif
+
 //============================================================
 //  DEBUGGING
 //============================================================
@@ -107,7 +138,7 @@ static constexpr const auto NETLIST_INTERNAL_RES = 1000000000;
 // FIXME: Belongs into MAME netlist.h
 static constexpr const auto NETLIST_CLOCK = NETLIST_INTERNAL_RES;
 
-///  @}
+///  \}
 
 /// \brief  Floating point types used
 ///
@@ -127,7 +158,7 @@ namespace netlist
 {
 	/// \brief  Specific constants depending on floating type
 	///
-	///  @tparam FT floating point type: double/float
+	/// \tparam FT floating point type: double/float
 	///
 	template <typename FT>
 	struct fp_constants
@@ -209,4 +240,15 @@ namespace netlist
 #endif
 } // namespace netlist
 
-#endif /* NLCONFIG_H_ */
+//============================================================
+//  Asserts
+//============================================================
+
+#if defined(MAME_DEBUG) || (NL_DEBUG == true)
+#define nl_assert(x)    passert_always(x)
+#else
+#define nl_assert(x)    do { } while (0)
+#endif
+#define nl_assert_always(x, msg) passert_always_msg(x, msg)
+
+#endif // NLCONFIG_H_

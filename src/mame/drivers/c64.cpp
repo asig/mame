@@ -1540,7 +1540,10 @@ void c64_state::ntsc(machine_config &config)
 	SOFTWARE_LIST(config, "cart_list_vic10").set_original("vic10").set_filter("NTSC");
 	SOFTWARE_LIST(config, "cart_list_c64").set_original("c64_cart").set_filter("NTSC");
 	SOFTWARE_LIST(config, "cass_list").set_original("c64_cass").set_filter("NTSC");
-	SOFTWARE_LIST(config, "flop_list").set_original("c64_flop").set_filter("NTSC");
+	// disk softlist split into originals, cleanly cracked, and misc (homebrew and defaced cracks)
+	SOFTWARE_LIST(config, "flop525_orig").set_original("c64_flop_orig").set_filter("NTSC");
+	SOFTWARE_LIST(config, "flop525_clean").set_compatible("c64_flop_clcracked").set_filter("NTSC");
+	SOFTWARE_LIST(config, "flop525_misc").set_compatible("c64_flop_misc").set_filter("NTSC");
 
 	// internal ram
 	RAM(config, RAM_TAG).set_default_size("64K");
@@ -1572,7 +1575,7 @@ void sx64_state::ntsc_sx(machine_config &config)
 	m_maincpu->set_pulls(0x07, 0xc0);
 
 	// devices
-	CBM_IEC_SLOT(config.replace(), "iec8", sx1541_iec_devices, "sx1541");
+	CBM_IEC_SLOT(config.replace(), "iec8", 8, sx1541_iec_devices, "sx1541");
 }
 
 
@@ -1585,7 +1588,7 @@ void sx64_state::ntsc_dx(machine_config &config)
 	ntsc_sx(config);
 
 	// devices
-	CBM_IEC_SLOT(config.replace(), "iec9", sx1541_iec_devices, "sx1541");
+	CBM_IEC_SLOT(config.replace(), "iec9", 9, sx1541_iec_devices, "sx1541");
 }
 
 
@@ -1711,7 +1714,10 @@ void c64_state::pal(machine_config &config)
 	SOFTWARE_LIST(config, "cart_list_vic10").set_original("vic10").set_filter("PAL");
 	SOFTWARE_LIST(config, "cart_list_c64").set_original("c64_cart").set_filter("PAL");
 	SOFTWARE_LIST(config, "cass_list").set_original("c64_cass").set_filter("PAL");
-	SOFTWARE_LIST(config, "flop_list").set_original("c64_flop").set_filter("PAL");
+	// disk softlist split into originals, cleanly cracked, and misc (homebrew and defaced cracks)
+	SOFTWARE_LIST(config, "flop525_orig").set_original("c64_flop_orig").set_filter("PAL");
+	SOFTWARE_LIST(config, "flop525_clean").set_compatible("c64_flop_clcracked").set_filter("PAL");
+	SOFTWARE_LIST(config, "flop525_misc").set_compatible("c64_flop_misc").set_filter("PAL");
 
 	// internal ram
 	RAM(config, RAM_TAG).set_default_size("64K");
@@ -1732,7 +1738,7 @@ void sx64_state::pal_sx(machine_config &config)
 	m_maincpu->set_pulls(0x07, 0xc0);
 
 	// devices
-	CBM_IEC_SLOT(config.replace(), "iec8", sx1541_iec_devices, "sx1541");
+	CBM_IEC_SLOT(config.replace(), "iec8", 8, sx1541_iec_devices, "sx1541");
 }
 
 
