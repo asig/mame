@@ -204,16 +204,14 @@ midzeus_renderer::midzeus_renderer(midzeus_state &state)
 		m_state(state)
 {}
 
-VIDEO_START_MEMBER(midzeus_state,midzeus)
+void midzeus_state::video_start()
 {
-	int i;
-
 	/* allocate memory for "wave" RAM */
 	m_waveram[0] = std::make_unique<uint32_t[]>(WAVERAM0_WIDTH * WAVERAM0_HEIGHT * 8/4);
 	m_waveram[1] = std::make_unique<uint32_t[]>(WAVERAM1_WIDTH * WAVERAM1_HEIGHT * 8/4);
 
 	/* initialize a 5-5-5 palette */
-	for (i = 0; i < 32768; i++)
+	for (int i = 0; i < 32768; i++)
 		m_palette->set_pen_color(i, pal5bit(i >> 10), pal5bit(i >> 5), pal5bit(i >> 0));
 
 	/* initialize polygon engine */
@@ -272,10 +270,8 @@ void midzeus_state::exit_handler()
  *
  *************************************/
 
-uint32_t midzeus_state::screen_update_midzeus(screen_device &screen, bitmap_ind16 &bitmap, const rectangle &cliprect)
+uint32_t midzeus_state::screen_update(screen_device &screen, bitmap_ind16 &bitmap, const rectangle &cliprect)
 {
-	int x, y;
-
 	m_poly->wait("VIDEO_UPDATE");
 
 	/* normal update case */
@@ -283,10 +279,10 @@ uint32_t midzeus_state::screen_update_midzeus(screen_device &screen, bitmap_ind1
 	{
 		const void *base = waveram1_ptr_from_expanded_addr(m_zeusbase[0xcc]);
 		int xoffs = screen.visible_area().min_x;
-		for (y = cliprect.min_y; y <= cliprect.max_y; y++)
+		for (int y = cliprect.min_y; y <= cliprect.max_y; y++)
 		{
-			uint16_t *dest = &bitmap.pix16(y);
-			for (x = cliprect.min_x; x <= cliprect.max_x; x++)
+			uint16_t *const dest = &bitmap.pix(y);
+			for (int x = cliprect.min_x; x <= cliprect.max_x; x++)
 				dest[x] = WAVERAM_READPIX(base, y, x - xoffs) & 0x7fff;
 		}
 	}
@@ -304,12 +300,12 @@ uint32_t midzeus_state::screen_update_midzeus(screen_device &screen, bitmap_ind1
 		if (m_yoffs < 0) m_yoffs = 0;
 		base = waveram0_ptr_from_block_addr(m_yoffs << 12);
 
-		for (y = cliprect.min_y; y <= cliprect.max_y; y++)
+		for (int y = cliprect.min_y; y <= cliprect.max_y; y++)
 		{
-			uint16_t *dest = &bitmap.pix16(y);
-			for (x = cliprect.min_x; x <= cliprect.max_x; x++)
+			uint16_t *const dest = &bitmap.pix(y);
+			for (int x = cliprect.min_x; x <= cliprect.max_x; x++)
 			{
-				uint8_t tex = get_texel_8bit(base, y, x, m_texel_width);
+				uint8_t const tex = get_texel_8bit(base, y, x, m_texel_width);
 				dest[x] = (tex << 8) | tex;
 			}
 		}
@@ -327,7 +323,7 @@ uint32_t midzeus_state::screen_update_midzeus(screen_device &screen, bitmap_ind1
  *
  *************************************/
 
-READ32_MEMBER(midzeus_state::zeus_r)
+uint32_t midzeus_state::zeus_r(offs_t offset)
 {
 	bool logit = (offset < 0xb0 || offset > 0xb7);
 	uint32_t result = m_zeusbase[offset & ~1];
@@ -397,7 +393,7 @@ READ32_MEMBER(midzeus_state::zeus_r)
  *
  *************************************/
 
-WRITE32_MEMBER(midzeus_state::zeus_w)
+void midzeus_state::zeus_w(offs_t offset, uint32_t data)
 {
 	bool logit = m_zeus_enable_logging || ((offset < 0xb0 || offset > 0xb7) && (offset < 0xe0 || offset > 0xe1));
 
@@ -874,7 +870,6 @@ int midzeus_state::zeus_fifo_process(const uint32_t *data, int numwords)
 		/* 0x28: same for mk4b */
 		/* 0x30: same for invasn */
 		case 0x25:
-		{
 			/* 0x25 is used differently in mk4b. What determines this? */
 			if (m_is_mk4b)
 			{
@@ -883,7 +878,7 @@ int midzeus_state::zeus_fifo_process(const uint32_t *data, int numwords)
 
 				break;
 			}
-		}
+			[[fallthrough]];
 		case 0x28:
 		case 0x30:
 			if (numwords < 4 || ((data[0] & 0x808000) && numwords < 10))
@@ -1471,14 +1466,14 @@ void midzeus_state::log_waveram(uint32_t length_and_base)
 	for (i = 0; i < numoctets; i++)
 		checksum += ptr[i*2] + ptr[i*2+1];
 
-	for (i = 0; i < ARRAY_LENGTH(recent_entries); i++)
+	for (i = 0; i < std::size(recent_entries); i++)
 		if (recent_entries[i].lab == length_and_base && recent_entries[i].checksum == checksum)
 		{
 			foundit = true;
 			break;
 		}
 
-	if (i == ARRAY_LENGTH(recent_entries))
+	if (i == std::size(recent_entries))
 		i--;
 	if (i != 0)
 	{

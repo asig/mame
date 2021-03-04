@@ -32,7 +32,7 @@ public:
 	// TODO: callbacks and configuration thereof
 
 protected:
-	upd78k2_device(const machine_config &mconfig, device_type type, const char *tag, device_t *owner, u32 clock, address_map_constructor mem_map, address_map_constructor sfr_map);
+	upd78k2_device(const machine_config &mconfig, device_type type, const char *tag, device_t *owner, u32 clock, int iram_bits, address_map_constructor mem_map, address_map_constructor sfr_map);
 
 	// device-level overrides
 	virtual void device_start() override;
@@ -60,10 +60,11 @@ private:
 	address_space_config m_program_config;
 	address_space_config m_iram_config;
 	address_space_config m_sfr_config;
-	address_space *m_program_space;
-	memory_access_cache<0, 0, ENDIANNESS_LITTLE> *m_program_cache;
-	memory_access_cache<1, 0, ENDIANNESS_LITTLE> *m_iram_cache;
-	address_space *m_sfr_space;
+	const offs_t m_iram_addrmask;
+	memory_access<20, 0, 0, ENDIANNESS_LITTLE>::cache m_program_cache;
+	memory_access< 8, 1, 0, ENDIANNESS_LITTLE>::cache m_iram_cache;
+	memory_access<20, 0, 0, ENDIANNESS_LITTLE>::specific m_program_space;
+	memory_access< 8, 1, 0, ENDIANNESS_LITTLE>::specific m_sfr_space;
 
 	// core registers and execution state
 	u16 m_pc;
@@ -71,6 +72,23 @@ private:
 	u8 m_psw;
 	u16 m_sp;
 	s32 m_icount;
+};
+
+// ======================> upd78210_device
+
+class upd78210_device : public upd78k2_device
+{
+public:
+	// device type constructor
+	upd78210_device(const machine_config &mconfig, const char *tag, device_t *owner, u32 clock);
+
+protected:
+	// device_disasm_interface overrides
+	virtual std::unique_ptr<util::disasm_interface> create_disassembler() override;
+
+private:
+	// type-specific internal memory maps
+	void sfr_map(address_map &map);
 };
 
 // ======================> upd78213_device
@@ -91,7 +109,8 @@ private:
 	void sfr_map(address_map &map);
 };
 
-// device type declaration
+// device type declarations
+DECLARE_DEVICE_TYPE(UPD78210, upd78210_device)
 DECLARE_DEVICE_TYPE(UPD78213, upd78213_device)
 
 #endif // MAME_CPU_UPD78K_UPD78K2_H

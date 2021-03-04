@@ -33,7 +33,7 @@
 #define LOG_MODE (1U << 1)
 #define LOG_INPUT (1U << 2)
 #define LOG_TC (1U << 3)
-#define VERBOSE (LOG_GENERAL | LOG_MODE)
+//#define VERBOSE (LOG_GENERAL | LOG_MODE)
 
 #include "logmacro.h"
 
@@ -1304,7 +1304,7 @@ void am9513_device::command_write(u8 data)
 				m_write_prefetch = !BIT(data, 0);
 				break;
 			}
-			// else fall through
+			[[fallthrough]];
 		default:
 			logerror("Invalid command: %02X\n", data);
 			break;

@@ -154,7 +154,7 @@ offs_t upd78k3_disassembler::dasm_01xx(std::ostream &stream, u8 op2, offs_t pc, 
 		util::stream_format(stream, "%-8s", s_16bit_ops[op2 & 0x03]);
 		format_sfrp(stream, opcodes.r8(pc + 2));
 		stream << ",";
-		format_imm16(stream, opcodes.r8(pc + 3));
+		format_imm16(stream, opcodes.r16(pc + 3));
 		return 5 | SUPPORTED;
 	}
 	else if (op2 == 0x1b)
@@ -177,7 +177,7 @@ offs_t upd78k3_disassembler::dasm_01xx(std::ostream &stream, u8 op2, offs_t pc, 
 	}
 	else if ((op2 & 0xf8) == 0x68)
 	{
-		util::stream_format(stream, "%-8sA,", s_alu_ops[op2 & 0x07]);
+		util::stream_format(stream, "%-8s", s_alu_ops[op2 & 0x07]);
 		format_sfr(stream, opcodes.r8(pc + 2));
 		stream << ",";
 		format_imm8(stream, opcodes.r8(pc + 3));
@@ -234,7 +234,7 @@ offs_t upd78k3_disassembler::dasm_02xx(std::ostream &stream, u8 op1, u8 op2, off
 			util::stream_format(stream, "%c.%d,", BIT(op2, 3) ? 'A' : 'X', op2 & 0x07);
 		else
 			util::stream_format(stream, "%s,", m_psw_bits[op2 & 0x0f]);
-		format_jdisp8(stream, pc + 4, opcodes.r8(pc + 3));
+		format_jdisp8(stream, pc + 3, opcodes.r8(pc + 2));
 		return 3 | SUPPORTED;
 	}
 	else
@@ -476,10 +476,10 @@ offs_t upd78k3_disassembler::dasm_09xx(std::ostream &stream, u8 op2, offs_t pc, 
 	else if ((op2 & 0xfe) == 0xf0)
 	{
 		util::stream_format(stream, "%-8s", "MOV");
-		if (!BIT(op2, 4))
+		if (!BIT(op2, 0))
 			stream << "A,";
 		format_abs16(stream, opcodes.r16(pc + 2));
-		if (BIT(op2, 4))
+		if (BIT(op2, 0))
 			stream << ",A";
 		return 4 | SUPPORTED;
 	}
@@ -598,27 +598,27 @@ offs_t upd78k3_disassembler::dasm_24xx(std::ostream &stream, u8 op, u8 rr)
 offs_t upd78k3_disassembler::dasm_2a(std::ostream &stream, offs_t pc, const upd78k3_disassembler::data_buffer &opcodes)
 {
 	util::stream_format(stream, "%-8s", "XCHW");
-	format_saddrp(stream, opcodes.r8(pc + 1));
-	stream << ",";
 	format_saddrp(stream, opcodes.r8(pc + 2));
+	stream << ",";
+	format_saddrp(stream, opcodes.r8(pc + 1));
 	return 3 | SUPPORTED;
 }
 
 offs_t upd78k3_disassembler::dasm_38(std::ostream &stream, u8 op, offs_t pc, const upd78k3_disassembler::data_buffer &opcodes)
 {
 	util::stream_format(stream, "%-8s", BIT(op, 0) ? "XCH" : "MOV");
-	format_saddr(stream, opcodes.r8(pc + 1));
-	stream << ",";
 	format_saddr(stream, opcodes.r8(pc + 2));
+	stream << ",";
+	format_saddr(stream, opcodes.r8(pc + 1));
 	return 3 | SUPPORTED;
 }
 
 offs_t upd78k3_disassembler::dasm_3c(std::ostream &stream, u8 op, offs_t pc, const upd78k3_disassembler::data_buffer &opcodes)
 {
 	util::stream_format(stream, "%-8s", s_16bit_ops[op & 0x03]);
-	format_saddrp(stream, opcodes.r8(pc + 1));
-	stream << ",";
 	format_saddrp(stream, opcodes.r8(pc + 2));
+	stream << ",";
+	format_saddrp(stream, opcodes.r8(pc + 1));
 	return 3 | SUPPORTED;
 }
 
@@ -658,9 +658,9 @@ offs_t upd78k3_disassembler::dasm_50(std::ostream &stream, u8 op)
 offs_t upd78k3_disassembler::dasm_78(std::ostream &stream, u8 op, offs_t pc, const upd78k3_disassembler::data_buffer &opcodes)
 {
 	util::stream_format(stream, "%-8s", s_alu_ops[op & 0x07]);
-	format_saddr(stream, opcodes.r8(pc + 1));
-	stream << ",";
 	format_saddr(stream, opcodes.r8(pc + 2));
+	stream << ",";
+	format_saddr(stream, opcodes.r8(pc + 1));
 	return 3 | SUPPORTED;
 }
 
@@ -767,11 +767,11 @@ offs_t upd78k3_disassembler::disassemble(std::ostream &stream, offs_t pc, const 
 				util::stream_format(stream, "%-8s", "MOV");
 				if (!BIT(op, 1))
 					stream << "A,";
-				u8 sfrp = opcodes.r8(pc + 1);
-				if (sfrp >= 0xfe)
-					util::stream_format(stream, "PSW%c", BIT(sfrp, 0) ? 'H' : 'L');
+				u8 sfr = opcodes.r8(pc + 1);
+				if (sfr >= 0xfe)
+					util::stream_format(stream, "PSW%c", BIT(sfr, 0) ? 'H' : 'L');
 				else
-					format_sfrp(stream, sfrp);
+					format_sfr(stream, sfr);
 				if (BIT(op, 1))
 					stream << ",A";
 			}
@@ -935,7 +935,7 @@ offs_t upd78k3_disassembler::disassemble(std::ostream &stream, offs_t pc, const 
 		}
 		else if (BIT(op, 1))
 		{
-			util::stream_format(stream, "%-8s%s,", "DBNZ", s_r_names[op & 0x07]);
+			util::stream_format(stream, "%-8s%c,", "DBNZ", BIT(op, 0) ? 'B' : 'C');
 			format_jdisp8(stream, pc + 2, opcodes.r8(pc + 1));
 			return 2 | SUPPORTED;
 		}

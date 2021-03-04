@@ -18,12 +18,12 @@
 #include "cpu/z80/z80.h"
 #include "cpu/m6809/m6809.h"
 #include "machine/gen_latch.h"
-#include "sound/2203intf.h"
+#include "sound/ym2203.h"
 #include "screen.h"
 #include "speaker.h"
 
 
-WRITE8_MEMBER(srumbler_state::bankswitch_w)
+void srumbler_state::bankswitch_w(uint8_t data)
 {
 	/*
 	  banking is controlled by two PROMs. 0000-4fff is mapped to the same
@@ -57,7 +57,7 @@ void srumbler_state::machine_start()
 	}
 
 	/* initialize banked ROM pointers */
-	bankswitch_w(m_maincpu->space(AS_PROGRAM), 0, 0);
+	bankswitch_w(0);
 }
 
 TIMER_DEVICE_CALLBACK_MEMBER(srumbler_state::interrupt)

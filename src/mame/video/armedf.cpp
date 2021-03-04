@@ -53,7 +53,7 @@ TILE_GET_INFO_MEMBER(armedf_state::get_nb1414m4_tx_tile_info)
 	/* bit 3 controls priority, (0) nb1414m4 has priority over all the other video layers */
 	tileinfo.category = (attributes & 0x8) >> 3;
 
-	SET_TILE_INFO_MEMBER(0,
+	tileinfo.set(0,
 			tile_number + 256 * (attributes & 0x3),
 			attributes >> 4,
 			0);
@@ -78,7 +78,7 @@ TILE_GET_INFO_MEMBER(armedf_state::get_armedf_tx_tile_info)
 	/* bit 3 controls priority, (0) nb1414m4 has priority over all the other video layers */
 	tileinfo.category = (attributes & 0x8) >> 3;
 
-	SET_TILE_INFO_MEMBER(0,
+	tileinfo.set(0,
 			tile_number + 256 * (attributes & 0x3),
 			attributes >> 4,
 			0);
@@ -88,7 +88,7 @@ TILE_GET_INFO_MEMBER(armedf_state::get_armedf_tx_tile_info)
 TILE_GET_INFO_MEMBER(armedf_state::get_fg_tile_info)
 {
 	const u16 data = m_fg_videoram[tile_index];
-	SET_TILE_INFO_MEMBER(1,
+	tileinfo.set(1,
 			data&0x7ff,
 			data>>11,
 			0);
@@ -98,7 +98,7 @@ TILE_GET_INFO_MEMBER(armedf_state::get_fg_tile_info)
 TILE_GET_INFO_MEMBER(armedf_state::get_bg_tile_info)
 {
 	const u16 data = m_bg_videoram[tile_index];
-	SET_TILE_INFO_MEMBER(2,
+	tileinfo.set(2,
 			data & 0x3ff,
 			data >> 11,
 			0);
@@ -281,28 +281,24 @@ void armedf_state::armedf_drawgfx(bitmap_ind16 &dest_bmp,const rectangle &clip,g
 
 	if (ex > sx)
 	{ /* skip if inner loop doesn't draw anything */
-		int x, y;
-
+		for (int y = sy; y < ey; y++)
 		{
-			for (y = sy; y < ey; y++)
+			u8 const *const source = source_base + y_index*gfx->rowbytes();
+			u16 *const dest = &dest_bmp.pix(y);
+			u8 *const destpri = &primap.pix(y);
+			int x_index = x_index_base;
+			for (int x = sx; x < ex; x++)
 			{
-				const u8 *source = source_base + y_index*gfx->rowbytes();
-				u16 *dest = &dest_bmp.pix16(y);
-				u8 *destpri = &primap.pix8(y);
-				int x_index = x_index_base;
-				for (x = sx; x < ex; x++)
+				int c = (source[x_index] & ~0xf) | ((m_spr_pal_clut[clut*0x10+(source[x_index] & 0xf)]) & 0xf);
+				if (c != transparent_color)
 				{
-					int c = (source[x_index] & ~0xf) | ((m_spr_pal_clut[clut*0x10+(source[x_index] & 0xf)]) & 0xf);
-					if (c != transparent_color)
-					{
-						if (((1 << (destpri[x] & 0x1f)) & pmask) == 0)
-							dest[x] = pal[c];
-						destpri[x] = 0x1f;
-					}
-					x_index += xinc;
+					if (((1 << (destpri[x] & 0x1f)) & pmask) == 0)
+						dest[x] = pal[c];
+					destpri[x] = 0x1f;
 				}
-				y_index += yinc;
+				x_index += xinc;
 			}
+			y_index += yinc;
 		}
 	}
 }
@@ -332,7 +328,7 @@ void armedf_state::draw_sprites( bitmap_ind16 &bitmap, const rectangle &cliprect
 			pmask |= GFX_PMASK_2;
 		/*
 		if (pri >= 3)
-			pmask |= GFX_PMASK_1;
+		    pmask |= GFX_PMASK_1;
 		*/
 
 		if (flip_screen())
@@ -372,7 +368,6 @@ u32 armedf_state::screen_update(screen_device &screen, bitmap_ind16 &bitmap, con
 			m_fg_tilemap->set_scrollx(0, m_fg_scrollx);
 			m_fg_tilemap->set_scrolly(0, m_fg_scrolly);
 			break;
-
 	}
 
 	screen.priority().fill(0, cliprect);

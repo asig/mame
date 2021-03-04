@@ -1,7 +1,9 @@
 <?xml version="1.0"?>
 <!DOCTYPE softwarelist SYSTEM "softwarelist.dtd">
+<!--
+license:CC0
 
-<!-- to boot disks type 'BOOT' and press return
+  to boot disks type 'BOOT' and press return
   alternatively press numpad 9 which seems to do the same thing
 
   disk image formats:
@@ -11,7 +13,7 @@
   .sad seems to be a more advanced format that allows copy-protected images etc.
 
   currently only .mgt/.dsk is supported in coupedsk.cpp
-  should be trivial to add "extended DSK disk image" support as it's already in Mame.
+  should be trivial to add "extended DSK disk image" support as it's already in MAME.
 
   most game images have trainers/pokes.
   all Sam Coupe games will probably need re-dumping at some point as there seems to be very few clean images available.

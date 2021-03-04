@@ -5,16 +5,6 @@
 
     Written by Ville Linde
     Improvements by the hoot development team
-
-    history -
-    2007-02-08 hoot development team
-        looping
-        stereo panning
-        8-bit sample support
-
-    2007-02-16 hoot development team
-        envelope
-        fixed volume table
 */
 
 #include "emu.h"
@@ -129,7 +119,7 @@ void rf5c400_device::envelope_tables::init(uint32_t clock)
 rf5c400_device::rf5c400_device(const machine_config &mconfig, const char *tag, device_t *owner, uint32_t clock)
 	: device_t(mconfig, RF5C400, tag, owner, clock)
 	, device_sound_interface(mconfig, *this)
-	, device_rom_interface(mconfig, *this, 25, ENDIANNESS_LITTLE, 16)
+	, device_rom_interface(mconfig, *this)
 	, m_stream(nullptr)
 	, m_env_tables()
 {
@@ -149,68 +139,94 @@ void rf5c400_device::device_start()
 	// init channel info
 	for (rf5c400_channel &chan : m_channels)
 	{
+		chan.startH = 0;
+		chan.startL = 0;
+		chan.freq = 0;
+		chan.endL = 0;
+		chan.endHloopH = 0;
+		chan.loopL = 0;
+		chan.pan = 0;
+		chan.effect = 0;
+		chan.volume = 0;
+		chan.attack = 0;
+		chan.decay = 0;
+		chan.release = 0;
+		chan.pos = 0;
+		chan.step = 0;
+		chan.keyon = 0;
 		chan.env_phase = PHASE_NONE;
 		chan.env_level = 0.0;
 		chan.env_step = 0.0;
 		chan.env_scale = 1.0;
 	}
 
+	m_req_channel = 0;
+
 	save_item(NAME(m_rf5c400_status));
 	save_item(NAME(m_ext_mem_address));
 	save_item(NAME(m_ext_mem_data));
+	save_item(NAME(m_req_channel));
 
-	for (int i = 0; i < ARRAY_LENGTH(m_channels); i++)
-	{
-		save_item(NAME(m_channels[i].startH), i);
-		save_item(NAME(m_channels[i].startL), i);
-		save_item(NAME(m_channels[i].freq), i);
-		save_item(NAME(m_channels[i].endL), i);
-		save_item(NAME(m_channels[i].endHloopH), i);
-		save_item(NAME(m_channels[i].loopL), i);
-		save_item(NAME(m_channels[i].pan), i);
-		save_item(NAME(m_channels[i].effect), i);
-		save_item(NAME(m_channels[i].volume), i);
-		save_item(NAME(m_channels[i].attack), i);
-		save_item(NAME(m_channels[i].decay), i);
-		save_item(NAME(m_channels[i].release), i);
-		save_item(NAME(m_channels[i].cutoff), i);
-		save_item(NAME(m_channels[i].pos), i);
-		save_item(NAME(m_channels[i].step), i);
-		save_item(NAME(m_channels[i].keyon), i);
-		save_item(NAME(m_channels[i].env_phase), i);
-		save_item(NAME(m_channels[i].env_level), i);
-		save_item(NAME(m_channels[i].env_step), i);
-		save_item(NAME(m_channels[i].env_scale), i);
-	}
+	save_item(STRUCT_MEMBER(m_channels, startH));
+	save_item(STRUCT_MEMBER(m_channels, startL));
+	save_item(STRUCT_MEMBER(m_channels, freq));
+	save_item(STRUCT_MEMBER(m_channels, endL));
+	save_item(STRUCT_MEMBER(m_channels, endHloopH));
+	save_item(STRUCT_MEMBER(m_channels, loopL));
+	save_item(STRUCT_MEMBER(m_channels, pan));
+	save_item(STRUCT_MEMBER(m_channels, effect));
+	save_item(STRUCT_MEMBER(m_channels, volume));
+	save_item(STRUCT_MEMBER(m_channels, attack));
+	save_item(STRUCT_MEMBER(m_channels, decay));
+	save_item(STRUCT_MEMBER(m_channels, release));
+	save_item(STRUCT_MEMBER(m_channels, cutoff));
+	save_item(STRUCT_MEMBER(m_channels, pos));
+	save_item(STRUCT_MEMBER(m_channels, step));
+	save_item(STRUCT_MEMBER(m_channels, keyon));
+	save_item(STRUCT_MEMBER(m_channels, env_phase));
+	save_item(STRUCT_MEMBER(m_channels, env_level));
+	save_item(STRUCT_MEMBER(m_channels, env_step));
+	save_item(STRUCT_MEMBER(m_channels, env_scale));
 
 	m_stream = stream_alloc(0, 2, clock() / 384);
+}
+
+//-------------------------------------------------
+//  device_clock_changed - called if the clock
+//  changes
+//-------------------------------------------------
+
+void rf5c400_device::device_clock_changed()
+{
+	m_env_tables.init(clock());
+	m_stream->set_sample_rate(clock() / 384);
 }
 
 //-------------------------------------------------
 //  sound_stream_update - handle a stream update
 //-------------------------------------------------
 
-void rf5c400_device::sound_stream_update(sound_stream &stream, stream_sample_t **inputs, stream_sample_t **outputs, int samples)
+void rf5c400_device::sound_stream_update(sound_stream &stream, std::vector<read_stream_view> const &inputs, std::vector<write_stream_view> &outputs)
 {
 	int i, ch;
-	uint32_t end, loop;
+	uint64_t start, end, loop;
 	uint64_t pos;
 	uint8_t vol, lvol, rvol, type;
 	uint8_t env_phase;
 	double env_level, env_step, env_rstep;
 
-	memset(outputs[0], 0, samples * sizeof(*outputs[0]));
-	memset(outputs[1], 0, samples * sizeof(*outputs[1]));
+	outputs[0].fill(0);
+	outputs[1].fill(0);
 
 	for (ch=0; ch < 32; ch++)
 	{
 		rf5c400_channel *channel = &m_channels[ch];
-		stream_sample_t *buf0 = outputs[0];
-		stream_sample_t *buf1 = outputs[1];
+		auto &buf0 = outputs[0];
+		auto &buf1 = outputs[1];
 
-//      start = ((channel->startH & 0xFF00) << 8) | channel->startL;
-		end = ((channel->endHloopH & 0xFF) << 16) | channel->endL;
-		loop = ((channel->endHloopH & 0xFF00) << 8) | channel->loopL;
+		start = ((uint32_t)(channel->startH & 0xFF00) << 8) | channel->startL;
+		end = ((uint32_t)(channel->endHloopH & 0xFF) << 16) | channel->endL;
+		loop = ((uint32_t)(channel->endHloopH & 0xFF00) << 8) | channel->loopL;
 		pos = channel->pos;
 		vol = channel->volume & 0xFF;
 		lvol = channel->pan & 0xFF;
@@ -222,7 +238,13 @@ void rf5c400_device::sound_stream_update(sound_stream &stream, stream_sample_t *
 		env_step = channel->env_step;
 		env_rstep = env_step * channel->env_scale;
 
-		for (i=0; i < samples; i++)
+		if (start == end)
+		{
+			// This occurs in pop'n music when trying to play a non-existent sample on the sound test menu
+			continue;
+		}
+
+		for (i=0; i < buf0.samples(); i++)
 		{
 			int16_t tmp;
 			int32_t sample;
@@ -292,14 +314,23 @@ void rf5c400_device::sound_stream_update(sound_stream &stream, stream_sample_t *
 
 			sample *= volume_table[vol];
 			sample = (sample >> 9) * env_level;
-			*buf0++ += sample * pan_table[lvol];
-			*buf1++ += sample * pan_table[rvol];
+			buf0.add_int(i, sample * pan_table[lvol], 32768);
+			buf1.add_int(i, sample * pan_table[rvol], 32768);
 
 			pos += channel->step;
 			if ((pos>>16) > end)
 			{
 				pos -= loop<<16;
-				pos &= 0xFFFFFF0000U;
+				pos &= 0xFFFFFF0000ULL;
+
+				if (pos < (start<<16))
+				{
+					// This case only shows up in Firebeat games from what I could tell.
+					// The loop value will be higher than the actual buffer size.
+					// This is used when DMAs will be overwriting the current buffer.
+					// It expects the buffer to be looped without any additional commands.
+					pos = start<<16;
+				}
 			}
 
 		}
@@ -318,7 +349,7 @@ void rf5c400_device::rom_bank_updated()
 
 /*****************************************************************************/
 
-READ16_MEMBER( rf5c400_device::rf5c400_r )
+uint16_t rf5c400_device::rf5c400_r(offs_t offset, uint16_t mem_mask)
 {
 	if (offset < 0x400)
 	{
@@ -334,6 +365,32 @@ READ16_MEMBER( rf5c400_device::rf5c400_r )
 			case 0x04:      // unknown read
 			{
 				return 0;
+			}
+
+			case 0x09:      // position read?
+			{
+				// The game will always call rf5c400_w 0x08 with a channel number and some other value before reading this register.
+				// The call to rf5c400_w 0x08 contains additional information, potentially what information it's expecting to be returned here.
+				// This implementation assumes all commands want the same information as command 6.
+				m_stream->update();
+
+				rf5c400_channel* channel = &m_channels[m_req_channel];
+				if (channel->env_phase == PHASE_NONE)
+				{
+					return 0;
+				}
+
+				// pop'n music's SPU program expects to read this register 6 times with the same value between every read before it will send the next DMA request.
+				//
+				// This register is polled while a streaming BGM is being played.
+				// For pop'n music specifically, the game starts off by reading 0x200000 into 0x00780000 - 0x00880000.
+				// When 2xxx is found (pos - start = 0x00080000), it will trigger the next DMA of 0x100000 overwriting 0x00780000 - 0x00800000, and continues polling the register until it reads 1xxx next.
+				// When 1xxx is found (pos - start = 0x00040000), it will trigger the next DMA of 0x100000 overwriting 0x00800000 - 0x00880000, and continues polling the register until it reads 2xxx next.
+				// ... repeat until song is finished, alternating between 2xxx and 1xxx ...
+				// This ends up so that it'll always be buffering new sample data into the sections of memory that aren't being used.
+				auto start = ((uint32_t)(channel->startH & 0xFF00) << 8) | channel->startL;
+				auto ch_offset = (channel->pos >> 16) - start;
+				return ch_offset >> 6;
 			}
 
 			case 0x13:      // memory read
@@ -364,7 +421,7 @@ READ16_MEMBER( rf5c400_device::rf5c400_r )
 	}
 }
 
-WRITE16_MEMBER( rf5c400_device::rf5c400_w )
+void rf5c400_device::rf5c400_w(offs_t offset, uint16_t data, uint16_t mem_mask)
 {
 	if (offset < 0x400)
 	{
@@ -383,7 +440,7 @@ WRITE16_MEMBER( rf5c400_device::rf5c400_w )
 				{
 					case 0x60:
 						m_channels[ch].pos =
-							((m_channels[ch].startH & 0xFF00) << 8) | m_channels[ch].startL;
+							((uint32_t)(m_channels[ch].startH & 0xFF00) << 8) | m_channels[ch].startL;
 						m_channels[ch].pos <<= 16;
 
 						m_channels[ch].env_phase = PHASE_ATTACK;
@@ -413,8 +470,16 @@ WRITE16_MEMBER( rf5c400_device::rf5c400_w )
 				break;
 			}
 
-			case 0x08:      // relative to env attack (channel no)
-			case 0x09:      // relative to env attack (0x0c00/ 0x1c00)
+			case 0x08:
+			{
+				// There's some other data stuffed in the upper bits beyond the channel: data >> 5
+				// The other data might be some kind of register or command. I've seen 0, 4, 5, and 6.
+				// Firebeat uses 6 when polling rf5c400_r 0x09.
+				m_req_channel = data & 0x1f;
+				break;
+			}
+
+			case 0x09:      // relative to env attack (0x0c00/ 0x1c00/ 0x1e00)
 
 			case 0x11:      // memory r/w address, bits 15 - 0
 			{

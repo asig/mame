@@ -22,7 +22,6 @@ magnetic chess board sensors. See fidel_sc12.cpp for a more technical descriptio
 #include "machine/sensorboard.h"
 #include "machine/timer.h"
 #include "sound/dac.h"
-#include "sound/volt_reg.h"
 #include "video/pwm.h"
 #include "bus/generic/slot.h"
 #include "bus/generic/carts.h"
@@ -47,7 +46,6 @@ public:
 		m_board(*this, "board"),
 		m_display(*this, "display"),
 		m_dac(*this, "dac"),
-		m_cart(*this, "cartslot"),
 		m_inputs(*this, "IN.0")
 	{ }
 
@@ -63,7 +61,6 @@ private:
 	required_device<sensorboard_device> m_board;
 	required_device<pwm_display_device> m_display;
 	required_device<dac_bit_interface> m_dac;
-	required_device<generic_slot_device> m_cart;
 	required_ioport m_inputs;
 
 	// address maps
@@ -73,13 +70,11 @@ private:
 	template<int Line> TIMER_DEVICE_CALLBACK_MEMBER(irq_on) { m_maincpu->set_input_line(Line, ASSERT_LINE); }
 	template<int Line> TIMER_DEVICE_CALLBACK_MEMBER(irq_off) { m_maincpu->set_input_line(Line, CLEAR_LINE); }
 
-	DECLARE_DEVICE_IMAGE_LOAD_MEMBER(cart_load);
-
 	// I/O handlers
 	void update_display();
-	DECLARE_WRITE8_MEMBER(control_w);
-	DECLARE_WRITE8_MEMBER(led_w);
-	DECLARE_READ8_MEMBER(input_r);
+	void control_w(u8 data);
+	void led_w(offs_t offset, u8 data);
+	u8 input_r(offs_t offset);
 
 	u16 m_inp_mux;
 	u8 m_led_data;
@@ -104,27 +99,13 @@ void as12_state::machine_start()
     I/O
 ******************************************************************************/
 
-// cartridge
-
-DEVICE_IMAGE_LOAD_MEMBER(as12_state::cart_load)
-{
-	u32 size = m_cart->common_get_size("rom");
-	m_cart->rom_alloc(size, GENERIC_ROM8_WIDTH, ENDIANNESS_LITTLE);
-	m_cart->common_load_rom(m_cart->get_rom_base(), size, "rom");
-
-	return image_init_result::PASS;
-}
-
-
-// TTL/generic
-
 void as12_state::update_display()
 {
 	// 8*8(+1) chessboard leds
 	m_display->matrix(m_inp_mux, m_led_data);
 }
 
-WRITE8_MEMBER(as12_state::control_w)
+void as12_state::control_w(u8 data)
 {
 	// d0-d3: 74245 P0-P3
 	// 74245 Q0-Q8: input mux, led select
@@ -139,14 +120,14 @@ WRITE8_MEMBER(as12_state::control_w)
 	// d6,d7: N/C?
 }
 
-WRITE8_MEMBER(as12_state::led_w)
+void as12_state::led_w(offs_t offset, u8 data)
 {
 	// a0-a2,d0: led data via NE591N
 	m_led_data = (m_led_data & ~(1 << offset)) | ((data & 1) << offset);
 	update_display();
 }
 
-READ8_MEMBER(as12_state::input_r)
+u8 as12_state::input_r(offs_t offset)
 {
 	u8 data = 0;
 
@@ -212,8 +193,7 @@ void as12_state::as12(machine_config &config)
 {
 	/* basic machine hardware */
 	R65C02(config, m_maincpu, 4_MHz_XTAL); // R65C02P4
-	m_maincpu->set_addrmap(AS_PROGRAM, &as12_state::div_trampoline);
-	ADDRESS_MAP_BANK(config, m_mainmap).set_map(&as12_state::main_map).set_options(ENDIANNESS_LITTLE, 8, 16);
+	m_maincpu->set_addrmap(AS_PROGRAM, &as12_state::main_map);
 
 	const attotime irq_period = attotime::from_hz(600); // from 556 timer (22nF, 110K, 1K), ideal frequency is 600Hz
 	TIMER(config, m_irq_on).configure_periodic(FUNC(as12_state::irq_on<M6502_IRQ_LINE>), irq_period);
@@ -231,12 +211,9 @@ void as12_state::as12(machine_config &config)
 	/* sound hardware */
 	SPEAKER(config, "speaker").front_center();
 	DAC_1BIT(config, m_dac).add_route(ALL_OUTPUTS, "speaker", 0.25);
-	VOLTAGE_REGULATOR(config, "vref").add_route(0, "dac", 1.0, DAC_VREF_POS_INPUT);
 
 	/* cartridge */
-	GENERIC_CARTSLOT(config, m_cart, generic_plain_slot, "fidel_scc", "bin,dat");
-	m_cart->set_device_load(FUNC(as12_state::cart_load));
-
+	GENERIC_CARTSLOT(config, "cartslot", generic_plain_slot, "fidel_scc");
 	SOFTWARE_LIST(config, "cart_list").set_original("fidel_scc");
 }
 
@@ -247,7 +224,7 @@ void as12_state::as12(machine_config &config)
 ******************************************************************************/
 
 ROM_START( feleg ) // model AS12(or 6085)
-	ROM_REGION( 0x10000, "mainmap", 0 )
+	ROM_REGION( 0x10000, "maincpu", 0 )
 	ROM_LOAD("feleg.1", 0x8000, 0x2000, CRC(e9df31e8) SHA1(31c52bb8f75580c82093eb950959c1bc294189a8) ) // TMM2764, no label
 	ROM_LOAD("feleg.2", 0xc000, 0x2000, CRC(bed9c84b) SHA1(c12f39765b054d2ad81f747e698715ad4246806d) ) // "
 	ROM_LOAD("feleg.3", 0xe000, 0x2000, CRC(b1fb49aa) SHA1(d8c9687dd564f0fa603e6d684effb1d113ac64b4) ) // "

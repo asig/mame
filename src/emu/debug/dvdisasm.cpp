@@ -2,7 +2,7 @@
 // copyright-holders:Aaron Giles, Olivier Galibert
 /*********************************************************************
 
-    dvdisasm.c
+    dvdisasm.cpp
 
     Disassembly debugger view.
 
@@ -34,9 +34,6 @@ debug_view_disasm_source::debug_view_disasm_source(std::string &&name, device_t 
 //**************************************************************************
 //  DEBUG VIEW DISASM
 //**************************************************************************
-
-const int debug_view_disasm::DEFAULT_DASM_LINES, debug_view_disasm::DEFAULT_DASM_WIDTH, debug_view_disasm::DASM_MAX_BYTES;
-
 
 //-------------------------------------------------
 //  debug_view_disasm - constructor
@@ -89,7 +86,7 @@ void debug_view_disasm::enumerate_sources()
 	m_source_list.clear();
 
 	// iterate over devices with disassembly interfaces
-	for (device_disasm_interface &dasm : disasm_interface_iterator(machine().root_device()))
+	for (device_disasm_interface &dasm : disasm_interface_enumerator(machine().root_device()))
 	{
 		if (dasm.device().memory().space_config(AS_PROGRAM))
 		{
@@ -117,7 +114,11 @@ void debug_view_disasm::view_notify(debug_view_notification type)
 		adjust_visible_y_for_cursor();
 
 	else if(type == VIEW_NOTIFY_SOURCE_CHANGED)
-		m_expression.set_context(&downcast<const debug_view_disasm_source *>(m_source)->device()->debug()->symtable());
+	{
+		const debug_view_disasm_source &source = downcast<const debug_view_disasm_source &>(*m_source);
+		m_expression.set_context(&source.device()->debug()->symtable());
+		m_expression.set_default_base(source.space().is_octal() ? 8 : 16);
+	}
 }
 
 
@@ -356,13 +357,7 @@ void debug_view_disasm::complete_information(const debug_view_disasm_source &sou
 
 		dasm.m_is_pc = adr == pc;
 
-		dasm.m_is_bp = false;
-		for(const device_debug::breakpoint &bp : source.device()->debug()->breakpoint_list())
-			if(adr == (bp.address() & source.m_space.logaddrmask())) {
-				dasm.m_is_bp = true;
-				break;
-			}
-
+		dasm.m_is_bp = source.device()->debug()->breakpoint_find(adr) != nullptr;
 		dasm.m_is_visited = source.device()->debug()->track_pc_visited(adr);
 
 		const char *comment = source.device()->debug()->comment_text(adr);

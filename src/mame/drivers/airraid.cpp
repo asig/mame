@@ -59,7 +59,7 @@ Stephh's notes (based on the game Z80 code and some tests) :
 
   - Inputs notes :
 
-      * COINx don't work correcly : see "cshooter_coin_r" read handler.
+      * COINx don't work correctly : see "cshooter_coin_r" read handler.
     * In game, bits 3 and 4 of 0xc202 ("START") are tested,
         while bits 4 and 5 are tested in the "test mode".
       * Pressing STARTx while in game adds lives (depending on the
@@ -159,6 +159,8 @@ Stephh's notes (based on the game Z80 code and some tests) :
 #include "speaker.h"
 
 
+namespace {
+
 class airraid_state : public driver_device
 {
 public:
@@ -187,11 +189,9 @@ private:
 
 	required_device<airraid_video_device> m_airraid_video;
 
-	DECLARE_READ8_MEMBER(cshooter_coin_r);
-	DECLARE_WRITE8_MEMBER(cshooter_c500_w);
-	DECLARE_WRITE8_MEMBER(cshooter_c700_w);
-	DECLARE_WRITE8_MEMBER(bank_w);
-	DECLARE_MACHINE_RESET(cshooter);
+	void cshooter_c500_w(uint8_t data);
+	void cshooter_c700_w(uint8_t data);
+	void bank_w(uint8_t data);
 	TIMER_DEVICE_CALLBACK_MEMBER(cshooter_scanline);
 
 	void airraid_map(address_map &map);
@@ -215,20 +215,15 @@ TIMER_DEVICE_CALLBACK_MEMBER(airraid_state::cshooter_scanline)
 		m_maincpu->set_input_line_and_vector(0, HOLD_LINE,0xcf); /* Z80 - RST 08h */
 }
 
-
-MACHINE_RESET_MEMBER(airraid_state,cshooter)
+void airraid_state::cshooter_c500_w(uint8_t data)
 {
 }
 
-WRITE8_MEMBER(airraid_state::cshooter_c500_w)
+void airraid_state::cshooter_c700_w(uint8_t data)
 {
 }
 
-WRITE8_MEMBER(airraid_state::cshooter_c700_w)
-{
-}
-
-WRITE8_MEMBER(airraid_state::bank_w)
+void airraid_state::bank_w(uint8_t data)
 {
 	// format of this address is TTBB tbfs
 
@@ -628,6 +623,9 @@ void airraid_state::init_cshootere()
 	init_cshooter();
 
 }
+
+} // Anonymous namespace
+
 
 // There's also an undumped International Games version
 GAME( 1987, cshooter, airraid, airraid_crypt, airraid, airraid_state, init_cshootere, ROT270, "Seibu Kaihatsu (J.K.H. license)", "Cross Shooter (Single PCB)", MACHINE_NOT_WORKING | MACHINE_SUPPORTS_SAVE )

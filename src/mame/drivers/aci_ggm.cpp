@@ -20,7 +20,7 @@ Known chess cartridges (*denotes not dumped):
 - Chess/Boris 2.5 (aka Sargon 2.5)
 - *Gruenfeld Edition - Master Chess Openings
 - *Morphy Edition - Master Chess
-- *Capablanca Edition - Master Chess Endgame
+- Capablanca Edition - Master Chess Endgame
 - Sandy Edition - Master Chess (German language version of Morphy)
 - Steinitz Edition-4 - Master Chess
 - *Monitor Edition - Master Kriegspiel
@@ -41,8 +41,6 @@ TODO:
 - confirm display AP segment, is it used anywhere?
 - verify cartridge pinout, right now assume A0-A15 (max known cart size is 24KB).
   Boris/Sargon cartridge is A0-A11 and 2 CS lines, Steinitz uses the whole range.
-- (probably won't) add chesspieces to artwork? this machine supports more board
-  games than just chess: checkers, reversi, and even a blackjack game
 
 ******************************************************************************/
 
@@ -53,7 +51,6 @@ TODO:
 #include "machine/timer.h"
 #include "video/pwm.h"
 #include "sound/dac.h"
-#include "sound/volt_reg.h"
 #include "bus/generic/slot.h"
 #include "bus/generic/carts.h"
 
@@ -73,6 +70,7 @@ public:
 		driver_device(mconfig, type, tag),
 		m_maincpu(*this, "maincpu"),
 		m_via(*this, "via"),
+		m_extram(*this, "extram", 0x800, ENDIANNESS_LITTLE),
 		m_display(*this, "display"),
 		m_dac(*this, "dac"),
 		m_cart(*this, "cartslot"),
@@ -93,6 +91,7 @@ private:
 	// devices/pointers
 	required_device<cpu_device> m_maincpu;
 	required_device<via6522_device> m_via;
+	memory_share_creator<u8> m_extram;
 	required_device<pwm_display_device> m_display;
 	required_device<dac_bit_interface> m_dac;
 	required_device<generic_slot_device> m_cart;
@@ -106,31 +105,26 @@ private:
 	TIMER_DEVICE_CALLBACK_MEMBER(ca1_off) { m_via->write_ca1(0); }
 
 	DECLARE_DEVICE_IMAGE_LOAD_MEMBER(cartridge);
-	DECLARE_READ8_MEMBER(cartridge_r);
+	u8 cartridge_r(offs_t offset);
 
-	DECLARE_WRITE8_MEMBER(select_w);
-	DECLARE_WRITE8_MEMBER(control_w);
-	DECLARE_READ8_MEMBER(input_r);
+	void select_w(u8 data);
+	void control_w(u8 data);
+	u8 input_r();
 
-	DECLARE_WRITE_LINE_MEMBER(shift_clock_w);
-	DECLARE_WRITE_LINE_MEMBER(shift_data_w);
+	void shift_clock_w(int state);
+	void shift_data_w(int state);
 
-	u8 m_inp_mux;
-	u16 m_digit_data;
-	u8 m_shift_data;
-	u8 m_shift_clock;
-	u32 m_cart_mask;
-	u8 m_overlay;
+	u8 m_inp_mux = 0;
+	u16 m_digit_data = 0;
+	u8 m_shift_data = 0;
+	u8 m_shift_clock = 0;
+
+	u32 m_cart_mask = 0;
+	u8 m_overlay = 0;
 };
 
 void ggm_state::machine_start()
 {
-	// zerofill
-	m_inp_mux = 0;
-	m_digit_data = 0;
-	m_shift_data = 0;
-	m_shift_clock = 0;
-
 	// register for savestates
 	save_item(NAME(m_inp_mux));
 	save_item(NAME(m_digit_data));
@@ -179,17 +173,17 @@ DEVICE_IMAGE_LOAD_MEMBER(ggm_state::cartridge)
 	m_cart->common_load_rom(m_cart->get_rom_base(), size, "rom");
 
 	// keypad overlay
-	std::string overlay(image.get_feature("overlay"));
-	m_overlay = std::stoul(overlay, nullptr, 0) & 0xf;
+	const char *overlay = image.get_feature("overlay");
+	m_overlay = overlay ? strtoul(overlay, nullptr, 0) & 0xf : 0;
 
 	// extra ram (optional)
 	if (image.get_feature("ram"))
-		m_maincpu->space(AS_PROGRAM).install_ram(0x0800, 0x0fff, nullptr);
+		m_maincpu->space(AS_PROGRAM).install_ram(0x0800, 0x0fff, m_extram);
 
 	return image_init_result::PASS;
 }
 
-READ8_MEMBER(ggm_state::cartridge_r)
+u8 ggm_state::cartridge_r(offs_t offset)
 {
 	return m_cart->read_rom(offset & m_cart_mask);
 }
@@ -203,7 +197,7 @@ void ggm_state::update_display()
 	m_display->matrix(m_inp_mux, data);
 }
 
-WRITE_LINE_MEMBER(ggm_state::shift_clock_w)
+void ggm_state::shift_clock_w(int state)
 {
 	// shift display segment data on rising edge
 	if (state && !m_shift_clock)
@@ -215,19 +209,19 @@ WRITE_LINE_MEMBER(ggm_state::shift_clock_w)
 	m_shift_clock = state;
 }
 
-WRITE_LINE_MEMBER(ggm_state::shift_data_w)
+void ggm_state::shift_data_w(int state)
 {
 	m_shift_data = state;
 }
 
-WRITE8_MEMBER(ggm_state::select_w)
+void ggm_state::select_w(u8 data)
 {
 	// PA0-PA7: input mux, digit select
 	m_inp_mux = data;
 	update_display();
 }
 
-WRITE8_MEMBER(ggm_state::control_w)
+void ggm_state::control_w(u8 data)
 {
 	// PB0: ?
 
@@ -235,7 +229,7 @@ WRITE8_MEMBER(ggm_state::control_w)
 	m_dac->write(BIT(data, 7));
 }
 
-READ8_MEMBER(ggm_state::input_r)
+u8 ggm_state::input_r()
 {
 	u8 data = 0;
 
@@ -426,7 +420,7 @@ void ggm_state::ggm(machine_config &config)
 	M6502(config, m_maincpu, 2000000);
 	m_maincpu->set_addrmap(AS_PROGRAM, &ggm_state::main_map);
 
-	VIA6522(config, m_via, 2000000); // DDRA = 0xff, DDRB = 0x81
+	MOS6522(config, m_via, 2000000); // DDRA = 0xff, DDRB = 0x81
 	m_via->writepa_handler().set(FUNC(ggm_state::select_w));
 	m_via->writepb_handler().set(FUNC(ggm_state::control_w));
 	m_via->readpb_handler().set(FUNC(ggm_state::input_r));
@@ -446,10 +440,9 @@ void ggm_state::ggm(machine_config &config)
 	/* sound hardware */
 	SPEAKER(config, "speaker").front_center();
 	DAC_1BIT(config, m_dac).add_route(ALL_OUTPUTS, "speaker", 0.25);
-	VOLTAGE_REGULATOR(config, "vref").add_route(0, "dac", 1.0, DAC_VREF_POS_INPUT);
 
 	/* cartridge */
-	GENERIC_CARTSLOT(config, m_cart, generic_plain_slot, "ggm", "bin");
+	GENERIC_CARTSLOT(config, m_cart, generic_plain_slot, "ggm");
 	m_cart->set_device_load(FUNC(ggm_state::cartridge));
 	m_cart->set_must_be_loaded(true);
 

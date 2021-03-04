@@ -98,7 +98,7 @@ void msm5205_device::device_start()
 	compute_tables();
 
 	/* stream system initialize */
-	m_stream = machine().sound().stream_alloc(*this, 0, 1, clock());
+	m_stream = stream_alloc(0, 1, clock());
 	m_vck_timer = timer_alloc(TIMER_VCK);
 	m_capture_timer = timer_alloc(TIMER_ADPCM_CAPTURE);
 
@@ -239,7 +239,7 @@ void msm5205_device::update_adpcm()
  *    Handle an update of the VCK status of a chip (1 is reset ON, 0 is reset OFF)
  *    This function can use selector = MSM5205_SEX only
  */
-WRITE_LINE_MEMBER(msm5205_device::vclk_w)
+void msm5205_device::vclk_w(int state)
 {
 	if (get_prescaler() != 0)
 		logerror("Error: vclk_w() called but VCK selected master mode\n");
@@ -255,7 +255,7 @@ WRITE_LINE_MEMBER(msm5205_device::vclk_w)
  *    Handle an update of the reset status of a chip (1 is reset ON, 0 is reset OFF)
  */
 
-WRITE_LINE_MEMBER(msm5205_device::reset_w)
+void msm5205_device::reset_w(int state)
 {
 	m_reset = state;
 }
@@ -264,7 +264,7 @@ WRITE_LINE_MEMBER(msm5205_device::reset_w)
  *    Handle an update of the data to the chip
  */
 
-void msm5205_device::write_data(int data)
+void msm5205_device::data_w(uint8_t data)
 {
 	if (m_bitwidth == 4)
 		m_data = data & 0x0f;
@@ -311,7 +311,7 @@ void msm5205_device::playmode_w(int select)
 	}
 }
 
-WRITE_LINE_MEMBER(msm5205_device::s1_w)
+void msm5205_device::s1_w(int state)
 {
 	if (m_s1 != bool(state))
 	{
@@ -321,7 +321,7 @@ WRITE_LINE_MEMBER(msm5205_device::s1_w)
 	}
 }
 
-WRITE_LINE_MEMBER(msm5205_device::s2_w)
+void msm5205_device::s2_w(int state)
 {
 	if (m_s2 != bool(state))
 	{
@@ -360,23 +360,20 @@ void msm5205_device::device_clock_changed()
 //  sound_stream_update - handle a stream update
 //-------------------------------------------------
 
-void msm5205_device::sound_stream_update(sound_stream &stream, stream_sample_t **inputs, stream_sample_t **outputs, int samples)
+void msm5205_device::sound_stream_update(sound_stream &stream, std::vector<read_stream_view> const &inputs, std::vector<write_stream_view> &outputs)
 {
-	stream_sample_t *buffer = outputs[0];
+	auto &output = outputs[0];
 
 	/* if this voice is active */
-	if(m_signal)
+	if (m_signal)
 	{
+		constexpr stream_buffer::sample_t sample_scale = 1.0 / double(1 << 12);
 		const int dac_mask = (m_dac_bits >= 12) ? 0 : (1 << (12 - m_dac_bits)) - 1;
-		short val = (m_signal & ~dac_mask) * 16; // 10 bit DAC
-		while (samples)
-		{
-			*buffer++ = val;
-			samples--;
-		}
+		stream_buffer::sample_t val = stream_buffer::sample_t(m_signal & ~dac_mask) * sample_scale;
+		output.fill(val);
 	}
 	else
-		memset(buffer, 0, samples * sizeof(*buffer));
+		output.fill(0);
 }
 
 
@@ -407,8 +404,8 @@ void msm6585_device::device_timer(emu_timer &timer, device_timer_id id, int para
 //  sound_stream_update - handle a stream update
 //-------------------------------------------------
 
-void msm6585_device::sound_stream_update(sound_stream &stream, stream_sample_t **inputs, stream_sample_t **outputs, int samples)
+void msm6585_device::sound_stream_update(sound_stream &stream, std::vector<read_stream_view> const &inputs, std::vector<write_stream_view> &outputs)
 {
 	// should this be different?
-	msm5205_device::sound_stream_update(stream, inputs, outputs,samples);
+	msm5205_device::sound_stream_update(stream, inputs, outputs);
 }

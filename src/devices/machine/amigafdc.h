@@ -17,7 +17,7 @@ public:
 	auto dskblk_callback() { return m_write_dskblk.bind(); }
 	auto dsksyn_callback() { return m_write_dsksyn.bind(); }
 
-	DECLARE_WRITE8_MEMBER(ciaaprb_w);
+	void ciaaprb_w(uint8_t data);
 
 	uint8_t ciaapra_r();
 	uint16_t dskbytr_r();
@@ -32,7 +32,7 @@ public:
 	void dmacon_set(uint16_t data);
 	uint16_t adkcon_r(void);
 
-	DECLARE_FLOPPY_FORMATS( floppy_formats );
+	static void floppy_formats(format_registration &fr);
 
 protected:
 	virtual void device_start() override;

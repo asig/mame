@@ -13,8 +13,8 @@
 
 #pragma once
 
-#include "osdcore.h"
-#include "coretmpl.h"
+#include <cstdint>
+#include <vector>
 
 
 #define CHDCODEC_VERIFY_COMPRESSION 0
@@ -50,7 +50,7 @@ protected:
 
 public:
 	// allow public deletion
-	virtual ~chd_codec() = default;
+	virtual ~chd_codec();
 
 	// accessors
 	chd_file &chd() const { return m_chd; }

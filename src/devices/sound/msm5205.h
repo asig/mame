@@ -32,21 +32,20 @@ public:
 	auto vck_legacy_callback() { return m_vck_legacy_cb.bind(); }
 
 	// reset signal should keep for 2cycle of VCLK
-	DECLARE_WRITE_LINE_MEMBER(reset_w);
+	void reset_w(int state);
 
 	// adpcmata is latched after vclk_interrupt callback
-	void write_data(int data);
-	DECLARE_WRITE8_MEMBER(data_w) { write_data(data); }
+	void data_w(uint8_t data);
 
 	// VCLK slave mode option
 	// if VCLK and reset or data is changed at the same time,
 	// call vclk_w after data_w and reset_w.
-	DECLARE_WRITE_LINE_MEMBER(vclk_w);
+	void vclk_w(int state);
 
 	// option , selected pin selector
 	void playmode_w(int select);
-	DECLARE_WRITE_LINE_MEMBER(s1_w);
-	DECLARE_WRITE_LINE_MEMBER(s2_w);
+	void s1_w(int state);
+	void s2_w(int state);
 
 protected:
 	enum
@@ -66,7 +65,7 @@ protected:
 	void update_adpcm();
 
 	// sound stream update overrides
-	virtual void sound_stream_update(sound_stream &stream, stream_sample_t **inputs, stream_sample_t **outputs, int samples) override;
+	virtual void sound_stream_update(sound_stream &stream, std::vector<read_stream_view> const &inputs, std::vector<write_stream_view> &outputs) override;
 
 	void compute_tables();
 	virtual int get_prescaler() const;
@@ -109,7 +108,7 @@ protected:
 	virtual void device_timer(emu_timer &timer, device_timer_id id, int param, void *ptr) override;
 
 	// sound stream update overrides
-	virtual void sound_stream_update(sound_stream &stream, stream_sample_t **inputs, stream_sample_t **outputs, int samples) override;
+	virtual void sound_stream_update(sound_stream &stream, std::vector<read_stream_view> const &inputs, std::vector<write_stream_view> &outputs) override;
 };
 
 

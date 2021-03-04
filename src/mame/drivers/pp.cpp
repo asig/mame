@@ -41,6 +41,7 @@ public:
 		, m_int_status(0xf)
 		, m_kbd_scan(0)
 		, m_kbd_release(false)
+		, m_tmi_enable(false)
 		, m_printer_busy(false)
 		, m_dr(0)
 		, m_mode(0)
@@ -96,6 +97,7 @@ private:
 	u8 m_int_status;
 	u8 m_kbd_scan;
 	bool m_kbd_release;
+	bool m_tmi_enable;
 	bool m_printer_busy;
 	u8 m_dr;
 	u8 m_mode;
@@ -117,6 +119,7 @@ void pp_state::machine_start()
 	save_item(NAME(m_int_status));
 	save_item(NAME(m_kbd_scan));
 	save_item(NAME(m_kbd_release));
+	save_item(NAME(m_tmi_enable));
 	save_item(NAME(m_printer_busy));
 	save_item(NAME(m_dr));
 	save_item(NAME(m_mode));
@@ -180,17 +183,19 @@ SCN2672_DRAW_CHARACTER_MEMBER(pp_state::display_char)
 
 	for (int i = 0; i < 7; i++)
 	{
-		bitmap.pix32(y, x++) = BIT(dots, 7) ? fg : rgb_t::black();
+		bitmap.pix(y, x++) = BIT(dots, 7) ? fg : rgb_t::black();
 		dots <<= 1;
 	}
 	if (!BIT(m_mode, 6))
-		bitmap.pix32(y, x++) = BIT(dots, 7) ? fg : rgb_t::black();
+		bitmap.pix(y, x++) = BIT(dots, 7) ? fg : rgb_t::black();
 }
 
 
 void pp_state::kbd_scan_w(u8 data)
 {
-	// SL3 = AUTORPT (TODO: clocks INT3)
+	// SL3 = AUTORPT (also clocks timer interrupt)
+	if (!BIT(m_kbd_scan, 3) && BIT(data, 3) && m_tmi_enable)
+		int_w<3>(1);
 	m_kbd_scan = data;
 }
 
@@ -205,13 +210,13 @@ u8 pp_state::kbd_cols_r()
 READ_LINE_MEMBER(pp_state::cntl_r)
 {
 	// pin 1 of J13 connector
-	return (m_modifiers->read() & 0x5) != 0x5;
+	return (m_modifiers->read() & 0x5) == 0x5;
 }
 
 READ_LINE_MEMBER(pp_state::shift_r)
 {
 	// pin 3 of J13 connector
-	return (m_modifiers->read() & 0x6) != 0x6;
+	return (m_modifiers->read() & 0x6) == 0x6;
 }
 
 WRITE_LINE_MEMBER(pp_state::printer_busy_w)
@@ -283,7 +288,12 @@ void pp_state::co_w(u8 data)
 	// KBIEN
 	m_int4->in_w<0>(BIT(data, 4));
 
-	// TODO: D5 = TMIEN, D6 = HDIEN
+	// TMIEN
+	if (m_tmi_enable && !BIT(data, 5))
+		int_w<3>(0);
+	m_tmi_enable = BIT(data, 5);
+
+	// TODO: D6 = HDIEN
 
 	// KBREL
 	m_kbd_release = BIT(data, 7);
@@ -317,7 +327,7 @@ void pp_state::io_map(address_map &map)
 	map.global_mask(0xff);
 	map(0x00, 0x07).rw(m_pvtc, FUNC(scn2672_device::read), FUNC(scn2672_device::write));
 	map(0x08, 0x09).mirror(2).rw("pkdi", FUNC(i8279_device::read), FUNC(i8279_device::write));
-	map(0x0d, 0x0d).mirror(2).r(m_pvtc, FUNC(scn2672_device::buffer_r)).w("cent_data_out", FUNC(output_latch_device::bus_w));
+	map(0x0d, 0x0d).mirror(2).r(m_pvtc, FUNC(scn2672_device::buffer_r)).w("cent_data_out", FUNC(output_latch_device::write));
 	map(0x10, 0x13).mirror(4).rw("fdc", FUNC(fd1793_device::read), FUNC(fd1793_device::write));
 	map(0x18, 0x18).mirror(2).rw(FUNC(pp_state::stat_r), FUNC(pp_state::co_w));
 	map(0x1c, 0x1c).mirror(2).w(m_pvtc, FUNC(scn2672_device::buffer_w));
@@ -336,7 +346,7 @@ static INPUT_PORTS_START(pp)
 	PORT_START("ROW0") // pin 11 of J13 connector
 	PORT_BIT(0x01, IP_ACTIVE_LOW, IPT_KEYBOARD) PORT_NAME("Esc") PORT_CHAR(0x1b) PORT_CODE(KEYCODE_ESC)
 	PORT_BIT(0x02, IP_ACTIVE_LOW, IPT_KEYBOARD) PORT_CHAR('2') PORT_CHAR('@') PORT_CODE(KEYCODE_2)
-	PORT_BIT(0x04, IP_ACTIVE_LOW, IPT_KEYBOARD) PORT_CHAR('3') PORT_CHAR('#') PORT_CODE(KEYCODE_3)
+	PORT_BIT(0x04, IP_ACTIVE_LOW, IPT_KEYBOARD) PORT_CHAR('5') PORT_CHAR('%') PORT_CODE(KEYCODE_5)
 	PORT_BIT(0x08, IP_ACTIVE_LOW, IPT_KEYBOARD) PORT_CHAR('6') PORT_CHAR('^') PORT_CODE(KEYCODE_6)
 	PORT_BIT(0x10, IP_ACTIVE_LOW, IPT_KEYBOARD) PORT_CHAR('9') PORT_CHAR('(') PORT_CODE(KEYCODE_9)
 	PORT_BIT(0x20, IP_ACTIVE_LOW, IPT_KEYBOARD) PORT_CHAR('0') PORT_CHAR(')') PORT_CODE(KEYCODE_0)
@@ -423,7 +433,7 @@ INPUT_PORTS_END
 static void pp_floppies(device_slot_interface &device)
 {
 	// Mitsubishi M485X
-	device.option_add("525dd", FLOPPY_525_DD);
+	device.option_add("525qd", FLOPPY_525_QD);
 }
 
 void pp_state::pp(machine_config &config)
@@ -451,8 +461,8 @@ void pp_state::pp(machine_config &config)
 	m_fdc->drq_wr_callback().set("int7", FUNC(input_merger_device::in_w<0>));
 	m_fdc->hld_wr_callback().set(FUNC(pp_state::hld_w));
 
-	FLOPPY_CONNECTOR(config, m_floppy[0], pp_floppies, "525dd", floppy_image_device::default_floppy_formats).enable_sound(true);
-	FLOPPY_CONNECTOR(config, m_floppy[1], pp_floppies, nullptr, floppy_image_device::default_floppy_formats).enable_sound(true);
+	FLOPPY_CONNECTOR(config, m_floppy[0], pp_floppies, "525qd", floppy_image_device::default_mfm_floppy_formats).enable_sound(true);
+	FLOPPY_CONNECTOR(config, m_floppy[1], pp_floppies, nullptr, floppy_image_device::default_mfm_floppy_formats).enable_sound(true);
 
 	SCN2672(config, m_pvtc, 13_MHz_XTAL / 8);
 	m_pvtc->set_character_width(8); // 8 or 7 depending on mode

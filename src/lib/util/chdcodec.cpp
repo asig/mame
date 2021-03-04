@@ -124,7 +124,7 @@ class chd_lzma_compressor : public chd_compressor
 public:
 	// construction/destruction
 	chd_lzma_compressor(chd_file &chd, uint32_t hunkbytes, bool lossy);
-	~chd_lzma_compressor() = default;
+	~chd_lzma_compressor();
 
 	// core functionality
 	virtual uint32_t compress(const uint8_t *src, uint32_t srclen, uint8_t *dest) override;
@@ -497,6 +497,15 @@ chd_codec::chd_codec(chd_file &chd, uint32_t hunkbytes, bool lossy)
 
 
 //-------------------------------------------------
+//  ~chd_codec - destructor
+//-------------------------------------------------
+
+chd_codec::~chd_codec()
+{
+}
+
+
+//-------------------------------------------------
 //  configure - configuration
 //-------------------------------------------------
 
@@ -613,7 +622,7 @@ chd_compressor_group::chd_compressor_group(chd_file &chd, uint32_t compressor_li
 #endif
 {
 	// verify the compression types and initialize the codecs
-	for (int codecnum = 0; codecnum < ARRAY_LENGTH(m_compressor); codecnum++)
+	for (int codecnum = 0; codecnum < std::size(m_compressor); codecnum++)
 	{
 		m_compressor[codecnum] = nullptr;
 		if (compressor_list[codecnum] != CHD_CODEC_NONE)
@@ -654,7 +663,7 @@ int8_t chd_compressor_group::find_best_compressor(const uint8_t *src, uint8_t *c
 	// determine best compression technique
 	complen = m_hunkbytes;
 	int8_t compression = -1;
-	for (int codecnum = 0; codecnum < ARRAY_LENGTH(m_compressor); codecnum++)
+	for (int codecnum = 0; codecnum < std::size(m_compressor); codecnum++)
 		if (m_compressor[codecnum] != nullptr)
 		{
 			// attempt to compress, swallowing errors
@@ -1041,6 +1050,15 @@ chd_lzma_compressor::chd_lzma_compressor(chd_file &chd, uint32_t hunkbytes, bool
 {
 	// initialize the properties
 	configure_properties(m_props, hunkbytes);
+}
+
+
+//-------------------------------------------------
+//  ~chd_lzma_compressor - destructor
+//-------------------------------------------------
+
+chd_lzma_compressor::~chd_lzma_compressor()
+{
 }
 
 
@@ -1768,7 +1786,7 @@ void chd_avhuff_decompressor::configure(int param, void *config)
 {
 	// if we're getting the decompression configuration, apply it now
 	if (param == AVHUFF_CODEC_DECOMPRESS_CONFIG)
-		m_decoder.configure(*reinterpret_cast<avhuff_decompress_config *>(config));
+		m_decoder.configure(*reinterpret_cast<avhuff_decoder::config const *>(config));
 
 	// anything else is invalid
 	else

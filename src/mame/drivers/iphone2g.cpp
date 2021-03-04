@@ -110,8 +110,8 @@ DEFINE_DEVICE_TYPE(IPHONE2G_SPI, iphone2g_spi_device, "iphone2g_spi", "iPhone 2G
 
 iphone2g_spi_device::iphone2g_spi_device(const machine_config &mconfig, device_type type, const char *tag, device_t *owner, uint32_t clock)
 	: device_t(mconfig, type, tag, owner, clock)
-    , device_memory_interface(mconfig, *this)
-    , m_mmio_config("mmio", ENDIANNESS_LITTLE, 32, 32, 0)
+	, device_memory_interface(mconfig, *this)
+	, m_mmio_config("mmio", ENDIANNESS_LITTLE, 32, 32, 0)
 	, m_out_irq_func(*this)
 {
 }
@@ -195,8 +195,8 @@ DEFINE_DEVICE_TYPE(IPHONE2G_TIMER, iphone2g_timer_device, "iphone2g_timer", "iPh
 
 iphone2g_timer_device::iphone2g_timer_device(const machine_config &mconfig, device_type type, const char *tag, device_t *owner, uint32_t clock)
 	: device_t(mconfig, type, tag, owner, clock)
-    , device_memory_interface(mconfig, *this)
-    , m_mmio_config("mmio", ENDIANNESS_LITTLE, 32, 32, 0)
+	, device_memory_interface(mconfig, *this)
+	, m_mmio_config("mmio", ENDIANNESS_LITTLE, 32, 32, 0)
 	, m_out_irq_func(*this)
 {
 }
@@ -227,7 +227,7 @@ protected:
 	virtual void machine_start() override;
 	virtual void machine_reset() override;
 
-	DECLARE_READ32_MEMBER(clock1_r);
+	uint32_t clock1_r(offs_t offset);
 
 private:
 	required_device<cpu_device> m_maincpu;
@@ -249,7 +249,7 @@ uint32_t iphone2g_state::screen_update(screen_device &screen, bitmap_rgb32 &bitm
 	return 0;
 }
 
-READ32_MEMBER(iphone2g_state::clock1_r)
+uint32_t iphone2g_state::clock1_r(offs_t offset)
 {
 	uint32_t ret = 0;
 	switch(offset)
