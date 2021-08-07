@@ -978,52 +978,6 @@ bool mame_ui_manager::is_menu_active(void)
 ***************************************************************************/
 
 //-------------------------------------------------
-<<<<<<< HEAD
-//  handler_messagebox - displays the current
-//  messagebox_text string but handles no input
-//-------------------------------------------------
-
-uint32_t mame_ui_manager::handler_messagebox(render_container &container)
-{
-	// draw_text_box(container, messagebox_text.c_str(), ui::text_layout::LEFT, 0.5f, 0.5f, messagebox_backcolor);
-	return 0;
-}
-
-
-//-------------------------------------------------
-//  handler_messagebox_anykey - displays the
-//  current messagebox_text string and waits for
-//  any keypress
-//-------------------------------------------------
-
-uint32_t mame_ui_manager::handler_messagebox_anykey(render_container &container)
-{
-	return UI_HANDLER_CANCEL;
-	/*
-	uint32_t state = 0;
-
-	// draw a standard message window
-	draw_text_box(container, messagebox_text.c_str(), ui::text_layout::LEFT, 0.5f, 0.5f, messagebox_backcolor);
-
-	// if the user cancels, exit out completely
-	if (machine().ui_input().pressed(IPT_UI_CANCEL))
-	{
-		machine().schedule_exit();
-		state = UI_HANDLER_CANCEL;
-	}
-
-	// if any key is pressed, just exit
-	else if (machine().input().poll_switches() != INPUT_CODE_INVALID)
-		state = UI_HANDLER_CANCEL;
-
-	return state;
-	*/
-}
-
-
-//-------------------------------------------------
-=======
->>>>>>> cc9b1f8f7d589d0ceb476bb880df7f504287d694
 //  process_natural_keyboard - processes any
 //  natural keyboard input
 //-------------------------------------------------
