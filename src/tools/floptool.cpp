@@ -1,124 +1,89 @@
 // license:BSD-3-Clause
-// copyright-holders:Miodrag Milanovic
+// copyright-holders:Olivier Galibert
 /***************************************************************************
 
-    main.c
-
-    Floptool command line front end
-
-    20/07/2011 Initial version by Miodrag Milanovic
+    (Floppy) image command-line manager
 
 ***************************************************************************/
 
-#include <cstdio>
-#include <cstring>
-#include <cctype>
-#include <cstdlib>
-#include <ctime>
-#include <cstdarg>
-#include <cassert>
-#include <map>
+#include "image_handler.h"
 
 #include "corestr.h"
-#include "osdcomm.h"
+#include "ioprocs.h"
 
-#include "formats/all.h"
+#include <cassert>
+#include <cctype>
+#include <cstdarg>
+#include <cstdio>
+#include <cstdlib>
+#include <cstring>
+#include <ctime>
 
-std::map<std::string, std::vector<floppy_image_format_t *>> formats_by_category;
-std::map<std::string, floppy_image_format_t *> formats_by_key;
 
-struct enumerator : public mame_formats_enumerator {
-	virtual ~enumerator() = default;
-	virtual void add(const cassette_image::Format *const *formats) {}
-
-	std::vector<floppy_image_format_t *> *cf = nullptr;
-	virtual void category(const char *name) {
-		auto i = formats_by_category.find(name);
-		if(i != formats_by_category.end()) {
-			fprintf(stderr, "Collision on category name %s\n", name);
-			exit(1);
-		}
-		cf = &formats_by_category[name];
-	}
-
-	virtual void add(floppy_format_type format) {
-		auto f = format();
-		std::string key = f->name();
-		auto i = formats_by_key.find(key);
-		if(i != formats_by_key.end()) {
-			fprintf(stderr, "Collision on key %s between \"%s\" and \"%s\".\n",
-					key.c_str(),
-					i->second->description(),
-					f->description());
-			exit(1);
-		}
-		cf->push_back(f);
-		formats_by_key[key] = f;
-	}
-};
-
-void CLIB_DECL ATTR_PRINTF(1,2) logerror(const char *format, ...)
-{
-	va_list arg;
-	va_start(arg, format);
-	vprintf(format, arg);
-	va_end(arg);
-}
-
-static std::vector<uint32_t> variants;
-
-static void init_formats()
-{
-	enumerator en;
-	mame_formats_full_list(en);
-}
-
-static floppy_image_format_t *find_format_by_name(const char *name)
-{
-	auto i = formats_by_key.find(name);
-	if(i == formats_by_key.end())
-		return nullptr;
-	return i->second;
-}
-
-static floppy_image_format_t *find_format_by_identify(io_generic *image)
-{
-	int best = 0;
-	floppy_image_format_t *best_fif = nullptr;
-
-	for(const auto &e : formats_by_key) {
-		floppy_image_format_t *fif = e.second;
-		int score = fif->identify(image, floppy_image::FF_UNKNOWN, variants);
-		if(score > best) {
-			best = score;
-			best_fif = fif;
-		}
-	}
-	return best_fif;
-}
+static formats_table formats;
 
 static void display_usage()
 {
 	fprintf(stderr, "Usage: \n");
-	fprintf(stderr, "       floptool.exe identify <inputfile> [<inputfile> ...]\n");
-	fprintf(stderr, "       floptool.exe convert [input_format|auto] output_format <inputfile> <outputfile>\n");
+	fprintf(stderr, "       floptool.exe identify <inputfile> [<inputfile> ...]                                 -- Identify an image format\n");
+	fprintf(stderr, "       floptool.exe flopconvert [input_format|auto] output_format <inputfile> <outputfile> -- Convert a floppy image\n");
+	fprintf(stderr, "       floptool.exe flopcreate output_format filesystem <outputfile>                       -- Create a preformatted floppy image\n");
+	fprintf(stderr, "       floptool.exe flopdir input_format filesystem <image>                                -- List the contents of a floppy image\n");
+	fprintf(stderr, "       floptool.exe flopread input_format filesystem <image> <path> <outputfile>           -- Extract a file from a floppy image\n");
+	fprintf(stderr, "       floptool.exe flopwrite input_format filesystem <image> <inputfile> <path>           -- Write a file into a floppy image\n");
 }
 
 static void display_formats()
 {
 	int sk = 0;
-	for(const auto &e : formats_by_key) {
+	for(const auto &e : formats.floppy_format_info_by_key) {
 		int sz = e.first.size();
 		if(sz > sk)
 			sk = sz;
 	}
 
-	fprintf(stderr, "Supported formats:\n\n");
-	for(const auto &e : formats_by_category)
+	for(const auto &e : formats.filesystem_format_by_key) {
+		int sz = e.first.size();
+		if(sz > sk)
+			sk = sz;
+	}
+
+	for(const auto &e : formats.floppy_create_info_by_key) {
+		int sz = e.first.size();
+		if(sz > sk)
+			sk = sz;
+	}
+
+	fprintf(stderr, "Supported floppy formats:\n\n");
+	for(const auto &e : formats.floppy_format_info_by_category)
 		if(!e.second.empty()) {
 			fprintf(stderr, "%s:\n", e.first.c_str());
-			for(floppy_image_format_t *fif : e.second)
-				fprintf(stderr, "  %-*s - %s [%s]\n", sk, fif->name(), fif->description(), fif->extensions());
+			for(auto *fif : e.second)
+				fprintf(stderr, "  %-*s     r%c - %s [%s]\n", sk, fif->m_format->name(), fif->m_format->supports_save() ? 'w' : '-', fif->m_format->description(), fif->m_format->extensions());
+		}
+
+	fprintf(stderr, "\n\n");
+	fprintf(stderr, "Supported filesystems (with floppy formatting names):\n\n");
+	for(const auto &e : formats.filesystem_format_by_category)
+		if(!e.second.empty()) {
+			fprintf(stderr, "%s:\n", e.first.c_str());
+			for(const auto &f : e.second) {
+				fprintf(stderr, "  %-*s %c%c%c %c%c%c - %s\n",
+						sk,
+						f->m_manager->name(),
+						f->m_floppy || f->m_floppy_raw ? 'F' : '-',
+						f->m_hd ? 'H' : '-',
+						f->m_cd ? 'C' : '-',
+						f->m_manager->can_format() || f->m_floppy_raw ? 'f' : '-',
+						f->m_manager->can_read() ? 'r' : '-',
+						f->m_manager->can_write() ? 'w' : '-',
+						f->m_manager->description());
+				for(auto &f2 : f->m_floppy_create)
+					fprintf(stderr, "    %-*s         - %s\n",
+							sk,
+							f2->m_name,
+							f2->m_description);
+			}
 		}
 }
 
@@ -129,133 +94,618 @@ static void display_full_usage()
 	display_usage();
 	fprintf(stderr, "\n");
 	display_formats();
-	fprintf(stderr, "\nExample usage:\n");
-	fprintf(stderr, "        floptool.exe identify image.dsk\n\n");
 
 }
 
 static int identify(int argc, char *argv[])
 {
-	if (argc<3) {
+	// Need to detect CHDs too
+
+	if(argc<3) {
 		fprintf(stderr, "Missing name of file to identify.\n\n");
 		display_usage();
 		return 1;
 	}
 
+	int sz = 0;
 	for(int i=2; i<argc; i++) {
-		char msg[4096];
-		sprintf(msg, "Error opening %s for reading", argv[i]);
-		FILE *f = fopen(argv[i], "rb");
-		if (!f) {
-			perror(msg);
-			return 1;
-		}
-		io_generic io;
-		io.file = f;
-		io.procs = &stdio_ioprocs_noclose;
-		io.filler = 0xff;
+		int len = strlen(argv[i]);
+		if(len > sz)
+			sz = len;
+	}
 
-		floppy_image_format_t *best_fif = find_format_by_identify(&io);
-		if (best_fif)
-			printf("%s : %s\n", argv[i], best_fif->description());
-		else
-			printf("%s : Unknown format\n", argv[i]);
-		fclose(f);
+	for(int i=2; i<argc; i++) {
+		image_handler ih;
+		ih.set_on_disk_path(argv[i]);
+		auto scores = ih.identify(formats);
+		if(scores.empty())
+			printf("%-*s : Unknown format\n", sz, argv[i]);
+		int sz2 = 0;
+		for(const auto &e : scores) {
+			int len = strlen(e.second->m_format->name());
+			if(len > sz2)
+				sz2 = len;
+		}
+
+		bool first = true;
+		for(const auto &e : scores) {
+			printf("%-*s %c %3d - %-*s %s\n", sz, first ? argv[i] : "", first ? ':' : ' ', e.first, sz2, e.second->m_format->name(), e.second->m_format->description());
+			first = false;
+		}
 	}
 	return 0;
 }
 
-static int convert(int argc, char *argv[])
+static const floppy_format_info *find_floppy_source_format(const char *name, image_handler &ih)
 {
-	if (argc!=6) {
+	const floppy_format_info *source_format;
+	if(!core_stricmp(name, "auto")) {
+		auto scores = ih.identify(formats);
+		if(scores.empty()) {
+			fprintf(stderr, "Error: Could not identify the format of file %s\n", ih.get_on_disk_path().c_str());
+			return nullptr;
+		}
+		if(scores.size() >= 2 && scores[0].first == scores[1].first) {
+			fprintf(stderr, "Ambiguous source format.  Possible formats:\n");
+			int sz = 0;
+			for(const auto &e : scores) {
+				int len = strlen(e.second->m_format->name());
+				if(len > sz)
+					sz = len;
+			}
+
+			for(const auto &e : scores)
+				printf("  %3d - %-*s %s\n", e.first, sz, e.second->m_format->name(), e.second->m_format->description());
+			return nullptr;
+		}
+		source_format = scores[0].second;
+
+	} else {
+		source_format = formats.find_floppy_format_info_by_key(name);
+		if(!source_format) {
+			fprintf(stderr, "Error: Format '%s' unknown\n", name);
+			return nullptr;
+
+		}
+	}
+	return source_format;
+}
+
+static int flopconvert(int argc, char *argv[])
+{
+	if(argc!=6) {
 		fprintf(stderr, "Incorrect number of arguments.\n\n");
 		display_usage();
 		return 1;
 	}
 
-	floppy_image_format_t *source_format, *dest_format;
+	image_handler ih;
+	ih.set_on_disk_path(argv[4]);
 
-	char msg[4096];
-	sprintf(msg, "Error opening %s for reading", argv[4]);
-	FILE *f = fopen(argv[4], "rb");
-	if (!f) {
-		perror(msg);
+	const floppy_format_info *source_format = find_floppy_source_format(argv[2], ih);
+	if(!source_format)
 		return 1;
-	}
-	io_generic source_io;
-	source_io.file = f;
-	source_io.procs = &stdio_ioprocs_noclose;
-	source_io.filler = 0xff;
 
-	if(!core_stricmp(argv[2], "auto")) {
-		source_format = find_format_by_identify(&source_io);
-		if(!source_format) {
-			fprintf(stderr, "Error: Could not identify the format of file %s\n", argv[4]);
-			return 1;
-		}
-
-	} else {
-		source_format = find_format_by_name(argv[2]);
-		if(!source_format) {
-			fprintf(stderr, "Error: Format '%s' unknown\n", argv[2]);
-			return 1;
-		}
-	}
-
-	dest_format = find_format_by_name(argv[3]);
+	const floppy_format_info *dest_format = formats.find_floppy_format_info_by_key(argv[3]);
 	if(!dest_format) {
 		fprintf(stderr, "Error: Format '%s' unknown\n", argv[3]);
 		return 1;
 	}
-	if(!dest_format->supports_save()) {
-		fprintf(stderr, "Error: saving to format '%s' unsupported\n", argv[3]);
+	if(!dest_format->m_format->supports_save()) {
+		fprintf(stderr, "Error: Aaving to format '%s' unsupported\n", argv[3]);
 		return 1;
 	}
 
-	sprintf(msg, "Error opening %s for writing", argv[5]);
-	f = fopen(argv[5], "wb");
-	if (!f) {
-		perror(msg);
-		return 1;
-	}
-	io_generic dest_io;
-	dest_io.file = f;
-	dest_io.procs = &stdio_ioprocs_noclose;
-	dest_io.filler = 0xff;
-
-	floppy_image image(84, 2, floppy_image::FF_UNKNOWN);
-	if(!source_format->load(&source_io, floppy_image::FF_UNKNOWN, variants, &image)) {
-		fprintf(stderr, "Error: parsing input file as '%s' failed\n", source_format->name());
+	if(ih.floppy_load(source_format)) {
+		fprintf(stderr, "Error: Loading as format '%s' failed\n", source_format->m_format->name());
 		return 1;
 	}
 
-	if(!dest_format->save(&dest_io, variants, &image)) {
-		fprintf(stderr, "Error: writing output file as '%s' failed\n", dest_format->name());
+	ih.set_on_disk_path(argv[5]);
+
+	if(ih.floppy_save(dest_format)) {
+		fprintf(stderr, "Error: Saving as format '%s' failed\n", dest_format->m_format->name());
 		return 1;
 	}
-
-	fclose((FILE *)source_io.file);
-	fclose((FILE *)dest_io.file);
 
 	return 0;
 }
 
+static int flopcreate(int argc, char *argv[])
+{
+	if(argc!=5) {
+		fprintf(stderr, "Incorrect number of arguments.\n\n");
+		display_usage();
+		return 1;
+	}
+
+	auto dest_format = formats.find_floppy_format_info_by_key(argv[2]);
+	if(!dest_format) {
+		fprintf(stderr, "Error: Floppy format '%s' unknown\n", argv[3]);
+		return 1;
+	}
+	if(!dest_format->m_format->supports_save()) {
+		fprintf(stderr, "Error: Saving to format '%s' unsupported\n", argv[3]);
+		return 1;
+	}
+
+	auto create_fs = formats.find_floppy_create_info_by_key(argv[3]);
+	if(!create_fs) {
+		fprintf(stderr, "Error: Floppy creation format '%s' unknown\n", argv[3]);
+		return 1;
+	}
+	if(!create_fs->m_manager->can_format()) {
+		fprintf(stderr, "Error: Floppy creation format '%s' does not support creating new images\n", argv[3]);
+		return 1;
+	}
+
+	fs_meta_data meta;
+	image_handler ih;
+	ih.set_on_disk_path(argv[4]);
+
+	ih.floppy_create(create_fs, meta);
+	return ih.floppy_save(dest_format);
+}
+
+static void dir_scan(u32 depth, filesystem_t::dir_t dir, std::vector<std::vector<std::string>> &entries, const std::unordered_map<fs_meta_name, size_t> &nmap, size_t nc, const std::vector<fs_meta_description> &dmetad, const std::vector<fs_meta_description> &fmetad)
+{
+	std::string head;
+	for(u32 i = 0; i != depth; i++)
+		head += "  ";
+	auto contents = dir.contents();
+	for(const auto &c : contents) {
+		size_t id = entries.size();
+		entries.resize(id+1);
+		entries[id].resize(nc);
+		switch(c.m_type) {
+		case fs_dir_entry_type::dir: {
+			auto subdir = dir.dir_get(c.m_key);
+			auto meta = subdir.metadata();
+			for(const auto &m : dmetad) {
+				if(!meta.has(m.m_name))
+					continue;
+				size_t slot = nmap.find(m.m_name)->second;
+				std::string val = fs_meta::to_string(m.m_type, meta.get(m.m_name));
+				if(slot == 0)
+					val = head + "dir  " + val;
+				entries[id][slot] = val;
+			}
+			dir_scan(depth+1, subdir, entries, nmap, nc, dmetad, fmetad);
+			break;
+		}
+		case fs_dir_entry_type::file:
+		case fs_dir_entry_type::system_file: {
+			auto file = dir.file_get(c.m_key);
+			auto meta = file.metadata();
+			for(const auto &m : fmetad) {
+				if(!meta.has(m.m_name))
+					continue;
+				size_t slot = nmap.find(m.m_name)->second;
+				std::string val = fs_meta::to_string(m.m_type, meta.get(m.m_name));
+				if(slot == 0)
+					val = head + (c.m_type == fs_dir_entry_type::system_file ? "sys  " : "file ") + val;
+				entries[id][slot] = val;
+			}
+			break;
+		}
+		}
+	}
+}
+
+static int generic_dir(image_handler &ih)
+{
+	auto [fsm, fs] = ih.get_fs();
+	auto vmetad = fsm->volume_meta_description();
+	auto fmetad = fsm->file_meta_description();
+	auto dmetad = fsm->directory_meta_description();
+
+	auto vmeta = fs->metadata();
+	if(!vmeta.empty()) {
+		std::string vinf = "Volume:";
+		for(const auto &e : vmetad)
+			vinf += util::string_format(" %s=%s", fs_meta_data::entry_name(e.m_name), fs_meta::to_string(e.m_type, vmeta.get(e.m_name)));
+		printf("%s\n\n", vinf.c_str());
+	}
+
+	std::vector<fs_meta_name> names;
+	names.push_back(fs_meta_name::name);
+	for(const auto &e : fmetad)
+		if(e.m_name != fs_meta_name::name)
+			names.push_back(e.m_name);
+	for(const auto &e : dmetad)
+		if(std::find(names.begin(), names.end(), e.m_name) == names.end())
+			names.push_back(e.m_name);
+
+	std::unordered_map<fs_meta_name, size_t> nmap;
+	for(size_t i = 0; i != names.size(); i++)
+		nmap[names[i]] = i;
+
+	auto root = fs->root();
+	std::vector<std::vector<std::string>> entries;
+
+	entries.resize(1);
+	for(fs_meta_name n : names)
+		entries[0].push_back(fs_meta_data::entry_name(n));
+
+	dir_scan(0, root, entries, nmap, names.size(), dmetad, fmetad);
+
+	std::vector<u32> sizes(names.size());
+
+	for(const auto &e : entries)
+		for(unsigned int i=0; i != names.size(); i++)
+			sizes[i] = std::max<u32>(sizes[i], e[i].size());
+
+	for(const auto &e : entries) {
+		std::string l;
+		for(unsigned int i=0; i != names.size(); i++) {
+			if(i)
+				l += ' ';
+			l += util::string_format("%-*s", sizes[i], e[i]);
+		}
+		printf("%s\n", l.c_str());
+	}
+
+	return 0;
+}
+
+static int flopdir(int argc, char *argv[])
+{
+	if(argc!=5) {
+		fprintf(stderr, "Incorrect number of arguments.\n\n");
+		display_usage();
+		return 1;
+	}
+
+	image_handler ih;
+	ih.set_on_disk_path(argv[4]);
+
+	const floppy_format_info *source_format = find_floppy_source_format(argv[2], ih);
+	if(!source_format)
+		return 1;
+
+	auto fs = formats.find_filesystem_format_by_key(argv[3]);
+	if(!fs) {
+		fprintf(stderr, "Error: Filesystem '%s' unknown\n", argv[3]);
+		return 1;
+	}
+
+	if(!fs->m_manager || !fs->m_manager->can_read()) {
+		fprintf(stderr, "Error: Filesystem '%s' does not implement reading\n", argv[3]);
+		return 1;
+	}
+
+	if(ih.floppy_load(source_format)) {
+		fprintf(stderr, "Error: Loading as format '%s' failed\n", source_format->m_format->name());
+		return 1;
+	}
+
+	if(ih.floppy_mount_fs(fs)) {
+		fprintf(stderr, "Error: Parsing as filesystem '%s' failed\n", fs->m_manager->name());
+		return 1;
+	}
+
+	return generic_dir(ih);
+}
+
+static int hddir(int argc, char *argv[])
+{
+	if(argc!=4) {
+		fprintf(stderr, "Incorrect number of arguments.\n\n");
+		display_usage();
+		return 1;
+	}
+
+	image_handler ih;
+	ih.set_on_disk_path(argv[3]);
+
+	auto fs = formats.find_filesystem_format_by_key(argv[2]);
+	if(!fs) {
+		fprintf(stderr, "Error: Filesystem '%s' unknown\n", argv[2]);
+		return 1;
+	}
+
+	if(!fs->m_manager || !fs->m_manager->can_read()) {
+		fprintf(stderr, "Error: Filesystem '%s' does not implement reading\n", argv[2]);
+		return 1;
+	}
+
+	if(ih.hd_mount_fs(fs)) {
+		fprintf(stderr, "Error: Parsing as filesystem '%s' failed\n", fs->m_manager->name());
+		return 1;
+	}
+
+	return generic_dir(ih);
+}
+
+
+static int generic_read(image_handler &ih, const char *srcpath, const char *dstpath)
+{
+	auto [fsm, fs] = ih.get_fs();
+
+	std::vector<std::string> path = ih.path_split(srcpath);
+
+	auto dir = fs->root();
+	std::string apath;
+	for(unsigned int i = 0; i < path.size() - 1; i++) {
+		auto c = dir.contents();
+		unsigned int j;
+		for(j = 0; j != c.size(); j++)
+			if(c[j].m_name == path[i])
+				break;
+		if(j == c.size()) {
+			fprintf(stderr, "Error: directory %s%c%s not found\n", apath.c_str(), fsm->directory_separator(), path[i].c_str());
+			return 1;
+		}
+		if(c[j].m_type != fs_dir_entry_type::dir) {
+			fprintf(stderr, "Error: %s%c%s is not a directory\n", apath.c_str(), fsm->directory_separator(), path[i].c_str());
+			return 1;
+		}
+		dir = dir.dir_get(c[j].m_key);
+		apath += fsm->directory_separator() + path[i];
+	}
+
+	auto c = dir.contents();
+	unsigned int j;
+	for(j = 0; j != c.size(); j++)
+		if(c[j].m_name == path.back())
+			break;
+	if(j == c.size()) {
+		fprintf(stderr, "Error: file %s%c%s not found\n", apath.c_str(), fsm->directory_separator(), path.back().c_str());
+		return 1;
+	}
+	auto file = dir.file_get(c[j].m_key);
+	auto meta = file.metadata();
+
+	if(!meta.has(fs_meta_name::length)) {
+		fprintf(stderr, "Error: %s%c%s is not a readable file\n", apath.c_str(), fsm->directory_separator(), path.back().c_str());
+		return 1;
+	}
+
+	image_handler::fsave(dstpath, file.read_all());
+
+	bool has_rsrc = fsm->has_rsrc() && meta.has(fs_meta_name::rsrc_length);
+
+	if(has_rsrc)
+		image_handler::fsave_rsrc(image_handler::path_make_rsrc(dstpath), file.rsrc_read_all());
+
+	return 0;
+}
+
+
+static int flopread(int argc, char *argv[])
+{
+	if(argc!=7) {
+		fprintf(stderr, "Incorrect number of arguments.\n\n");
+		display_usage();
+		return 1;
+	}
+
+	image_handler ih;
+	ih.set_on_disk_path(argv[4]);
+
+	const floppy_format_info *source_format = find_floppy_source_format(argv[2], ih);
+	if(!source_format)
+		return 1;
+
+	auto fs = formats.find_filesystem_format_by_key(argv[3]);
+	if(!fs) {
+		fprintf(stderr, "Error: Filesystem '%s' unknown\n", argv[3]);
+		return 1;
+	}
+
+	if(!fs->m_manager || !fs->m_manager->can_read()) {
+		fprintf(stderr, "Error: Filesystem '%s' does not implement reading\n", argv[3]);
+		return 1;
+	}
+
+	if(ih.floppy_load(source_format)) {
+		fprintf(stderr, "Error: Loading as format '%s' failed\n", source_format->m_format->name());
+		return 1;
+	}
+
+	if(ih.floppy_mount_fs(fs)) {
+		fprintf(stderr, "Error: Parsing as filesystem '%s' failed\n", fs->m_manager->name());
+		return 1;
+	}
+
+	return generic_read(ih, argv[5], argv[6]);
+}
+
+static int hdread(int argc, char *argv[])
+{
+	if(argc!=6) {
+		fprintf(stderr, "Incorrect number of arguments.\n\n");
+		display_usage();
+		return 1;
+	}
+
+	image_handler ih;
+	ih.set_on_disk_path(argv[3]);
+
+	auto fs = formats.find_filesystem_format_by_key(argv[2]);
+	if(!fs) {
+		fprintf(stderr, "Error: Filesystem '%s' unknown\n", argv[2]);
+		return 1;
+	}
+
+	if(!fs->m_manager || !fs->m_manager->can_read()) {
+		fprintf(stderr, "Error: Filesystem '%s' does not implement reading\n", argv[2]);
+		return 1;
+	}
+
+	if(ih.hd_mount_fs(fs)) {
+		fprintf(stderr, "Error: Parsing as filesystem '%s' failed\n", fs->m_manager->name());
+		return 1;
+	}
+
+	return generic_read(ih, argv[4], argv[5]);
+}
+
+
+
+static int generic_write(image_handler &ih, const char *srcpath, const char *dstpath)
+{
+	auto [fsm, fs] = ih.get_fs();
+
+	std::vector<std::string> path = ih.path_split(dstpath);
+
+	auto dir = fs->root();
+	std::string apath;
+	for(unsigned int i = 0; i < path.size() - 1; i++) {
+		auto c = dir.contents();
+		unsigned int j;
+		for(j = 0; j != c.size(); j++)
+			if(c[j].m_name == path[i])
+				break;
+		if(j == c.size()) {
+			fprintf(stderr, "Error: directory %s%c%s not found\n", apath.c_str(), fsm->directory_separator(), path[i].c_str());
+			return 1;
+		}
+		if(c[j].m_type != fs_dir_entry_type::dir) {
+			fprintf(stderr, "Error: %s%c%s is not a directory\n", apath.c_str(), fsm->directory_separator(), path[i].c_str());
+			return 1;
+		}
+		dir = dir.dir_get(c[j].m_key);
+		apath += fsm->directory_separator() + path[i];
+	}
+
+
+	fs_meta_data meta;
+	meta.set(fs_meta_name::name, path.back());
+
+	auto file = dir.file_create(meta);
+	auto filedata = image_handler::fload(srcpath);
+	file.replace(filedata);
+
+	bool has_rsrc = fsm->has_rsrc();
+
+	if(has_rsrc) {
+		std::string rpath = image_handler::path_make_rsrc(dstpath);
+
+		if(image_handler::fexists(rpath)) {
+			filedata = image_handler::fload_rsrc(rpath);
+			if(!filedata.empty())
+				file.rsrc_replace(filedata);
+		}
+	}
+
+	return 0;
+}
+
+
+static int flopwrite(int argc, char *argv[])
+{
+	if(argc!=7) {
+		fprintf(stderr, "Incorrect number of arguments.\n\n");
+		display_usage();
+		return 1;
+	}
+
+	image_handler ih;
+	ih.set_on_disk_path(argv[4]);
+
+	const floppy_format_info *source_format = find_floppy_source_format(argv[2], ih);
+	if(!source_format)
+		return 1;
+
+	auto fs = formats.find_filesystem_format_by_key(argv[3]);
+	if(!fs) {
+		fprintf(stderr, "Error: Filesystem '%s' unknown\n", argv[3]);
+		return 1;
+	}
+
+	if(!fs->m_manager || !fs->m_manager->can_read()) {
+		fprintf(stderr, "Error: Filesystem '%s' does not implement reading\n", argv[3]);
+		return 1;
+	}
+
+	if(ih.floppy_load(source_format)) {
+		fprintf(stderr, "Error: Loading as format '%s' failed\n", source_format->m_format->name());
+		return 1;
+	}
+
+	if(ih.floppy_mount_fs(fs)) {
+		fprintf(stderr, "Error: Parsing as filesystem '%s' failed\n", fs->m_manager->name());
+		return 1;
+	}
+
+	int err = generic_write(ih, argv[5], argv[6]);
+	if(err)
+		return err;
+
+	ih.fs_to_floppy();
+	if(ih.floppy_save(source_format))
+		return 1;
+
+	return 0;
+}
+
+static int hdwrite(int argc, char *argv[])
+{
+	if(argc!=6) {
+		fprintf(stderr, "Incorrect number of arguments.\n\n");
+		display_usage();
+		return 1;
+	}
+
+
+	image_handler ih;
+	ih.set_on_disk_path(argv[3]);
+
+	auto fs = formats.find_filesystem_format_by_key(argv[2]);
+	if(!fs) {
+		fprintf(stderr, "Error: Filesystem '%s' unknown\n", argv[2]);
+		return 1;
+	}
+
+	if(!fs->m_manager || !fs->m_manager->can_read()) {
+		fprintf(stderr, "Error: Filesystem '%s' does not implement reading\n", argv[2]);
+		return 1;
+	}
+
+	if(ih.hd_mount_fs(fs)) {
+		fprintf(stderr, "Error: Parsing as filesystem '%s' failed\n", fs->m_manager->name());
+		return 1;
+	}
+
+	return generic_write(ih, argv[4], argv[5]);
+}
+
 int CLIB_DECL main(int argc, char *argv[])
 {
-	init_formats();
+	formats.init();
 
-	if (argc == 1) {
+	if(argc == 1) {
 		display_full_usage();
 		return 0;
 	}
 
-	if (!core_stricmp("identify", argv[1]))
-		return identify(argc, argv);
-	else if (!core_stricmp("convert", argv[1]))
-		return convert(argc, argv);
-	else {
-		fprintf(stderr, "Unknown command '%s'\n\n", argv[1]);
-		display_usage();
+	try {
+		if(!core_stricmp("identify", argv[1]))
+			return identify(argc, argv);
+		else if(!core_stricmp("flopconvert", argv[1]))
+			return flopconvert(argc, argv);
+		else if(!core_stricmp("flopcreate", argv[1]))
+			return flopcreate(argc, argv);
+		else if(!core_stricmp("flopdir", argv[1]))
+			return flopdir(argc, argv);
+		else if(!core_stricmp("flopread", argv[1]))
+			return flopread(argc, argv);
+		else if(!core_stricmp("flopwrite", argv[1]))
+			return flopwrite(argc, argv);
+		else if(!core_stricmp("hddir", argv[1]))
+			return hddir(argc, argv);
+		else if(!core_stricmp("hdread", argv[1]))
+			return hdread(argc, argv);
+		else if(!core_stricmp("hdwrite", argv[1]))
+			return hdwrite(argc, argv);
+		else {
+			fprintf(stderr, "Unknown command '%s'\n\n", argv[1]);
+			display_usage();
+			return 1;
+		}
+	} catch(const emu_fatalerror &err) {
+		fprintf(stderr, "Error: %s", err.what());
 		return 1;
 	}
 }

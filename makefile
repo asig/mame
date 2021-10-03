@@ -35,12 +35,12 @@ SUBTARGET = arcade
 # NO_OPENGL = 0
 # USE_DISPATCH_GL = 0
 # MODERN_WIN_API = 0
-# DIRECTINPUT = 7
 # USE_SDL = 1
 # SDL_INI_PATH = .;$HOME/.mame/;ini;
 # SDL2_MULTIAPI = 1
 # NO_USE_MIDI = 1
 # NO_USE_PORTAUDIO = 1
+# NO_USE_PULSEAUDIO = 1
 # USE_TAPTUN = 1
 # USE_PCAP = 1
 # USE_QTDEBUG = 1
@@ -98,6 +98,7 @@ SUBTARGET = arcade
 # OVERRIDE_CC = cc
 # OVERRIDE_CXX = c++
 # OVERRIDE_LD = ld
+# OVERRIDE_AR = ar
 
 # DEPRECATED = 0
 # LTO = 1
@@ -116,7 +117,7 @@ SUBTARGET = arcade
 # FORCE_VERSION_COMPILE = 1
 
 # MSBUILD = 1
-# IGNORE_BAD_LOCALISATION=1
+# IGNORE_BAD_LOCALISATION = 1
 # PRECOMPILE = 0
 
 # DEBUG_DIR=c:\test\location
@@ -246,6 +247,7 @@ endif
 # build scripts will be run from
 # scripts/target/$(TARGET)/$(SUBTARGET).lua
 #-------------------------------------------------
+
 ifdef PROJECT
 PARAMS += --PROJECT='$(PROJECT)'
 TARGET := $(PROJECT)
@@ -412,6 +414,7 @@ endif
 endif
 
 ifeq ($(findstring riscv64,$(UNAME)),riscv64)
+ARCHITECTURE :=
 ifndef FORCE_DRC_C_BACKEND
 	FORCE_DRC_C_BACKEND := 1
 endif
@@ -434,7 +437,6 @@ endif
 ifneq (,$(findstring s390x,$(UNAME)))
 BIGENDIAN := 1
 endif
-endif # BIGENDIAN
 # FreeBSD
 ifneq (,$(findstring powerpc,$(UNAME)))
 ifneq (,$(findstring powerpc64le,$(UNAME)))
@@ -443,6 +445,7 @@ else
 BIGENDIAN := 1
 endif
 endif
+endif # BIGENDIAN
 
 ifndef PYTHON_EXECUTABLE
 PYTHON := python
@@ -597,6 +600,12 @@ ifdef OVERRIDE_LD
 PARAMS += --LD='$(OVERRIDE_LD)'
 ifndef CROSS_BUILD
 LD := $(OVERRIDE_LD)
+endif
+endif
+ifdef OVERRIDE_AR
+PARAMS += --AR='$(OVERRIDE_AR)'
+ifndef CROSS_BUILD
+AR := $(OVERRIDE_AR)
 endif
 endif
 
@@ -770,16 +779,16 @@ ifdef NO_USE_PORTAUDIO
 PARAMS += --NO_USE_PORTAUDIO='$(NO_USE_PORTAUDIO)'
 endif
 
+ifdef NO_USE_PULSEAUDIO
+PARAMS += --NO_USE_PULSEAUDIO='$(NO_USE_PULSEAUDIO)'
+endif
+
 ifdef USE_QTDEBUG
 PARAMS += --USE_QTDEBUG='$(USE_QTDEBUG)'
 endif
 
 ifdef MODERN_WIN_API
 PARAMS += --MODERN_WIN_API='$(MODERN_WIN_API)'
-endif
-
-ifdef DIRECTINPUT
-PARAMS += --DIRECTINPUT='$(DIRECTINPUT)'
 endif
 
 ifdef USE_SDL
@@ -901,10 +910,10 @@ endif
 ifdef SANITIZE
 PARAMS += --SANITIZE='$(SANITIZE)'
 endif
+
 #-------------------------------------------------
 # All scripts
 #-------------------------------------------------
-
 
 SCRIPTS = scripts/genie.lua \
 	scripts/src/lib.lua \
@@ -1474,6 +1483,7 @@ xcode4-ios: generate
 #-------------------------------------------------
 # gmake-solaris
 #-------------------------------------------------
+
 ifndef CLANG_VERSION
 $(PROJECTDIR)/$(MAKETYPE)-solaris/Makefile: makefile $(SCRIPTS) $(GENIE)
 	$(SILENT) $(GENIE) $(PARAMS) $(TARGET_PARAMS) --gcc=solaris --gcc_version=$(GCC_VERSION) $(MAKETYPE)
@@ -1494,6 +1504,7 @@ solaris_x86: generate $(PROJECTDIR)/$(MAKETYPE)-solaris/Makefile
 #-------------------------------------------------
 # gmake-solaris-clang
 #-------------------------------------------------
+
 ifdef CLANG_VERSION
 $(PROJECTDIR)/$(MAKETYPE)-solaris/Makefile: makefile $(SCRIPTS) $(GENIE)
 	$(SILENT) $(GENIE) $(PARAMS) $(TARGET_PARAMS) --gcc=solaris --gcc_version=$(CLANG_VERSION) $(MAKETYPE)
@@ -1510,7 +1521,6 @@ solaris_clang: solaris_x86_clang
 solaris_x86_clang: generate $(PROJECTDIR)/$(MAKETYPE)-solaris/Makefile
 	$(SILENT) $(MAKE) -C $(PROJECTDIR)/$(MAKETYPE)-solaris config=$(CONFIG)32 precompile
 	$(SILENT) $(MAKE) -C $(PROJECTDIR)/$(MAKETYPE)-solaris config=$(CONFIG)32
-
 
 #-------------------------------------------------
 # gmake-freebsd
@@ -1681,6 +1691,7 @@ endif
 #-------------------------------------------------
 # cmake
 #-------------------------------------------------
+
 .PHONY: cmake
 cmake: generate
 	$(SILENT) $(GENIE) $(PARAMS) $(TARGET_PARAMS) cmake
@@ -1753,14 +1764,14 @@ endif
 
 ifeq (posix,$(SHELLTYPE))
 $(GENDIR)/version.cpp: makefile $(GENDIR)/git_desc | $(GEN_FOLDERS)
-	@echo '#define BARE_BUILD_VERSION "0.229"' > $@
+	@echo '#define BARE_BUILD_VERSION "0.236"' > $@
 	@echo 'extern const char bare_build_version[];' >> $@
 	@echo 'extern const char build_version[];' >> $@
 	@echo 'const char bare_build_version[] = BARE_BUILD_VERSION;' >> $@
 	@echo 'const char build_version[] = BARE_BUILD_VERSION " ($(NEW_GIT_VERSION))";' >> $@
 else
 $(GENDIR)/version.cpp: makefile $(GENDIR)/git_desc | $(GEN_FOLDERS)
-	@echo #define BARE_BUILD_VERSION "0.229" > $@
+	@echo #define BARE_BUILD_VERSION "0.236" > $@
 	@echo extern const char bare_build_version[]; >> $@
 	@echo extern const char build_version[]; >> $@
 	@echo const char bare_build_version[] = BARE_BUILD_VERSION; >> $@
@@ -1779,6 +1790,7 @@ ifdef IGNORE_BAD_LOCALISATION
 else
 	$(SILENT)$(PYTHON) scripts/build/msgfmt.py --output-file $@ $<
 endif
+
 #-------------------------------------------------
 # Regression tests
 #-------------------------------------------------
@@ -1799,35 +1811,24 @@ tests: $(REGTESTS)
 cleansrc:
 	@echo Cleaning up tabs/spaces/end of lines....
 ifeq (posix,$(SHELLTYPE))
-	$(SILENT) find src -name \*.c -exec ./srcclean {} \; >&2
-	$(SILENT) find src -name \*.cpp -exec ./srcclean {} \; >&2
-	$(SILENT) find src -name \*.h -exec ./srcclean {} \; >&2
-	$(SILENT) find src -name \*.hpp -exec ./srcclean {} \; >&2
-	$(SILENT) find src -name \*.hxx -exec ./srcclean {} \; >&2
-	$(SILENT) find src -name \*.ipp -exec ./srcclean {} \; >&2
-	$(SILENT) find src -name \*.lay -exec ./srcclean {} \; >&2
-	$(SILENT) find src -name \*.lst -exec ./srcclean {} \; >&2
-	$(SILENT) find src -name \*.mak -exec ./srcclean {} \; >&2
-	$(SILENT) find src -name \*.mm -exec ./srcclean {} \; >&2
-	$(SILENT) find hash -name \*.hsi -exec ./srcclean {} \; >&2
-	$(SILENT) find hash -name \*.xml -exec ./srcclean {} \; >&2
-	$(SILENT) find plugins -name \*.lua -exec ./srcclean {} \; >&2
-	$(SILENT) find scripts -name \*.lua -exec ./srcclean {} \; >&2
+	$(SILENT) find src \
+		-name \*.c -o -name \*.cpp -o \
+		-name \*.h -o -name \*.hpp -o -name \*.hxx -o \
+		-name \*.ipp -o \
+		-name \*.mm -o \
+		-name \*.lay -o \
+		-name \*.lst \
+		-exec ./srcclean {} \; >&2
+	$(SILENT) find hash    -name \*.hsi -o -name \*.xml  -exec ./srcclean {} \; >&2
+	$(SILENT) find bgfx    -name \*.json                 -exec ./srcclean {} \; >&2
+	$(SILENT) find plugins -name \*.lua -o -name \*.json -exec ./srcclean {} \; >&2
+	$(SILENT) find scripts -name \*.lua                  -exec ./srcclean {} \; >&2
 else
-	$(shell for /r src %%i in (*.c) do srcclean %%i >&2 )
-	$(shell for /r src %%i in (*.cpp) do srcclean %%i >&2 )
-	$(shell for /r src %%i in (*.h) do srcclean %%i >&2 )
-	$(shell for /r src %%i in (*.hpp) do srcclean %%i >&2 )
-	$(shell for /r src %%i in (*.hxx) do srcclean %%i >&2 )
-	$(shell for /r src %%i in (*.ipp) do srcclean %%i >&2 )
-	$(shell for /r src %%i in (*.lay) do srcclean %%i >&2 )
-	$(shell for /r src %%i in (*.lst) do srcclean %%i >&2 )
-	$(shell for /r src %%i in (*.mak) do srcclean %%i >&2 )
-	$(shell for /r src %%i in (*.mm) do srcclean %%i >&2 )
-	$(shell for /r hash %%i in (*.hsi) do srcclean %%i >&2 )
-	$(shell for /r hash %%i in (*.xml) do srcclean %%i >&2 )
-	$(shell for /r plugins %%i in (*.lua) do srcclean %%i >&2 )
-	$(shell for /r scripts %%i in (*.lua) do srcclean %%i >&2 )
+	$(shell for /r src     %%i in (*.c, *.cpp, *.h, *.hpp, *.hxx, *.ipp, *.mm, *.lay, *.lst) do srcclean %%i >&2 )
+	$(shell for /r hash    %%i in (*.hsi, *.xml)  do srcclean %%i >&2 )
+	$(shell for /r bgfx    %%i in (*.json)        do srcclean %%i >&2 )
+	$(shell for /r plugins %%i in (*.lua, *.json) do srcclean %%i >&2 )
+	$(shell for /r scripts %%i in (*.lua)         do srcclean %%i >&2 )
 endif
 
 #-------------------------------------------------

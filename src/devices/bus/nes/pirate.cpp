@@ -36,8 +36,8 @@
 
 DEFINE_DEVICE_TYPE(NES_AGCI_50282,  nes_agci_device,        "nes_agci50282",   "NES Cart AGCI 50282 PCB")
 DEFINE_DEVICE_TYPE(NES_DREAMTECH01, nes_dreamtech_device,   "nes_dreamtech",   "NES Cart Dreamtech01 PCB")
-DEFINE_DEVICE_TYPE(NES_FUKUTAKE,    nes_fukutake_device,    "nes_futuremedia", "NES Cart Fukutake Study Box PCB")
-DEFINE_DEVICE_TYPE(NES_FUTUREMEDIA, nes_futuremedia_device, "nes_fukutake",    "NES Cart FutureMedia PCB")
+DEFINE_DEVICE_TYPE(NES_FUKUTAKE,    nes_fukutake_device,    "nes_fukutake",    "NES Cart Fukutake Study Box PCB")
+DEFINE_DEVICE_TYPE(NES_FUTUREMEDIA, nes_futuremedia_device, "nes_futuremedia", "NES Cart FutureMedia PCB")
 DEFINE_DEVICE_TYPE(NES_MAGSERIES,   nes_magseries_device,   "nes_magseries",   "NES Cart Magical Series PCB")
 DEFINE_DEVICE_TYPE(NES_DAOU306,     nes_daou306_device,     "nes_daou306",     "NES Cart Daou 306 PCB")
 DEFINE_DEVICE_TYPE(NES_CC21,        nes_cc21_device,        "nes_cc21",        "NES Cart CC-21 PCB")
@@ -49,6 +49,7 @@ DEFINE_DEVICE_TYPE(NES_WHERO,       nes_whero_device,       "nes_whero",       "
 DEFINE_DEVICE_TYPE(NES_43272,       nes_43272_device,       "nes_43272",       "NES Cart UNL-43272 PCB")
 DEFINE_DEVICE_TYPE(NES_TF1201,      nes_tf1201_device,      "nes_tf1201",      "NES Cart UNL-TF1201 PCB")
 DEFINE_DEVICE_TYPE(NES_CITYFIGHT,   nes_cityfight_device,   "nes_cityfight",   "NES Cart City Fighter PCB")
+DEFINE_DEVICE_TYPE(NES_EH8813A,     nes_eh8813a_device,     "nes_eh8813a",     "NES Cart UNL-EH8813A PCB")
 
 
 nes_agci_device::nes_agci_device(const machine_config &mconfig, const char *tag, device_t *owner, uint32_t clock)
@@ -81,7 +82,7 @@ nes_daou306_device::nes_daou306_device(const machine_config &mconfig, const char
 {
 }
 
-nes_cc21_device::nes_cc21_device(const machine_config &mconfig, const char *tag, device_t *owner, uint32_t clock)
+nes_cc21_device::nes_cc21_device(const machine_config &mconfig, const char *tag, device_t *owner, u32 clock)
 	: nes_nrom_device(mconfig, NES_CC21, tag, owner, clock)
 {
 }
@@ -123,6 +124,11 @@ nes_tf1201_device::nes_tf1201_device(const machine_config &mconfig, const char *
 
 nes_cityfight_device::nes_cityfight_device(const machine_config &mconfig, const char *tag, device_t *owner, uint32_t clock)
 	: nes_nrom_device(mconfig, NES_CITYFIGHT, tag, owner, clock), m_prg_reg(0), m_prg_mode(0), m_irq_count(0), m_irq_enable(0), irq_timer(nullptr)
+{
+}
+
+nes_eh8813a_device::nes_eh8813a_device(const machine_config &mconfig, const char *tag, device_t *owner, uint32_t clock)
+	: nes_nrom_device(mconfig, NES_EH8813A, tag, owner, clock), m_dipsetting(0), m_latch(0)
 {
 }
 
@@ -221,18 +227,6 @@ void nes_daou306_device::pcb_reset()
 	set_nt_mirroring(PPU_MIRROR_LOW);
 
 	memset(m_reg, 0, sizeof(m_reg));
-}
-
-void nes_cc21_device::device_start()
-{
-	common_start();
-}
-
-void nes_cc21_device::pcb_reset()
-{
-	m_chr_source = m_vrom_chunks ? CHRROM : CHRRAM;
-	prg32(0);
-	chr8(0, m_chr_source);
 }
 
 void nes_xiaozy_device::device_start()
@@ -405,6 +399,25 @@ void nes_cityfight_device::pcb_reset()
 	m_irq_count = 0;
 }
 
+void nes_eh8813a_device::device_start()
+{
+	common_start();
+	save_item(NAME(m_dipsetting));
+	save_item(NAME(m_latch));
+}
+
+void nes_eh8813a_device::pcb_reset()
+{
+	m_chr_source = m_vrom_chunks ? CHRROM : CHRRAM;
+	prg16_89ab(0);
+	prg16_89ab(m_prg_chunks - 1);
+	chr8(0, m_chr_source);
+	set_nt_mirroring(PPU_MIRROR_VERT);
+
+	m_dipsetting = 0; // no means to adjust cart DIPs - unimplemented
+	m_latch = 0;
+}
+
 
 
 /*-------------------------------------------------
@@ -441,7 +454,9 @@ void nes_agci_device::write_h(offs_t offset, uint8_t data)
 
  Games: Korean Igo
 
- In MESS: Supported
+ NES 2.0: mapper 521
+
+ In MAME: Supported.
 
  -------------------------------------------------*/
 
@@ -462,8 +477,7 @@ void nes_dreamtech_device::write_l(offs_t offset, uint8_t data)
 
  iNES: mapper 186
 
- In MESS: Unsupported.
-
+ In MAME: Unsupported.
 
  -------------------------------------------------*/
 
@@ -570,7 +584,7 @@ void nes_futuremedia_device::write_h(offs_t offset, uint8_t data)
 			break;
 
 		case 0x5000:
-			set_nt_mirroring(BIT(data, 0) ?  PPU_MIRROR_HORZ : PPU_MIRROR_VERT);
+			set_nt_mirroring(BIT(data, 0) ? PPU_MIRROR_HORZ : PPU_MIRROR_VERT);
 			break;
 
 		case 0x4001:
@@ -691,16 +705,19 @@ void nes_daou306_device::write_h(offs_t offset, uint8_t data)
 
  Games: Mi Hun Che
 
- In MESS: Supported
+ iNES: mapper 27 (overlaps with incompatible World Hero)
+
+ In MAME: Supported.
 
  -------------------------------------------------*/
 
-void nes_cc21_device::write_h(offs_t offset, uint8_t data)
+void nes_cc21_device::write_h(offs_t offset, u8 data)
 {
 	LOG_MMC(("cc21 write_h, offset: %04x, data: %02x\n", offset, data));
 
-	set_nt_mirroring(BIT(offset, 1) ? PPU_MIRROR_HIGH : PPU_MIRROR_LOW);
-	chr8((offset & 0x01), CHRROM);
+	set_nt_mirroring(BIT(offset, 0) ? PPU_MIRROR_HIGH : PPU_MIRROR_LOW);
+	chr4_0(BIT(offset, 0), CHRROM);
+	chr4_4(BIT(offset, 0), CHRROM);
 }
 
 /*-------------------------------------------------
@@ -902,7 +919,7 @@ void nes_mk2_device::write_m(offs_t offset, uint8_t data)
 
 /*-------------------------------------------------
 
- UNL-WOLRDHERO board emulation
+ UNL-WORLDHERO board emulation
 
 
  iNES:
@@ -1068,7 +1085,7 @@ void nes_tf1201_device::write_h(offs_t offset, uint8_t data)
 			update_prg();
 			break;
 		case 0x1000:
-			set_nt_mirroring(BIT(data, 0) ?  PPU_MIRROR_HORZ : PPU_MIRROR_VERT);
+			set_nt_mirroring(BIT(data, 0) ? PPU_MIRROR_HORZ : PPU_MIRROR_VERT);
 			break;
 		case 0x1001:
 			m_swap = data & 0x03;
@@ -1215,6 +1232,53 @@ void nes_cityfight_device::write_h(offs_t offset, uint8_t data)
 			m_irq_enable = BIT(data, 1);
 			break;
 	}
+}
+
+/*-------------------------------------------------
+
+ UNL-EH8813A
+
+ Games: Dr. Mario II
+
+ Board is used in multicarts other than this? "BY ES"
+ in pause menu suggests this may be by Waixing. Title
+ menus change with DIP settings (currently unimplemented),
+ but it is unclear if PCB has switch or solder pads or...?
+
+ NES 2.0: mapper 519
+
+ In MAME: Preliminary supported.
+
+ -------------------------------------------------*/
+
+void nes_eh8813a_device::write_h(offs_t offset, uint8_t data)
+{
+	LOG_MMC(("unl_eh8813a write_h, offset: %04x, data: %02x\n", offset, data));
+
+	if (BIT(offset, 8))
+		return;
+
+	chr8(data & 0x7f, m_chr_source);
+	set_nt_mirroring(BIT(data, 7) ? PPU_MIRROR_HORZ : PPU_MIRROR_VERT);
+
+	uint8_t bank = offset & 0x3f;
+	if (BIT(offset, 7))
+	{
+		prg16_89ab(bank);
+		prg16_cdef(bank);
+	}
+	else
+		prg32(bank >> 1);
+
+	m_latch = BIT(offset, 6);
+}
+
+uint8_t nes_eh8813a_device::read_h(offs_t offset)
+{
+	LOG_MMC(("unl_eh8813a read_h, offset: %04x\n", offset));
+	if (m_latch)
+		offset = (offset & 0xfff0) | m_dipsetting;
+	return hi_access_rom(offset);
 }
 
 

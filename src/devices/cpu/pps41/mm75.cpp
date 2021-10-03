@@ -10,7 +10,7 @@
 #include "mm75.h"
 
 
-DEFINE_DEVICE_TYPE(MM75, mm75_device, "mm75", "Rockwell MM75")
+DEFINE_DEVICE_TYPE(MM75, mm75_device, "mm75", "Rockwell MM75") // stripped-down MM76 (no serial i/o, less pins)
 
 
 // constructor
@@ -23,5 +23,5 @@ mm75_device::mm75_device(const machine_config &mconfig, const char *tag, device_
 void mm75_device::device_start()
 {
 	mm76_device::device_start();
-	m_d_pins--;
+	set_d_pins(9);
 }

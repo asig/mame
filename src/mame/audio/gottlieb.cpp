@@ -13,7 +13,6 @@
 #include "emu.h"
 #include "audio/gottlieb.h"
 
-#include "sound/dac.h"
 #include "machine/input_merger.h"
 
 
@@ -171,6 +170,7 @@ gottlieb_sound_r1_device::gottlieb_sound_r1_device(
 		uint32_t clock)
 	: device_t(mconfig, type, tag, owner, clock)
 	, device_mixer_interface(mconfig, *this)
+	, m_dac(*this, "dac")
 	, m_riot(*this, "riot")
 {
 }
@@ -256,7 +256,7 @@ void gottlieb_sound_r1_device::device_add_mconfig(machine_config &config)
 	m_riot->irq_callback().set_inputline("audiocpu", M6502_IRQ_LINE);
 
 	// sound devices
-	DAC_8BIT_R2R(config, "dac", 0).add_route(ALL_OUTPUTS, *this, 0.25); // unknown DAC
+	DAC_8BIT_R2R(config, m_dac, 0).add_route(ALL_OUTPUTS, *this, 0.25); // unknown DAC
 }
 
 
@@ -306,10 +306,13 @@ void gottlieb_sound_r1_with_votrax_device::device_add_mconfig(machine_config &co
 {
 	gottlieb_sound_r1_device::device_add_mconfig(config);
 
+	m_dac->reset_routes();
+	m_dac->add_route(ALL_OUTPUTS, *this, 0.20);
+
 	// add the VOTRAX
 	VOTRAX_SC01(config, m_votrax, 720000);
 	m_votrax->ar_callback().set("nmi", FUNC(input_merger_device::in_w<1>));
-	m_votrax->add_route(ALL_OUTPUTS, *this, 0.5);
+	m_votrax->add_route(ALL_OUTPUTS, *this, 0.80);
 }
 
 
@@ -463,7 +466,8 @@ inline void gottlieb_sound_r2_device::nmi_state_update()
 
 uint8_t gottlieb_sound_r2_device::audio_data_r()
 {
-	m_audiocpu->set_input_line(M6502_IRQ_LINE, CLEAR_LINE);
+	if (!machine().side_effects_disabled())
+		m_audiocpu->set_input_line(M6502_IRQ_LINE, CLEAR_LINE);
 	return m_audiocpu_latch;
 }
 
@@ -475,8 +479,25 @@ uint8_t gottlieb_sound_r2_device::audio_data_r()
 
 uint8_t gottlieb_sound_r2_device::speech_data_r()
 {
-	m_speechcpu->set_input_line(M6502_IRQ_LINE, CLEAR_LINE);
+	if (!machine().side_effects_disabled())
+		m_speechcpu->set_input_line(M6502_IRQ_LINE, CLEAR_LINE);
 	return m_speechcpu_latch;
+}
+
+
+//-------------------------------------------------
+//  signal_audio_nmi_r - signal an NMI from the
+//  speech CPU to the audio CPU
+//-------------------------------------------------
+
+uint8_t gottlieb_sound_r2_device::signal_audio_nmi_r()
+{
+	if (!machine().side_effects_disabled())
+	{
+		m_audiocpu->set_input_line(INPUT_LINE_NMI, ASSERT_LINE);
+		m_audiocpu->set_input_line(INPUT_LINE_NMI, CLEAR_LINE);
+	}
+	return 0xff;
 }
 
 
@@ -620,7 +641,7 @@ void gottlieb_sound_r2_device::gottlieb_speech_r2_map(address_map &map)
 	map(0x8000, 0x8000).mirror(0x1fff).w(FUNC(gottlieb_sound_r2_device::psg_latch_w));
 	map(0xa000, 0xa000).mirror(0x07ff).w(FUNC(gottlieb_sound_r2_device::nmi_rate_w));
 	map(0xa800, 0xa800).mirror(0x07ff).r(FUNC(gottlieb_sound_r2_device::speech_data_r));
-	map(0xb000, 0xb000).mirror(0x07ff).w(FUNC(gottlieb_sound_r2_device::signal_audio_nmi_w));
+	map(0xb000, 0xb000).mirror(0x07ff).rw(FUNC(gottlieb_sound_r2_device::signal_audio_nmi_r), FUNC(gottlieb_sound_r2_device::signal_audio_nmi_w));
 	map(0xc000, 0xffff).rom();
 }
 
@@ -703,6 +724,9 @@ void gottlieb_sound_r2_device::device_start()
 	save_item(NAME(m_nmi_state));
 	save_item(NAME(m_speech_control));
 	save_item(NAME(m_last_command));
+	save_item(NAME(m_psg_latch));
+	save_item(NAME(m_psg_data_latch));
+	save_item(NAME(m_sp0250_latch));
 }
 
 

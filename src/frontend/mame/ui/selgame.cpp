@@ -247,7 +247,7 @@ menu_select_game::menu_select_game(mame_ui_manager &mui, render_container &conta
 
 	if (s_first_start)
 	{
-		//s_first_start = false; TODO: why wansn't it ever clearing the first start flag?
+		//s_first_start = false; TODO: why wasn't it ever clearing the first start flag?
 		reselect_last::set_driver(moptions.last_used_machine());
 		ui_globals::rpanel = std::min<int>(std::max<int>(moptions.last_right_panel(), RP_FIRST), RP_LAST);
 
@@ -256,17 +256,17 @@ menu_select_game::menu_select_game(mame_ui_manager &mui, render_container &conta
 		std::string fake_ini;
 		if (found == std::string::npos)
 		{
-			fake_ini = util::string_format("%s = 1\n", tmp);
+			fake_ini = util::string_format(u8"\uFEFF%s = 1\n", tmp);
 		}
 		else
 		{
 			std::string const sub_filter(tmp.substr(found + 1));
 			tmp.resize(found);
-			fake_ini = util::string_format("%s = %s\n", tmp, sub_filter);
+			fake_ini = util::string_format(u8"\uFEFF%s = %s\n", tmp, sub_filter);
 		}
 
 		emu_file file(ui().options().ui_path(), OPEN_FLAG_READ);
-		if (file.open_ram(fake_ini.c_str(), fake_ini.size()) == osd_file::error::NONE)
+		if (!file.open_ram(fake_ini.c_str(), fake_ini.size()))
 		{
 			m_persistent_data.filter_data().load_ini(file);
 			file.close();
@@ -1259,12 +1259,12 @@ render_texture *menu_select_game::get_icon_texture(int linenum, void *selectedre
 
 		bitmap_argb32 tmp;
 		emu_file snapfile(std::string(m_icon_paths), OPEN_FLAG_READ);
-		if (snapfile.open(std::string(driver->name) + ".ico") == osd_file::error::NONE)
+		if (!snapfile.open(std::string(driver->name) + ".ico"))
 		{
 			render_load_ico_highest_detail(snapfile, tmp);
 			snapfile.close();
 		}
-		if (!tmp.valid() && cloneof && (snapfile.open(std::string(driver->parent) + ".ico") == osd_file::error::NONE))
+		if (!tmp.valid() && cloneof && !snapfile.open(std::string(driver->parent) + ".ico"))
 		{
 			render_load_ico_highest_detail(snapfile, tmp);
 			snapfile.close();
@@ -1309,7 +1309,7 @@ bool menu_select_game::load_available_machines()
 {
 	// try to load available drivers from file
 	emu_file file(ui().options().ui_path(), OPEN_FLAG_READ);
-	if (file.open(std::string(emulator_info::get_configname()) + "_avail.ini") != osd_file::error::NONE)
+	if (file.open(std::string(emulator_info::get_configname()) + "_avail.ini"))
 		return false;
 
 	char rbuf[MAX_CHAR_INFO];
@@ -1361,7 +1361,7 @@ bool menu_select_game::load_available_machines()
 void menu_select_game::load_custom_filters()
 {
 	emu_file file(ui().options().ui_path(), OPEN_FLAG_READ);
-	if (file.open(util::string_format("custom_%s_filter.ini", emulator_info::get_configname())) == osd_file::error::NONE)
+	if (!file.open(util::string_format("custom_%s_filter.ini", emulator_info::get_configname())))
 	{
 		machine_filter::ptr flt(machine_filter::create(file, m_persistent_data.filter_data()));
 		if (flt)
@@ -1456,7 +1456,7 @@ void menu_select_game::filter_selected()
 					if (machine_filter::CUSTOM == new_type)
 					{
 						emu_file file(ui().options().ui_path(), OPEN_FLAG_WRITE | OPEN_FLAG_CREATE | OPEN_FLAG_CREATE_PATHS);
-						if (file.open(util::string_format("custom_%s_filter.ini", emulator_info::get_configname())) == osd_file::error::NONE)
+						if (!file.open(util::string_format("custom_%s_filter.ini", emulator_info::get_configname())))
 						{
 							filter.save_ini(file, 0);
 							file.close();

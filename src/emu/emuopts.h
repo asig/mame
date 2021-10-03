@@ -47,6 +47,7 @@
 #define OPTION_SNAPSHOT_DIRECTORY   "snapshot_directory"
 #define OPTION_DIFF_DIRECTORY       "diff_directory"
 #define OPTION_COMMENT_DIRECTORY    "comment_directory"
+#define OPTION_SHARE_DIRECTORY      "share_directory"
 
 // core state/playback options
 #define OPTION_STATE                "state"
@@ -119,6 +120,7 @@
 #define OPTION_SAMPLERATE           "samplerate"
 #define OPTION_SAMPLES              "samples"
 #define OPTION_VOLUME               "volume"
+#define OPTION_COMPRESSOR           "compressor"
 #define OPTION_SPEAKER_REPORT       "speaker_report"
 
 // core input options
@@ -331,6 +333,7 @@ public:
 	const char *snapshot_directory() const { return value(OPTION_SNAPSHOT_DIRECTORY); }
 	const char *diff_directory() const { return value(OPTION_DIFF_DIRECTORY); }
 	const char *comment_directory() const { return value(OPTION_COMMENT_DIRECTORY); }
+	const char *share_directory() const { return value(OPTION_SHARE_DIRECTORY); }
 
 	// core state/playback options
 	const char *state() const { return value(OPTION_STATE); }
@@ -403,6 +406,7 @@ public:
 	int sample_rate() const { return int_value(OPTION_SAMPLERATE); }
 	bool samples() const { return bool_value(OPTION_SAMPLES); }
 	int volume() const { return int_value(OPTION_VOLUME); }
+	bool compressor() const { return bool_value(OPTION_COMPRESSOR); }
 	int speaker_report() const { return int_value(OPTION_SPEAKER_REPORT); }
 
 	// core input options

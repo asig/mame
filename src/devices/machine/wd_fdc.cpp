@@ -23,7 +23,7 @@
 #define LOG_LIVE    (1U << 13) // Live states
 #define LOG_FUNC    (1U << 14) // Function calls
 
-#define VERBOSE (LOG_GENERAL)
+#define VERBOSE (LOG_DESC)
 //#define LOG_OUTPUT_STREAM std::cout
 
 #include "logmacro.h"
@@ -1075,7 +1075,8 @@ void wd_fdc_device_base::do_generic()
 void wd_fdc_device_base::do_cmd_w()
 {
 	// it is actually possible to send another command even while in busy state.
-	// currently we simply accept any commands, but chip logic probably more complex (presumable it is possible change command of the same type only).
+	// currently we simply accept any commands, but chip logic is probably more complex
+	// (presumably it is only possible change to a command of the same type).
 #if 0
 	// Only available command when busy is interrupt
 	if(main_state != IDLE && (cmd_buffer & 0xf0) != 0xd0) {
@@ -1146,6 +1147,14 @@ void wd_fdc_device_base::cmd_w(uint8_t val)
 
 	LOGCOMP("Initiating command %02x\n", val);
 
+	// INTRQ flip-flop logic from die schematics:
+	//  Reset conditions:
+	//   - Command register write
+	//   - Status register read
+	//  Setting conditions:
+	//   - While command register contain Dx (interrupt cmd) and one or more I0-I3 conditions met
+	//   - Command-specific based on PLL microprogram
+	// No other logic present in real chips, descriptions of "Forced interrupt" (Dx) command in datasheets are wrong.
 	if (intrq) {
 		intrq = false;
 		if(!intrq_cb.isnull())

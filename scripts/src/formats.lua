@@ -25,7 +25,7 @@ project "formats"
 		MAME_DIR .. "src/lib",
 		MAME_DIR .. "src/lib/util",
 		MAME_DIR .. "3rdparty",
-	    GEN_DIR,
+		GEN_DIR,
 		ext_includedir("zlib"),
 	}
 
@@ -33,8 +33,6 @@ project "formats"
 		MAME_DIR .. "src/lib/formats/all.cpp",
 		MAME_DIR .. "src/lib/formats/all.h",
 
-		MAME_DIR .. "src/lib/formats/ioprocs.cpp",
-		MAME_DIR .. "src/lib/formats/ioprocs.h",
 		MAME_DIR .. "src/lib/formats/imageutl.cpp",
 		MAME_DIR .. "src/lib/formats/imageutl.h",
 
@@ -45,11 +43,15 @@ project "formats"
 
 		MAME_DIR .. "src/lib/formats/flopimg.cpp",
 		MAME_DIR .. "src/lib/formats/flopimg.h",
+		MAME_DIR .. "src/lib/formats/flopimg_legacy.cpp",
+		MAME_DIR .. "src/lib/formats/flopimg_legacy.h",
 
 		MAME_DIR .. "src/lib/formats/cqm_dsk.cpp",
 		MAME_DIR .. "src/lib/formats/cqm_dsk.h",
 		MAME_DIR .. "src/lib/formats/dsk_dsk.cpp",
 		MAME_DIR .. "src/lib/formats/dsk_dsk.h",
+		MAME_DIR .. "src/lib/formats/ipf_dsk.cpp",
+		MAME_DIR .. "src/lib/formats/ipf_dsk.h",
 		MAME_DIR .. "src/lib/formats/td0_dsk.cpp",
 		MAME_DIR .. "src/lib/formats/td0_dsk.h",
 		MAME_DIR .. "src/lib/formats/hxchfe_dsk.cpp",
@@ -69,6 +71,15 @@ project "formats"
 		MAME_DIR .. "src/lib/formats/dfi_dsk.cpp",
 		MAME_DIR .. "src/lib/formats/dfi_dsk.h",
 		MAME_DIR .. "src/lib/formats/fdi_dsk.cpp",
+		MAME_DIR .. "src/lib/formats/rpk.cpp",
+		MAME_DIR .. "src/lib/formats/rpk.h",
+
+		MAME_DIR .. "src/lib/formats/fsmgr.h",
+		MAME_DIR .. "src/lib/formats/fsmgr.cpp",
+		MAME_DIR .. "src/lib/formats/fsblk_vec.h",
+		MAME_DIR .. "src/lib/formats/fsblk_vec.cpp",
+		MAME_DIR .. "src/lib/formats/fs_unformatted.h",
+		MAME_DIR .. "src/lib/formats/fs_unformatted.cpp",
 	}
 
 --------------------------------------------------
@@ -1490,18 +1501,6 @@ end
 
 --------------------------------------------------
 --
---@src/lib/formats/ipf_dsk.h,FORMATS["IPF_DSK"] = true
---------------------------------------------------
-
-if opt_tool(FORMATS, "IPF_DSK") then
-	files {
-		MAME_DIR.. "src/lib/formats/ipf_dsk.cpp",
-		MAME_DIR.. "src/lib/formats/ipf_dsk.h",
-	}
-end
-
---------------------------------------------------
---
 --@src/lib/formats/phc25_cas.h,FORMATS["PHC25_CAS"] = true
 --------------------------------------------------
 
@@ -1994,6 +1993,30 @@ end
 
 --------------------------------------------------
 --
+--@src/lib/formats/vt_dsk.h,FORMATS["VT_DSK"] = true
+--------------------------------------------------
+
+if opt_tool(FORMATS, "VT_DSK") then
+	files {
+		MAME_DIR.. "src/lib/formats/vt_dsk.cpp",
+		MAME_DIR.. "src/lib/formats/vt_dsk.h",
+	}
+end
+
+--------------------------------------------------
+--
+--@src/lib/formats/fs_vtech.h,FORMATS["FS_VTECH"] = true
+--------------------------------------------------
+
+if opt_tool(FORMATS, "FS_VTECH") then
+	files {
+		MAME_DIR.. "src/lib/formats/fs_vtech.cpp",
+		MAME_DIR.. "src/lib/formats/fs_vtech.h",
+	}
+end
+
+--------------------------------------------------
+--
 --@src/lib/formats/wd177x_dsk.h,FORMATS["WD177X_DSK"] = true
 --------------------------------------------------
 
@@ -2049,6 +2072,30 @@ if opt_tool(FORMATS, "ZX81_P") then
 	files {
 		MAME_DIR.. "src/lib/formats/zx81_p.cpp",
 		MAME_DIR.. "src/lib/formats/zx81_p.h",
+	}
+end
+
+--------------------------------------------------
+--
+--@src/lib/formats/fs_prodos.h,FORMATS["FS_PRODOS"] = true
+--------------------------------------------------
+
+if opt_tool(FORMATS, "FS_PRODOS") then
+	files {
+		MAME_DIR.. "src/lib/formats/fs_prodos.cpp",
+		MAME_DIR.. "src/lib/formats/fs_prodos.h",
+	}
+end
+
+--------------------------------------------------
+--
+--@src/lib/formats/fs_oric_jasmin.h,FORMATS["FS_ORIC_JASMIN"] = true
+--------------------------------------------------
+
+if opt_tool(FORMATS, "FS_ORIC_JASMIN") then
+	files {
+		MAME_DIR.. "src/lib/formats/fs_oric_jasmin.cpp",
+		MAME_DIR.. "src/lib/formats/fs_oric_jasmin.h",
 	}
 end
 
