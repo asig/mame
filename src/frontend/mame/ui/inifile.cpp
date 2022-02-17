@@ -13,9 +13,13 @@
 
 #include "ui/moptions.h"
 
-#include "corestr.h"
+#include "language.h"
+
 #include "drivenum.h"
+#include "fileio.h"
 #include "softlist_dev.h"
+
+#include "corestr.h"
 
 #include <algorithm>
 #include <cstring>
@@ -94,7 +98,7 @@ void inifile_manager::load_ini_category(size_t file, size_t category, std::unord
 //  initialize category
 //-------------------------------------------------
 
-void inifile_manager::init_category(std::string &&filename, emu_file &file)
+void inifile_manager::init_category(std::string &&filename, util::core_file &file)
 {
 	categoryindex index;
 	char rbuf[MAX_CHAR_INFO];
@@ -107,7 +111,11 @@ void inifile_manager::init_category(std::string &&filename, emu_file &file)
 			auto const tail(std::find_if(head, std::end(rbuf), [] (char ch) { return !ch || (']' == ch); }));
 			name.assign(head, tail);
 			if ("FOLDER_SETTINGS" != name)
-				index.emplace_back(std::move(name), file.tell());
+			{
+				u64 result;
+				if (!file.tell(result))
+					index.emplace_back(std::move(name), result);
+			}
 		}
 	}
 	std::stable_sort(index.begin(), index.end(), [] (auto const &x, auto const &y) { return 0 > core_stricmp(x.first.c_str(), y.first.c_str()); });
@@ -219,49 +227,59 @@ favorite_manager::favorite_manager(ui_options &options)
 	if (!file.open(FAVORITE_FILENAME))
 	{
 		char readbuf[1024];
-		file.gets(readbuf, 1024);
+		file.gets(readbuf, std::size(readbuf));
 
 		while (readbuf[0] == '[')
-			file.gets(readbuf, 1024);
+			file.gets(readbuf, std::size(readbuf));
 
-		while (file.gets(readbuf, 1024))
+		while (file.gets(readbuf, std::size(readbuf)))
 		{
 			ui_software_info tmpmatches;
 			tmpmatches.shortname = chartrimcarriage(readbuf);
-			file.gets(readbuf, 1024);
+			file.gets(readbuf, std::size(readbuf));
 			tmpmatches.longname = chartrimcarriage(readbuf);
-			file.gets(readbuf, 1024);
+			file.gets(readbuf, std::size(readbuf));
 			tmpmatches.parentname = chartrimcarriage(readbuf);
-			file.gets(readbuf, 1024);
+			file.gets(readbuf, std::size(readbuf));
 			tmpmatches.year = chartrimcarriage(readbuf);
-			file.gets(readbuf, 1024);
+			file.gets(readbuf, std::size(readbuf));
 			tmpmatches.publisher = chartrimcarriage(readbuf);
-			file.gets(readbuf, 1024);
+			file.gets(readbuf, std::size(readbuf));
 			tmpmatches.supported = software_support(atoi(readbuf));
-			file.gets(readbuf, 1024);
+			file.gets(readbuf, std::size(readbuf));
 			tmpmatches.part = chartrimcarriage(readbuf);
-			file.gets(readbuf, 1024);
+			file.gets(readbuf, std::size(readbuf));
 			chartrimcarriage(readbuf);
 			auto dx = driver_list::find(readbuf);
 			if (0 > dx)
 				continue;
 			tmpmatches.driver = &driver_list::driver(dx);
-			file.gets(readbuf, 1024);
+			file.gets(readbuf, std::size(readbuf));
 			tmpmatches.listname = chartrimcarriage(readbuf);
-			file.gets(readbuf, 1024);
+			file.gets(readbuf, std::size(readbuf));
 			tmpmatches.interface = chartrimcarriage(readbuf);
-			file.gets(readbuf, 1024);
+			file.gets(readbuf, std::size(readbuf));
 			tmpmatches.instance = chartrimcarriage(readbuf);
-			file.gets(readbuf, 1024);
+			file.gets(readbuf, std::size(readbuf));
 			tmpmatches.startempty = atoi(readbuf);
-			file.gets(readbuf, 1024);
+			file.gets(readbuf, std::size(readbuf));
 			tmpmatches.parentlongname = chartrimcarriage(readbuf);
-			file.gets(readbuf, 1024);
-			tmpmatches.usage = chartrimcarriage(readbuf);
-			file.gets(readbuf, 1024);
+			file.gets(readbuf, std::size(readbuf));
+			//tmpmatches.usage = chartrimcarriage(readbuf); TODO: recover multi-line info
+			file.gets(readbuf, std::size(readbuf));
 			tmpmatches.devicetype = chartrimcarriage(readbuf);
-			file.gets(readbuf, 1024);
+			file.gets(readbuf, std::size(readbuf));
 			tmpmatches.available = atoi(readbuf);
+
+			// need to populate this, it isn't displayed anywhere else
+			tmpmatches.infotext.append(tmpmatches.longname);
+			tmpmatches.infotext.append(1, '\n');
+			tmpmatches.infotext.append(_("swlist-info", "Software list/item"));
+			tmpmatches.infotext.append(1, '\n');
+			tmpmatches.infotext.append(tmpmatches.listname);
+			tmpmatches.infotext.append(1, ':');
+			tmpmatches.infotext.append(tmpmatches.shortname);
+
 			m_favorites.emplace(std::move(tmpmatches));
 		}
 		file.close();
@@ -292,25 +310,18 @@ void favorite_manager::add_favorite(running_machine &machine)
 				if (imagedev)
 				{
 					// creating this is fairly expensive, but we'll assume this usually succeeds
-					ui_software_info info;
 					software_part const *const part(imagedev->part_entry());
 					assert(software);
 					assert(part);
+					ui_software_info info(
+							*software,
+							*part,
+							driver,
+							imagedev->software_list_name(),
+							imagedev->instance_name(),
+							strensure(imagedev->image_type_name()));
 
-					// start with simple stuff that can just be copied
-					info.shortname = software->shortname();
-					info.longname = software->longname();
-					info.parentname = software->parentname();
-					info.year = software->year();
-					info.publisher = software->publisher();
-					info.supported = software->supported();
-					info.part = part->name();
-					info.driver = &driver;
-					info.listname = imagedev->software_list_name();
-					info.interface = part->interface();
-					info.instance = imagedev->instance_name();
-					info.startempty = 0;
-					info.devicetype = strensure(imagedev->image_type_name());
+					// assume it's available if it's mounted
 					info.available = true;
 
 					// look up the parent in the list if necessary (eugh, O(n) walk)
@@ -325,16 +336,6 @@ void favorite_manager::add_favorite(running_machine &machine)
 								info.parentlongname = other.longname();
 								break;
 							}
-						}
-					}
-
-					// fill in with the first usage entry we find
-					for (feature_list_item const &feature : software->other_info())
-					{
-						if (feature.name() == "usage")
-						{
-							info.usage = feature.value();
-							break;
 						}
 					}
 
@@ -567,7 +568,7 @@ void favorite_manager::save_favorites()
 				buf << info.instance << '\n';
 				util::stream_format(buf, "%d\n", info.startempty);
 				buf << info.parentlongname << '\n';
-				buf << info.usage << '\n';
+				buf << '\n'; //buf << info.usage << '\n'; TODO: store multi-line info in a recoverable format
 				buf << info.devicetype << '\n';
 				util::stream_format(buf, "%d\n", info.available);
 

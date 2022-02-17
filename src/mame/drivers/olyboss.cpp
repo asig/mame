@@ -84,7 +84,7 @@ public:
 protected:
 	virtual void machine_start() override;
 	virtual void machine_reset() override;
-	virtual void device_timer(emu_timer &timer, device_timer_id id, int param, void *ptr) override;
+	virtual void device_timer(emu_timer &timer, device_timer_id id, int param) override;
 
 private:
 	u8 keyboard_read();
@@ -149,7 +149,7 @@ void olyboss_state::machine_reset()
 	m_timer->adjust(attotime::from_hz(30), 0, attotime::from_hz(30)); // unknown timer freq, possibly com2651 BRCLK
 }
 
-void olyboss_state::device_timer(emu_timer &timer, device_timer_id id, int param, void *ptr)
+void olyboss_state::device_timer(emu_timer &timer, device_timer_id id, int param)
 {
 	m_timstate = !m_timstate;
 	if(m_pic)
@@ -525,6 +525,7 @@ void olyboss_state::bossb85(machine_config &config)
 	UPD3301(config, m_crtc, XTAL(14'318'181));
 	m_crtc->set_character_width(8);
 	m_crtc->set_display_callback(FUNC(olyboss_state::olyboss_display_pixels));
+	m_crtc->set_attribute_fetch_callback(m_crtc, FUNC(upd3301_device::default_attr_fetch));
 	m_crtc->drq_wr_callback().set(m_dma, FUNC(i8257_device::dreq2_w));
 	m_crtc->int_wr_callback().set_inputline("maincpu", I8085_RST75_LINE);
 	m_crtc->set_screen(SCREEN_TAG);

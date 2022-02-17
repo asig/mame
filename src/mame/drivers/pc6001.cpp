@@ -143,6 +143,8 @@ irq vector 0x26:                                                                
 #include "emu.h"
 #include "includes/pc6001.h"
 
+#include "softlist_dev.h"
+
 #define LOG_IRQ    (1U << 1)
 
 //#define VERBOSE (LOG_IRQ)
@@ -177,7 +179,7 @@ inline void pc6001_state::ppi_control_hack_w(uint8_t data)
 	else
 		m_port_c_8255 &= ~(1<<((data>>1)&0x07));
 
-	#ifdef UNUSED_FUNCTION
+#if 0
 	// this switch-case is overwritten below anyway!?
 	switch(data)
 	{
@@ -187,7 +189,7 @@ inline void pc6001_state::ppi_control_hack_w(uint8_t data)
 		case 0x0d: m_port_c_8255 &= 0xf7; break;
 		default: break;
 	}
-	#endif
+#endif
 
 	m_port_c_8255 |= 0xa8;
 }
@@ -802,7 +804,8 @@ void pc6601_state::fdc_mon_w(u8 data)
 void pc6601_state::pc6601_fdc_io(address_map &map)
 {
 	map(0xb1, 0xb1).mirror(0x4).w(FUNC(pc6601_state::fdc_sel_w));
-//  0xb0, 0xb3
+	map(0xb2, 0xb2).lr8([this]() { return m_fdc->get_irq() ? 1 : 0; }, "FDCINT");
+	//map(0xb3, 0xb3).w  b3 is written when b2 is read
 	map(0xd0, 0xdf).view(m_fdc_intf_view);
 	m_fdc_intf_view[0](0xd4, 0xd4).r(FUNC(pc6601_state::fdc_mon_r));
 	m_fdc_intf_view[0](0xd6, 0xd6).w(FUNC(pc6601_state::fdc_mon_w));
@@ -941,7 +944,7 @@ void pc6001mk2sr_state::necsr_ppi8255_w(offs_t offset, u8 data)
 	{
 		ppi_control_hack_w(data);
 
-		#ifdef UNUSED_FUNCTION
+#if 0
 		{
 			//printf("%02x\n",data);
 
@@ -950,7 +953,7 @@ void pc6001mk2sr_state::necsr_ppi8255_w(offs_t offset, u8 data)
 			if ((data & 0x0f) == 0x04)
 				m_bank1->set_base(m_region_gfx1->base());
 		}
-		#endif
+#endif
 	}
 
 	m_ppi->write(offset,data);

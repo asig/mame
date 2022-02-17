@@ -25,6 +25,12 @@ project "utils"
 		ext_includedir("utf8proc"),
 	}
 
+if not _OPTIONS["with-system-utf8proc"] then
+	defines {
+		"UTF8PROC_STATIC",
+	}
+end
+
 	files {
 		MAME_DIR .. "src/lib/util/abi.h",
 		MAME_DIR .. "src/lib/util/avhuff.cpp",
@@ -83,6 +89,8 @@ project "utils"
 		MAME_DIR .. "src/lib/util/ioprocsvec.h",
 		MAME_DIR .. "src/lib/util/jedparse.cpp",
 		MAME_DIR .. "src/lib/util/jedparse.h",
+		MAME_DIR .. "src/lib/util/language.cpp",
+		MAME_DIR .. "src/lib/util/language.h",
 		MAME_DIR .. "src/lib/util/lrucache.h",
 		MAME_DIR .. "src/lib/util/md5.cpp",
 		MAME_DIR .. "src/lib/util/md5.h",
@@ -90,6 +98,7 @@ project "utils"
 		MAME_DIR .. "src/lib/util/msdib.h",
 		MAME_DIR .. "src/lib/util/nanosvg.cpp",
 		MAME_DIR .. "src/lib/util/nanosvg.h",
+		MAME_DIR .. "src/lib/util/notifier.h",
 		MAME_DIR .. "src/lib/util/opresolv.cpp",
 		MAME_DIR .. "src/lib/util/opresolv.h",
 		MAME_DIR .. "src/lib/util/options.cpp",

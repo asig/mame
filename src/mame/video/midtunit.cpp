@@ -18,6 +18,7 @@
 #include "debugger.h"
 
 #include "emuopts.h" // Used by PNG logging
+#include "fileio.h" // Used by PNG logging
 #include "png.h" // Used by PNG logging
 
 #include <rapidjson/prettywriter.h> // Used by JSON logging
@@ -440,7 +441,7 @@ void midtunit_video_device::dma_draw()
 	while (iy < height)
 	{
 		int startskip = m_dma_state.startskip << 8;
-		int endskip = m_dma_state.endskip << 8;
+		[[maybe_unused]] int endskip = m_dma_state.endskip << 8;
 		int width = m_dma_state.width << 8;
 		int sx = m_dma_state.xpos;
 		int ix = 0;
@@ -616,7 +617,7 @@ DEFINE_TEMPLATED_DMA_DRAW_GROUP(false, false);
  *
  *************************************/
 
-void midtunit_video_device::device_timer(emu_timer &timer, device_timer_id id, int param, void *ptr)
+void midtunit_video_device::device_timer(emu_timer &timer, device_timer_id id, int param)
 {
 	switch (id)
 	{
@@ -922,7 +923,7 @@ void midtunit_video_device::log_bitmap(int command, int bpp, bool Skip)
 	for (int y = 0; y < m_dma_state.height; y++)
 	{
 		int startskip = m_dma_state.startskip;
-		int endskip = m_dma_state.endskip;
+		[[maybe_unused]] int endskip = m_dma_state.endskip;
 		int width = m_dma_state.width;
 		int ix = 0;
 		int tx;
