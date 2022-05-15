@@ -33,10 +33,6 @@
      point should be just about 100% accurate, though I cannot tell for
      certain as yet.
 
-     A queue interface is also available for additional speed.  However,
-     the implementation is not yet 100% (DPCM sounds are inaccurate),
-     so it is disabled by default.
-
  *****************************************************************************
 
    BUGFIXES:
@@ -49,25 +45,6 @@
 #include "emu.h"
 #include "nes_apu.h"
 
-// INTERNAL FUNCTIONS
-
-// INITIALIZE WAVE TIMES RELATIVE TO SAMPLE RATE
-static void create_vbltimes(u32 *table, const u8 *vbl, unsigned int rate)
-{
-	for (int i = 0; i < 0x20; i++)
-		table[i] = vbl[i] * rate;
-}
-
-// INITIALIZE SAMPLE TIMES IN TERMS OF VSYNCS
-void nesapu_device::create_syncs(unsigned long sps)
-{
-	for (int i = 0; i < SYNCS_MAX1; i++)
-		m_sync_times1[i] = sps * (i + 1);
-
-	for (int i = 0; i < SYNCS_MAX2; i++)
-		m_sync_times2[i] = (sps * i) >> 2;
-}
-
 DEFINE_DEVICE_TYPE(NES_APU, nesapu_device, "nesapu", "N2A03 APU")
 
 nesapu_device::nesapu_device(const machine_config &mconfig, device_type type, const char *tag, device_t *owner, u32 clock)
@@ -75,25 +52,10 @@ nesapu_device::nesapu_device(const machine_config &mconfig, device_type type, co
 	, device_sound_interface(mconfig, *this)
 	, m_is_pal(0)
 	, m_samps_per_sync(0)
-	, m_buffer_size(0)
 	, m_stream(nullptr)
 	, m_irq_handler(*this)
 	, m_mem_read_cb(*this)
 {
-	for (auto & elem : m_vbl_times)
-	{
-		elem = 0;
-	}
-
-	for (auto & elem : m_sync_times1)
-	{
-		elem = 0;
-	}
-
-	for (auto & elem : m_sync_times2)
-	{
-		elem = 0;
-	}
 }
 
 nesapu_device::nesapu_device(const machine_config& mconfig, const char* tag, device_t* owner, u32 clock)
@@ -114,16 +76,19 @@ void nesapu_device::device_clock_changed()
 
 void nesapu_device::calculate_rates()
 {
-	int rate = clock() / 4;
-
 	m_samps_per_sync = 89490 / 12; // Is there a different PAL value?
-	m_buffer_size = m_samps_per_sync;
 
-	create_vbltimes(m_vbl_times,vbl_length,m_samps_per_sync);
-	create_syncs(m_samps_per_sync);
+	// initialize sample times in terms of vsyncs
+	for (int i = 0; i < SYNCS_MAX1; i++)
+	{
+		m_vbl_times[i] = vbl_length[i] * m_samps_per_sync / 2;
+		m_sync_times1[i] = m_samps_per_sync * (i + 1);
+	}
 
-	/* Adjust buffer size if 16 bits */
-	m_buffer_size+=m_samps_per_sync;
+	for (int i = 0; i < SYNCS_MAX2; i++)
+		m_sync_times2[i] = (m_samps_per_sync * i) >> 2;
+
+	int rate = clock() / 4;
 
 	if (m_stream != nullptr)
 		m_stream->set_sample_rate(rate);
@@ -147,7 +112,7 @@ void nesapu_device::device_start()
 	/*
 	pulse channel output:
 
-		     95.88
+	         95.88
 	-----------------------
 	      8128
 	----------------- + 100
@@ -163,7 +128,7 @@ void nesapu_device::device_start()
 	/*
 	triangle, noise, DMC channel output:
 
-		         159.79
+	             159.79
 	-------------------------------
 	            1
 	------------------------- + 100
@@ -202,6 +167,7 @@ void nesapu_device::device_start()
 
 	save_item(NAME(m_APU.tri.regs));
 	save_item(NAME(m_APU.tri.linear_length));
+	save_item(NAME(m_APU.tri.linear_reload));
 	save_item(NAME(m_APU.tri.vbl_length));
 	save_item(NAME(m_APU.tri.write_latency));
 	save_item(NAME(m_APU.tri.phaseacc));
@@ -209,7 +175,6 @@ void nesapu_device::device_start()
 	save_item(NAME(m_APU.tri.counter_started));
 	save_item(NAME(m_APU.tri.enabled));
 	save_item(NAME(m_APU.tri.output));
-	save_item(NAME(m_APU.tri.output_next));
 
 	save_item(NAME(m_APU.noi.regs));
 	save_item(NAME(m_APU.noi.seed));
@@ -231,15 +196,6 @@ void nesapu_device::device_start()
 	save_item(NAME(m_APU.dpcm.vol));
 	save_item(NAME(m_APU.dpcm.output));
 
-	save_item(NAME(m_APU.regs));
-
-	#ifdef USE_QUEUE
-	save_item(NAME(m_APU.queue));
-	save_item(NAME(m_APU.head));
-	save_item(NAME(m_APU.tail));
-	#else
-	save_item(NAME(m_APU.buf_pos));
-	#endif
 	save_item(NAME(m_APU.step_mode));
 }
 
@@ -328,19 +284,17 @@ void nesapu_device::apu_square(apu_t::square_t *chan)
 /* OUTPUT TRIANGLE WAVE SAMPLE (VALUES FROM 0 to +15) */
 void nesapu_device::apu_triangle(apu_t::triangle_t *chan)
 {
-	int freq;
 	/* reg0: 7=holdnote, 6-0=linear length counter
 	** reg2: low 8 bits of frequency
 	** reg3: 7-3=length counter, 2-0=high 3 bits of frequency
 	*/
 
 	if (!chan->enabled)
-	{
-		chan->output = 0;
 		return;
-	}
 
-	if (!chan->counter_started && !(chan->regs[0] & 0x80))
+	bool not_held = !BIT(chan->regs[0], 7);
+
+	if (!chan->counter_started && not_held)
 	{
 		if (chan->write_latency)
 			chan->write_latency--;
@@ -350,45 +304,37 @@ void nesapu_device::apu_triangle(apu_t::triangle_t *chan)
 
 	if (chan->counter_started)
 	{
-		if (chan->linear_length > 0)
+		if (chan->linear_reload)
+			chan->linear_length = m_sync_times2[chan->regs[0] & 0x7f];
+		else if (chan->linear_length > 0)
 			chan->linear_length--;
-		if (chan->vbl_length && !(chan->regs[0] & 0x80))
-				chan->vbl_length--;
 
-		if (!chan->vbl_length)
-		{
-			chan->output = 0;
-			return;
-		}
+		if (not_held)
+			chan->linear_reload = false;
+
+		if (chan->vbl_length && not_held)
+			chan->vbl_length--;
 	}
 
-	if (!chan->linear_length)
-	{
-		chan->output = 0;
+	if (!(chan->linear_length && chan->vbl_length))
 		return;
-	}
 
-	freq = (((chan->regs[3] & 7) << 8) + chan->regs[2]) + 1;
+	int freq = ((chan->regs[3] & 7) << 8) + chan->regs[2] + 1;
 
-	if (freq < 4) /* inaudible */
-	{
-		chan->output = 0;
+// FIXME: This halts ultrasonic frequencies. On hardware there should be some popping noise? Crash Man's stage in Mega Man 2 is an example. This can probably be removed if hardware filters are implemented (they vary by machine, NES, FC, VS, etc).
+	if (freq < 2)
 		return;
-	}
 
 	chan->phaseacc -= 4;
 	while (chan->phaseacc < 0)
 	{
 		chan->phaseacc += freq;
-		chan->adder = (chan->adder + 1) & 0x1f;
+		chan->adder++;
 
-		if (chan->adder & 0x10)
-			chan->output_next = chan->adder & 0xf;
-		else
-			chan->output_next = 0xf - (chan->adder & 0xf);
+		chan->output = chan->adder & 0xf;
+		if (!BIT(chan->adder, 4))
+			chan->output ^= 0xf;
 	}
-
-	chan->output = chan->output_next;
 }
 
 /* OUTPUT NOISE WAVE SAMPLE (VALUES FROM 0 to +15) */
@@ -462,7 +408,6 @@ static inline void apu_dpcmreset(apu_t::dpcm_t *chan)
 	chan->bits_left = chan->length << 3;
 	chan->irq_occurred = false;
 	chan->enabled = true; /* Fixed * Proper DPCM channel ENABLE/DISABLE flag behaviour*/
-	chan->vol = 0; /* Fixed * DPCM DAC resets itself when restarted */
 }
 
 /* OUTPUT DPCM WAVE SAMPLE (VALUES FROM 0 to +127) */
@@ -489,7 +434,6 @@ void nesapu_device::apu_dpcm(apu_t::dpcm_t *chan)
 			if (!chan->length)
 			{
 				chan->enabled = false; /* Fixed * Proper DPCM channel ENABLE/DISABLE flag behaviour*/
-				chan->vol = 0; /* Fixed * DPCM DAC resets itself when restarted */
 				if (chan->regs[0] & 0x40)
 					apu_dpcmreset(chan);
 				else
@@ -526,11 +470,13 @@ void nesapu_device::apu_dpcm(apu_t::dpcm_t *chan)
 }
 
 /* WRITE REGISTER VALUE */
-inline void nesapu_device::apu_regwrite(int address, u8 value)
+void nesapu_device::write(offs_t offset, u8 value)
 {
-	int chan = (address & 4) ? 1 : 0;
+	m_stream->update();
 
-	switch (address)
+	int chan = BIT(offset, 2);
+
+	switch (offset)
 	{
 	/* squares */
 	case apu_t::WRA0:
@@ -610,6 +556,7 @@ inline void nesapu_device::apu_regwrite(int address, u8 value)
 			m_APU.tri.counter_started = false;
 			m_APU.tri.vbl_length = m_vbl_times[value >> 3];
 			m_APU.tri.linear_length = m_sync_times2[m_APU.tri.regs[0] & 0x7f];
+			m_APU.tri.linear_reload = true;
 		}
 
 		break;
@@ -722,18 +669,16 @@ inline void nesapu_device::apu_regwrite(int address, u8 value)
 		break;
 	default:
 #ifdef MAME_DEBUG
-logerror("invalid apu write: $%02X at $%04X\n", value, address);
+logerror("invalid apu write: $%02X at $%04X\n", value, offset);
 #endif
 		break;
 	}
 }
 
-
-
 /* READ VALUES FROM REGISTERS */
-u8 nesapu_device::read(offs_t address)
+u8 nesapu_device::read(offs_t offset)
 {
-	if (address == 0x15) /*FIXED* Address $4015 has different behaviour*/
+	if (offset == 0x15) /*FIXED* Address $4015 has different behaviour*/
 	{
 		int readval = 0;
 		if (m_APU.squ[0].vbl_length > 0)
@@ -748,24 +693,16 @@ u8 nesapu_device::read(offs_t address)
 		if (m_APU.noi.vbl_length > 0)
 			readval |= 0x08;
 
-		if (m_APU.dpcm.enabled == true)
+		if (m_APU.dpcm.enabled)
 			readval |= 0x10;
 
-		if (m_APU.dpcm.irq_occurred == true)
+		if (m_APU.dpcm.irq_occurred)
 			readval |= 0x80;
 
 		return readval;
 	}
 	else
-		return m_APU.regs[address];
-}
-
-/* WRITE VALUE TO TEMP REGISTRY AND QUEUE EVENT */
-void nesapu_device::write(offs_t address, u8 value)
-{
-	m_APU.regs[address]=value;
-	m_stream->update();
-	apu_regwrite(address,value);
+		return 0xff; // FIXME: this should be open bus?
 }
 
 
