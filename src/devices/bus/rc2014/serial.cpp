@@ -28,6 +28,7 @@ public:
 protected:
 	// device-level overrides
 	virtual void device_start() override;
+	virtual void device_reset() override;
 	virtual void device_resolve_objects() override;
 	virtual void device_add_mconfig(machine_config &config) override;
 
@@ -45,6 +46,10 @@ serial_io_device::serial_io_device(const machine_config &mconfig, const char *ta
 }
 
 void serial_io_device::device_start()
+{
+}
+
+void serial_io_device::device_reset()
 {
 	// A15-A8 and A5-A1 not connected
 	m_bus->installer(AS_IO)->install_readwrite_handler(0x80, 0x81, 0, 0xff3e, 0, read8sm_delegate(*m_acia, FUNC(acia6850_device::read)), write8sm_delegate(*m_acia, FUNC(acia6850_device::write)));
@@ -79,6 +84,7 @@ void serial_io_device::device_add_mconfig(machine_config &config)
 	rs232_port_device &rs232(RS232_PORT(config, "rs232", default_rs232_devices, "terminal"));
 	rs232.rxd_handler().set(m_acia, FUNC(acia6850_device::write_rxd));
 	rs232.set_option_device_input_defaults("terminal", DEVICE_INPUT_DEFAULTS_NAME(terminal));
+	rs232.set_option_device_input_defaults("null_modem", DEVICE_INPUT_DEFAULTS_NAME(terminal));
 }
 
 //**************************************************************************
@@ -145,9 +151,12 @@ void dual_serial_base::device_add_mconfig(machine_config &config)
 	rs232_port_device &rs232a(RS232_PORT(config, "rs232a", default_rs232_devices, "terminal"));
 	rs232a.rxd_handler().set(m_sio, FUNC(z80sio_device::rxa_w));
 	rs232a.set_option_device_input_defaults("terminal", DEVICE_INPUT_DEFAULTS_NAME(terminal));
+	rs232a.set_option_device_input_defaults("null_modem", DEVICE_INPUT_DEFAULTS_NAME(terminal));
 
 	rs232_port_device &rs232b(RS232_PORT(config, "rs232b", default_rs232_devices, nullptr));
 	rs232b.rxd_handler().set(m_sio, FUNC(z80sio_device::rxb_w));
+	rs232b.set_option_device_input_defaults("terminal", DEVICE_INPUT_DEFAULTS_NAME(terminal));
+	rs232b.set_option_device_input_defaults("null_modem", DEVICE_INPUT_DEFAULTS_NAME(terminal));
 }
 
 static INPUT_PORTS_START( dual_serial_jumpers )
@@ -175,7 +184,7 @@ public:
 
 protected:
 	// device-level overrides
-	virtual void device_start() override;
+	virtual void device_reset() override;
 	virtual void device_resolve_objects() override;
 
 	// base-class overrides
@@ -190,8 +199,9 @@ dual_serial_device::dual_serial_device(const machine_config &mconfig, const char
 {
 }
 
-void dual_serial_device::device_start()
+void dual_serial_device::device_reset()
 {
+	dual_serial_base::device_reset();
 	// A15-A8 and A2 not connected
 	m_bus->installer(AS_IO)->install_readwrite_handler(0x80, 0x80, 0, 0xff04, 0, read8smo_delegate(*m_sio, FUNC(z80sio_device::ca_r)), write8smo_delegate(*m_sio, FUNC(z80sio_device::ca_w)));
 	m_bus->installer(AS_IO)->install_readwrite_handler(0x81, 0x81, 0, 0xff04, 0, read8smo_delegate(*m_sio, FUNC(z80sio_device::da_r)), write8smo_delegate(*m_sio, FUNC(z80sio_device::da_w)));
@@ -224,7 +234,7 @@ public:
 
 protected:
 	// device-level overrides
-	virtual void device_start() override;
+	virtual void device_reset() override;
 	virtual void device_resolve_objects() override;
 
 	// base-class overrides
@@ -239,8 +249,9 @@ dual_serial_device_40pin::dual_serial_device_40pin(const machine_config &mconfig
 {
 }
 
-void dual_serial_device_40pin::device_start()
+void dual_serial_device_40pin::device_reset()
 {
+	dual_serial_base::device_reset();
 	// A15-A8 and A2 not connected
 	m_bus->installer(AS_IO)->install_readwrite_handler(0x80, 0x80, 0, 0xff04, 0, read8smo_delegate(*m_sio, FUNC(z80sio_device::ca_r)), write8smo_delegate(*m_sio, FUNC(z80sio_device::ca_w)));
 	m_bus->installer(AS_IO)->install_readwrite_handler(0x81, 0x81, 0, 0xff04, 0, read8smo_delegate(*m_sio, FUNC(z80sio_device::da_r)), write8smo_delegate(*m_sio, FUNC(z80sio_device::da_w)));
