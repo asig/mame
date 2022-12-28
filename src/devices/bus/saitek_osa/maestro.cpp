@@ -238,7 +238,6 @@ void saitekosa_analyst_device::device_add_mconfig(machine_config &config)
 
 	// video hardware
 	HD44780(config, m_lcd, 0);
-	m_lcd->set_lcd_size(2, 8);
 }
 
 
@@ -340,7 +339,7 @@ void saitekosa_maestro_device::nmi_w(int state)
 void saitekosa_maestro_device::ack_w(int state)
 {
 	if (state != m_expansion->ack_state())
-		machine().scheduler().boost_interleave(attotime::zero, attotime::from_usec(100));
+		machine().scheduler().perfect_quantum(attotime::from_usec(100));
 }
 
 u32 saitekosa_analyst_device::screen_update(screen_device &screen, bitmap_rgb32 &bitmap, const rectangle &cliprect)

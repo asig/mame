@@ -224,12 +224,18 @@ private:
 			{
 				if (m_float_valid)
 				{
-					m_text = std::to_string(m_float);
+					std::ostringstream stream;
+					stream.imbue(std::locale::classic());
+					stream << m_float;
+					m_text = std::move(stream).str();
 					m_text_valid = true;
 				}
 				else if (m_int_valid)
 				{
-					m_text = std::to_string(m_int);
+					std::ostringstream stream;
+					stream.imbue(std::locale::classic());
+					stream << m_int;
+					m_text = std::move(stream).str();
 					m_text_valid = true;
 				}
 			}
@@ -2477,8 +2483,8 @@ protected:
 
 	virtual void draw_aligned(running_machine &machine, bitmap_argb32 &dest, const rectangle &bounds, int state) override
 	{
-        rgb_t const onpen = rgb_t(m_invert ? 0x20 : 0xff, 0xff, 0xff, 0xff);
-        rgb_t const offpen = rgb_t(m_invert ? 0xff : 0x20, 0xff, 0xff, 0xff);
+		rgb_t const onpen = rgb_t(m_invert ? 0x20 : 0xff, 0xff, 0xff, 0xff);
+		rgb_t const offpen = rgb_t(m_invert ? 0xff : 0x20, 0xff, 0xff, 0xff);
 
 		// sizes for computation
 		int const bmwidth = 250;
