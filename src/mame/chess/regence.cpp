@@ -1,12 +1,13 @@
 // license:BSD-3-Clause
 // copyright-holders:hap
-/******************************************************************************
+/*******************************************************************************
 
 La Régence, French chess computer by "France Double R". German distribution
 by Sandy Electronic, who sub-titled it TSB 4 (Turniersensorbrett), the EPROM
-contents is the same.
+contents is the same. There is no English version.
 
-The chess engine is Richard Lang's Cyrus.
+the chess engine is Richard Lang's Cyrus. This was from when he was working for
+Intelligent Software, before he got hired by Hegener + Glaser.
 
 Hardware notes:
 - PCB label: FRANCE DOUBLE R, MADE IN FRANCE
@@ -15,10 +16,13 @@ Hardware notes:
 - 2KB battery-backed RAM (MSM5128-15RS), 3 sockets, only middle one used
 - TTL, piezo, 8*8+4 LEDs, magnetic sensors
 
-The hardware triggers an NMI on power-off (or power-failure). If this isn't done,
-NVRAM fails at next power-on.
+NOTE: The hardware triggers an NMI on power-off (or power-failure). If this isn't
+done, NVRAM fails at next power-on.
 
-******************************************************************************/
+TODO:
+- if/when MAME supports an exit callback, hook up power-off NMI to that
+
+*******************************************************************************/
 
 #include "emu.h"
 
@@ -31,7 +35,7 @@ NVRAM fails at next power-on.
 #include "speaker.h"
 
 // internal artwork
-#include "regence.lh" // clickable
+#include "regence.lh"
 
 
 namespace {
@@ -48,7 +52,7 @@ public:
 		m_inputs(*this, "IN.%u", 0)
 	{ }
 
-	DECLARE_INPUT_CHANGED_MEMBER(power) { if (newval && m_power) power_off(); }
+	DECLARE_INPUT_CHANGED_MEMBER(power_off);
 
 	// machine configs
 	void regence(machine_config &config);
@@ -65,6 +69,10 @@ private:
 	required_device<dac_bit_interface> m_dac;
 	required_ioport_array<2> m_inputs;
 
+	bool m_power = false;
+	u8 m_inp_mux = 0;
+	u8 m_led_data = 0;
+
 	// address maps
 	void main_map(address_map &map);
 
@@ -73,12 +81,6 @@ private:
 	void control_w(u8 data);
 	void leds_w(u8 data);
 	u8 input_r();
-
-	void power_off();
-	bool m_power = false;
-
-	u8 m_inp_mux = 0;
-	u8 m_led_data = 0;
 };
 
 void regence_state::machine_start()
@@ -89,18 +91,21 @@ void regence_state::machine_start()
 	save_item(NAME(m_led_data));
 }
 
-void regence_state::power_off()
+INPUT_CHANGED_MEMBER(regence_state::power_off)
 {
 	// NMI at power-off (it prepares nvram for next power-on)
-	m_maincpu->pulse_input_line(INPUT_LINE_NMI, attotime::zero);
-	m_power = false;
+	if (newval && m_power)
+	{
+		m_maincpu->pulse_input_line(INPUT_LINE_NMI, attotime::zero);
+		m_power = false;
+	}
 }
 
 
 
-/******************************************************************************
+/*******************************************************************************
     I/O
-******************************************************************************/
+*******************************************************************************/
 
 void regence_state::update_display()
 {
@@ -144,9 +149,9 @@ u8 regence_state::input_r()
 
 
 
-/******************************************************************************
+/*******************************************************************************
     Address Maps
-******************************************************************************/
+*******************************************************************************/
 
 void regence_state::main_map(address_map &map)
 {
@@ -160,9 +165,9 @@ void regence_state::main_map(address_map &map)
 
 
 
-/******************************************************************************
+/*******************************************************************************
     Input Ports
-******************************************************************************/
+*******************************************************************************/
 
 static INPUT_PORTS_START( regence )
 	PORT_START("IN.0")
@@ -186,14 +191,14 @@ static INPUT_PORTS_START( regence )
 	PORT_BIT(0x80, IP_ACTIVE_HIGH, IPT_UNUSED)
 
 	PORT_START("POWER") // needs to be triggered for nvram to work
-	PORT_BIT(0x01, IP_ACTIVE_HIGH, IPT_OTHER) PORT_CODE(KEYCODE_F1) PORT_CHANGED_MEMBER(DEVICE_SELF, regence_state, power, 0) PORT_NAME("Power Off")
+	PORT_BIT(0x01, IP_ACTIVE_HIGH, IPT_OTHER) PORT_CODE(KEYCODE_F1) PORT_CHANGED_MEMBER(DEVICE_SELF, regence_state, power_off, 0) PORT_NAME("Power Off")
 INPUT_PORTS_END
 
 
 
-/******************************************************************************
+/*******************************************************************************
     Machine Configs
-******************************************************************************/
+*******************************************************************************/
 
 void regence_state::regence(machine_config &config)
 {
@@ -221,9 +226,9 @@ void regence_state::regence(machine_config &config)
 
 
 
-/******************************************************************************
+/*******************************************************************************
     ROM Definitions
-******************************************************************************/
+*******************************************************************************/
 
 ROM_START( regence )
 	ROM_REGION( 0x10000, "maincpu", 0 )
@@ -236,9 +241,9 @@ ROM_END
 
 
 
-/******************************************************************************
+/*******************************************************************************
     Drivers
-******************************************************************************/
+*******************************************************************************/
 
-/*    YEAR  NAME     PARENT  COMPAT  MACHINE  INPUT    CLASS          INIT        COMPANY, FULLNAME, FLAGS */
-CONS( 1982, regence, 0,      0,      regence, regence, regence_state, empty_init, "France Double R", u8"La Régence", MACHINE_SUPPORTS_SAVE | MACHINE_CLICKABLE_ARTWORK )
+//    YEAR  NAME     PARENT  COMPAT  MACHINE  INPUT    CLASS          INIT        COMPANY, FULLNAME, FLAGS
+SYST( 1982, regence, 0,      0,      regence, regence, regence_state, empty_init, "France Double R / Intelligent Software", u8"La Régence", MACHINE_SUPPORTS_SAVE | MACHINE_CLICKABLE_ARTWORK )

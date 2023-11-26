@@ -1,7 +1,7 @@
 // license:BSD-3-Clause
 // copyright-holders:hap
 // thanks-to:Berger, Sean Riddle
-/******************************************************************************
+/*******************************************************************************
 
 Fidelity's 1st generation chess computers:
 - Chess Challenger
@@ -20,7 +20,7 @@ the ESB 6000 board in the machine configuration, and set the video options to
 
 That being said, it's probably a better idea to use a real chessboard.
 
-===============================================================================
+================================================================================
 
 Chess Challenger (1)
 --------------------
@@ -56,18 +56,19 @@ Computer(reseller of Fidelity chesscomputers) did name it Chess-Challenger 10 C.
 Officially, Fidelity started adding level numbers to their chesscomputer titles
 with CCX and CC7.
 
-******************************************************************************/
+*******************************************************************************/
 
 #include "emu.h"
+
 #include "cpu/i8085/i8085.h"
 #include "machine/i8255.h"
 #include "machine/timer.h"
 #include "video/pwm.h"
 
 // internal artwork
-#include "fidel_cc1.lh" // clickable
-#include "fidel_cc3.lh" // clickable
-#include "fidel_cc10c.lh" // clickable
+#include "fidel_cc1.lh"
+#include "fidel_cc3.lh"
+#include "fidel_cc10c.lh"
 
 
 namespace {
@@ -103,6 +104,9 @@ private:
 	optional_device<timer_device> m_delay;
 	required_ioport_array<2> m_inputs;
 
+	u8 m_led_select = 0;
+	u8 m_7seg_data = 0;
+
 	// address maps
 	void main_map(address_map &map);
 	void main_io(address_map &map);
@@ -113,9 +117,6 @@ private:
 	u8 ppi_porta_r();
 	void ppi_portb_w(u8 data);
 	void ppi_portc_w(u8 data);
-
-	u8 m_led_select = 0;
-	u8 m_7seg_data = 0;
 };
 
 void cc1_state::machine_start()
@@ -127,9 +128,9 @@ void cc1_state::machine_start()
 
 
 
-/******************************************************************************
+/*******************************************************************************
     I/O
-******************************************************************************/
+*******************************************************************************/
 
 // I8255 PPI
 
@@ -174,9 +175,9 @@ void cc1_state::ppi_portc_w(u8 data)
 
 
 
-/******************************************************************************
+/*******************************************************************************
     Address Maps
-******************************************************************************/
+*******************************************************************************/
 
 void cc1_state::main_map(address_map &map)
 {
@@ -201,9 +202,9 @@ void cc1_state::cc10c_map(address_map &map)
 
 
 
-/******************************************************************************
+/*******************************************************************************
     Input Ports
-******************************************************************************/
+*******************************************************************************/
 
 static INPUT_PORTS_START( cc1 )
 	PORT_START("IN.0")
@@ -248,13 +249,13 @@ INPUT_PORTS_END
 
 
 
-/******************************************************************************
+/*******************************************************************************
     Machine Configs
-******************************************************************************/
+*******************************************************************************/
 
 void cc1_state::cc1(machine_config &config)
 {
-	/* basic machine hardware */
+	// basic machine hardware
 	I8080A(config, m_maincpu, 18_MHz_XTAL/9);
 	m_maincpu->set_addrmap(AS_PROGRAM, &cc1_state::main_map);
 	m_maincpu->set_addrmap(AS_IO, &cc1_state::main_io);
@@ -268,7 +269,7 @@ void cc1_state::cc1(machine_config &config)
 
 	TIMER(config, "delay").configure_generic(nullptr);
 
-	/* video hardware */
+	// video hardware
 	PWM_DISPLAY(config, m_display).set_size(6, 7);
 	m_display->set_segmask(0xf, 0x7f);
 	config.set_default_layout(layout_fidel_cc1);
@@ -284,7 +285,7 @@ void cc1_state::cc10c(machine_config &config)
 {
 	cc1(config);
 
-	/* basic machine hardware */
+	// basic machine hardware
 	m_maincpu->set_addrmap(AS_PROGRAM, &cc1_state::cc10c_map);
 
 	config.set_default_layout(layout_fidel_cc10c);
@@ -292,9 +293,9 @@ void cc1_state::cc10c(machine_config &config)
 
 
 
-/******************************************************************************
+/*******************************************************************************
     ROM Definitions
-******************************************************************************/
+*******************************************************************************/
 
 ROM_START( cc1 )
 	ROM_REGION(0x10000, "maincpu", ROMREGION_ERASEFF)
@@ -308,19 +309,19 @@ ROM_END
 
 ROM_START( cc10c )
 	ROM_REGION(0x10000, "maincpu", 0)
-	ROM_LOAD("k95069-922_ucc_10", 0x0000, 0x1000, CRC(2232c1c4) SHA1(fd282ba7ce7ac28834c860cec2cca398aec1b3f3) )
-	ROM_CONTINUE(                 0x2000, 0x1000 )
+	ROM_LOAD("ucc_10", 0x0000, 0x1000, CRC(2232c1c4) SHA1(fd282ba7ce7ac28834c860cec2cca398aec1b3f3) )
+	ROM_CONTINUE(      0x2000, 0x1000 )
 ROM_END
 
 } // anonymous namespace
 
 
 
-/******************************************************************************
+/*******************************************************************************
     Drivers
-******************************************************************************/
+*******************************************************************************/
 
-//    YEAR  NAME   PARENT CMP MACHINE  INPUT  STATE      INIT        COMPANY, FULLNAME, FLAGS
-CONS( 1977, cc1,   0,      0, cc1,     cc1,   cc1_state, empty_init, "Fidelity Electronics", "Chess Challenger", MACHINE_SUPPORTS_SAVE | MACHINE_CLICKABLE_ARTWORK | MACHINE_NO_SOUND_HW )
-CONS( 1977, cc3,   0,      0, cc3,     cc3,   cc1_state, empty_init, "Fidelity Electronics", "Chess Challenger (upgraded version, 3 levels)", MACHINE_SUPPORTS_SAVE | MACHINE_CLICKABLE_ARTWORK | MACHINE_NO_SOUND_HW ) // aka Chess Challenger 3
-CONS( 1979, cc10c, 0,      0, cc10c,   cc10c, cc1_state, empty_init, "Fidelity Electronics", "Chess Challenger (model UCC10, 10 levels)", MACHINE_SUPPORTS_SAVE | MACHINE_CLICKABLE_ARTWORK | MACHINE_NO_SOUND_HW ) // aka Chess Challenger 10 C
+//    YEAR  NAME   PARENT  COMPAT  MACHINE  INPUT  CLASS      INIT        COMPANY, FULLNAME, FLAGS
+SYST( 1977, cc1,   0,      0,      cc1,     cc1,   cc1_state, empty_init, "Fidelity Electronics", "Chess Challenger", MACHINE_SUPPORTS_SAVE | MACHINE_CLICKABLE_ARTWORK | MACHINE_NO_SOUND_HW )
+SYST( 1977, cc3,   0,      0,      cc3,     cc3,   cc1_state, empty_init, "Fidelity Electronics", "Chess Challenger (upgraded version, 3 levels)", MACHINE_SUPPORTS_SAVE | MACHINE_CLICKABLE_ARTWORK | MACHINE_NO_SOUND_HW ) // aka Chess Challenger 3
+SYST( 1979, cc10c, 0,      0,      cc10c,   cc10c, cc1_state, empty_init, "Fidelity Electronics", "Chess Challenger (model UCC10, 10 levels)", MACHINE_SUPPORTS_SAVE | MACHINE_CLICKABLE_ARTWORK | MACHINE_NO_SOUND_HW ) // aka Chess Challenger 10 C

@@ -75,6 +75,8 @@ project "formats"
 
 		MAME_DIR .. "src/lib/formats/fsmgr.h",
 		MAME_DIR .. "src/lib/formats/fsmgr.cpp",
+		MAME_DIR .. "src/lib/formats/fsblk.h",
+		MAME_DIR .. "src/lib/formats/fsblk.cpp",
 		MAME_DIR .. "src/lib/formats/fsblk_vec.h",
 		MAME_DIR .. "src/lib/formats/fsblk_vec.cpp",
 		MAME_DIR .. "src/lib/formats/fs_unformatted.h",
@@ -128,6 +130,18 @@ if opt_tool(FORMATS, "ABC800_DSK") then
 	files {
 		MAME_DIR.. "src/lib/formats/abc800_dsk.cpp",
 		MAME_DIR.. "src/lib/formats/abc800_dsk.h",
+	}
+end
+
+--------------------------------------------------
+--
+--@src/lib/formats/abc800i_dsk.h,FORMATS["ABC800I_DSK"] = true
+--------------------------------------------------
+
+if opt_tool(FORMATS, "ABC800I_DSK") then
+	files {
+		MAME_DIR.. "src/lib/formats/abc800i_dsk.cpp",
+		MAME_DIR.. "src/lib/formats/abc800i_dsk.h",
 	}
 end
 
@@ -536,18 +550,6 @@ if opt_tool(FORMATS, "CCVF_DSK") then
 	files {
 		MAME_DIR.. "src/lib/formats/ccvf_dsk.cpp",
 		MAME_DIR.. "src/lib/formats/ccvf_dsk.h",
-	}
-end
-
---------------------------------------------------
---
---@src/lib/formats/cd90_640_dsk.h,FORMATS["CD90_640_DSK"] = true
---------------------------------------------------
-
-if opt_tool(FORMATS, "CD90_640_DSK") then
-	files {
-		MAME_DIR.. "src/lib/formats/cd90_640_dsk.cpp",
-		MAME_DIR.. "src/lib/formats/cd90_640_dsk.h",
 	}
 end
 
@@ -1189,6 +1191,18 @@ end
 
 --------------------------------------------------
 --
+--@src/lib/formats/lw30_dsk.h,FORMATS["LW30_DSK"] = true
+--------------------------------------------------
+
+if opt_tool(FORMATS, "LW30_DSK") then
+	files {
+		MAME_DIR.. "src/lib/formats/lw30_dsk.cpp",
+		MAME_DIR.. "src/lib/formats/lw30_dsk.h",
+	}
+end
+
+--------------------------------------------------
+--
 --@src/lib/formats/os9_dsk.h,FORMATS["OS9_DSK"] = true
 --------------------------------------------------
 
@@ -1388,6 +1402,18 @@ if opt_tool(FORMATS, "MZ_CAS") then
 	files {
 		MAME_DIR.. "src/lib/formats/mz_cas.cpp",
 		MAME_DIR.. "src/lib/formats/mz_cas.h",
+	}
+end
+
+--------------------------------------------------
+--
+--@src/lib/formats/nabupc_dsk.h,FORMATS["NABUPC_DSK"] = true
+--------------------------------------------------
+
+if opt_tool(FORMATS, "NABUPC_DSK") then
+	files {
+		MAME_DIR.. "src/lib/formats/nabupc_dsk.cpp",
+		MAME_DIR.. "src/lib/formats/nabupc_dsk.h",
 	}
 end
 
@@ -1694,6 +1720,18 @@ end
 
 --------------------------------------------------
 --
+--@src/lib/formats/roland_dsk.h,FORMATS["ROLAND_DSK"] = true
+--------------------------------------------------
+
+if opt_tool(FORMATS, "ROLAND_DSK") then
+	files {
+		MAME_DIR.. "src/lib/formats/roland_dsk.cpp",
+		MAME_DIR.. "src/lib/formats/roland_dsk.h",
+	}
+end
+
+--------------------------------------------------
+--
 --@src/lib/formats/rx50_dsk.h,FORMATS["RX50_DSK"] = true
 --------------------------------------------------
 
@@ -1910,6 +1948,18 @@ end
 
 --------------------------------------------------
 --
+--@src/lib/formats/tibdd001_dsk.h,FORMATS["TIBDD001_DSK"] = true
+--------------------------------------------------
+
+if opt_tool(FORMATS, "TIBDD001_DSK") then
+	files {
+		MAME_DIR.. "src/lib/formats/tibdd001_dsk.cpp",
+		MAME_DIR.. "src/lib/formats/tibdd001_dsk.h",
+	}
+end
+
+--------------------------------------------------
+--
 --@src/lib/formats/tiki100_dsk.h,FORMATS["TIKI100_DSK"] = true
 --------------------------------------------------
 
@@ -2049,6 +2099,18 @@ if opt_tool(FORMATS, "VG5K_CAS") then
 	files {
 		MAME_DIR.. "src/lib/formats/vg5k_cas.cpp",
 		MAME_DIR.. "src/lib/formats/vg5k_cas.h",
+	}
+end
+
+--------------------------------------------------
+--
+--@src/lib/formats/vgi_dsk.h,FORMATS["VGI_DSK"] = true
+--------------------------------------------------
+
+if opt_tool(FORMATS, "VGI_DSK") then
+	files {
+		MAME_DIR.. "src/lib/formats/vgi_dsk.cpp",
+		MAME_DIR.. "src/lib/formats/vgi_dsk.h",
 	}
 end
 
@@ -2253,6 +2315,18 @@ if opt_tool(FORMATS, "FS_ISIS") then
 	files {
 		MAME_DIR.. "src/lib/formats/fs_isis.cpp",
 		MAME_DIR.. "src/lib/formats/fs_isis.h",
+	}
+end
+
+--------------------------------------------------
+--
+--@src/lib/formats/fs_hp98x5.h,FORMATS["FS_HP98X5"] = true
+--------------------------------------------------
+
+if opt_tool(FORMATS, "FS_HP98X5") then
+	files {
+		MAME_DIR.. "src/lib/formats/fs_hp98x5.cpp",
+		MAME_DIR.. "src/lib/formats/fs_hp98x5.h",
 	}
 end
 

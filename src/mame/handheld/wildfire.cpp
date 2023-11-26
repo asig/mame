@@ -43,6 +43,7 @@ TODO:
 #include "sound/flt_vol.h"
 #include "sound/spkrdev.h"
 #include "video/pwm.h"
+
 #include "speaker.h"
 
 #include "wildfire.lh"
@@ -72,16 +73,17 @@ private:
 	required_device<speaker_sound_device> m_speaker;
 	required_device<filter_volume_device> m_volume;
 
+	u16 m_a = 0;
+	u8 m_d = 0;
+
+	double m_speaker_volume = 0.0;
+
 	void update_display();
 	void write_d(u8 data);
 	void write_a(u16 data);
 
 	void speaker_update();
 	TIMER_DEVICE_CALLBACK_MEMBER(speaker_decay_sim);
-	double m_speaker_volume = 0.0;
-
-	u16 m_a = 0;
-	u8 m_d = 0;
 };
 
 void wildfire_state::machine_start()
@@ -196,7 +198,7 @@ void wildfire_state::wildfire(machine_config &config)
 ROM_START( wildfire )
 	ROM_REGION( 0x0800, "maincpu", ROMREGION_ERASE00 )
 	// Typed in from patent US4334679, data should be correct(it included checksums). 1st half was also dumped/verified with release version.
-	ROM_LOAD( "us4341385", 0x0000, 0x0400, CRC(84ac0f1f) SHA1(1e00ddd402acfc2cc267c34eed4b89d863e2144f) )
+	ROM_LOAD( "us4334679", 0x0000, 0x0400, CRC(84ac0f1f) SHA1(1e00ddd402acfc2cc267c34eed4b89d863e2144f) )
 	ROM_CONTINUE(          0x0600, 0x0200 )
 ROM_END
 
@@ -208,5 +210,5 @@ ROM_END
     Drivers
 *******************************************************************************/
 
-//    YEAR  NAME      PARENT CMP MACHINE   INPUT     CLASS           INIT        COMPANY, FULLNAME, FLAGS
-CONS( 1979, wildfire, 0,      0, wildfire, wildfire, wildfire_state, empty_init, "Parker Brothers", "Wildfire (patent)", MACHINE_IMPERFECT_SOUND | MACHINE_SUPPORTS_SAVE | MACHINE_REQUIRES_ARTWORK ) // note: pretty sure that it matches the commercial release
+//    YEAR  NAME      PARENT  COMPAT  MACHINE   INPUT     CLASS           INIT        COMPANY, FULLNAME, FLAGS
+SYST( 1979, wildfire, 0,      0,      wildfire, wildfire, wildfire_state, empty_init, "Parker Brothers", "Wildfire (patent)", MACHINE_IMPERFECT_SOUND | MACHINE_SUPPORTS_SAVE | MACHINE_REQUIRES_ARTWORK ) // note: pretty sure that it matches the commercial release

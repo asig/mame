@@ -112,13 +112,13 @@ const options_entry cli_option_entries[] =
 	{ CLICOMMAND_LISTBROTHERS   ";lb",      "0",       core_options::option_type::COMMAND,    "show \"brothers\", or other drivers from same sourcefile" },
 	{ CLICOMMAND_LISTCRC,                   "0",       core_options::option_type::COMMAND,    "CRC-32s" },
 	{ CLICOMMAND_LISTROMS       ";lr",      "0",       core_options::option_type::COMMAND,    "list required ROMs for a driver" },
-	{ CLICOMMAND_LISTBIOS,                  "0",       core_options::option_type::COMMAND,    "list alternate BIOSes for a driver" },
 	{ CLICOMMAND_LISTSAMPLES,               "0",       core_options::option_type::COMMAND,    "list optional samples for a driver" },
 	{ CLICOMMAND_VERIFYROMS,                "0",       core_options::option_type::COMMAND,    "report romsets that have problems" },
 	{ CLICOMMAND_VERIFYSAMPLES,             "0",       core_options::option_type::COMMAND,    "report samplesets that have problems" },
 	{ CLICOMMAND_ROMIDENT,                  "0",       core_options::option_type::COMMAND,    "compare files with known MAME ROMs" },
-	{ CLICOMMAND_LISTDEVICES    ";ld",      "0",       core_options::option_type::COMMAND,    "list available devices" },
+	{ CLICOMMAND_LISTDEVICES    ";ld",      "0",       core_options::option_type::COMMAND,    "list devices in a system" },
 	{ CLICOMMAND_LISTSLOTS      ";lslot",   "0",       core_options::option_type::COMMAND,    "list available slots and slot devices" },
+	{ CLICOMMAND_LISTBIOS,                  "0",       core_options::option_type::COMMAND,    "list BIOS options for a system" },
 	{ CLICOMMAND_LISTMEDIA      ";lm",      "0",       core_options::option_type::COMMAND,    "list available media for the system" },
 	{ CLICOMMAND_LISTSOFTWARE   ";lsoft",   "0",       core_options::option_type::COMMAND,    "list known software for the system" },
 	{ CLICOMMAND_VERIFYSOFTWARE ";vsoft",   "0",       core_options::option_type::COMMAND,    "verify known software for the system" },
@@ -403,25 +403,10 @@ void cli_frontend::listsource(const std::vector<std::string> &args)
 {
 	auto const list_system_source = [] (device_type type)
 	{
-		std::string_view src(type.source());
-		auto prefix(src.find("src/mame/"));
-		if (std::string_view::npos == prefix)
-			prefix = src.find("src\\mame\\");
-		if (std::string_view::npos != prefix)
-		{
-			src.remove_prefix(prefix + 9);
-		}
-		else
-		{
-			auto prefix(src.find("src/"));
-			if (std::string_view::npos == prefix)
-				prefix = src.find("src\\");
-			if (std::string_view::npos != prefix)
-			{
-				src.remove_prefix(prefix + 4);
-			}
-		}
-		osd_printf_info("%-16s %s\n", type.shortname(), src);
+		osd_printf_info(
+				"%-16s %s\n",
+				type.shortname(),
+				info_xml_creator::format_sourcefile(type.source()));
 	};
 	apply_action(
 			args,
@@ -520,13 +505,8 @@ void cli_frontend::listbrothers(const std::vector<std::string> &args)
 	drivlist.reset();
 	while (drivlist.next())
 	{
-		std::string_view src(drivlist.driver().type.source());
-		auto prefix(src.find("src/mame/"));
-		if (std::string_view::npos == prefix)
-			prefix = src.find("src\\mame\\");
-		if (std::string_view::npos != prefix)
-			src.remove_prefix(prefix + 9);
-		int const clone_of = drivlist.clone();
+		auto const src(info_xml_creator::format_sourcefile(drivlist.driver().type.source()));
+		int const clone_of(drivlist.clone());
 		if (clone_of != -1)
 			osd_printf_info("%-20s %-16s %s\n", src, drivlist.driver().name, (clone_of == -1 ? "" : drivlist.driver(clone_of).name));
 		else
@@ -660,44 +640,65 @@ void cli_frontend::listroms(const std::vector<std::string> &args)
 
 
 //-------------------------------------------------
-//  listbios - output the list of BIOSes referenced
+//  listbios - output the BIOS options for a system
 //  by matching systems/devices
 //-------------------------------------------------
 
 void cli_frontend::listbios(const std::vector<std::string> &args)
 {
-	apply_device_action(
-			args,
-			[] (device_t &root, char const *type, bool first)
+	const char *gamename = args.empty() ? nullptr : args[0].c_str();
+
+	// determine which drivers to output; return an error if none found
+	driver_enumerator drivlist(m_options, gamename);
+	if (drivlist.count() == 0)
+		throw emu_fatalerror(EMU_ERR_NO_SUCH_SYSTEM, "No matching systems found for '%s'", gamename);
+
+	// iterate over drivers
+	bool firstsystem = true;
+	std::vector<std::pair<std::string, std::string> > bioses;
+	while (drivlist.next())
+	{
+		device_t &root = drivlist.config()->root_device();
+		if (firstsystem)
+			firstsystem = false;
+		else
+			printf("\n");
+
+		// print system BIOS options if there are any
+		bool firstbios = true;
+		for (const romload::system_bios &bios : romload::system_bioses(root.rom_region()))
+		{
+			if (firstbios)
 			{
-				// space between items
-				if (!first)
-					osd_printf_info("\n");
+				printf("BIOS options for system %s (%s):\n", root.name(), root.shortname());
+				firstbios = false;
+			}
+			printf("    %-16s %s\n", bios.get_name(), bios.get_description());
+		}
+		if (firstbios)
+			printf("No BIOS options for system %s (%s)\n", root.name(), root.shortname());
 
-				// gather BIOS names and descriptions for one device only
-				std::vector<std::pair<std::string, std::string>> bioses;
-				for (const romload::system_bios &bios : romload::system_bioses(root.rom_region()))
-				{
-					int bios_index = bios.get_value() - 1;
-					if (bios_index >= 0)
-					{
-						if (bioses.size() < bios_index)
-							bioses.resize(bios_index);
-						bioses.emplace(bioses.begin() + bios_index, bios.get_name(), bios.get_description());
-					}
-				}
+		// iterate over slots
+		for (const device_slot_interface &slot : slot_interface_enumerator(root))
+		{
+			// ignore fixed or empty slots
+			device_t *const card = slot.get_card_device();
+			if (slot.fixed() || !card || !card->rom_region())
+				continue;
 
-				// print results
-				if (bioses.empty())
-					osd_printf_info("No BIOSes available for %s \"%s\".\n", type, root.shortname());
-				else
+			// print card BIOS options if there are any
+			bool firstcard = true;
+			for (const romload::system_bios &bios : romload::system_bioses(card->rom_region()))
+			{
+				if (firstcard)
 				{
-					osd_printf_info("%d BIOS%s available for %s \"%s\".\n", bioses.size(), bioses.size() != 1 ? "es" : "", type, root.shortname());
-					osd_printf_info("Name:             Description:\n");
-					for (const auto &desc : bioses)
-						osd_printf_info("%-17s \"%s\"\n", desc.first, desc.second);
+					printf("\n  BIOS options for device %s (-%s %s):\n", card->name(), slot.device().tag() + 1, card->basetag());
+					firstcard = false;
 				}
-			});
+				printf("      %-16s %s\n", bios.get_name(), bios.get_description());
+			}
+		}
+	}
 }
 
 
@@ -828,7 +829,7 @@ void cli_frontend::listdevices(const std::vector<std::string> &args)
 
 //-------------------------------------------------
 //  listslots - output the list of slot devices
-//  referenced by a given game or set of games
+//  present in a system or set of systems
 //-------------------------------------------------
 
 void cli_frontend::listslots(const std::vector<std::string> &args)
@@ -847,11 +848,12 @@ void cli_frontend::listslots(const std::vector<std::string> &args)
 	// iterate over drivers
 	while (drivlist.next())
 	{
-		// iterate
+		// iterate over slots
 		bool first = true;
 		for (const device_slot_interface &slot : slot_interface_enumerator(drivlist.config()->root_device()))
 		{
-			if (slot.fixed()) continue;
+			if (slot.fixed())
+				continue;
 
 			// build a list of user-selectable options
 			std::vector<device_slot_interface::slot_option const *> option_list;
@@ -860,9 +862,13 @@ void cli_frontend::listslots(const std::vector<std::string> &args)
 					option_list.push_back(option.second.get());
 
 			// sort them by name
-			std::sort(option_list.begin(), option_list.end(), [](device_slot_interface::slot_option const *opt1, device_slot_interface::slot_option const *opt2) {
-				return strcmp(opt1->name(), opt2->name()) < 0;
-			});
+			std::sort(
+					option_list.begin(),
+					option_list.end(),
+					[] (device_slot_interface::slot_option const *opt1, device_slot_interface::slot_option const *opt2)
+					{
+						return strcmp(opt1->name(), opt2->name()) < 0;
+					});
 
 
 			// output the line, up to the list of extensions
@@ -1189,37 +1195,39 @@ const char cli_frontend::s_softlist_xml_dtd[] =
 
 void cli_frontend::output_single_softlist(std::ostream &out, software_list_device &swlistdev)
 {
-	util::stream_format(out, "\t<softwarelist name=\"%s\" description=\"%s\">\n", swlistdev.list_name(), util::xml::normalize_string(swlistdev.description().c_str()));
+	using util::xml::normalize_string;
+
+	util::stream_format(out, "\t<softwarelist name=\"%s\" description=\"%s\">\n", swlistdev.list_name(), normalize_string(swlistdev.description()));
 	for (const software_info &swinfo : swlistdev.get_info())
 	{
-		util::stream_format(out, "\t\t<software name=\"%s\"", util::xml::normalize_string(swinfo.shortname().c_str()));
+		util::stream_format(out, "\t\t<software name=\"%s\"", normalize_string(swinfo.shortname()));
 		if (!swinfo.parentname().empty())
-			util::stream_format(out, " cloneof=\"%s\"", util::xml::normalize_string(swinfo.parentname().c_str()));
+			util::stream_format(out, " cloneof=\"%s\"", normalize_string(swinfo.parentname()));
 		if (swinfo.supported() == software_support::PARTIALLY_SUPPORTED)
 			out << " supported=\"partial\"";
 		else if (swinfo.supported() == software_support::UNSUPPORTED)
 			out << " supported=\"no\"";
 		out << ">\n";
-		util::stream_format(out, "\t\t\t<description>%s</description>\n", util::xml::normalize_string(swinfo.longname().c_str()));
-		util::stream_format(out, "\t\t\t<year>%s</year>\n", util::xml::normalize_string(swinfo.year().c_str()));
-		util::stream_format(out, "\t\t\t<publisher>%s</publisher>\n", util::xml::normalize_string(swinfo.publisher().c_str()));
+		util::stream_format(out, "\t\t\t<description>%s</description>\n", normalize_string(swinfo.longname()));
+		util::stream_format(out, "\t\t\t<year>%s</year>\n", normalize_string(swinfo.year()));
+		util::stream_format(out, "\t\t\t<publisher>%s</publisher>\n", normalize_string(swinfo.publisher()));
 
 		for (const auto &flist : swinfo.info())
-			util::stream_format(out, "\t\t\t<info name=\"%s\" value=\"%s\"/>\n", flist.name(), util::xml::normalize_string(flist.value().c_str()));
+			util::stream_format(out, "\t\t\t<info name=\"%s\" value=\"%s\"/>\n", flist.name(), normalize_string(flist.value()));
 
 		for (const auto &flist : swinfo.shared_features())
-			util::stream_format(out, "\t\t\t<sharedfeat name=\"%s\" value=\"%s\"/>\n", flist.name(), util::xml::normalize_string(flist.value().c_str()));
+			util::stream_format(out, "\t\t\t<sharedfeat name=\"%s\" value=\"%s\"/>\n", flist.name(), normalize_string(flist.value()));
 
 		for (const software_part &part : swinfo.parts())
 		{
-			util::stream_format(out, "\t\t\t<part name=\"%s\"", util::xml::normalize_string(part.name().c_str()));
+			util::stream_format(out, "\t\t\t<part name=\"%s\"", normalize_string(part.name()));
 			if (!part.interface().empty())
-				util::stream_format(out, " interface=\"%s\"", util::xml::normalize_string(part.interface().c_str()));
+				util::stream_format(out, " interface=\"%s\"", normalize_string(part.interface()));
 
 			out << ">\n";
 
 			for (const auto &flist : part.features())
-				util::stream_format(out, "\t\t\t\t<feature name=\"%s\" value=\"%s\" />\n", flist.name(), util::xml::normalize_string(flist.value().c_str()));
+				util::stream_format(out, "\t\t\t\t<feature name=\"%s\" value=\"%s\" />\n", flist.name(), normalize_string(flist.value()));
 
 			// TODO: display ROM region information
 			for (const rom_entry *region = part.romdata().data(); region; region = rom_next_region(region))
@@ -1227,18 +1235,18 @@ void cli_frontend::output_single_softlist(std::ostream &out, software_list_devic
 				int is_disk = ROMREGION_ISDISKDATA(region);
 
 				if (!is_disk)
-					util::stream_format(out, "\t\t\t\t<dataarea name=\"%s\" size=\"%d\">\n", util::xml::normalize_string(region->name().c_str()), region->get_length());
+					util::stream_format(out, "\t\t\t\t<dataarea name=\"%s\" size=\"%d\">\n", normalize_string(region->name()), region->get_length());
 				else
-					util::stream_format(out, "\t\t\t\t<diskarea name=\"%s\">\n", util::xml::normalize_string(region->name().c_str()));
+					util::stream_format(out, "\t\t\t\t<diskarea name=\"%s\">\n", normalize_string(region->name()));
 
 				for (const rom_entry *rom = rom_first_file(region); rom && !ROMENTRY_ISREGIONEND(rom); rom++)
 				{
 					if (ROMENTRY_ISFILE(rom))
 					{
 						if (!is_disk)
-							util::stream_format(out, "\t\t\t\t\t<rom name=\"%s\" size=\"%d\"", util::xml::normalize_string(ROM_GETNAME(rom)), rom_file_size(rom));
+							util::stream_format(out, "\t\t\t\t\t<rom name=\"%s\" size=\"%d\"", normalize_string(ROM_GETNAME(rom)), rom_file_size(rom));
 						else
-							util::stream_format(out, "\t\t\t\t\t<disk name=\"%s\"", util::xml::normalize_string(ROM_GETNAME(rom)));
+							util::stream_format(out, "\t\t\t\t\t<disk name=\"%s\"", normalize_string(ROM_GETNAME(rom)));
 
 						// dump checksum information only if there is a known dump
 						util::hash_collection hashes(rom->hashdata());
@@ -1687,8 +1695,8 @@ const cli_frontend::info_command_struct *cli_frontend::find_command(const std::s
 		{ CLICOMMAND_LISTCRC,           0, -1, &cli_frontend::listcrc,          "[system name]" },
 		{ CLICOMMAND_LISTDEVICES,       0,  1, &cli_frontend::listdevices,      "[system name]" },
 		{ CLICOMMAND_LISTSLOTS,         0,  1, &cli_frontend::listslots,        "[system name]" },
+		{ CLICOMMAND_LISTBIOS,          0,  1, &cli_frontend::listbios,         "[system name]" },
 		{ CLICOMMAND_LISTROMS,          0, -1, &cli_frontend::listroms,         "[pattern] ..." },
-		{ CLICOMMAND_LISTBIOS,          0, -1, &cli_frontend::listbios,         "[pattern] ..." },
 		{ CLICOMMAND_LISTSAMPLES,       0,  1, &cli_frontend::listsamples,      "[system name]" },
 		{ CLICOMMAND_VERIFYROMS,        0, -1, &cli_frontend::verifyroms,       "[pattern] ..." },
 		{ CLICOMMAND_VERIFYSAMPLES,     0,  1, &cli_frontend::verifysamples,    "[system name|*]" },
@@ -1757,34 +1765,41 @@ void cli_frontend::execute_commands(std::string_view exename)
 	// createconfig?
 	if (m_options.command() == CLICOMMAND_CREATECONFIG)
 	{
-		// attempt to open the output file
+		// attempt to open the output file and generate the updated (mame).ini
 		emu_file file(OPEN_FLAG_WRITE | OPEN_FLAG_CREATE | OPEN_FLAG_CREATE_PATHS);
 		if (file.open(std::string(emulator_info::get_configname()) + ".ini"))
 			throw emu_fatalerror("Unable to create file %s.ini\n",emulator_info::get_configname());
 
-		// generate the updated INI
 		file.puts(m_options.output_ini());
 
+		// ui.ini
 		ui_options ui_opts;
 		emu_file file_ui(OPEN_FLAG_WRITE | OPEN_FLAG_CREATE | OPEN_FLAG_CREATE_PATHS);
 		if (file_ui.open("ui.ini"))
 			throw emu_fatalerror("Unable to create file ui.ini\n");
 
-		// generate the updated INI
 		file_ui.puts(ui_opts.output_ini());
 
+		// plugin.ini
 		plugin_options plugin_opts;
 		path_iterator iter(m_options.plugins_path());
 		std::string pluginpath;
 		while (iter.next(pluginpath))
 			plugin_opts.scan_directory(pluginpath, true);
 
-		emu_file file_plugin(OPEN_FLAG_WRITE | OPEN_FLAG_CREATE | OPEN_FLAG_CREATE_PATHS);
-		if (file_plugin.open("plugin.ini"))
-			throw emu_fatalerror("Unable to create file plugin.ini\n");
+		std::string plugins(plugin_opts.output_ini());
 
-		// generate the updated INI
-		file_plugin.puts(plugin_opts.output_ini());
+		// only update the file when it found plugins
+		if (!plugins.empty())
+		{
+			emu_file file_plugin(OPEN_FLAG_WRITE | OPEN_FLAG_CREATE | OPEN_FLAG_CREATE_PATHS);
+			if (file_plugin.open("plugin.ini"))
+				throw emu_fatalerror("Unable to create file plugin.ini\n");
+
+			file_plugin.puts(plugins);
+		}
+		else
+			osd_printf_error("Skipped plugin.ini, could not find any plugins\n");
 
 		return;
 	}

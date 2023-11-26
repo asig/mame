@@ -1277,6 +1277,7 @@ layout_element::layout_element(environment &env, util::xml::data_node const &ele
 	, m_defstate(env.get_attribute_int(elemnode, "defstate", -1))
 	, m_statemask(0)
 	, m_foldhigh(false)
+	, m_invalidated(false)
 {
 	// parse components in order
 	bool first = true;
@@ -1647,6 +1648,17 @@ render_texture *layout_element::state_texture(int state)
 
 
 //-------------------------------------------------
+//  set_draw_callback - set handler called after
+//  drawing components
+//-------------------------------------------------
+
+void layout_element::set_draw_callback(draw_delegate &&handler)
+{
+	m_draw = std::move(handler);
+}
+
+
+//-------------------------------------------------
 //  preload - perform expensive loading upfront
 //  for all components
 //-------------------------------------------------
@@ -1655,6 +1667,25 @@ void layout_element::preload()
 {
 	for (component::ptr const &curcomp : m_complist)
 		curcomp->preload(machine());
+}
+
+
+//-------------------------------------------------
+//  prepare - perform additional tasks before
+//  drawing a frame
+//-------------------------------------------------
+
+void layout_element::prepare()
+{
+	if (m_invalidated)
+	{
+		m_invalidated = false;
+		for (texture &tex : m_elemtex)
+		{
+			machine().render().texture_free(tex.m_texture);
+			tex.m_texture = nullptr;
+		}
+	}
 }
 
 
@@ -1674,6 +1705,10 @@ void layout_element::element_scale(bitmap_argb32 &dest, bitmap_argb32 &source, c
 		if ((elemtex.m_state & curcomp->statemask()) == curcomp->stateval())
 			curcomp->draw(elemtex.m_element->machine(), dest, elemtex.m_state);
 	}
+
+	// if there's a callback for additional drawing, invoke it
+	if (!elemtex.m_element->m_draw.isnull())
+		elemtex.m_element->m_draw(elemtex.m_state, dest);
 }
 
 
@@ -3204,10 +3239,10 @@ protected:
 						width = font->string_width(ourheight / num_shown, aspect, m_stopnames[fruit]);
 						if (width < bounds.width())
 							break;
-						aspect *= 0.9f;
+						aspect *= 0.95f;
 					}
 
-					s32 curx = bounds.left() + (bounds.width() - width) / 2;
+					float curx = bounds.left() + (bounds.width() - width) / 2.0f;
 
 					// loop over characters
 					std::string_view s = m_stopnames[fruit];
@@ -3234,7 +3269,7 @@ protected:
 								u32 *const d = &dest.pix(effy);
 								for (int x = 0; x < chbounds.width(); x++)
 								{
-									int effx = curx + x + chbounds.left();
+									int effx = int(curx) + x + chbounds.left();
 									if (effx >= bounds.left() && effx <= bounds.right())
 									{
 										u32 spix = rgb_t(src[x]).a();
@@ -3352,10 +3387,10 @@ private:
 						width = font->string_width(dest.height(), aspect, m_stopnames[fruit]);
 						if (width < bounds.width())
 							break;
-						aspect *= 0.9f;
+						aspect *= 0.95f;
 					}
 
-					s32 curx = bounds.left();
+					float curx = bounds.left();
 
 					// allocate a temporary bitmap
 					bitmap_argb32 tempbitmap(dest.width(), dest.height());
@@ -3385,7 +3420,7 @@ private:
 								u32 *const d = &dest.pix(effy);
 								for (int x = 0; x < chbounds.width(); x++)
 								{
-									int effx = basex + curx + x;
+									int effx = basex + int(curx) + x;
 									if (effx >= bounds.left() && effx <= bounds.right())
 									{
 										u32 spix = rgb_t(src[x]).a();
@@ -3490,7 +3525,7 @@ layout_element::texture::texture(texture &&that) : texture()
 
 layout_element::texture::~texture()
 {
-	if (m_element != nullptr)
+	if (m_element)
 		m_element->machine().render().texture_free(m_texture);
 }
 
@@ -3707,11 +3742,11 @@ void layout_element::component::draw_text(
 		width = font.string_width(bounds.height(), aspect, str);
 		if (width < bounds.width())
 			break;
-		aspect *= 0.9f;
+		aspect *= 0.95f;
 	}
 
 	// get alignment
-	s32 curx;
+	float curx;
 	switch (align)
 	{
 		// left
@@ -3726,7 +3761,7 @@ void layout_element::component::draw_text(
 
 		// default to center
 		default:
-			curx = bounds.left() + (bounds.width() - width) / 2;
+			curx = bounds.left() + (bounds.width() - width) / 2.0f;
 			break;
 	}
 
@@ -3756,7 +3791,7 @@ void layout_element::component::draw_text(
 				u32 *const d = &dest.pix(effy);
 				for (int x = 0; x < chbounds.width(); x++)
 				{
-					int effx = curx + x + chbounds.left();
+					int effx = int(curx) + x + chbounds.left();
 					if (effx >= bounds.left() && effx <= bounds.right())
 					{
 						u32 spix = rgb_t(src[x]).a();
@@ -3986,6 +4021,7 @@ layout_view::layout_view(
 	: m_effaspect(1.0f)
 	, m_name(make_name(env, viewnode))
 	, m_unqualified_name(env.get_attribute_string(viewnode, "name"))
+	, m_elemmap(elemmap)
 	, m_defvismask(0U)
 	, m_has_art(false)
 {
@@ -4128,6 +4164,21 @@ bool layout_view::has_screen(screen_device const &screen) const
 bool layout_view::has_visible_screen(screen_device const &screen) const
 {
 	return std::find_if(m_screens.begin(), m_screens.end(), [&screen] (auto const &scr) { return &scr.get() == &screen; }) != m_screens.end();
+}
+
+
+//-------------------------------------------------
+//  prepare_items - perform additional tasks
+//  before rendering a frame
+//-------------------------------------------------
+
+void layout_view::prepare_items()
+{
+	if (!m_prepare_items.isnull())
+		m_prepare_items();
+
+	for (auto &[name, element] : m_elemmap)
+		element.prepare();
 }
 
 

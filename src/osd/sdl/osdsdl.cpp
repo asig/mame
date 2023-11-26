@@ -111,9 +111,9 @@ void osd_sdl_info()
 		SDL_DisplayMode mode;
 
 		osd_printf_verbose("\tDisplay #%d\n", i);
-		if (SDL_GetDesktopDisplayMode(i, &mode))
+		if (SDL_GetDesktopDisplayMode(i, &mode) == 0)
 			osd_printf_verbose("\t\tDesktop Mode:         %dx%d-%d@%d\n", mode.w, mode.h, SDL_BITSPERPIXEL(mode.format), mode.refresh_rate);
-		if (SDL_GetCurrentDisplayMode(i, &mode))
+		if (SDL_GetCurrentDisplayMode(i, &mode) == 0)
 			osd_printf_verbose("\t\tCurrent Display Mode: %dx%d-%d@%d\n", mode.w, mode.h, SDL_BITSPERPIXEL(mode.format), mode.refresh_rate);
 
 		osd_printf_verbose("\t\tRenderdrivers:\n");
@@ -260,6 +260,9 @@ void sdl_osd_interface::init(running_machine &machine)
 		}
 	}
 
+#if defined(SDLMAME_ANDROID)
+	SDL_SetHint(SDL_HINT_VIDEO_EXTERNAL_CONTEXT, "1");
+#endif
 	/* Initialize SDL */
 
 	if (SDL_InitSubSystem(SDL_INIT_VIDEO))
@@ -267,10 +270,6 @@ void sdl_osd_interface::init(running_machine &machine)
 		osd_printf_error("Could not initialize SDL %s\n", SDL_GetError());
 		exit(-1);
 	}
-
-	// bgfx does not work with wayland
-	if ((strcmp(SDL_GetCurrentVideoDriver(), "wayland") == 0) && ((strcmp(options().video(), "auto") == 0) || (strcmp(options().video(), "bgfx") == 0)))
-		fatalerror("Error: BGFX video does not work with wayland videodriver. Please change either of the options.");
 
 	osd_sdl_info();
 
@@ -294,11 +293,10 @@ void sdl_osd_interface::init(running_machine &machine)
 }
 
 
-void sdl_osd_interface::input_update()
+void sdl_osd_interface::input_update(bool relative_reset)
 {
 	process_events_buf();
-	poll_inputs();
-	check_osd_inputs();
+	poll_input_modules(relative_reset);
 }
 
 
@@ -401,7 +399,7 @@ void sdl_osd_interface::customize_input_type_list(std::vector<input_type_entry> 
 
 		// disable the config menu if the ALT key is down
 		// (allows ALT-TAB to switch between apps)
-		case IPT_UI_CONFIGURE:
+		case IPT_UI_MENU:
 			entry.defseq(SEQ_TYPE_STANDARD).set(KEYCODE_TAB, input_seq::not_code, KEYCODE_LALT, input_seq::not_code, KEYCODE_RALT);
 			break;
 
@@ -418,15 +416,6 @@ void sdl_osd_interface::customize_input_type_list(std::vector<input_type_entry> 
 			break;
 		}
 	}
-}
-
-
-void sdl_osd_interface::poll_inputs()
-{
-	m_keyboard_input->poll_if_necessary();
-	m_mouse_input->poll_if_necessary();
-	m_lightgun_input->poll_if_necessary();
-	m_joystick_input->poll_if_necessary();
 }
 
 
@@ -661,6 +650,8 @@ void sdl_osd_interface::process_window_event(SDL_Event const &event)
 		break;
 
 	case SDL_WINDOWEVENT_FOCUS_LOST:
+		if (window == m_focus_window)
+			m_focus_window = nullptr;
 		machine().ui_input().push_window_defocus_event(window->target());
 		break;
 
@@ -700,8 +691,8 @@ void sdl_osd_interface::process_textinput_event(SDL_Event const &event)
 
 void sdl_osd_interface::check_osd_inputs()
 {
-	// check for toggling fullscreen mode
-	if (machine().ui_input().pressed(IPT_OSD_1))
+	// check for toggling fullscreen mode (don't do this in debug mode)
+	if (machine().ui_input().pressed(IPT_OSD_1) && !(machine().debug_flags & DEBUG_FLAG_OSD_ENABLED))
 	{
 		// destroy the renderers first so that the render module can bounce if it depends on having a window handle
 		for (auto it = osd_common_t::window_list().rbegin(); osd_common_t::window_list().rend() != it; ++it)
