@@ -13,20 +13,20 @@
 ###########################################################################
 
 TARGET = mame
-SUBTARGET = arcade
+SUBTARGET = mame
 
 STRIP_SYMBOLS = 1
-DEBUG =
-SYMBOLS = 1
-PROFILER =
+DEBUG = 
+SYMBOLS = 
+PROFILER = 
 
 # REGENIE = 1
 # VERBOSE = 1
 # NOWERROR = 1
 # IGNORE_GIT = 1
 
-TARGET = mame
-SUBTARGET = arcade
+# TARGET = mame
+# SUBTARGET = mame
 # TOOLS = 1
 # TESTS = 1
 # BENCHMARKS = 1
