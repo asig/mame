@@ -7,7 +7,12 @@
     H8-3337 family emulation
 
     TODO:
-    - 16-bit timer module is different
+    - 16-bit timer module is different from how it's implemented in h8_timer16.cpp
+    - PWM timer module
+    - Host Interface module
+    - finish WSCR emulation, CKDBL flag would need support in peripherals
+    - finish STCR emulation
+    - finish SYSCR emulation
 
 ***************************************************************************/
 
@@ -37,7 +42,6 @@ h83337_device::h83337_device(const machine_config &mconfig, device_type type, co
 	m_timer16(*this, "timer16"),
 	m_timer16_0(*this, "timer16:0"),
 	m_watchdog(*this, "watchdog"),
-	m_syscr(0),
 	m_ram_start(start)
 {
 }
@@ -81,22 +85,22 @@ void h83337_device::map(address_map &map)
 	map(0xffac, 0xffac).rw(m_port1, FUNC(h8_port_device::pcr_r), FUNC(h8_port_device::pcr_w));
 	map(0xffad, 0xffad).rw(m_port2, FUNC(h8_port_device::pcr_r), FUNC(h8_port_device::pcr_w));
 	map(0xffae, 0xffae).rw(m_port3, FUNC(h8_port_device::pcr_r), FUNC(h8_port_device::pcr_w));
-	map(0xffb0, 0xffb0).w(m_port1, FUNC(h8_port_device::ddr_w));
-	map(0xffb1, 0xffb1).w(m_port2, FUNC(h8_port_device::ddr_w));
+	map(0xffb0, 0xffb0).rw(m_port1, FUNC(h8_port_device::ff_r), FUNC(h8_port_device::ddr_w));
+	map(0xffb1, 0xffb1).rw(m_port2, FUNC(h8_port_device::ff_r), FUNC(h8_port_device::ddr_w));
 	map(0xffb2, 0xffb2).rw(m_port1, FUNC(h8_port_device::port_r), FUNC(h8_port_device::dr_w));
 	map(0xffb3, 0xffb3).rw(m_port2, FUNC(h8_port_device::port_r), FUNC(h8_port_device::dr_w));
-	map(0xffb4, 0xffb4).w(m_port3, FUNC(h8_port_device::ddr_w));
-	map(0xffb5, 0xffb5).w(m_port4, FUNC(h8_port_device::ddr_w));
+	map(0xffb4, 0xffb4).rw(m_port3, FUNC(h8_port_device::ff_r), FUNC(h8_port_device::ddr_w));
+	map(0xffb5, 0xffb5).rw(m_port4, FUNC(h8_port_device::ff_r), FUNC(h8_port_device::ddr_w));
 	map(0xffb6, 0xffb6).rw(m_port3, FUNC(h8_port_device::port_r), FUNC(h8_port_device::dr_w));
 	map(0xffb7, 0xffb7).rw(m_port4, FUNC(h8_port_device::port_r), FUNC(h8_port_device::dr_w));
-	map(0xffb8, 0xffb8).w(m_port5, FUNC(h8_port_device::ddr_w));
-	map(0xffb9, 0xffb9).w(m_port6, FUNC(h8_port_device::ddr_w));
+	map(0xffb8, 0xffb8).rw(m_port5, FUNC(h8_port_device::ff_r), FUNC(h8_port_device::ddr_w));
+	map(0xffb9, 0xffb9).rw(m_port6, FUNC(h8_port_device::ff_r), FUNC(h8_port_device::ddr_w));
 	map(0xffba, 0xffba).rw(m_port5, FUNC(h8_port_device::port_r), FUNC(h8_port_device::dr_w));
 	map(0xffbb, 0xffbb).rw(m_port6, FUNC(h8_port_device::port_r), FUNC(h8_port_device::dr_w));
-	map(0xffbd, 0xffbd).w(m_port8, FUNC(h8_port_device::ddr_w));
+	map(0xffbd, 0xffbd).rw(m_port8, FUNC(h8_port_device::ff_r), FUNC(h8_port_device::ddr_w));
 	map(0xffbe, 0xffbe).rw(m_port7, FUNC(h8_port_device::port_r), FUNC(h8_port_device::dr_w));
 	map(0xffbf, 0xffbf).rw(m_port8, FUNC(h8_port_device::port_r), FUNC(h8_port_device::dr_w));
-	map(0xffc0, 0xffc0).w(m_port9, FUNC(h8_port_device::ddr_w));
+	map(0xffc0, 0xffc0).rw(m_port9, FUNC(h8_port_device::ff_r), FUNC(h8_port_device::ddr_w));
 	map(0xffc1, 0xffc1).rw(m_port9, FUNC(h8_port_device::port_r), FUNC(h8_port_device::dr_w));
 
 	map(0xffc2, 0xffc2).rw(FUNC(h83337_device::wscr_r), FUNC(h83337_device::wscr_w));
@@ -189,15 +193,36 @@ void h83337_device::internal_update(u64 current_time)
 	recompute_bcount(event_time);
 }
 
+void h83337_device::notify_standby(int state)
+{
+	m_adc->notify_standby(state);
+	m_sci[0]->notify_standby(state);
+	m_sci[1]->notify_standby(state);
+	m_timer8_0->notify_standby(state);
+	m_timer8_1->notify_standby(state);
+	m_timer16_0->notify_standby(state);
+	m_watchdog->notify_standby(state);
+}
+
 void h83337_device::device_start()
 {
 	h8_device::device_start();
+
+	m_wscr = 0;
+	m_stcr = 0;
+	m_syscr = 0;
+
+	save_item(NAME(m_wscr));
+	save_item(NAME(m_stcr));
 	save_item(NAME(m_syscr));
 }
 
 void h83337_device::device_reset()
 {
 	h8_device::device_reset();
+
+	m_wscr = 0x08;
+	m_stcr = 0x00;
 	m_syscr = 0x09;
 }
 
@@ -208,30 +233,35 @@ u8 h83337_device::syscr_r()
 
 void h83337_device::syscr_w(u8 data)
 {
-	m_syscr = data;
 	logerror("syscr = %02x\n", data);
+	m_syscr = (m_syscr & 0x08) | (data & 0xf7);
 }
 
 u8 h83337_device::wscr_r()
 {
-	return 0x00;
+	return m_wscr;
 }
 
 void h83337_device::wscr_w(u8 data)
 {
 	logerror("wscr = %02x\n", data);
+	m_wscr = data;
 }
 
 u8 h83337_device::stcr_r()
 {
-	return 0x00;
+	return m_stcr;
 }
 
 void h83337_device::stcr_w(u8 data)
 {
 	logerror("stcr = %02x\n", data);
-	m_timer8_0->set_extra_clock_bit(data & 0x01);
-	m_timer8_1->set_extra_clock_bit(data & 0x02);
+
+	// ICKS0/1
+	m_timer8_0->set_extra_clock_bit(BIT(data, 0));
+	m_timer8_1->set_extra_clock_bit(BIT(data, 1));
+
+	m_stcr = data;
 }
 
 u8 h83337_device::mdcr_r()

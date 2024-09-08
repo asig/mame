@@ -184,6 +184,9 @@ public:
 	}
 
 protected:
+	// driver_device overrides
+	virtual void machine_start() override;
+	virtual void machine_reset() override;
 
 	virtual uint8_t read_io0(uint8_t direction);
 	virtual uint8_t read_io1(uint8_t direction);
@@ -219,9 +222,6 @@ private:
 	INTERRUPT_GEN_MEMBER(interrupt);
 	TIMER_DEVICE_CALLBACK_MEMBER(scanline_cb);
 
-	// driver_device overrides
-	virtual void machine_start() override;
-	virtual void machine_reset() override;
 
 	virtual void video_start() override;
 
@@ -615,7 +615,9 @@ public:
 
 	void xavix_i2c_24lc04(machine_config &config);
 	void xavix_i2c_24c02(machine_config &config);
+	void xavix_i2c_24c02_43mhz(machine_config &config);
 	void xavix_i2c_24c08(machine_config &config);
+	void xavix_i2c_24c16(machine_config &config);
 
 	void xavix2000_i2c_24c08(machine_config &config);
 	void xavix2000_i2c_24c04(machine_config &config);
@@ -715,7 +717,7 @@ public:
 	void xavix_cart_popira(machine_config &config);
 	void xavix_cart_ddrfammt(machine_config &config);
 	void xavix_cart_evio(machine_config &config);
-	void xavix_cart_hikara(machine_config &config);
+	void xavix_cart_daig(machine_config &config);
 
 protected:
 
@@ -949,6 +951,16 @@ protected:
 	virtual void write_io1(uint8_t data, uint8_t direction) override;
 };
 
+class xavix_daig_cart_state : public xavix_cart_state
+{
+public:
+	xavix_daig_cart_state(const machine_config &mconfig, device_type type, const char *tag)
+		: xavix_cart_state(mconfig,type,tag)
+	{ }
+
+protected:
+};
+
 class xavix_ekara_state : public xavix_cart_state
 {
 public:
@@ -984,16 +996,30 @@ public:
 		m_extra3(*this, "EXTRA3")
 	{ }
 
+	void xavix_cart_hikara(machine_config &config);
+
 	virtual int ekara_multi0_r() override;
 	virtual int ekara_multi1_r() override;
 	int ekara_multi2_r();
 	int ekara_multi3_r();
 
 protected:
+	virtual void machine_reset() override;
 
 	required_ioport m_extra2;
 	required_ioport m_extra3;
 
+};
+
+class xavix_duelmast_state : public xavix_i2c_state
+{
+public:
+	xavix_duelmast_state(const machine_config &mconfig, device_type type, const char *tag)
+		: xavix_i2c_state(mconfig, type, tag)
+	{ }
+
+protected:
+	virtual uint8_t read_io1(uint8_t direction) override;
 };
 
 

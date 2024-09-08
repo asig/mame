@@ -1037,6 +1037,13 @@ void apple2e_state::machine_start()
 	m_joystick_x1_time = m_joystick_x2_time = m_joystick_y1_time = m_joystick_y2_time = 0;
 	m_reset_latch = false;
 
+	last_mx = 0;
+	last_my = 0;
+	count_x = 0;
+	count_y = 0;
+	m_x0 = false;
+	m_y0 = false;
+
 	// setup save states
 	save_item(NAME(m_speaker_state));
 	save_item(NAME(m_cassette_state));
@@ -1119,16 +1126,42 @@ void apple2e_state::machine_start()
 
 void apple2e_state::machine_reset()
 {
+	// All MMU switches off (80STORE, RAMRD, RAMWRT, INTCXROM, ALTZP, SLOTC3ROM, PAGE2, HIRES, INTC8ROM)
+	// Sather, Fig 5.13
+	m_ramrd = false;
+	m_ramwrt = false;
+	m_altzp = false;
+	m_slotc3rom = false;
+	m_intc8rom = false;
+
+	// Certain IOU switches off (80STORE, 80COL, ALTCHR, PAGE2, HIRES, AN0, AN1, AN2, AN3)
+	// Sather, Fig 7.1
+	m_video->a80store_w(false);
+	m_video->a80col_w(false);
+	m_video->altcharset_w(false);
 	m_video->page2_w(false);
-	m_video->monohgr_w(m_iscecm);
+	m_video->res_w(0);
+
+	// IIe IOU
 	m_an0 = m_an1 = m_an2 = m_an3 = false;
 	m_gameio->an0_w(0);
 	m_gameio->an1_w(0);
 	m_gameio->an2_w(0);
 	m_gameio->an3_w(0);
-	m_vbl = m_vblmask = false;
-	m_slotc3rom = false;
+
+	// IIc IOU
+	m_ioudis = true;
 	m_romswitch = false;
+
+	// LC resets to read ROM, write RAM, no pre-write, bank 2
+	// Sather, Fig 5.13
+	m_lcram = false;
+	m_lcram2 = true;
+	m_lcprewrite = false;
+	m_lcwriteenable = true;
+
+	m_video->monohgr_w(m_iscecm);
+	m_vbl = m_vblmask = false;
 	m_irqmask = 0;
 	m_strobe = 0;
 	m_franklin_last_fkeys = 0;
@@ -1139,10 +1172,11 @@ void apple2e_state::machine_reset()
 	m_xy = false;
 	m_x0edge = false;
 	m_y0edge = false;
+	m_x1 = false;
+	m_y1 = false;
 	m_xirq = false;
 	m_yirq = false;
 	m_mockingboard4c = false;
-	m_intc8rom = false;
 	m_cec_bank = 0;
 	m_accel_unlocked = false;
 	m_accel_stage = 0;
@@ -1221,23 +1255,10 @@ void apple2e_state::machine_reset()
 
 	}
 
-	m_video->a80store_w(false);
-	m_altzp = false;
-	m_ramrd = false;
-	m_ramwrt = false;
-	m_ioudis = true;
-
-	// LC default state: read ROM, write enabled, Dxxx bank 2
-	m_lcram = false;
-	m_lcram2 = true;
-	m_lcprewrite = false;
-	m_lcwriteenable = true;
-	lcrom_update();
-
 	m_exp_bankhior = 0xf0;
 
 	// sync up the banking with the variables.
-	// Understanding the Apple IIe: RESET on the IIe always resets LC state, doesn't on II/II+ with discrete LC
+	lcrom_update();
 	auxbank_update();
 	update_slotrom_banks();
 }
@@ -1320,20 +1341,13 @@ TIMER_DEVICE_CALLBACK_MEMBER(apple2e_state::apple2_interrupt)
 				m_reset_latch = true;
 				m_maincpu->set_input_line(INPUT_LINE_RESET, ASSERT_LINE);
 
-				// As per Sather: LC resets to read ROM, write RAM, no pre-write, bank 2
-				m_lcram = false;
-				m_lcram2 = true;
-				m_lcprewrite = false;
-				m_lcwriteenable = true;
-				lcrom_update();
-
-				// More Sather: all MMU switches off (80STORE, RAMRD, RAMWRT, INTCXROM, ALTZP, SLOTC3ROM, PAGE2, HIRES, INTC8ROM)
-				m_video->a80store_w(false);
+				// All MMU switches off (80STORE, RAMRD, RAMWRT, INTCXROM, ALTZP, SLOTC3ROM, PAGE2, HIRES, INTC8ROM)
+				// Sather, Fig 5.13
 				m_ramrd = false;
 				m_ramwrt = false;
 				m_altzp = false;
-				m_video->page2_w(false);
-				m_video->res_w(0);
+				m_slotc3rom = false;
+				m_intc8rom = false;
 
 				// reset intcxrom to default
 				if ((m_isiic) || (m_isace500))
@@ -1345,6 +1359,30 @@ TIMER_DEVICE_CALLBACK_MEMBER(apple2e_state::apple2_interrupt)
 					m_intcxrom = false;
 					m_slotc3rom = false;
 				}
+
+				// Certain IOU switches off (80STORE, 80COL, ALTCHR, PAGE2, HIRES, AN0, AN1, AN2, AN3)
+				// Sather, Fig 7.1
+				m_video->a80store_w(false);
+				m_video->a80col_w(false);
+				m_video->altcharset_w(false);
+				m_video->page2_w(false);
+				m_video->res_w(0);
+
+				// IIe IOU
+				m_an0 = m_an1 = m_an2 = m_an3 = false;
+				m_gameio->an0_w(0);
+				m_gameio->an1_w(0);
+				m_gameio->an2_w(0);
+				m_gameio->an3_w(0);
+
+				// LC resets to read ROM, write RAM, no pre-write, bank 2
+				// Sather, Fig 5.13
+				m_lcram = false;
+				m_lcram2 = true;
+				m_lcprewrite = false;
+				m_lcwriteenable = true;
+
+				lcrom_update();
 				auxbank_update();
 				update_slotrom_banks();
 			}
@@ -2464,7 +2502,7 @@ u8 apple2e_state::c000_iic_r(offs_t offset)
 		case 0x7e:  // read IOUDIS
 			m_vbl = false;
 			lower_irq(IRQ_VBL);
-			return (m_ioudis ? 0x00 : 0x80) | uFloatingBus7;
+			return (m_ioudis ? 0x80 : 0x00) | uFloatingBus7;
 
 		case 0x7f:  // read DHIRES
 			return (m_video->get_dhires() ? 0x00 : 0x80) | uFloatingBus7;
@@ -2652,6 +2690,7 @@ void apple2e_state::c000_iic_w(offs_t offset, u8 data)
 void apple2e_state::update_iic_mouse()
 {
 	int new_mx, new_my;
+	bool raise_mousexy_irq = false;
 
 	// read the axes and check for changes
 	new_mx = m_mousex->read();
@@ -2721,13 +2760,14 @@ void apple2e_state::update_iic_mouse()
 			if (m_xy)
 			{
 				m_xirq = true;
-				raise_irq(IRQ_MOUSEXY);
+				raise_mousexy_irq = true;
 			}
 		}
 
 		m_x0 = !m_x0;
 	}
-	else if (count_y)
+
+	if (count_y)
 	{
 		if (count_y < 0)
 		{
@@ -2747,11 +2787,16 @@ void apple2e_state::update_iic_mouse()
 			if (m_xy)
 			{
 				m_yirq = true;
-				raise_irq(IRQ_MOUSEXY);
+				raise_mousexy_irq = true;
 			}
 		}
 
 		m_y0 = !m_y0;
+	}
+
+	if (raise_mousexy_irq)
+	{
+		raise_irq(IRQ_MOUSEXY);
 	}
 }
 
@@ -4345,10 +4390,10 @@ static INPUT_PORTS_START( apple2c )
 	PORT_BIT( 0x01, IP_ACTIVE_HIGH, IPT_BUTTON1) PORT_NAME("Mouse Button") PORT_CODE(MOUSECODE_BUTTON1)
 
 	PORT_START(MOUSE_XAXIS_TAG) /* Mouse - X AXIS */
-	PORT_BIT( 0xff, 0x00, IPT_MOUSE_X) PORT_SENSITIVITY(20) PORT_KEYDELTA(0) PORT_PLAYER(1)
+	PORT_BIT( 0xff, 0x00, IPT_MOUSE_X) PORT_SENSITIVITY(40) PORT_KEYDELTA(0) PORT_PLAYER(1)
 
 	PORT_START(MOUSE_YAXIS_TAG) /* Mouse - Y AXIS */
-	PORT_BIT( 0xff, 0x00, IPT_MOUSE_Y) PORT_SENSITIVITY(20) PORT_KEYDELTA(0) PORT_PLAYER(1)
+	PORT_BIT( 0xff, 0x00, IPT_MOUSE_Y) PORT_SENSITIVITY(40) PORT_KEYDELTA(0) PORT_PLAYER(1)
 INPUT_PORTS_END
 
 static INPUT_PORTS_START( laser128 )
@@ -4368,10 +4413,10 @@ static INPUT_PORTS_START( laser128 )
 	PORT_BIT( 0x01, IP_ACTIVE_HIGH, IPT_BUTTON1) PORT_NAME("Mouse Button") PORT_CODE(MOUSECODE_BUTTON1)
 
 	PORT_START(MOUSE_XAXIS_TAG) /* Mouse - X AXIS */
-	PORT_BIT( 0xff, 0x00, IPT_MOUSE_X) PORT_SENSITIVITY(20) PORT_KEYDELTA(0) PORT_PLAYER(1)
+	PORT_BIT( 0xff, 0x00, IPT_MOUSE_X) PORT_SENSITIVITY(40) PORT_KEYDELTA(0) PORT_PLAYER(1)
 
 	PORT_START(MOUSE_YAXIS_TAG) /* Mouse - Y AXIS */
-	PORT_BIT( 0xff, 0x00, IPT_MOUSE_Y) PORT_SENSITIVITY(20) PORT_KEYDELTA(0) PORT_PLAYER(1)
+	PORT_BIT( 0xff, 0x00, IPT_MOUSE_Y) PORT_SENSITIVITY(40) PORT_KEYDELTA(0) PORT_PLAYER(1)
 INPUT_PORTS_END
 
 static INPUT_PORTS_START( ace500 )
@@ -4409,10 +4454,10 @@ static INPUT_PORTS_START( ace500 )
 	PORT_BIT( 0x01, IP_ACTIVE_HIGH, IPT_BUTTON1) PORT_NAME("Mouse Button") PORT_CODE(MOUSECODE_BUTTON1)
 
 	PORT_START(MOUSE_XAXIS_TAG) /* Mouse - X AXIS */
-	PORT_BIT( 0xff, 0x00, IPT_MOUSE_X) PORT_SENSITIVITY(20) PORT_KEYDELTA(0) PORT_PLAYER(1)
+	PORT_BIT( 0xff, 0x00, IPT_MOUSE_X) PORT_SENSITIVITY(40) PORT_KEYDELTA(0) PORT_PLAYER(1)
 
 	PORT_START(MOUSE_YAXIS_TAG) /* Mouse - Y AXIS */
-	PORT_BIT( 0xff, 0x00, IPT_MOUSE_Y) PORT_SENSITIVITY(20) PORT_KEYDELTA(0) PORT_PLAYER(1)
+	PORT_BIT( 0xff, 0x00, IPT_MOUSE_Y) PORT_SENSITIVITY(40) PORT_KEYDELTA(0) PORT_PLAYER(1)
 INPUT_PORTS_END
 
 static INPUT_PORTS_START( apple2cp )
@@ -4424,10 +4469,10 @@ static INPUT_PORTS_START( apple2cp )
 	PORT_BIT( 0x01, IP_ACTIVE_HIGH, IPT_BUTTON1) PORT_NAME("Mouse Button") PORT_CODE(MOUSECODE_BUTTON1)
 
 	PORT_START(MOUSE_XAXIS_TAG) /* Mouse - X AXIS */
-	PORT_BIT( 0xff, 0x00, IPT_MOUSE_X) PORT_SENSITIVITY(20) PORT_KEYDELTA(0) PORT_PLAYER(1)
+	PORT_BIT( 0xff, 0x00, IPT_MOUSE_X) PORT_SENSITIVITY(40) PORT_KEYDELTA(0) PORT_PLAYER(1)
 
 	PORT_START(MOUSE_YAXIS_TAG) /* Mouse - Y AXIS */
-	PORT_BIT( 0xff, 0x00, IPT_MOUSE_Y) PORT_SENSITIVITY(20) PORT_KEYDELTA(0) PORT_PLAYER(1)
+	PORT_BIT( 0xff, 0x00, IPT_MOUSE_Y) PORT_SENSITIVITY(40) PORT_KEYDELTA(0) PORT_PLAYER(1)
 INPUT_PORTS_END
 
 static INPUT_PORTS_START( apple2euk )

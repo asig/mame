@@ -33,12 +33,12 @@ void h83008_device::map(address_map &map)
 {
 	const offs_t base = m_mode_a20 ? 0 : 0xf00000;
 
-	map(base | 0xee003, base | 0xee003).w(m_port4, FUNC(h8_port_device::ddr_w));
-	map(base | 0xee005, base | 0xee005).w(m_port6, FUNC(h8_port_device::ddr_w));
-	map(base | 0xee007, base | 0xee007).w(m_port8, FUNC(h8_port_device::ddr_w));
-	map(base | 0xee008, base | 0xee008).w(m_port9, FUNC(h8_port_device::ddr_w));
-	map(base | 0xee009, base | 0xee009).w(m_porta, FUNC(h8_port_device::ddr_w));
-	map(base | 0xee00a, base | 0xee00a).w(m_portb, FUNC(h8_port_device::ddr_w));
+	map(base | 0xee003, base | 0xee003).rw(m_port4, FUNC(h8_port_device::ff_r), FUNC(h8_port_device::ddr_w));
+	map(base | 0xee005, base | 0xee005).rw(m_port6, FUNC(h8_port_device::ff_r), FUNC(h8_port_device::ddr_w));
+	map(base | 0xee007, base | 0xee007).rw(m_port8, FUNC(h8_port_device::ff_r), FUNC(h8_port_device::ddr_w));
+	map(base | 0xee008, base | 0xee008).rw(m_port9, FUNC(h8_port_device::ff_r), FUNC(h8_port_device::ddr_w));
+	map(base | 0xee009, base | 0xee009).rw(m_porta, FUNC(h8_port_device::ff_r), FUNC(h8_port_device::ddr_w));
+	map(base | 0xee00a, base | 0xee00a).rw(m_portb, FUNC(h8_port_device::ff_r), FUNC(h8_port_device::ddr_w));
 
 	map(base | 0xee012, base | 0xee012).rw(FUNC(h83008_device::syscr_r), FUNC(h83008_device::syscr_w));
 	map(base | 0xee014, base | 0xee014).rw(m_intc, FUNC(h8h_intc_device::iscr_r), FUNC(h8h_intc_device::iscr_w));
@@ -204,9 +204,25 @@ void h83008_device::internal_update(u64 current_time)
 	recompute_bcount(event_time);
 }
 
+void h83008_device::notify_standby(int state)
+{
+	m_adc->notify_standby(state);
+	m_sci[0]->notify_standby(state);
+	m_sci[1]->notify_standby(state);
+	m_timer8_0->notify_standby(state);
+	m_timer8_1->notify_standby(state);
+	m_timer8_2->notify_standby(state);
+	m_timer8_3->notify_standby(state);
+	m_timer16_0->notify_standby(state);
+	m_timer16_1->notify_standby(state);
+	m_timer16_2->notify_standby(state);
+	m_watchdog->notify_standby(state);
+}
+
 void h83008_device::device_start()
 {
 	h8h_device::device_start();
+	save_item(NAME(m_syscr));
 }
 
 void h83008_device::device_reset()
@@ -214,7 +230,6 @@ void h83008_device::device_reset()
 	h8h_device::device_reset();
 	m_syscr = 0x09;
 }
-
 
 u8 h83008_device::syscr_r()
 {

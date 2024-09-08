@@ -425,8 +425,6 @@ private:
 };
 
 
-// video
-
 /***************************************************************************/
 
 void rbisland_state::colpri_cb(uint32_t &sprite_colbank, uint32_t &pri_mask, uint16_t sprite_ctrl)
@@ -499,7 +497,7 @@ uint32_t jumping_state::screen_update(screen_device &screen, bitmap_ind16 &bitma
 	for (int offs = m_spriteram.bytes() / 2 - 8; offs >= 0; offs -= 8)
 	{
 		int const tile = m_spriteram[offs];
-		if (tile < m_gfxdecode->gfx(1)->elements())
+		if (tile < m_gfxdecode->gfx(0)->elements())
 		{
 			int sy = ((m_spriteram[offs + 1] - 0xfff1) ^ 0xffff) & 0x1ff;
 			if (sy > 400) sy = sy - 512;
@@ -522,8 +520,6 @@ uint32_t jumping_state::screen_update(screen_device &screen, bitmap_ind16 &bitma
 	return 0;
 }
 
-
-// machine
 
 /***************************************************************************
                             MEMORY STRUCTURES
@@ -1127,8 +1123,8 @@ ROM_END
 } // anonymous namespace
 
 
-GAME( 1987, rbisland,  0,        rbisland, rbisland, rbisland_state, empty_init, ROT0, "Taito Corporation", "Rainbow Islands (new version)",   MACHINE_SUPPORTS_SAVE )
-GAME( 1987, rbislando, rbisland, rbisland, rbisland, rbisland_state, empty_init, ROT0, "Taito Corporation", "Rainbow Islands (old version)",   MACHINE_SUPPORTS_SAVE )
+GAME( 1987, rbisland,  0,        rbisland, rbisland, rbisland_state, empty_init, ROT0, "Taito Corporation", "Rainbow Islands (rev 1)",         MACHINE_SUPPORTS_SAVE )
+GAME( 1987, rbislando, rbisland, rbisland, rbisland, rbisland_state, empty_init, ROT0, "Taito Corporation", "Rainbow Islands",                 MACHINE_SUPPORTS_SAVE )
 
 GAME( 1989, jumping,   rbisland, jumping,  jumping,  jumping_state,  empty_init, ROT0, "bootleg",           "Jumping (set 1)",                 MACHINE_SUPPORTS_SAVE )
 GAME( 1988, jumpinga,  rbisland, jumping,  jumping,  jumping_state,  empty_init, ROT0, "bootleg (Seyutu)",  "Jumping (set 2)",                 MACHINE_SUPPORTS_SAVE )

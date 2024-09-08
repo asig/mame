@@ -224,8 +224,6 @@ private:
 };
 
 
-// video
-
 /*************************************
  *
  *  TMS34061 I/O
@@ -311,7 +309,8 @@ uint8_t bowlrama_state::blitter_r(offs_t offset)
 		// Read data and increment address
 		case 4:
 			result = data;
-			m_blitter_addr = (m_blitter_addr + 1) & 0x3ffff;
+			if (!machine().side_effects_disabled())
+				m_blitter_addr = (m_blitter_addr + 1) & 0x3ffff;
 			break;
 
 		default:
@@ -366,8 +365,6 @@ uint32_t capbowl_base_state::screen_update(screen_device &screen, bitmap_rgb32 &
 	return 0;
 }
 
-
-// machine
 
 /*************************************
  *
@@ -587,7 +584,7 @@ void capbowl_base_state::base(machine_config &config)
 
 	NVRAM(config, "nvram", nvram_device::DEFAULT_RANDOM);
 
-	TICKET_DISPENSER(config, "ticket", attotime::from_msec(100), TICKET_MOTOR_ACTIVE_HIGH, TICKET_STATUS_ACTIVE_LOW);
+	TICKET_DISPENSER(config, "ticket", attotime::from_msec(100), ticket_dispenser_device::MOTOR_ACTIVE_HIGH, ticket_dispenser_device::STATUS_ACTIVE_LOW);
 
 	// video hardware
 	SCREEN(config, m_screen, SCREEN_TYPE_RASTER);
@@ -731,4 +728,4 @@ GAME( 1988, capbowl2, capbowl, capbowl,  capbowl, capbowl_state,  empty_init, RO
 GAME( 1988, capbowl3, capbowl, capbowl,  capbowl, capbowl_state,  empty_init, ROT270, "Incredible Technologies / Capcom", "Capcom Bowling (set 3)", MACHINE_SUPPORTS_SAVE )
 GAME( 1988, capbowl4, capbowl, capbowl,  capbowl, capbowl_state,  empty_init, ROT270, "Incredible Technologies / Capcom", "Capcom Bowling (set 4)", MACHINE_SUPPORTS_SAVE )
 GAME( 1989, clbowl,   capbowl, capbowl,  capbowl, capbowl_state,  empty_init, ROT270, "Incredible Technologies / Capcom", "Coors Light Bowling",    MACHINE_SUPPORTS_SAVE )
-GAME( 1991, bowlrama, 0,       bowlrama, capbowl, bowlrama_state, empty_init, ROT270, "P&P Marketing",                    "Bowl-O-Rama Rev 1.0",    MACHINE_SUPPORTS_SAVE )
+GAME( 1991, bowlrama, 0,       bowlrama, capbowl, bowlrama_state, empty_init, ROT270, "P&P Marketing",                    "Bowl-O-Rama (Rev 1.0)",  MACHINE_SUPPORTS_SAVE )

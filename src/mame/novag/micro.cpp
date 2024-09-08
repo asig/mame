@@ -56,7 +56,7 @@ private:
 	required_device<cpu_device> m_maincpu;
 	required_device<pwm_display_device> m_display;
 	required_device<sensorboard_device> m_board;
-	required_device<dac_bit_interface> m_dac;
+	required_device<dac_1bit_device> m_dac;
 	required_ioport m_inputs;
 
 	u8 m_led_data = 0;
@@ -105,9 +105,9 @@ void micro_state::input_w(u8 data)
 
 u8 micro_state::input_r()
 {
+	// P10-P17: multiplexed inputs
 	u8 data = 0;
 
-	// P10-P17: multiplexed inputs
 	// read chessboard
 	u8 cb_mux = (m_inp_mux << 2) | (m_control >> 5 & 3);
 	cb_mux = bitswap<8>(cb_mux,4,5,6,7,1,0,3,2);
@@ -242,4 +242,4 @@ ROM_END
 *******************************************************************************/
 
 //    YEAR  NAME    PARENT  COMPAT  MACHINE  INPUT  CLASS        INIT        COMPANY, FULLNAME, FLAGS
-SYST( 1981, nmicro, 0,      0,      micro,   micro, micro_state, empty_init, "Novag", "Micro Chess", MACHINE_SUPPORTS_SAVE | MACHINE_CLICKABLE_ARTWORK )
+SYST( 1981, nmicro, 0,      0,      micro,   micro, micro_state, empty_init, "Novag Industries", "Micro Chess", MACHINE_SUPPORTS_SAVE )

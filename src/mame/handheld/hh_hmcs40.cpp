@@ -71,7 +71,7 @@ known chips:
  @A89     HD38820  1984, Bandai Pair Match (PT-460) (2/2)
 
   A34     HD44801  1981, SciSys Mini Chess -> saitek/minichess.cpp
-  A50     HD44801  1981, CXG Sensor Computachess -> cxg/scptchess.cpp
+  A50     HD44801  1981, CXG Sensor Computachess -> cxg/computachess.cpp
   A75     HD44801  1982, Alpha 8201 protection MCU -> alpha/alpha8201.*
  *A85     HD44801  1982, SciSys Travel Sensor / Travel Mate / Chesspartner 5000/6000
  *A92     HD44801  1982, SciSys Play Bridge Computer
@@ -79,9 +79,10 @@ known chips:
   B42     HD44801  1983, Alpha 8303 protection MCU (see 8201)
  *B43     HD44801  1983, Alpha 8304 protection MCU (see 8201)
   C57     HD44801  1985, Alpha 8505 protection MCU (see 8201)
-  C89     HD44801  1985, CXG Portachess (1985 version) -> cxg/scptchess.cpp
+  C89     HD44801  1985, CXG Portachess (1985 version) -> cxg/computachess.cpp
 
  *A86     HD44820  1983, Chess King Pocket Micro / Mighty Midget
+ *B46     HD44820  1984, Chess King Pocket Micro / Mighty Midget
  *B63     HD44820  1985, CXG Pocket Chess (12 buttons)
 
  *A13     HD44840  1982, CXG Computachess II
@@ -90,7 +91,7 @@ known chips:
  *B55     HD44860  1987, Saitek Pro Bridge 100
 
  *A04     HD44868  1984, SciSys Rapier
- *A07     HD44868  1984, Chess King Pocket Micro Deluxe
+ *A07     HD44868  1984, Chess King Pocket Micro Deluxe / Mephisto Teufelchen
  *A12     HD44868  1985, SciSys MK 10 / Pocket Chess / Electronic Trio
  *A14     HD44868  1985, SciSys Kasparov Plus
  *A16     HD44868  1988, Saitek Pocket Checkers
@@ -5388,8 +5389,8 @@ SYST( 1984, pairmtch,  0,        0,      pairmtch,  pairmtch,  pairmtch_state,  
 SYST( 1981, alnattck,  0,        0,      alnattck,  alnattck,  alnattck_state,  empty_init, "Coleco", "Alien Attack", MACHINE_SUPPORTS_SAVE )
 SYST( 1982, cdkong,    0,        0,      cdkong,    cdkong,    cdkong_state,    empty_init, "Coleco", "Donkey Kong (Coleco)", MACHINE_SUPPORTS_SAVE )
 SYST( 1982, cgalaxn,   0,        0,      cgalaxn,   cgalaxn,   cgalaxn_state,   empty_init, "Coleco", "Galaxian (Coleco)", MACHINE_SUPPORTS_SAVE | MACHINE_IMPERFECT_SOUND )
-SYST( 1981, cpacman,   0,        0,      cpacman,   cpacman,   cpacman_state,   empty_init, "Coleco", "Pac-Man (Coleco, Rev. 29)", MACHINE_SUPPORTS_SAVE )
-SYST( 1981, cpacmanr1, cpacman,  0,      cpacman,   cpacman,   cpacman_state,   empty_init, "Coleco", "Pac-Man (Coleco, Rev. 28)", MACHINE_SUPPORTS_SAVE )
+SYST( 1981, cpacman,   0,        0,      cpacman,   cpacman,   cpacman_state,   empty_init, "Coleco", "Pac-Man (Coleco, rev. 29)", MACHINE_SUPPORTS_SAVE )
+SYST( 1981, cpacmanr1, cpacman,  0,      cpacman,   cpacman,   cpacman_state,   empty_init, "Coleco", "Pac-Man (Coleco, rev. 28)", MACHINE_SUPPORTS_SAVE )
 SYST( 1983, cmspacmn,  0,        0,      cmspacmn,  cmspacmn,  cmspacmn_state,  empty_init, "Coleco", "Ms. Pac-Man (Coleco)", MACHINE_SUPPORTS_SAVE )
 
 SYST( 1981, egalaxn2,  0,        0,      egalaxn2,  egalaxn2,  egalaxn2_state,  empty_init, "Entex", "Galaxian 2 (Entex)", MACHINE_SUPPORTS_SAVE )

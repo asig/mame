@@ -133,26 +133,26 @@ void h83042_device::map(address_map &map)
 	map(base | 0xffbb, base | 0xffbb).rw(m_sci[1], FUNC(h8_sci_device::tdr_r), FUNC(h8_sci_device::tdr_w));
 	map(base | 0xffbc, base | 0xffbc).rw(m_sci[1], FUNC(h8_sci_device::ssr_r), FUNC(h8_sci_device::ssr_w));
 	map(base | 0xffbd, base | 0xffbd).r(m_sci[1], FUNC(h8_sci_device::rdr_r));
-	map(base | 0xffc0, base | 0xffc0).w(m_port1, FUNC(h8_port_device::ddr_w));
-	map(base | 0xffc1, base | 0xffc1).w(m_port2, FUNC(h8_port_device::ddr_w));
+	map(base | 0xffc0, base | 0xffc0).rw(m_port1, FUNC(h8_port_device::ff_r), FUNC(h8_port_device::ddr_w));
+	map(base | 0xffc1, base | 0xffc1).rw(m_port2, FUNC(h8_port_device::ff_r), FUNC(h8_port_device::ddr_w));
 	map(base | 0xffc2, base | 0xffc2).rw(m_port1, FUNC(h8_port_device::port_r), FUNC(h8_port_device::dr_w));
 	map(base | 0xffc3, base | 0xffc3).rw(m_port2, FUNC(h8_port_device::port_r), FUNC(h8_port_device::dr_w));
-	map(base | 0xffc4, base | 0xffc4).w(m_port3, FUNC(h8_port_device::ddr_w));
-	map(base | 0xffc5, base | 0xffc5).w(m_port4, FUNC(h8_port_device::ddr_w));
+	map(base | 0xffc4, base | 0xffc4).rw(m_port3, FUNC(h8_port_device::ff_r), FUNC(h8_port_device::ddr_w));
+	map(base | 0xffc5, base | 0xffc5).rw(m_port4, FUNC(h8_port_device::ff_r), FUNC(h8_port_device::ddr_w));
 	map(base | 0xffc6, base | 0xffc6).rw(m_port3, FUNC(h8_port_device::port_r), FUNC(h8_port_device::dr_w));
 	map(base | 0xffc7, base | 0xffc7).rw(m_port4, FUNC(h8_port_device::port_r), FUNC(h8_port_device::dr_w));
-	map(base | 0xffc8, base | 0xffc8).w(m_port5, FUNC(h8_port_device::ddr_w));
-	map(base | 0xffc9, base | 0xffc9).w(m_port6, FUNC(h8_port_device::ddr_w));
+	map(base | 0xffc8, base | 0xffc8).rw(m_port5, FUNC(h8_port_device::ff_r), FUNC(h8_port_device::ddr_w));
+	map(base | 0xffc9, base | 0xffc9).rw(m_port6, FUNC(h8_port_device::ff_r), FUNC(h8_port_device::ddr_w));
 	map(base | 0xffca, base | 0xffca).rw(m_port5, FUNC(h8_port_device::port_r), FUNC(h8_port_device::dr_w));
 	map(base | 0xffcb, base | 0xffcb).rw(m_port6, FUNC(h8_port_device::port_r), FUNC(h8_port_device::dr_w));
-	map(base | 0xffcd, base | 0xffcd).w(m_port8, FUNC(h8_port_device::ddr_w));
+	map(base | 0xffcd, base | 0xffcd).rw(m_port8, FUNC(h8_port_device::ff_r), FUNC(h8_port_device::ddr_w));
 	map(base | 0xffce, base | 0xffce).rw(m_port7, FUNC(h8_port_device::port_r), FUNC(h8_port_device::dr_w));
 	map(base | 0xffcf, base | 0xffcf).rw(m_port8, FUNC(h8_port_device::port_r), FUNC(h8_port_device::dr_w));
-	map(base | 0xffd0, base | 0xffd0).w(m_port9, FUNC(h8_port_device::ddr_w));
-	map(base | 0xffd1, base | 0xffd1).w(m_porta, FUNC(h8_port_device::ddr_w));
+	map(base | 0xffd0, base | 0xffd0).rw(m_port9, FUNC(h8_port_device::ff_r), FUNC(h8_port_device::ddr_w));
+	map(base | 0xffd1, base | 0xffd1).rw(m_porta, FUNC(h8_port_device::ff_r), FUNC(h8_port_device::ddr_w));
 	map(base | 0xffd2, base | 0xffd2).rw(m_port9, FUNC(h8_port_device::port_r), FUNC(h8_port_device::dr_w));
 	map(base | 0xffd3, base | 0xffd3).rw(m_porta, FUNC(h8_port_device::port_r), FUNC(h8_port_device::dr_w));
-	map(base | 0xffd4, base | 0xffd4).w(m_portb, FUNC(h8_port_device::ddr_w));
+	map(base | 0xffd4, base | 0xffd4).rw(m_portb, FUNC(h8_port_device::ff_r), FUNC(h8_port_device::ddr_w));
 	map(base | 0xffd6, base | 0xffd6).rw(m_portb, FUNC(h8_port_device::port_r), FUNC(h8_port_device::dr_w));
 	map(base | 0xffd8, base | 0xffd8).rw(m_port2, FUNC(h8_port_device::pcr_r), FUNC(h8_port_device::pcr_w));
 	map(base | 0xffda, base | 0xffda).rw(m_port4, FUNC(h8_port_device::pcr_r), FUNC(h8_port_device::pcr_w));
@@ -263,9 +263,23 @@ void h83042_device::internal_update(u64 current_time)
 	recompute_bcount(event_time);
 }
 
+void h83042_device::notify_standby(int state)
+{
+	m_adc->notify_standby(state);
+	m_sci[0]->notify_standby(state);
+	m_sci[1]->notify_standby(state);
+	m_timer16_0->notify_standby(state);
+	m_timer16_1->notify_standby(state);
+	m_timer16_2->notify_standby(state);
+	m_timer16_3->notify_standby(state);
+	m_timer16_4->notify_standby(state);
+	m_watchdog->notify_standby(state);
+}
+
 void h83042_device::device_start()
 {
 	h8h_device::device_start();
+	save_item(NAME(m_syscr));
 }
 
 void h83042_device::device_reset()

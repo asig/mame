@@ -69,11 +69,11 @@ is engine version C.
 #include "saitek_tking.lh"
 
 
-class stratos_state : public saitek_stratos_state
+class stratos_state : public stratos_base_state
 {
 public:
 	stratos_state(const machine_config &mconfig, device_type type, const char *tag) :
-		saitek_stratos_state(mconfig, type, tag),
+		stratos_base_state(mconfig, type, tag),
 		m_banked_nvram(*this, "nvram.u7", 0x2000, ENDIANNESS_LITTLE),
 		m_nvrambank(*this, "nvrambank"),
 		m_rombank(*this, "rombank"),
@@ -101,7 +101,7 @@ private:
 	required_memory_bank m_rombank;
 	required_device<generic_slot_device> m_extrom;
 	required_device<sensorboard_device> m_board;
-	required_device<dac_bit_interface> m_dac;
+	required_device<dac_1bit_device> m_dac;
 	required_ioport_array<8+2> m_inputs;
 
 	u8 m_select = 0;
@@ -122,9 +122,10 @@ private:
 	u8 extrom_r(offs_t offset);
 };
 
-// saitek_stratos_state
 
-void saitek_stratos_state::machine_start()
+// stratos_base_state
+
+void stratos_base_state::machine_start()
 {
 	// resolve handlers
 	m_out_digit.resolve();
@@ -138,7 +139,7 @@ void saitek_stratos_state::machine_start()
 	save_item(NAME(m_lcd_data));
 }
 
-void saitek_stratos_state::machine_reset()
+void stratos_base_state::machine_reset()
 {
 	m_power = true;
 	m_lcd_ready = false;
@@ -146,7 +147,7 @@ void saitek_stratos_state::machine_reset()
 	clear_lcd();
 }
 
-INPUT_CHANGED_MEMBER(saitek_stratos_state::change_cpu_freq)
+INPUT_CHANGED_MEMBER(stratos_base_state::change_cpu_freq)
 {
 	// known officially* released CPU speeds: 5MHz, 5.626MHz, 5.67MHz
 	// *not including reseller overclocks, user mods, or the "Turbo Kit"
@@ -154,11 +155,12 @@ INPUT_CHANGED_MEMBER(saitek_stratos_state::change_cpu_freq)
 	m_maincpu->set_unscaled_clock(xtal[newval % 3]);
 }
 
+
 // stratos_state
 
 void stratos_state::machine_start()
 {
-	saitek_stratos_state::machine_start();
+	stratos_base_state::machine_start();
 
 	// init banks
 	m_rombank->configure_entries(0, 2, memregion("maincpu")->base(), 0x8000);
@@ -172,7 +174,7 @@ void stratos_state::machine_start()
 
 void stratos_state::machine_reset()
 {
-	saitek_stratos_state::machine_reset();
+	stratos_base_state::machine_reset();
 
 	m_control = 0;
 	m_rombank->set_entry(0);
@@ -187,7 +189,7 @@ void stratos_state::machine_reset()
 
 // soft power on/off
 
-INPUT_CHANGED_MEMBER(saitek_stratos_state::go_button)
+INPUT_CHANGED_MEMBER(stratos_base_state::go_button)
 {
 	if (newval && !m_power)
 	{
@@ -196,7 +198,7 @@ INPUT_CHANGED_MEMBER(saitek_stratos_state::go_button)
 	}
 }
 
-void saitek_stratos_state::power_off()
+void stratos_base_state::power_off()
 {
 	m_power = false;
 	m_maincpu->set_input_line(INPUT_LINE_RESET, ASSERT_LINE);
@@ -210,7 +212,7 @@ void saitek_stratos_state::power_off()
 
 // LCD HLE
 
-void saitek_stratos_state::update_lcd()
+void stratos_base_state::update_lcd()
 {
 	// output individual segments
 	for (int i = 0; i < 0x40; i++)
@@ -228,7 +230,7 @@ void saitek_stratos_state::update_lcd()
 		m_out_digit[i + 5] = (m_lcd_data[0x11 + i * 2] << 4 | m_lcd_data[0x11 + i * 2 + 1]) & 0x7f;
 }
 
-void saitek_stratos_state::lcd_data_w(u8 data)
+void stratos_base_state::lcd_data_w(u8 data)
 {
 	// d0-d3: lcd data
 	// d4-d7: unused?
@@ -416,10 +418,10 @@ INPUT_PORTS_START( saitek_stratos )
 	PORT_CONFSETTING(    0x01, DEF_STR( Normal ) )
 
 	PORT_START("RESET")
-	PORT_BIT(0x01, IP_ACTIVE_HIGH, IPT_KEYPAD) PORT_CODE(KEYCODE_A) PORT_CHANGED_MEMBER(DEVICE_SELF, saitek_stratos_state, go_button, 0) PORT_NAME("Go")
+	PORT_BIT(0x01, IP_ACTIVE_HIGH, IPT_KEYPAD) PORT_CODE(KEYCODE_A) PORT_CHANGED_MEMBER(DEVICE_SELF, stratos_base_state, go_button, 0) PORT_NAME("Go")
 
 	PORT_START("CPU")
-	PORT_CONFNAME( 0x03, 0x00, "CPU Frequency" ) PORT_CHANGED_MEMBER(DEVICE_SELF, saitek_stratos_state, change_cpu_freq, 0) // factory set
+	PORT_CONFNAME( 0x03, 0x00, "CPU Frequency" ) PORT_CHANGED_MEMBER(DEVICE_SELF, stratos_base_state, change_cpu_freq, 0) // factory set
 	PORT_CONFSETTING(    0x00, "5MHz" )
 	PORT_CONFSETTING(    0x01, "5.626MHz" )
 	PORT_CONFSETTING(    0x02, "5.67MHz" )
@@ -466,7 +468,7 @@ static INPUT_PORTS_START( tking ) // same buttons, but different locations
 	PORT_BIT(0x04, IP_ACTIVE_HIGH, IPT_KEYPAD) PORT_CODE(KEYCODE_E) PORT_NAME("Normal")
 
 	PORT_MODIFY("RESET")
-	PORT_BIT(0x01, IP_ACTIVE_HIGH, IPT_KEYPAD) PORT_CODE(KEYCODE_Y) PORT_CHANGED_MEMBER(DEVICE_SELF, saitek_stratos_state, go_button, 0) PORT_NAME("Go")
+	PORT_BIT(0x01, IP_ACTIVE_HIGH, IPT_KEYPAD) PORT_CODE(KEYCODE_Y) PORT_CHANGED_MEMBER(DEVICE_SELF, stratos_base_state, go_button, 0) PORT_NAME("Go")
 INPUT_PORTS_END
 
 static INPUT_PORTS_START( tking2 )
@@ -572,9 +574,9 @@ ROM_END
 *******************************************************************************/
 
 //    YEAR  NAME      PARENT   COMPAT  MACHINE  INPUT    CLASS          INIT        COMPANY, FULLNAME, FLAGS
-SYST( 1987, stratos,  0,       0,      stratos, stratos, stratos_state, empty_init, "SciSys", "Kasparov Stratos (set 1)", MACHINE_SUPPORTS_SAVE | MACHINE_CLICKABLE_ARTWORK )
-SYST( 1987, stratosa, stratos, 0,      stratos, stratos, stratos_state, empty_init, "SciSys", "Kasparov Stratos (set 2)", MACHINE_SUPPORTS_SAVE | MACHINE_CLICKABLE_ARTWORK )
+SYST( 1987, stratos,  0,       0,      stratos, stratos, stratos_state, empty_init, "SciSys / Heuristic Software", "Kasparov Stratos (set 1)", MACHINE_SUPPORTS_SAVE )
+SYST( 1987, stratosa, stratos, 0,      stratos, stratos, stratos_state, empty_init, "SciSys / Heuristic Software", "Kasparov Stratos (set 2)", MACHINE_SUPPORTS_SAVE )
 
-SYST( 1990, tking,    stratos, 0,      tking2,  tking2,  stratos_state, empty_init, "Saitek", "Kasparov Turbo King (ver. D)", MACHINE_SUPPORTS_SAVE | MACHINE_CLICKABLE_ARTWORK ) // aka Turbo King II
-SYST( 1988, tkinga,   stratos, 0,      tking,   tking,   stratos_state, empty_init, "Saitek", "Kasparov Turbo King (ver. B, set 1)", MACHINE_SUPPORTS_SAVE | MACHINE_CLICKABLE_ARTWORK )
-SYST( 1988, tkingb,   stratos, 0,      tking,   tking,   stratos_state, empty_init, "Saitek", "Kasparov Turbo King (ver. B, set 2)", MACHINE_SUPPORTS_SAVE | MACHINE_CLICKABLE_ARTWORK )
+SYST( 1990, tking,    stratos, 0,      tking2,  tking2,  stratos_state, empty_init, "Saitek / Heuristic Software", "Kasparov Turbo King (ver. D)", MACHINE_SUPPORTS_SAVE ) // aka Turbo King II
+SYST( 1988, tkinga,   stratos, 0,      tking,   tking,   stratos_state, empty_init, "Saitek / Heuristic Software", "Kasparov Turbo King (ver. B, set 1)", MACHINE_SUPPORTS_SAVE )
+SYST( 1988, tkingb,   stratos, 0,      tking,   tking,   stratos_state, empty_init, "Saitek / Heuristic Software", "Kasparov Turbo King (ver. B, set 2)", MACHINE_SUPPORTS_SAVE )
