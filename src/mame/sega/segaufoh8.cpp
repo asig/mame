@@ -47,7 +47,7 @@ public:
 private:
 	required_device<h83007_device> m_maincpu;
 
-	void program_map(address_map &map);
+	void program_map(address_map &map) ATTR_COLD;
 };
 
 
@@ -133,4 +133,4 @@ ROM_END
 } // anonymous namespace
 
 
-GAME( 2001, ufo7, 0, segaufoh8, ufo7, segaufoh8_state, empty_init, ROT0, "Sega", "UFO Catcher 7", MACHINE_IS_SKELETON_MECHANICAL ) // UFO Catch 7 V20011112 in string in ROM
+GAME( 2001, ufo7, 0, segaufoh8, ufo7, segaufoh8_state, empty_init, ROT0, "Sega", "UFO Catcher 7", MACHINE_NO_SOUND | MACHINE_NOT_WORKING | MACHINE_MECHANICAL | MACHINE_REQUIRES_ARTWORK ) // UFO Catch 7 V20011112 in string in ROM

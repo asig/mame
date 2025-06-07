@@ -469,7 +469,7 @@ void i960_cpu_device::take_interrupt(int vector, int lvl)
 	}
 
 	SP = (SP + 63) & ~63;
-	SP += 128;  // emulate ElSemi's core, this fixes the crash in sonic the fighters
+	SP += 64;	// add padding to prevent buffer underflow when saving processor state
 
 	do_call(IRQV, 7, SP);
 
@@ -1538,7 +1538,7 @@ void i960_cpu_device::execute_op(uint32_t opcode)
 				t1 = get_1_ri(opcode);
 				t2 = get_2_ri(opcode);
 
-				set_ri64(opcode, (int64_t)t1 * (int64_t)t2);
+				set_ri64(opcode, mulu_32x32(t1, t2));
 				break;
 
 			case 0x1: // ediv

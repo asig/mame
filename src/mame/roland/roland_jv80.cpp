@@ -28,7 +28,7 @@ public:
 	void jv880(machine_config &config);
 
 private:
-	void jv880_mem_map(address_map &map);
+	void jv880_mem_map(address_map &map) ATTR_COLD;
 
 	required_device<h8532_device> m_maincpu;
 	required_device<tc6116_device> m_pcm;
@@ -73,7 +73,7 @@ public:
 	void rd500(machine_config &config);
 
 private:
-	void rd500_mem_map(address_map &map);
+	void rd500_mem_map(address_map &map) ATTR_COLD;
 
 	u8 keyscan_r(offs_t offset);
 	void keyscan_w(offs_t offset, u8 data);
@@ -141,6 +141,6 @@ ROM_END
 } // anonymous namespace
 
 
-//SYST(1992, jv80, 0, 0, jv80, jv80, roland_jv80_state, empty_init, "Roland", "JV-80 Multi Timbral Synthesizer", MACHINE_IS_SKELETON)
-SYST(1992, jv880, 0, 0, jv880, jv880, roland_jv80_state, empty_init, "Roland", "JV-880 Multi Timbral Synthesizer Module", MACHINE_IS_SKELETON)
-SYST(1994, rd500, 0, 0, rd500, rd500, roland_rd500_state, empty_init, "Roland", "RD-500 Digital Piano", MACHINE_IS_SKELETON)
+//SYST(1992, jv80, 0, 0, jv80, jv80, roland_jv80_state, empty_init, "Roland", "JV-80 Multi Timbral Synthesizer", MACHINE_NO_SOUND | MACHINE_NOT_WORKING)
+SYST(1992, jv880, 0, 0, jv880, jv880, roland_jv80_state, empty_init, "Roland", "JV-880 Multi Timbral Synthesizer Module", MACHINE_NO_SOUND | MACHINE_NOT_WORKING)
+SYST(1994, rd500, 0, 0, rd500, rd500, roland_rd500_state, empty_init, "Roland", "RD-500 Digital Piano", MACHINE_NO_SOUND | MACHINE_NOT_WORKING)

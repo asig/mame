@@ -167,7 +167,7 @@ public:
 
 protected:
 	virtual void machine_start() override { m_lamps.resolve(); }
-	virtual void video_start() override;
+	virtual void video_start() override ATTR_COLD;
 
 private:
 	uint32_t screen_update(screen_device &screen, bitmap_ind16 &bitmap, const rectangle &cliprect);
@@ -189,15 +189,15 @@ private:
 
 	INTERRUPT_GEN_MEMBER(vblank_irq);
 
-	void amuse1_map(address_map &map);
-	void amuse_map(address_map &map);
-	void findout_map(address_map &map);
-	void gepoker_map(address_map &map);
-	void getrivia_map(address_map &map);
-	void gselect_map(address_map &map);
-	void quizvid_map(address_map &map);
-	void sprtauth_map(address_map &map);
-	void suprpokr_map(address_map &map);
+	void amuse1_map(address_map &map) ATTR_COLD;
+	void amuse_map(address_map &map) ATTR_COLD;
+	void findout_map(address_map &map) ATTR_COLD;
+	void gepoker_map(address_map &map) ATTR_COLD;
+	void getrivia_map(address_map &map) ATTR_COLD;
+	void gselect_map(address_map &map) ATTR_COLD;
+	void quizvid_map(address_map &map) ATTR_COLD;
+	void sprtauth_map(address_map &map) ATTR_COLD;
+	void suprpokr_map(address_map &map) ATTR_COLD;
 
 	bitmap_ind16 m_bitmap;
 
@@ -591,7 +591,7 @@ static INPUT_PORTS_START(trivia_standard)
 	PORT_START("IN0")
 	PORT_BIT( 0x01, IP_ACTIVE_LOW, IPT_COIN1 ) PORT_IMPULSE(2)
 	PORT_BIT( 0x02, IP_ACTIVE_LOW, IPT_COIN2 ) PORT_IMPULSE(2)
-	PORT_BIT( 0x04, IP_ACTIVE_HIGH, IPT_CUSTOM ) PORT_READ_LINE_DEVICE_MEMBER("ticket", ticket_dispenser_device, line_r)
+	PORT_BIT( 0x04, IP_ACTIVE_HIGH, IPT_CUSTOM ) PORT_READ_LINE_DEVICE_MEMBER("ticket", FUNC(ticket_dispenser_device::line_r))
 	PORT_SERVICE( 0x08, IP_ACTIVE_LOW )
 	PORT_BIT( 0x10, IP_ACTIVE_LOW, IPT_UNKNOWN )
 	PORT_BIT( 0x20, IP_ACTIVE_LOW, IPT_UNKNOWN )
@@ -699,7 +699,7 @@ static INPUT_PORTS_START( getrivia )
 	PORT_BIT( 0x01, IP_ACTIVE_LOW, IPT_BUTTON6 ) PORT_IMPULSE(2) PORT_CONDITION("DSWA", 0x40, EQUALS, 0x00) PORT_NAME ("Start in no coins mode")
 	PORT_BIT( 0x02, IP_ACTIVE_LOW, IPT_COIN2 ) PORT_IMPULSE(2) PORT_CONDITION("DSWA", 0x40, EQUALS, 0x40)
 	PORT_BIT( 0x02, IP_ACTIVE_LOW, IPT_UNKNOWN ) PORT_CONDITION("DSWA", 0x40, EQUALS, 0x00)
-	PORT_BIT( 0x04, IP_ACTIVE_HIGH, IPT_CUSTOM ) PORT_READ_LINE_DEVICE_MEMBER("ticket", ticket_dispenser_device, line_r)
+	PORT_BIT( 0x04, IP_ACTIVE_HIGH, IPT_CUSTOM ) PORT_READ_LINE_DEVICE_MEMBER("ticket", FUNC(ticket_dispenser_device::line_r))
 	PORT_SERVICE( 0x08, IP_ACTIVE_LOW )
 	PORT_BIT( 0x10, IP_ACTIVE_LOW, IPT_UNKNOWN )
 	PORT_BIT( 0x20, IP_ACTIVE_LOW, IPT_UNKNOWN )
@@ -1059,7 +1059,7 @@ void gei_state::getrivia(machine_config &config)
 	m_ppi[1]->out_pb_callback().set(FUNC(gei_state::lamps_w));
 	m_ppi[1]->out_pc_callback().set(FUNC(gei_state::lamps2_w));
 
-	TICKET_DISPENSER(config, m_ticket, attotime::from_msec(100), ticket_dispenser_device::MOTOR_ACTIVE_HIGH, ticket_dispenser_device::STATUS_ACTIVE_HIGH);
+	TICKET_DISPENSER(config, m_ticket, attotime::from_msec(100));
 
 	// sound hardware
 	SPEAKER(config, "speaker").front_center();
@@ -1479,6 +1479,57 @@ ROM_START( gepoker2 ) // v50.02 with control dated 9-30-84
 	ROM_LOAD( "jokerpoker_cb_10-19-88",    0x10000, 0x2000, CRC(a590af75) SHA1(63bc64fbc9ac0c489b1f4894d77a4be13d7251e7) )
 	ROM_LOAD( "horserace_icb_1-1-87",      0x12000, 0x2000, CRC(6d5092e3) SHA1(ef99d1b858aef3c438c61c2b17e371dc6aca6623) )
 ROM_END
+
+/*
+  GREYHOUND ELECTRONICS INC.
+  PCB: UV-1B
+  copyright GEI, 1982
+
+
+  ROM board:
+  .----------------+++++++++++++++++++++++++-------------------------.
+  | UVM10-C        |||||||||||||||||||||||||           .-----------. |
+  | G.E.I.              2x25 connector                 | PAL10L8xx | |
+  |                                                    '-----------' |
+  |        .----. .----. .----. .----. .----. .----. .----.          |
+  | .----. |    | |    | |    | |    | |    | |    | |    |   .--.   |
+  | | D  | | 27 | | 27 | | 27 | | 27 | | 27 | | 27 | | 27 |   |74|   |
+  | |449 | | 64 | | 64 | | 64 | | 64 | | 64 | | 64 | | 64 |   |LS|   |
+  | |C-2 | |    | |    | |    | |    | |    | |    | |    |   |37|   |
+  | |    | |    | |    | |    | |    | |    | |    | |    |   |4 |   |
+  | '----' '----' '----' '----' '----' '----' '----' '----'   '--'   |
+  |  RAM    HIGH  CONTROL ROM1   ROM2   ROM3   ROM4   ROM5           |
+  '------------------------------------------------------------------'
+
+
+  COPYRIGHT 1984 GREYHOUND ELECTRONICS INC.
+  CREDIT VERSION 50.02,ICB
+
+
+  RAM:     NEC D449C-2
+  HIGH:    HROM 6/25 M105 PTS.
+  CONTROL: CONT 9/30 M105 P.C.
+  ROM1:    JOKER POKER CB 10-19-88
+  ROM2:    BLACK JACK ICB 9-30-86
+  ROM3:    ROLLING BONES ICB 8-16-84
+  ROM4:    CASINO SLOTS ICB 9-30-86
+  ROM5:    HORSE RACE ICB 1-1-87
+
+  PLD:  PAL10L8xx
+
+*/
+ROM_START( gepoker2a )  // v50.02 with control dated 9-30-84, 5 games.
+	ROM_REGION( 0x1b000, "maincpu", ROMREGION_ERASEFF )
+	ROM_LOAD( "control_cont_9-30_m105_pts_2764.bin",  0x00000, 0x2000, CRC(08b996f2) SHA1(5f5efb5015ec9571cc94734c18debfadaa28f585) )
+	ROM_LOAD( "high_hrom_6-25_m105_pts_2764.bin",     0x0e000, 0x2000, CRC(6ddc1750) SHA1(ee19206b7f4a98e3e7647414127f4e09b3e9134f) )
+	// Banked ROMs
+	ROM_LOAD( "rom1_pokr_w-r_1019_m105_pts_2764.bin", 0x10000, 0x2000, CRC(a590af75) SHA1(63bc64fbc9ac0c489b1f4894d77a4be13d7251e7) )
+	ROM_LOAD( "rom2_bljk_9-30_m105_pts_2764.bin",     0x12000, 0x2000, CRC(82804184) SHA1(2e2e6a80c99c8eb226dc54c1d32d0bf24de300a4) )
+	ROM_LOAD( "rom3_bone_8-16_m105_pts_2764.bin",     0x14000, 0x2000, CRC(52d66cb6) SHA1(57db34906fcafd37f3a361df209dafe080aeac16) )
+	ROM_LOAD( "rom4_slot_9-30_m105_pts_2764.bin",     0x16000, 0x2000, CRC(713c3963) SHA1(a9297c04fc44522ca6891516a2c744712132896a) )
+	ROM_LOAD( "rom5_hrse_1-1_87_m105_pts_2764.bin",   0x18000, 0x2000, CRC(6d5092e3) SHA1(ef99d1b858aef3c438c61c2b17e371dc6aca6623) )
+ROM_END
+
 
 ROM_START( gepoker3 ) // v50.02 with control dated 9-30-84
 	ROM_REGION( 0x1b000, "maincpu", ROMREGION_ERASEFF )
@@ -2157,6 +2208,7 @@ GAME( 1983, amuse1a,   amuse,    amuse1,    gepoker,  gei_state, init_bank2k,   
 GAME( 1984, gepoker,   0,        gepoker,   gepoker,  gei_state, init_bank2k,   ROT0, "Greyhound Electronics", "Poker (Version 50.02 ICB, set 1)",        MACHINE_IMPERFECT_GRAPHICS | MACHINE_IMPERFECT_SOUND | MACHINE_SUPPORTS_SAVE )
 GAME( 1984, gepoker1,  gepoker,  gepoker,   gepoker,  gei_state, init_bank2k,   ROT0, "Greyhound Electronics", "Poker (Version 50.02 ICB, set 2)",        MACHINE_IMPERFECT_GRAPHICS | MACHINE_IMPERFECT_SOUND | MACHINE_SUPPORTS_SAVE )
 GAME( 1984, gepoker2,  gepoker,  gepoker,   gepoker,  gei_state, init_bank2k,   ROT0, "Greyhound Electronics", "Poker (Version 50.02 ICB, set 3)",        MACHINE_IMPERFECT_GRAPHICS | MACHINE_IMPERFECT_SOUND | MACHINE_SUPPORTS_SAVE )
+GAME( 1984, gepoker2a, gepoker,  gepoker,   gepoker,  gei_state, init_bank2k,   ROT0, "Greyhound Electronics", "Poker (Version 50.02 ICB, set 3 alt)",    MACHINE_IMPERFECT_GRAPHICS | MACHINE_IMPERFECT_SOUND | MACHINE_SUPPORTS_SAVE )
 GAME( 1984, gepoker3,  gepoker,  gepoker,   gepoker,  gei_state, init_bank2k,   ROT0, "Greyhound Electronics", "Poker (Version 50.02 ICB, set 4)",        MACHINE_IMPERFECT_GRAPHICS | MACHINE_IMPERFECT_SOUND | MACHINE_SUPPORTS_SAVE )
 
 GAME( 1984, gtsers1,   0,        getrivia,  getrivia, gei_state, init_bank2k,   ROT0, "Greyhound Electronics", "Trivia (Questions Series 1)",             MACHINE_IMPERFECT_GRAPHICS | MACHINE_IMPERFECT_SOUND | MACHINE_SUPPORTS_SAVE )

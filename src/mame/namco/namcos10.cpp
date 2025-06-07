@@ -702,23 +702,23 @@ public:
 protected:
 	using unscramble_func = uint16_t (*)(uint16_t);
 
-	virtual void machine_start() override;
-	virtual void machine_reset() override;
-	virtual void device_resolve_objects() override;
+	virtual void machine_start() override ATTR_COLD;
+	virtual void machine_reset() override ATTR_COLD;
+	virtual void device_resolve_objects() override ATTR_COLD;
 
 	void namcos10_base(machine_config &config);
 	void namcos10_exio(machine_config &config);
 	void namcos10_mgexio(machine_config &config);
 	void namcos10_exfinalio(machine_config &config);
 
-	void namcos10_map_inner(address_map &map);
-	void namcos10_map(address_map &map);
+	void namcos10_map_inner(address_map &map) ATTR_COLD;
+	void namcos10_map(address_map &map) ATTR_COLD;
 
-	void namcos10_map_exio_inner(address_map &map);
-	void namcos10_map_exio(address_map &map);
+	void namcos10_map_exio_inner(address_map &map) ATTR_COLD;
+	void namcos10_map_exio(address_map &map) ATTR_COLD;
 
-	void namcos10_map_mgexio_inner(address_map &map);
-	void namcos10_map_mgexio(address_map &map);
+	void namcos10_map_mgexio_inner(address_map &map) ATTR_COLD;
+	void namcos10_map_mgexio(address_map &map) ATTR_COLD;
 
 	required_device<psxcpu_device> m_maincpu;
 	optional_device<ns10_decrypter_device> m_decrypter;
@@ -806,14 +806,14 @@ public:
 	void init_mrdrilr2();
 
 protected:
-	virtual void machine_start() override;
-	virtual void machine_reset() override;
+	virtual void machine_start() override ATTR_COLD;
+	virtual void machine_reset() override ATTR_COLD;
 
 private:
 	void namcos10_memm(machine_config &config);
 
-	void namcos10_memm_map_inner(address_map &map);
-	void namcos10_memm_map(address_map &map);
+	void namcos10_memm_map_inner(address_map &map) ATTR_COLD;
+	void namcos10_memm_map(address_map &map) ATTR_COLD;
 
 	void memm_driver_init();
 
@@ -873,13 +873,13 @@ public:
 	void memn_driver_init();
 
 protected:
-	virtual void machine_start() override;
-	virtual void machine_reset() override;
+	virtual void machine_start() override ATTR_COLD;
+	virtual void machine_reset() override ATTR_COLD;
 
 	void namcos10_memn_base(machine_config &config);
 	void namcos10_memn(machine_config &config);
 
-	void namcos10_memn_map(address_map &map);
+	void namcos10_memn_map(address_map &map) ATTR_COLD;
 
 	void namcos10_nand_k9f2808u0b(machine_config &config, int nand_count);
 	void namcos10_nand_k9f5608u0d(machine_config &config, int nand_count);
@@ -893,7 +893,7 @@ protected:
 	uint8_t m_nand_rnb_state[16];
 
 private:
-	void namcos10_memn_map_inner(address_map &map);
+	void namcos10_memn_map_inner(address_map &map) ATTR_COLD;
 
 	void nand_copy(uint8_t *nand_base, uint16_t *dst, uint32_t address, int len);
 
@@ -932,15 +932,15 @@ public:
 	void ns10_squizchs(machine_config &config);
 
 protected:
-	virtual void machine_start() override;
-	virtual void machine_reset() override;
+	virtual void machine_start() override ATTR_COLD;
+	virtual void machine_reset() override ATTR_COLD;
 
 private:
 	void namcos10_memp3_base(machine_config &config);
 
-	void namcos10_memp3_map_inner(address_map &map);
-	void namcos10_memp3_map(address_map &map);
-	void mcu_map(address_map &map);
+	void namcos10_memp3_map_inner(address_map &map) ATTR_COLD;
+	void namcos10_memp3_map(address_map &map) ATTR_COLD;
+	void mcu_map(address_map &map) ATTR_COLD;
 
 	template <int Port> uint8_t port_read(offs_t offset);
 	template <int Port> void port_write(offs_t offset, uint8_t data);
@@ -1005,12 +1005,12 @@ public:
 	void ns10_ippo2(machine_config &config);
 
 protected:
-	virtual void machine_reset() override;
+	virtual void machine_reset() override ATTR_COLD;
 
 private:
 	void namcos10_memio_base(machine_config &config);
-	void namcos10_memio_map(address_map &map);
-	void namcos10_memio_map_inner(address_map &map);
+	void namcos10_memio_map(address_map &map) ATTR_COLD;
+	void namcos10_memio_map_inner(address_map &map) ATTR_COLD;
 
 	void namcos10_nand_tc58256aft(machine_config &config, int nand_count);
 
@@ -1101,15 +1101,14 @@ void namcos10_state::namcos10_base(machine_config &config)
 	SCREEN(config, "screen", SCREEN_TYPE_RASTER);
 
 	/* sound hardware */
-	SPEAKER(config, "lspeaker").front_left();
-	SPEAKER(config, "rspeaker").front_right();
+	SPEAKER(config, "speaker", 2).front();
 
 	// CXD2938Q; SPU with CD-ROM controller - also seen in PSone, 101.4912MHz / 2
 	// TODO: This must be replaced with a proper CXD2938Q device, CD-ROM functionality of chip not used
 	spu_device &spu(SPU(config, "spu", XTAL(101'491'200)/2, m_maincpu.target()));
 	spu.set_stream_flags(STREAM_SYNCHRONOUS);
-	spu.add_route(0, "lspeaker", 0.75);
-	spu.add_route(1, "rspeaker", 0.75);
+	spu.add_route(0, "speaker", 0.75, 0);
+	spu.add_route(1, "speaker", 0.75, 1);
 
 	// TODO: Trace main PCB to see where JAMMA I/O goes and/or how int10 can be triggered (SM10MA3?)
 	m_io_update_interrupt.bind().set("maincpu:irq", FUNC(psxirq_device::intin10));
@@ -1383,9 +1382,9 @@ void namcos10_state::namcos10_mgexio(machine_config &config)
 
 	namcos10_mgexio_device &mgexio(NAMCOS10_MGEXIO(config, m_exio, 0));
 
-	HOPPER(config, m_mgexio_hopper[0], attotime::from_msec(100), hopper_device::MOTOR_ACTIVE_HIGH, hopper_device::STATUS_ACTIVE_HIGH);
-	HOPPER(config, m_mgexio_hopper[1], attotime::from_msec(100), hopper_device::MOTOR_ACTIVE_HIGH, hopper_device::STATUS_ACTIVE_HIGH);
-	HOPPER(config, m_mgexio_hopper[2], attotime::from_msec(100), hopper_device::MOTOR_ACTIVE_HIGH, hopper_device::STATUS_ACTIVE_HIGH);
+	HOPPER(config, m_mgexio_hopper[0], attotime::from_msec(100));
+	HOPPER(config, m_mgexio_hopper[1], attotime::from_msec(100));
+	HOPPER(config, m_mgexio_hopper[2], attotime::from_msec(100));
 
 	mgexio.port4_read_callback().set([this] (offs_t offset) {
 		uint8_t r = 0;
@@ -2899,8 +2898,8 @@ void namcos10_memp3_state::namcos10_memp3_base(machine_config &config)
 	});
 
 	LC82310(config, m_lc82310, XTAL(16'934'400));
-	m_lc82310->add_route(0, "lspeaker", 1.0);
-	m_lc82310->add_route(1, "rspeaker", 1.0);
+	m_lc82310->add_route(0, "speaker", 1.0, 0);
+	m_lc82310->add_route(1, "speaker", 1.0, 1);
 }
 
 void namcos10_memp3_state::machine_start()
@@ -3352,8 +3351,8 @@ static INPUT_PORTS_START( mgexio_medal )
 	PORT_BIT( 0x80, IP_ACTIVE_LOW, IPT_TILT )
 
 	PORT_START("MGEXIO_COIN")
-	PORT_BIT( 0x01, IP_ACTIVE_LOW, IPT_COIN1 ) PORT_NAME("Coin Sensor(L)") PORT_CHANGED_MEMBER(DEVICE_SELF, namcos10_state, mgexio_coin_start, 0)
-	PORT_BIT( 0x04, IP_ACTIVE_LOW, IPT_COIN2 ) PORT_NAME("Coin Sensor(R)") PORT_CHANGED_MEMBER(DEVICE_SELF, namcos10_state, mgexio_coin_start, 1)
+	PORT_BIT( 0x01, IP_ACTIVE_LOW, IPT_COIN1 ) PORT_NAME("Coin Sensor(L)") PORT_CHANGED_MEMBER(DEVICE_SELF, FUNC(namcos10_state::mgexio_coin_start), 0)
+	PORT_BIT( 0x04, IP_ACTIVE_LOW, IPT_COIN2 ) PORT_NAME("Coin Sensor(R)") PORT_CHANGED_MEMBER(DEVICE_SELF, FUNC(namcos10_state::mgexio_coin_start), 1)
 
 INPUT_PORTS_END
 

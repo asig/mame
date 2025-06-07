@@ -68,8 +68,8 @@ public:
 	void zunknecta(machine_config &config);
 
 protected:
-	virtual void machine_start() override;
-	virtual void machine_reset() override;
+	virtual void machine_start() override ATTR_COLD;
+	virtual void machine_reset() override ATTR_COLD;
 
 	required_device<cpu_device> m_maincpu;
 };
@@ -160,5 +160,5 @@ ROM_END
 
 
 //    YEAR  NAME       PARENT  COMPAT  MACHINE    INPUT      CLASS           INIT        COMPANY            FULLNAME                                   FLAGS
-SYST( 1995, zvenezia,  0,      0,      zvenezia,  zvenezia,  zvenezia_state, empty_init, "Zanussi / Necta", "Venezia (coffee vending machine)",        MACHINE_IS_SKELETON )
-SYST( 1992, zunknecta, 0,      0,      zunknecta, zunknecta, zvenezia_state, empty_init, "Zanussi / Necta", "unknown Zanussi / Necta vending machine", MACHINE_IS_SKELETON )
+SYST( 1995, zvenezia,  0,      0,      zvenezia,  zvenezia,  zvenezia_state, empty_init, "Zanussi / Necta", "Venezia (coffee vending machine)",        MACHINE_NO_SOUND | MACHINE_NOT_WORKING )
+SYST( 1992, zunknecta, 0,      0,      zunknecta, zunknecta, zvenezia_state, empty_init, "Zanussi / Necta", "unknown Zanussi / Necta vending machine", MACHINE_NO_SOUND | MACHINE_NOT_WORKING )

@@ -3006,6 +3006,58 @@ Crashes after EA logo, requires better [VDP] irq handling
 	</software>
 
 
+	<software name="felixjr">
+		<description>Fix-it Felix Jr.</description>
+		<year>2014</year>
+		<publisher>Airwalk Studios</publisher>
+		<part name="cart" interface="megadriv_cart">
+			<dataarea name="rom" width="16" endianness="big" size="601870">
+				<rom name="fix-it felix jr (final).bin" size="601870" crc="424ff451" sha1="2bad4a0db0f95a7588e75f344c25427a6e83522b" />
+			</dataarea>
+		</part>
+	</software>
+
+
+	<!-- Another, 1.12, version is known to have existed between this and the final version
+	     See: https://www.youtube.com/watch?v=_1uGkfw5ky8 -->
+	<software name="felixjrv10" cloneof="felixjr">
+		<description>Fix-it Felix Jr. (v1.0)</description>
+		<year>2013</year>
+		<publisher>Airwalk Studios</publisher>
+		<part name="cart" interface="megadriv_cart">
+			<dataarea name="rom" width="16" endianness="big" size="131072">
+				<rom name="fix-it felix jr (1.0).bin" size="131072" crc="0b3ab7e9" sha1="c097b6dda7c0014e269884602bacd0eaff02d005" />
+			</dataarea>
+		</part>
+	</software>
+
+
+	<software name="wreckit" cloneof="felixjr">
+		<description>Wreck It Ralph (Russian translation bootleg)</description>
+		<year>2022</year>
+		<publisher>T+Rus Pirates</publisher>
+		<info name="language" value="Russian" />
+		<part name="cart" interface="megadriv_cart">
+			<dataarea name="rom" width="16" endianness="big" size="601870">
+				<rom name="wreck it ralph (trus bootleg).bin" size="601870" crc="6eec9f12" sha1="72eb534155a846327f2081566d7fa5ff12952ffa" />
+			</dataarea>
+		</part>
+	</software>
+
+
+	<software name="wreckita" cloneof="felixjr">
+		<description>Wreck It Ralph (Russian translation bootleg, alt)</description>
+		<year>2022</year>
+		<publisher>T+Rus Pirates</publisher>
+		<info name="language" value="Russian" />
+		<part name="cart" interface="megadriv_cart">
+			<dataarea name="rom" width="16" endianness="big" size="601870">
+				<rom name="wreck it ralph (trus bootleg alt).bin" size="601870" crc="ac8e0de5" sha1="68d1908926c39c336340300742086d5e17bf9806" />
+			</dataarea>
+		</part>
+	</software>
+
+
 	<software name="feverpit">
 		<description>Fever Pitch (Europe)</description>
 		<year>1995</year>
@@ -9848,11 +9900,12 @@ https://tcrf.net/World_Championship_Soccer_(Genesis)
 		</part>
 	</software>
 
-
 	<software name="zerowing">
 		<description>Zero Wing (Europe)</description>
 		<year>1991</year>
 		<publisher>Sega</publisher>
+		<info name="developer" value="Toaplan" />
+		<info name="serial" value="MK-1138-50"/>
 		<part name="cart" interface="megadriv_cart">
 			<feature name="pcb" value="171-5978BA"/>
 			<feature name="u1" value="MPR-14463-SM"/>  <!-- location not really marked on PCB, using u1 for consistency -->
@@ -9862,11 +9915,11 @@ https://tcrf.net/World_Championship_Soccer_(Genesis)
 		</part>
 	</software>
 
-
-	<software name="zerowingj" cloneof="zerowing">
+	<software name="zerowing_jp" cloneof="zerowing">
 		<description>Zero Wing (Japan)</description>
 		<year>1991</year>
 		<publisher>Toaplan</publisher>
+		<info name="developer" value="Toaplan" />
 		<info name="serial" value="T-40023"/>
 		<info name="release" value="19910531"/>
 		<info name="alt_title" value="ゼロウイング"/>
@@ -9879,11 +9932,25 @@ https://tcrf.net/World_Championship_Soccer_(Genesis)
 		</part>
 	</software>
 
+	<software name="zerowing_rb" cloneof="zerowing">
+		<description>Zero Wing (Retro-Bit)</description>
+		<year>2020</year>
+		<publisher>Retro-Bit</publisher>
+		<info name="developer" value="Toaplan" />
+		<part name="cart" interface="megadriv_cart">
+			<feature name="pcb" value="MD Cart 8BBit 2.0 20201125"/>
+			<feature name="u1" value="MX29F800CTTI-70G 5F550900A1"/>
+			<dataarea name="rom" width="16" endianness="big" size="1048576">
+				<rom name="mx29f800ctti-70g.u1" size="1048576" crc="d525babb" sha1="49336f51e047e58aeb079845760732d09e06047c" />
+			</dataarea>
+		</part>
+	</software>
 
 	<software name="zombies">
 		<description>Zombies (Europe)</description>
 		<year>1993</year>
 		<publisher>Konami</publisher>
+		<info name="developer" value="LucasArts" />
 		<sharedfeat name="compatibility" value="PAL"/>
 		<part name="cart" interface="megadriv_cart">
 			<feature name="pcb" value="353490"/>
@@ -9894,6 +9961,19 @@ https://tcrf.net/World_Championship_Soccer_(Genesis)
 		</part>
 	</software>
 
+	<software name="zombies_lrg" cloneof="zombies">
+		<description>Zombies Ate My Neighbors (Limited Run Games)</description>
+		<year>2022</year>
+		<publisher>Limited Run Games</publisher>
+		<info name="developer" value="LucasArts" />
+		<part name="cart" interface="megadriv_cart">
+			<feature name="pcb" value="MD Cart 8BBit 2.0 20221007 RB INNEX-B01"/>
+			<feature name="u1" value="29F800TA-90PFTN"/>
+			<dataarea name="rom" width="16" endianness="big" size="1048576">
+				<rom name="29f800ta-90pftn.u1" size="1048576" crc="583db890" sha1="62bc26db0df31eab4938aa86162be2c55aeb6970" />
+			</dataarea>
+		</part>
+	</software>
 
 	<software name="zool">
 		<description>Zool (Europe)</description>
@@ -9978,10 +10058,28 @@ https://tcrf.net/World_Championship_Soccer_(Genesis)
 	</software>
 
 	<software name="zerotol">
-		<!-- Zero Tolerance (Euro, USA), Cart manufactured by Accolade, LHR 1994 on board, Board type 7100-00010 REV A -->
-		<description>Zero Tolerance (Europe, USA)</description>
+		<description>Zero Tolerance (Europe, USA) (rev. C)</description>
 		<year>1994</year>
 		<publisher>Accolade</publisher>
+		<info name="developer" value="Technopop" />
+		<info name="language" value="English" />
+		<info name="pcb_serial" value="7100-00002 REV C" />
+		<info name="serial" value="T-119146-00" />
+		<part name="cart" interface="megadriv_cart">
+			<dataarea name="rom" width="16" endianness="big" size="2097152">
+				<rom name="7500-00030a.ic1" size="2097152" crc="23f603f5" sha1="d6d9733a619ba6be0dd76591d8dec621e4fdc17e" />
+			</dataarea>
+		</part>
+	</software>
+
+	<software name="zerotol_a" cloneof="zerotol">
+		<!-- Zero Tolerance (Euro, USA), Cart manufactured by Accolade, LHR 1994 on board, Board type 7100-00010 REV A -->
+		<description>Zero Tolerance (Europe, USA) (rev. A)</description>
+		<year>1994</year>
+		<publisher>Accolade</publisher>
+		<info name="developer" value="Technopop" />
+		<info name="language" value="English" />
+		<info name="pcb_serial" value="7100-00010 REV A" />
 		<part name="cart" interface="megadriv_cart">
 			<dataarea name="rom" width="16" endianness="big" size="2097152">
 				<rom name="zetsg lo 7500-00034a.u2" size="1048576" crc="b9c2d518" sha1="e5e7c36746233f441af5e03d0e2b63c6d916df24" offset="0x000001" loadflag="load16_byte"/>
@@ -10002,6 +10100,19 @@ https://tcrf.net/World_Championship_Soccer_(Genesis)
 -->
 	</software>
 
+	<software name="zerotol_de" cloneof="zerotol">
+		<description>Zero Tolerance (Germany)</description>
+		<year>1994</year>
+		<publisher>Accolade</publisher>
+		<info name="developer" value="Technopop" />
+		<info name="language" value="English" />
+		<info name="serial" value="T-119146-00" />
+		<part name="cart" interface="megadriv_cart">
+			<dataarea name="rom" width="16" endianness="big" size="2097152">
+				<rom name="Zero Tolerance (Germany) (En).bin" size="2097152" crc="6fb49ff8" sha1="c2ea98f595cb477495a9d326ff25d91f3dbfa90b" />
+			</dataarea>
+		</part>
+	</software>
 
 <!-- Only Euro is confirmed -->
 	<software name="sampras" supported="no">
@@ -12486,9 +12597,22 @@ https://bootleggames.fandom.com/wiki/Barver_Battle_Saga:_Tai_Kong_Zhan_Shi
 	</software>
 
 	<software name="beyondzt">
-		<description>Beyond Zero Tolerance (USA, prototype)</description>
+		<description>Beyond Zero Tolerance (prototype 19950714)</description>
 		<year>1995</year>
 		<publisher>Accolade</publisher>
+		<info name="version" value="Build: 071395a" />
+		<part name="cart" interface="megadriv_cart">
+			<dataarea name="rom" width="16" endianness="big" size="3145728">
+				<rom name="Beyond Zero Tolerance (prototype 1995-07-14).bin" size="3145728" crc="81a446f0" sha1="6903569a5e3fd7fc9193914d3af0d6e8f7ddc195" />
+			</dataarea>
+		</part>
+	</software>
+
+	<software name="beyondzt_p" cloneof="beyondzt">
+		<description>Beyond Zero Tolerance (USA, prototype 19950623)</description>
+		<year>1995</year>
+		<publisher>Accolade</publisher>
+		<info name="version" value="Build: 062395a" />
 		<part name="cart" interface="megadriv_cart">
 			<dataarea name="rom" width="16" endianness="big" size="2097152">
 				<rom name="beyond zero tolerance (usa) (prototype).bin" size="2097152" crc="c61ed2ed" sha1="663a1a6c7e25ba05232e22f102de36c1af2f48f8"/>
@@ -16674,7 +16798,7 @@ https://segaretro.org/Elitserien_96
 		<part name="cart" interface="megadriv_cart">
 			<feature name="slot" value="rom_sram"/>
 			<dataarea name="rom" width="16" endianness="big" size="2097152">
-				<rom name="espn national hockey night (usa).bin" size="2097152" crc="1d08828c" sha1="cfd65e3ffb17e1718356ef8de7c527e2c9fd8940"/>
+				<rom name="espn national hockey night (usa).bin" size="2097152" crc="401dc618" sha1="cb312d6617574f5b9cccd56a83a0a45b734671ed"/>
 			</dataarea>
 			<dataarea name="sram" size="16384">
 			</dataarea>
@@ -16895,6 +17019,17 @@ https://segaretro.org/Elitserien_96
 	</software>
 
 	<software name="eyra">
+		<description>Eyra - The Crow Maiden (digital release)</description>
+		<year>2022</year>
+		<publisher>Second Dimension</publisher>
+		<part name="cart" interface="megadriv_cart">
+			<dataarea name="rom" width="16" endianness="big" size="2083840">
+				<rom name="Eyra-the-Crow-Maiden-Final.bin" size="2083840" crc="d48289e3" sha1="22301d6366eac1b89234e59605d40d5e9e6559b5" />
+			</dataarea>
+		</part>
+	</software>
+
+	<software name="eyra_dm" cloneof="eyra">
 		<description>Eyra - The Crow Maiden (demo)</description>
 		<year>2020</year>
 		<publisher>Second Dimension</publisher>
@@ -34381,6 +34516,7 @@ Crashes often if you use level select in options menu, particularly later on.
 		<description>Zombies Ate My Neighbors (USA)</description>
 		<year>1994</year>
 		<publisher>Konami</publisher>
+		<info name="developer" value="LucasArts" />
 		<sharedfeat name="compatibility" value="NTSC-U"/>
 		<part name="cart" interface="megadriv_cart">
 			<!-- Dump To Be Confirmed -->
@@ -36583,7 +36719,7 @@ Jumps to invalid address, needs own slot type with mountable carts
 			</dataarea>
 		</part>
 	</software>
-	
+
 	<software name="par2" supported="no">
 		<description>Pro Action Replay 2 (Europe)</description>
 		<year>1994</year>

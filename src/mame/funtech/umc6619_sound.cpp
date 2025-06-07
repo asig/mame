@@ -14,6 +14,8 @@
 #define VERBOSE     (0)
 #include "logmacro.h"
 
+#define LIVE_AUDIO_VIEW 0
+
 // device type definition
 DEFINE_DEVICE_TYPE(UMC6619_SOUND, umc6619_sound_device, "umc6619_sound", "UMC UM6619 Sound Engine")
 
@@ -53,6 +55,7 @@ void umc6619_sound_device::device_start()
 	save_item(STRUCT_MEMBER(m_channels, volume_l));
 	save_item(STRUCT_MEMBER(m_channels, volume_r));
 	save_item(STRUCT_MEMBER(m_channels, one_shot));
+	save_item(STRUCT_MEMBER(m_channels, unk_upper_05));
 	save_item(NAME(m_regs));
 }
 
@@ -64,7 +67,20 @@ void umc6619_sound_device::device_reset()
 
 	for (auto &channel : m_channels)
 	{
+		channel.pitch = 0;
+		channel.length = 0;
+		channel.start_addr = 0;
+		channel.curr_addr = 0;
+		channel.end_addr = 0;
+		channel.addr_increment = 0;
+		channel.frac = 0;
 		channel.register9 = 0;
+		std::fill(std::begin(channel.envelope), std::end(channel.envelope), 0);
+		channel.volume = 0;
+		channel.volume_l = 0;
+		channel.volume_r = 0;
+		channel.one_shot = false;
+		channel.unk_upper_05 = 0;
 	}
 
 	m_timer->reset();
@@ -84,9 +100,44 @@ TIMER_CALLBACK_MEMBER(umc6619_sound_device::channel_irq)
 	}
 }
 
-void umc6619_sound_device::sound_stream_update(sound_stream &stream, std::vector<read_stream_view> const &inputs, std::vector<write_stream_view> &outputs)
+std::string umc6619_sound_device::print_audio_state()
 {
-	std::fill_n(&m_mix[0], outputs[0].samples() * 2, 0);
+	std::ostringstream outbuffer;
+
+	util::stream_format(outbuffer, "channel | address               | length | pitch | one?   |  vol | DMA? | (unk09)    |\n");
+
+	for (int i = 0; i < 16; i++)
+	{
+		acan_channel &channel = m_channels[i];
+
+		util::stream_format(outbuffer, "%02d: %01d | %04x (%04x-%04x) | %04x | %04x | %d (%02x)| %02x | %02x | %02x %02x %02x %02x|\n"
+			, i
+			, BIT(m_active_channels, i)
+			, channel.curr_addr
+			, (channel.start_addr << 6) & 0xffff
+			, channel.end_addr
+			, channel.length
+			, channel.pitch
+			, channel.one_shot
+			, channel.unk_upper_05
+			, channel.volume
+			, channel.register9
+			, channel.envelope[0]
+			, channel.envelope[1]
+			, channel.envelope[2]
+			, channel.envelope[3]
+		);
+	}
+
+	return outbuffer.str();
+}
+
+void umc6619_sound_device::sound_stream_update(sound_stream &stream)
+{
+	std::fill_n(&m_mix[0], stream.samples() * 2, 0);
+
+	if (LIVE_AUDIO_VIEW)
+		popmessage(print_audio_state());
 
 	for (int i = 0; i < 16 && m_active_channels != 0; i++)
 	{
@@ -95,7 +146,7 @@ void umc6619_sound_device::sound_stream_update(sound_stream &stream, std::vector
 			acan_channel &channel = m_channels[i];
 			int32_t *mixp = &m_mix[0];
 
-			for (int s = 0; s < outputs[0].samples(); s++)
+			for (int s = 0; s < stream.samples(); s++)
 			{
 				uint8_t data = m_ram_read(channel.curr_addr) + 0x80;
 				int16_t sample = (int16_t)(data << 8);
@@ -128,10 +179,10 @@ void umc6619_sound_device::sound_stream_update(sound_stream &stream, std::vector
 	}
 
 	int32_t *mixp = &m_mix[0];
-	for (int i = 0; i < outputs[0].samples(); i++)
+	for (int i = 0; i < stream.samples(); i++)
 	{
-		outputs[0].put_int(i, *mixp++, 32768 << 4);
-		outputs[1].put_int(i, *mixp++, 32768 << 4);
+		stream.put_int(0, i, *mixp++, 32768 << 4);
+		stream.put_int(1, i, *mixp++, 32768 << 4);
 	}
 }
 
@@ -147,7 +198,7 @@ uint8_t umc6619_sound_device::read(offs_t offset)
 		// acknowledge DMA IRQ?
 		m_dma_irq_handler(0);
 	}
-	// TODO: offset 0x15 (read by streaming DMAs)
+	// TODO: offset 0x15 (read by streaming DMAs, cfr. staiwbbl)
 	return m_regs[offset];
 }
 
@@ -244,6 +295,7 @@ void umc6619_sound_device::write(offs_t offset, uint8_t data)
 		acan_channel &channel = m_channels[lower];
 		channel.length = 0x40 << ((data & 0x0e) >> 1);
 		channel.one_shot = BIT(data, 0);
+		channel.unk_upper_05 = data & 0xf0;
 		LOG("%s: Waveform length and attributes (voice %02x): %02x\n", machine().describe_context(), lower, data);
 		break;
 	}

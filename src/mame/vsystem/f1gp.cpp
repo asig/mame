@@ -130,13 +130,13 @@ protected:
 	void gfxctrl_w(uint8_t data);
 	TILE_GET_INFO_MEMBER(get_fg_tile_info);
 
-	virtual void machine_start() override;
-	virtual void machine_reset() override;
-	virtual void video_start() override;
+	virtual void machine_start() override ATTR_COLD;
+	virtual void machine_reset() override ATTR_COLD;
+	virtual void video_start() override ATTR_COLD;
 
-	void f1gp_cpu2_map(address_map &map);
-	void sound_io_map(address_map &map);
-	void sound_map(address_map &map);
+	void f1gp_cpu2_map(address_map &map) ATTR_COLD;
+	void sound_io_map(address_map &map) ATTR_COLD;
+	void sound_map(address_map &map) ATTR_COLD;
 
 private:
 	// memory pointers
@@ -152,9 +152,9 @@ private:
 	uint32_t screen_update_f1gp(screen_device &screen, bitmap_ind16 &bitmap, const rectangle &cliprect);
 	uint32_t screen_update_f1gpbl(screen_device &screen, bitmap_ind16 &bitmap, const rectangle &cliprect);
 	void f1gpbl_draw_sprites(screen_device &screen, bitmap_ind16 &bitmap,const rectangle &cliprect);
-	void f1gp_cpu1_map(address_map &map);
-	void f1gpbl_cpu1_map(address_map &map);
-	void f1gpbl_cpu2_map(address_map &map);
+	void f1gp_cpu1_map(address_map &map) ATTR_COLD;
+	void f1gpbl_cpu1_map(address_map &map) ATTR_COLD;
+	void f1gpbl_cpu2_map(address_map &map) ATTR_COLD;
 };
 
 class f1gp2_state : public f1gp_state
@@ -168,8 +168,8 @@ public:
 	void f1gp2(machine_config &config);
 
 protected:
-	virtual void machine_reset() override;
-	virtual void video_start() override;
+	virtual void machine_reset() override ATTR_COLD;
+	virtual void video_start() override ATTR_COLD;
 
 private:
 	// video-related
@@ -183,7 +183,7 @@ private:
 	TILE_GET_INFO_MEMBER(get_roz_tile_info);
 
 	uint32_t screen_update(screen_device &screen, bitmap_ind16 &bitmap, const rectangle &cliprect);
-	void f1gp2_cpu1_map(address_map &map);
+	void f1gp2_cpu1_map(address_map &map) ATTR_COLD;
 };
 
 
@@ -220,7 +220,6 @@ TILE_GET_INFO_MEMBER(f1gp2_state::get_roz_tile_info)
   Start the video hardware emulation.
 
 ***************************************************************************/
-
 
 void f1gp_state::video_start()
 {
@@ -360,6 +359,7 @@ uint32_t f1gp2_state::screen_update(screen_device &screen, bitmap_ind16 &bitmap,
 	}
 	return 0;
 }
+
 
 /***************************************************************************
 
@@ -858,8 +858,7 @@ void f1gp_state::f1gp(machine_config &config)
 	m_k053936->set_offsets(-58, -2);
 
 	// sound hardware
-	SPEAKER(config, "lspeaker").front_left();
-	SPEAKER(config, "rspeaker").front_right();
+	SPEAKER(config, "speaker", 2).front();
 
 	GENERIC_LATCH_8(config, m_soundlatch);
 	m_soundlatch->data_pending_callback().set(FUNC(f1gp_state::soundlatch_pending_w));
@@ -867,10 +866,10 @@ void f1gp_state::f1gp(machine_config &config)
 
 	ym2610_device &ymsnd(YM2610(config, "ymsnd", XTAL(8'000'000)));
 	ymsnd.irq_handler().set_inputline(m_audiocpu, 0);
-	ymsnd.add_route(0, "lspeaker", 0.25);
-	ymsnd.add_route(0, "rspeaker", 0.25);
-	ymsnd.add_route(1, "lspeaker", 1.0);
-	ymsnd.add_route(2, "rspeaker", 1.0);
+	ymsnd.add_route(0, "speaker", 0.75, 0);
+	ymsnd.add_route(0, "speaker", 0.75, 1);
+	ymsnd.add_route(1, "speaker", 1.0, 0);
+	ymsnd.add_route(2, "speaker", 1.0, 1);
 }
 
 void f1gp_state::f1gpbl(machine_config &config)

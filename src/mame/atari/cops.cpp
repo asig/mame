@@ -31,8 +31,8 @@
     Game options cannot be adjusted, any attempt to do so resets the machine (seen on real hardware)
     Volume control cycles in the 'Stereo' test, but cannot be tested.
 
-
     This should be similar hardware for Street Viper if we get a dump.
+
 ***************************************************************************/
 
 
@@ -89,15 +89,15 @@ public:
 	void revlatns(machine_config &config);
 	void base(machine_config &config);
 	void cops(machine_config &config);
-	void cops_map(address_map &map);
-	void revlatns_map(address_map &map);
+	void cops_map(address_map &map) ATTR_COLD;
+	void revlatns_map(address_map &map) ATTR_COLD;
 
 	void init_cops();
 
 protected:
 	// driver_device overrides
-	virtual void machine_start() override;
-	virtual void machine_reset() override;
+	virtual void machine_start() override ATTR_COLD;
+	virtual void machine_reset() override ATTR_COLD;
 
 private:
 	// screen updates
@@ -615,19 +615,17 @@ void cops_state::base(machine_config &config)
 	SONY_LDP1450HLE(config, m_ld, 0);
 	m_ld->set_screen("screen");
 	m_ld->set_overlay(256, 256, FUNC(cops_state::screen_update));
-	m_ld->add_route(0, "lspeaker", 0.50);
-	m_ld->add_route(1, "rspeaker", 0.50);
+	m_ld->add_route(0, "speaker", 0.50, 0);
+	m_ld->add_route(1, "speaker", 0.50, 1);
 	m_ld->set_baud(9600);
 	m_ld->add_ntsc_screen(config, "screen");
 	m_ld->serial_tx().set("dacia", FUNC(r65c52_device::write_rxd1));
 
 	NVRAM(config, "nvram", nvram_device::DEFAULT_ALL_0);
 
-	SPEAKER(config, "lspeaker").front_left();
+	SPEAKER(config, "speaker", 2).front();
 
 	SPEAKER(config, "mspeaker").front_center();
-
-	SPEAKER(config, "rspeaker").front_right();
 
 	R65C52(config, m_dacia, DACIA_CLOCK);
 	m_dacia->txd1_handler().set("laserdisc", FUNC(sony_ldp1450hle_device::rx_w));

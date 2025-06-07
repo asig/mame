@@ -81,10 +81,10 @@ public:
 	void dblcrown(machine_config &config);
 
 private:
-	virtual void machine_start() override;
-	virtual void machine_reset() override;
+	virtual void machine_start() override ATTR_COLD;
+	virtual void machine_reset() override ATTR_COLD;
 
-	virtual void video_start() override;
+	virtual void video_start() override ATTR_COLD;
 
 	required_device<cpu_device> m_maincpu;
 	required_device<watchdog_timer_device> m_watchdog;
@@ -114,9 +114,9 @@ private:
 
 	TIMER_DEVICE_CALLBACK_MEMBER(scanline_cb);
 
-	void main_map(address_map &map);
-	void main_io(address_map &map);
-	void vram_map(address_map &map);
+	void main_map(address_map &map) ATTR_COLD;
+	void main_io(address_map &map) ATTR_COLD;
+	void vram_map(address_map &map) ATTR_COLD;
 
 	uint8_t m_bank = 0;
 	uint8_t m_irq_src = 0;
@@ -501,21 +501,10 @@ static INPUT_PORTS_START( dblcrown )
 	PORT_DIPSETTING(    0x00, DEF_STR( On ) )
 INPUT_PORTS_END
 
-static const gfx_layout char_16x16_layout =
-{
-	16,16,
-	RGN_FRAC(1,1),
-	4,
-	{ 0,1,2,3 },
-	{ 4,0, 12,8, 20,16, 28,24, 36,32, 44,40, 52,48, 60,56 },
-	{ STEP16(0,8*8) },
-	8*8*16
-};
-
 
 static GFXDECODE_START( gfx_dblcrown )
-	GFXDECODE_ENTRY( "gfx1", 0, char_16x16_layout, 0, 0x10 )
-	GFXDECODE_ENTRY( nullptr, 0, gfx_8x8x4_packed_lsb, 0, 0x10 )
+	GFXDECODE_ENTRY( "gfx1", 0, gfx_16x16x4_packed_lsb, 0, 0x10 )
+	GFXDECODE_RAM( nullptr, 0, gfx_8x8x4_packed_lsb, 0, 0x10 )
 GFXDECODE_END
 
 
@@ -588,7 +577,7 @@ void dblcrown_state::dblcrown(machine_config &config)
 	// 1000 ms. (minimal of MAX693A watchdog long timeout period with internal oscillator)
 	WATCHDOG_TIMER(config, m_watchdog).set_time(attotime::from_msec(1000));
 
-	HOPPER(config, m_hopper, attotime::from_msec(50), hopper_device::MOTOR_ACTIVE_HIGH, hopper_device::STATUS_ACTIVE_HIGH);
+	HOPPER(config, m_hopper, attotime::from_msec(50));
 
 	NVRAM(config, "nvram", nvram_device::DEFAULT_ALL_0);
 

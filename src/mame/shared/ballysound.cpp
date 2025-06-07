@@ -125,7 +125,7 @@ TIMER_CALLBACK_MEMBER(bally_as2888_device::sound_int_sync)
 void bally_as2888_device::device_add_mconfig(machine_config &config)
 {
 	DISCRETE(config, m_discrete, as2888_discrete);
-	m_discrete->add_route(ALL_OUTPUTS, *this, 1.00, AUTO_ALLOC_INPUT, 0);
+	m_discrete->add_route(ALL_OUTPUTS, *this, 1.00, 0);
 
 	TIMER(config, "timer_s_freq").configure_periodic(FUNC(bally_as2888_device::timer_s), attotime::from_hz(353000));     // Inverter clock on AS-2888 sound board
 	TIMER(config, m_snd_sustain_timer).configure_generic(FUNC(bally_as2888_device::timer_as2888));
@@ -178,7 +178,7 @@ TIMER_DEVICE_CALLBACK_MEMBER(bally_as2888_device::timer_as2888)
 
 static INPUT_PORTS_START(as3022)
 		PORT_START("SW1")
-		PORT_BIT( 0x01, IP_ACTIVE_LOW, IPT_SERVICE3 ) PORT_NAME("Sound Test") PORT_CHANGED_MEMBER(DEVICE_SELF, bally_as3022_device, sw1, 0)
+		PORT_BIT( 0x01, IP_ACTIVE_LOW, IPT_SERVICE3 ) PORT_NAME("Sound Test") PORT_CHANGED_MEMBER(DEVICE_SELF, FUNC(bally_as3022_device::sw1), 0)
 INPUT_PORTS_END
 
 ioport_constructor bally_as3022_device::device_input_ports() const
@@ -270,7 +270,7 @@ void bally_as3022_device::device_add_mconfig(machine_config &config)
 	m_ay->add_route(1, "ay_filter1", 0.33);
 	m_ay->add_route(2, "ay_filter2", 0.33);
 	m_ay->port_a_read_callback().set(FUNC(bally_as3022_device::ay_io_r));
-	m_ay->add_route(ALL_OUTPUTS, *this, 0.33, AUTO_ALLOC_INPUT, 0);
+	m_ay->add_route(ALL_OUTPUTS, *this, 0.33, 0);
 }
 
 
@@ -441,7 +441,7 @@ void bally_sounds_plus_device::vocalizer_pia_portb_w(uint8_t data)
 //--------------------------------------------------------------------------
 static INPUT_PORTS_START(cheap_squeak)
 		PORT_START("SW1")
-		PORT_BIT( 0x01, IP_ACTIVE_LOW, IPT_SERVICE3 ) PORT_NAME("Sound Test") PORT_CHANGED_MEMBER(DEVICE_SELF, bally_cheap_squeak_device, sw1, 0)
+		PORT_BIT( 0x01, IP_ACTIVE_LOW, IPT_SERVICE3 ) PORT_NAME("Sound Test") PORT_CHANGED_MEMBER(DEVICE_SELF, FUNC(bally_cheap_squeak_device::sw1), 0)
 INPUT_PORTS_END
 
 bally_cheap_squeak_device::bally_cheap_squeak_device(
@@ -528,7 +528,7 @@ void bally_cheap_squeak_device::device_add_mconfig(machine_config &config)
 	m_cpu->in_p2_cb().set(FUNC(bally_cheap_squeak_device::in_p2_cb));
 	m_cpu->out_p2_cb().set(FUNC(bally_cheap_squeak_device::out_p2_cb));
 
-	ZN429E(config, "dac", 0).add_route(ALL_OUTPUTS, *this, 1.00, AUTO_ALLOC_INPUT, 0);
+	ZN429E(config, "dac", 0).add_route(ALL_OUTPUTS, *this, 1.00, 0);
 }
 
 //-------------------------------------------------
@@ -624,7 +624,7 @@ bally_squawk_n_talk_ay_device::bally_squawk_n_talk_ay_device(
 //--------------------------------------------------------------------------
 static INPUT_PORTS_START(squawk_n_talk)
 	PORT_START("SW1")
-	PORT_BIT( 0x01, IP_ACTIVE_LOW, IPT_SERVICE3 ) PORT_NAME("SW1") PORT_CHANGED_MEMBER(DEVICE_SELF, bally_squawk_n_talk_device, sw1, 0)
+	PORT_BIT( 0x01, IP_ACTIVE_LOW, IPT_SERVICE3 ) PORT_NAME("SW1") PORT_CHANGED_MEMBER(DEVICE_SELF, FUNC(bally_squawk_n_talk_device::sw1), 0)
 INPUT_PORTS_END
 
 ioport_constructor bally_squawk_n_talk_device::device_input_ports() const

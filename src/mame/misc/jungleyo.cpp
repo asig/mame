@@ -128,7 +128,7 @@ public:
 	template <uint16_t Reset_addr> void init_magjack();
 
 protected:
-	virtual void video_start() override;
+	virtual void video_start() override ATTR_COLD;
 
 private:
 	void output_w(u16 data);
@@ -142,7 +142,7 @@ private:
 	void fg_videoram_w(offs_t offset, u16 data, u16 mem_mask = ~0);
 	template <int Layer> void reel_vram_w(offs_t offset, u16 data, u16 mem_mask = ~0);
 
-	void main_map(address_map &map);
+	void main_map(address_map &map) ATTR_COLD;
 
 	u8 palette_ram_r(offs_t offset);
 	void palette_ram_w(offs_t offset, u8 data);
@@ -884,12 +884,11 @@ void jungleyo_state::jungleyo(machine_config &config)
 
 	PALETTE(config, m_palette).set_entries(0x8000);
 
-	SPEAKER(config, "lspeaker").front_left();
-	SPEAKER(config, "rspeaker").front_right();
+	SPEAKER(config, "speaker", 2).front();
 
 	okim6295_device &oki(OKIM6295(config, "oki", 24_MHz_XTAL / 20, okim6295_device::PIN7_HIGH)); // clock frequency & pin 7 not verified
-	oki.add_route(ALL_OUTPUTS, "lspeaker", 0.47);
-	oki.add_route(ALL_OUTPUTS, "rspeaker", 0.47);
+	oki.add_route(ALL_OUTPUTS, "speaker", 0.47, 0);
+	oki.add_route(ALL_OUTPUTS, "speaker", 0.47, 1);
 }
 
 

@@ -37,7 +37,7 @@ public:
 	void z29(machine_config &config);
 
 protected:
-	virtual void machine_start() override;
+	virtual void machine_start() override ATTR_COLD;
 
 private:
 	void keyin_w(int state);
@@ -47,8 +47,8 @@ private:
 	void crtc_w(offs_t offset, u8 data);
 	void latch_12k_w(u8 data);
 
-	void prg_map(address_map &map);
-	void ext_map(address_map &map);
+	void prg_map(address_map &map) ATTR_COLD;
+	void ext_map(address_map &map) ATTR_COLD;
 
 	required_device<mcs51_cpu_device> m_maincpu;
 	required_device<z29_keyboard_port_device> m_keyboard;
@@ -196,4 +196,4 @@ ROM_END
 } // anonymous namespace
 
 //    year  name   parent compat  machine  input class      init        company                fullname          flags
-COMP( 1983, z29,   0,     0,      z29,     z29,  z29_state, empty_init, "Zenith Data Systems", "Z-29 Terminal",  MACHINE_IS_SKELETON)
+COMP( 1983, z29,   0,     0,      z29,     z29,  z29_state, empty_init, "Zenith Data Systems", "Z-29 Terminal",  MACHINE_NO_SOUND | MACHINE_NOT_WORKING)

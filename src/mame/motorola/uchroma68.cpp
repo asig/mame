@@ -125,7 +125,6 @@ expansion.
 #include "machine/timer.h"
 #include "video/mc6847.h"
 #include "imagedev/cassette.h"
-#include "sound/wave.h"
 #include "speaker.h"
 
 #include "machine/terminal.h"
@@ -157,10 +156,10 @@ public:
 	void uchroma68(machine_config &config);
 
 private:
-	virtual void machine_start() override;
-	virtual void machine_reset() override;
+	virtual void machine_start() override ATTR_COLD;
+	virtual void machine_reset() override ATTR_COLD;
 
-	void uchroma68_mem(address_map &map);
+	void uchroma68_mem(address_map &map) ATTR_COLD;
 
 	TIMER_CALLBACK_MEMBER(kbd_strobe);
 

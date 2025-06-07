@@ -10,7 +10,7 @@ license:CC0-1.0
 	<!-- cartridges contain the ROM only, the XaviX CPU and BIOS are in the base unit -->
 
 	<!-- e-kara cartridge pins
-	
+
 	1  GND
 	2  N/C
 	3  jumper to 22
@@ -55,7 +55,7 @@ license:CC0-1.0
 	42 A17
 	43 A16
 	44 GND
-	
+
 	-->
 
 	<!--
@@ -475,11 +475,11 @@ license:CC0-1.0
 	*JP-02  'Jumping Popira' JP-2
 
 	***********************************************************************************
-	
+
 	The Korean release of e-kara was called i-singer, and was distributed by Sonokong
-	
+
 	At least 15 cartridges exist for it
-	
+
 	It is unknown if the internal ROM is the same as the non-Japanese e-kara units, or if it
 	would have a Korean 'please insert a cartridge' message.  It is also unconfirmed if these
 	cartridges function on non-Korean units.
@@ -1895,7 +1895,7 @@ license:CC0-1.0
 			</dataarea>
 		</part>
 	</software>
-	
+
 	<software name="dc0007">
 		<description>Kids' Song Volume 4 (Yuuki Rinrin, Osakana Tengoku, etc.) (Japan) (DC0007-KID)</description>
 		<year>2004</year>
@@ -1909,7 +1909,7 @@ license:CC0-1.0
 				<rom name="dc0007-kid.u1" size="0x100000" crc="c8908d43" sha1="a42010f805c3839b974fa8a6e2a412d68c903324"/>
 			</dataarea>
 		</part>
-	</software>	
+	</software>
 
 	<software name="dc0008">
 		<description>Dream Cartridge: Best Artist Vol.7 (Japan) (DC0008-BAT)</description>
@@ -2582,7 +2582,7 @@ license:CC0-1.0
 			</dataarea>
 		</part>
 	</software>
-	
+
 	<!-- ********************************************************************************************************************************************************************** -->
 
 
@@ -3151,7 +3151,7 @@ license:CC0-1.0
 	     愛燦燦(あいさんさん)      美空ひばり      Ai Sansan                   Misora Hibari
 	     川の流れのように          美空ひばり      Kawa no Nagare no Yō ni     Misora Hibari
 	     真赤な太陽                美空ひばり      Makkana TaiYō               Misora Hibari -->
-	<software name="ekaraweb12a">
+	<software name="ekaraweb12a" cloneof="ekaraweb12">
 		<description>e-kara Web cartridge 12M (used, with 7 songs) (Japan)</description>
 		<year>2003</year>
 		<publisher>Takara</publisher>
@@ -3176,7 +3176,7 @@ license:CC0-1.0
 	     LOVE LOVE LOVE              DREAMS COME TRUE    Love Love Love                             Dreams Come True
 	     キラリ☆セーラードリーム     小枝(さえ)          Kirari ☆ Sailor Dream                      Koeda (Sae)
 	     夏祭り                      Whiteberry          Natsu Matsuri                              Whiteberry -->
-	<software name="ekaraweb12b">
+	<software name="ekaraweb12b" cloneof="ekaraweb12">
 		<description>e-kara Web cartridge 12M (used, with 12 songs) (Japan)</description>
 		<year>2003</year>
 		<publisher>Takara</publisher>
@@ -3189,13 +3189,31 @@ license:CC0-1.0
 	</software>
 
 	<!-- this one has some songs programmed into it:
+	    月光町のうた                  おじゃる丸・キス                      Gekkō Machi no Uta              Ojarumaru/Kiss
+	    詠人（うたびと）              北島三郎                              Utabito                         Kitajima Saburō
+	    アララの呪文                  ちびまる子ちゃんwith爆チュー問題      Arara no Jumon                  Chibi Maruko-chan with Bakuchū Mondai
+	    サザエさん                    宇野ゆう子                            Sazae-san                       Uno Yūko
+	    島人ぬ宝                      BEGIN                                 Shimanchunu Takara              BEGIN -->
+	<software name="ekaraweb12c" cloneof="ekaraweb12">
+		<description>e-kara Web cartridge 12M (used, with 5 songs) (Japan)</description>
+		<year>2003</year>
+		<publisher>Takara</publisher>
+		<sharedfeat name="compatibility" value="EKARA"/>
+		<part name="cart" interface="ekara_cart">
+			<dataarea name="rom" size="0x100000">
+				<rom name="usercart.bin" size="0x100000" crc="bc4635cd" sha1="5343b254218f85a2f9e5ae9e4646b456d82c7d27"/>
+			</dataarea>
+		</part>
+	</software>
+
+	<!-- this one has some songs programmed into it:
 	    世界に一つだけの花            SMAP                                  Sekai ni Hitotsu Dake no Hana   SMAP
 	    さくらんぼ                    大塚愛                                Sakuranbo                       Ōtsuka Ai
 	    あ～よかった                  花*花                                 Ah Yokatta                      hana*hana
 	    ハッスル                      かいけつゾロリ(山寺宏一)              Hustle                          Kaiketsu Zorori (Yamadera Kōichi)
 	    アララの呪文                  ちびまる子ちゃん with 爆チュー問題    Arara no Jumon                  Chibi Maruko-chan with Bakuchū Mondai
 	    ミニハムずの愛の唄            ミニハムず                            Minihams no Ai no Uta           Minihams
-	    ミニモニ。ジャンケンぴょん!   ミニモニ。			        mini-moni Jankenpyon!           mini-moni
+	    ミニモニ。ジャンケンぴょん!   ミニモニ。                            mini-moni Jankenpyon!           mini-moni
 	    大きな古時計                  童謡                                  Ōkina Furudokei                 Dōyō -->
 	<software name="ekaraweb8">
 		<description>e-kara Web cartridge 8M (used, with 8 songs) (Japan)</description>
@@ -3208,7 +3226,7 @@ license:CC0-1.0
 			</dataarea>
 		</part>
 	</software>
-	
+
 	<!-- ********************************************************************************************************************************************************************** -->
 
 
@@ -3719,6 +3737,54 @@ license:CC0-1.0
 		<part name="cart" interface="ekara_cart">
 			<dataarea name="rom" size="0x100000">
 				<rom name="spainvol2.bin" size="0x100000" crc="a60f7b30" sha1="7c7736e692b9f4ce838dc064e214322aa3ae0e6a"/>
+			</dataarea>
+		</part>
+	</software>
+
+	<software name="kr_vol2">
+		<description>i-Singer Volume 2 (Korea)</description>
+		<year>2002</year>
+		<publisher>Takara / Sonokong</publisher>
+		<sharedfeat name="compatibility" value="ISINGER"/>
+		<part name="cart" interface="ekara_cart">
+			<dataarea name="rom" size="0x100000">
+				<rom name="kr-ec002.u1" size="0x100000" crc="0c060c0f" sha1="82e0757a380617008b7313cf6b380e16804f7862"/>
+			</dataarea>
+		</part>
+	</software>
+
+	<software name="kr_vol3">
+		<description>i-Singer Volume 3 (Korea)</description>
+		<year>2002</year>
+		<publisher>Takara / Sonokong</publisher>
+		<sharedfeat name="compatibility" value="ISINGER"/>
+		<part name="cart" interface="ekara_cart">
+			<dataarea name="rom" size="0x100000">
+				<rom name="kr-ec003.u1" size="0x100000" crc="928b97a6" sha1="5900cda733298b258b114c5452e1c02b0d90cee4"/>
+			</dataarea>
+		</part>
+	</software>
+
+	<software name="kr_vol11">
+		<description>i-Singer Volume 11 (Korea)</description>
+		<year>2002</year>
+		<publisher>Takara / Sonokong</publisher>
+		<sharedfeat name="compatibility" value="ISINGER"/>
+		<part name="cart" interface="ekara_cart">
+			<dataarea name="rom" size="0x100000">
+				<rom name="kr-ec011.u1" size="0x100000" crc="effe2356" sha1="57417803b25273439fb5537a7d5aca340988eea8"/>
+			</dataarea>
+		</part>
+	</software>
+
+	<software name="kr_vol14">
+		<description>i-Singer Volume 14 (Korea)</description>
+		<year>2002</year>
+		<publisher>Takara / Sonokong</publisher>
+		<sharedfeat name="compatibility" value="ISINGER"/>
+		<part name="cart" interface="ekara_cart">
+			<dataarea name="rom" size="0x100000">
+				<rom name="kr-s001.u1" size="0x100000" crc="8a43e1b6" sha1="69eae20a395aee941a5da3a02e6c2dc6feee2391"/>
 			</dataarea>
 		</part>
 	</software>

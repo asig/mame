@@ -114,7 +114,7 @@ public:
 	void ufo800(machine_config &config);
 
 protected:
-	virtual void machine_start() override;
+	virtual void machine_start() override ATTR_COLD;
 	virtual void machine_reset() override { m_nmi_enable = false; }
 
 private:
@@ -148,9 +148,9 @@ private:
 	TIMER_CALLBACK_MEMBER(simulate_xyz);
 
 	// address maps
-	void ufo_map(address_map &map);
-	void ufo_portmap(address_map &map);
-	void ex_ufo21_portmap(address_map &map);
+	void ufo_map(address_map &map) ATTR_COLD;
+	void ufo_portmap(address_map &map) ATTR_COLD;
+	void ex_ufo21_portmap(address_map &map) ATTR_COLD;
 
 	// I/O handlers
 	void pit_out0(int state);
@@ -258,9 +258,10 @@ TIMER_CALLBACK_MEMBER(ufo_state::simulate_xyz)
 #if 0
 	// show io2 outputs
 	std::ostringstream msg;
+	msg << std::uppercase << std::hex << std::setfill('0');
 	for (int i = 0; i < 8; i++)
 	{
-		msg << std::uppercase << std::hex << std::setw(2) << std::setfill('0') << +m_io[1]->debug_peek_output(i);
+		msg << std::setw(2) << +m_io[1]->debug_peek_output(i);
 		if (i != 7) msg << " ";
 	}
 	popmessage("%s", std::move(msg).str());

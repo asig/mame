@@ -79,11 +79,11 @@ private:
 	K051316_CB_MEMBER(zoom_callback_2);
 	K051960_CB_MEMBER(sprite_callback);
 	uint32_t screen_update_chqflag(screen_device &screen, bitmap_ind16 &bitmap, const rectangle &cliprect);
-	void chqflag_map(address_map &map);
-	void chqflag_sound_map(address_map &map);
+	void chqflag_map(address_map &map) ATTR_COLD;
+	void chqflag_sound_map(address_map &map) ATTR_COLD;
 protected:
-	virtual void machine_start() override;
-	virtual void machine_reset() override;
+	virtual void machine_start() override ATTR_COLD;
+	virtual void machine_reset() override ATTR_COLD;
 private:
 	/* misc */
 	int        m_k051316_readroms = 0;
@@ -360,7 +360,7 @@ static INPUT_PORTS_START( chqflag )
 	PORT_BIT( 0x02, IP_ACTIVE_LOW, IPT_BUTTON2 )
 	PORT_BIT( 0x0c, IP_ACTIVE_LOW, IPT_UNKNOWN )    /* if this is set, it goes directly to test mode */
 	PORT_BIT( 0x70, IP_ACTIVE_HIGH, IPT_UNKNOWN )
-	PORT_BIT( 0x80, IP_ACTIVE_HIGH, IPT_CUSTOM ) PORT_READ_LINE_DEVICE_MEMBER("adc", adc0804_device, intr_r)
+	PORT_BIT( 0x80, IP_ACTIVE_HIGH, IPT_CUSTOM ) PORT_READ_LINE_DEVICE_MEMBER("adc", FUNC(adc0804_device::intr_r))
 
 	PORT_START("IN3")   /* Accelerator */
 	PORT_BIT( 0xff, 0x00, IPT_PEDAL ) PORT_SENSITIVITY(50) PORT_KEYDELTA(5)
@@ -477,28 +477,27 @@ void chqflag_state::chqflag(machine_config &config)
 	K051733(config, "k051733", 0);
 
 	/* sound hardware */
-	SPEAKER(config, "lspeaker").front_left();
-	SPEAKER(config, "rspeaker").front_right();
+	SPEAKER(config, "speaker", 2).front();
 
 	GENERIC_LATCH_8(config, "soundlatch");
 	GENERIC_LATCH_8(config, "soundlatch2").data_pending_callback().set_inputline(m_audiocpu, 0);
 
 	ym2151_device &ymsnd(YM2151(config, "ymsnd", XTAL(3'579'545))); /* verified on pcb */
 	ymsnd.irq_handler().set_inputline(m_audiocpu, INPUT_LINE_NMI);
-	ymsnd.add_route(0, "lspeaker", 1.00);
-	ymsnd.add_route(1, "rspeaker", 1.00);
+	ymsnd.add_route(0, "speaker", 1.00, 0);
+	ymsnd.add_route(1, "speaker", 1.00, 1);
 
 	K007232(config, m_k007232[0], XTAL(3'579'545)); /* verified on pcb */
 	m_k007232[0]->port_write().set(FUNC(chqflag_state::volume_callback0));
-	m_k007232[0]->add_route(0, "lspeaker", 0.20);
-	m_k007232[0]->add_route(1, "rspeaker", 0.20);
+	m_k007232[0]->add_route(0, "speaker", 0.20, 0);
+	m_k007232[0]->add_route(1, "speaker", 0.20, 1);
 
 	K007232(config, m_k007232[1], XTAL(3'579'545)); /* verified on pcb */
 	m_k007232[1]->port_write().set(FUNC(chqflag_state::volume_callback1));
-	m_k007232[1]->add_route(0, "lspeaker", 0.20);
-	m_k007232[1]->add_route(0, "rspeaker", 0.20);
-	m_k007232[1]->add_route(1, "lspeaker", 0.20);
-	m_k007232[1]->add_route(1, "rspeaker", 0.20);
+	m_k007232[1]->add_route(0, "speaker", 0.20, 0);
+	m_k007232[1]->add_route(0, "speaker", 0.20, 1);
+	m_k007232[1]->add_route(1, "speaker", 0.20, 0);
+	m_k007232[1]->add_route(1, "speaker", 0.20, 1);
 }
 
 ROM_START( chqflag )

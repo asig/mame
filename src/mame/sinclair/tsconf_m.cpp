@@ -29,11 +29,6 @@ enum v_mode : u8
 	VM_TXT
 };
 
-static constexpr u32 tmp_tile_oversized_to_code(u16 code)
-{
-	return code / 64 * 64 * 8 + (code % 64);
-}
-
 // https://github.com/tslabs/zx-evo/blob/master/pentevo/vdac/vdac1/cpld/top.v
 static constexpr u8 pwm_to_rgb[32] = {
 	0, 10, 21, 31, 42, 53, 63, 74,
@@ -52,12 +47,6 @@ rectangle tsconf_state::get_screen_area()
 	if (VM == VM_TXT)
 		info.set_width(info.width() << 1);
 	return info;
-}
-
-void tsconf_state::tsconf_palette(palette_device &palette) const
-{
-	rgb_t colors[256] = {0};
-	palette.set_pen_colors(0, colors);
 }
 
 void tsconf_state::tsconf_update_bank0()
@@ -163,7 +152,6 @@ void tsconf_state::tsconf_update_screen(screen_device &screen, bitmap_rgb32 &bit
 		}
 		else
 		{
-			bitmap.fill(m_palette->pen_color(get_border_color()), cliprect);
 			tsconf_draw_gfx(bitmap, cliprect);
 		}
 	}
@@ -253,7 +241,6 @@ void tsconf_state::tsconf_draw_txt(bitmap_rgb32 &bitmap, const rectangle &clipre
 void tsconf_state::tsconf_draw_gfx(bitmap_rgb32 &bitmap, const rectangle &cliprect)
 {
 	u8 pal_offset = m_regs[PAL_SEL] << 4;
-	const rgb_t transparent = m_palette->pen_color(0);
 	for (u16 vpos = cliprect.top(); vpos <= cliprect.bottom(); vpos++)
 	{
 		u16 y_offset = (OFFS_512(G_Y_OFFS_L) + m_gfx_y_frame_offset + vpos) & 0x1ff;
@@ -275,19 +262,11 @@ void tsconf_state::tsconf_draw_gfx(bitmap_rgb32 &bitmap, const rectangle &clipre
 					video_location -= 256;
 				u8 pix = *video_location++;
 				rgb_t pen = m_palette->pen_color(pal_offset | (pix >> 4));
-				if (pen != transparent)
-				{
-					*bm = pen;
-				}
-				bm++;
+				*bm++ = pen;
 				if (width != 1)
 				{
 					pen = m_palette->pen_color(pal_offset | (pix & 0x0f));
-					if (pen != transparent)
-					{
-						*bm = pen;
-					}
-					bm++;
+					*bm++ = pen;
 				}
 			}
 		}
@@ -298,11 +277,7 @@ void tsconf_state::tsconf_draw_gfx(bitmap_rgb32 &bitmap, const rectangle &clipre
 				if (x_offset == 512)
 					video_location -= 512;
 				rgb_t pen = m_palette->pen_color(*video_location++);
-				if (pen != transparent)
-				{
-					*bm = pen;
-				}
-				bm++;
+				*bm++ = pen;
 			}
 		}
 	}
@@ -378,7 +353,7 @@ void tsconf_state::draw_sprites(screen_device &screen_d, bitmap_rgb32 &bitmap, c
 	for (auto spr = m_sprites_cache.rbegin(); spr != m_sprites_cache.rend(); ++spr)
 	{
 		m_gfxdecode->gfx(TM_SPRITES)->prio_transpen(bitmap, cliprect,
-			tmp_tile_oversized_to_code(spr->code), spr->color, spr->flipx, spr->flipy, spr->destx, spr->desty,
+			spr->code, spr->color, spr->flipx, spr->flipy, spr->destx, spr->desty,
 			screen_d.priority(), spr->pmask, 0);
 	}
 
@@ -409,6 +384,11 @@ void tsconf_state::ram_bank_write(u8 bank, offs_t offset, u8 data)
 		ram_page_write(m_regs[PAGE0 + bank], offset, data);
 }
 
+static int tiles_offset_to_raw(int t_offset)
+{
+	return bitswap<17>(t_offset, 16, 15, 14, 13, 12, 11, 7, 6, 5, 4, 3, 2, 10, 9, 8, 1, 0) << 1;
+}
+
 void tsconf_state::ram_page_write(u8 page, offs_t offset, u8 data)
 {
 	u32 ram_addr = PAGE4K(page) + offset;
@@ -419,15 +399,21 @@ void tsconf_state::ram_page_write(u8 page, offs_t offset, u8 data)
 	}
 	else
 	{
-		if (ram_addr >= PAGE4K(m_regs[T0_G_PAGE] & 0xf8) && ram_addr < PAGE4K((m_regs[T0_G_PAGE] & 0xf8) + 8))
+		const int t0_offset = ram_addr - PAGE4K(m_regs[T0_G_PAGE] & 0xf8);
+		if ((t0_offset >= 0) && (t0_offset < PAGE4K(8)))
 		{
-			m_gfxdecode->gfx(TM_TILES0)->mark_all_dirty();
+			const int raw_offset = tiles_offset_to_raw(t0_offset);
+			m_tiles_raw[0][raw_offset] = data >> 4;
+			m_tiles_raw[0][raw_offset + 1] = data & 0x0f;
 			m_ts_tilemap[TM_TILES0]->mark_all_dirty();
 		}
 
-		if (ram_addr >= PAGE4K(m_regs[T1_G_PAGE] & 0xf8) && ram_addr < PAGE4K((m_regs[T1_G_PAGE] & 0xf8) + 8))
+		const int t1_offset = ram_addr - PAGE4K(m_regs[T1_G_PAGE] & 0xf8);
+		if ((t1_offset >= 0) && (t1_offset < PAGE4K(8)))
 		{
-			m_gfxdecode->gfx(TM_TILES1)->mark_all_dirty();
+			const int raw_offset = tiles_offset_to_raw(t1_offset);
+			m_tiles_raw[1][raw_offset] = data >> 4;
+			m_tiles_raw[1][raw_offset + 1] = data & 0x0f;
 			m_ts_tilemap[TM_TILES1]->mark_all_dirty();
 		}
 	}
@@ -438,15 +424,20 @@ void tsconf_state::ram_page_write(u8 page, offs_t offset, u8 data)
 	if (ram_addr >= PAGE4K(m_regs[m_regs[V_PAGE] ^ 0x01]) && ram_addr < PAGE4K(m_regs[m_regs[V_PAGE] ^ 0x01] + 1))
 		m_gfxdecode->gfx(TM_TS_CHAR)->mark_all_dirty();
 
-	if (ram_addr >= PAGE4K(m_regs[SG_PAGE] & 0xf8) && ram_addr < PAGE4K((m_regs[SG_PAGE] & 0xf8) + 8))
-		m_gfxdecode->gfx(TM_SPRITES)->mark_all_dirty();
+	const int spr_offset = ram_addr - PAGE4K(m_regs[SG_PAGE] & 0xf8);
+	if ((spr_offset >= 0) && (spr_offset < PAGE4K(8)))
+	{
+		const int raw_offset = tiles_offset_to_raw(spr_offset);
+		m_sprites_raw[raw_offset] = data >> 4;
+		m_sprites_raw[raw_offset + 1] = data & 0x0f;
+	}
 
-	m_ram->write(ram_addr, data);
+	m_ram->pointer()[ram_addr] = data;
 }
 
 u16 tsconf_state::ram_read16(offs_t offset)
 {
-	return (m_ram->read(offset & ~offs_t(1)) << 8) | m_ram->read(offset | 1);
+	return (m_ram->pointer()[offset & ~offs_t(1)] << 8) | m_ram->pointer()[offset | 1];
 }
 
 void tsconf_state::ram_write16(offs_t offset, u16 data)
@@ -514,7 +505,7 @@ void tsconf_state::tsconf_port_7ffd_w(u8 data)
 void tsconf_state::tsconf_ula_w(offs_t offset, u8 data)
 {
 	spectrum_ula_w(offset, data);
-	tsconf_port_xxaf_w(BORDER << 8, (data & 0x07) | (m_regs[PAL_SEL] << 4));
+	tsconf_port_xxaf_w(BORDER << 8, 0xf0 | (data & 0x07));
 }
 
 u8 tsconf_state::tsconf_port_xxaf_r(offs_t port)
@@ -546,6 +537,20 @@ u8 tsconf_state::tsconf_port_xxaf_r(offs_t port)
 
 	// LOGWARN("'tsconf': reg read %02X = %02x\n", nreg, data);
 	return data;
+}
+
+void tsconf_state::copy_tiles_to_raw(const u8 *tiles_src, u8 *raw_target)
+{
+	for (u32 ln = 0; ln < PAGE4K(8); ln += 4)
+	{
+		int targ = tiles_offset_to_raw(ln);
+		for (u8 x = 0; x < 4; ++x)
+		{
+			const u8 data = tiles_src[ln + x];
+			raw_target[targ + (x << 1)] = data >> 4;
+			raw_target[targ + (x << 1) + 1] = data & 0x0f;
+		}
+	}
 }
 
 void tsconf_state::tsconf_port_xxaf_w(offs_t port, u8 data)
@@ -680,7 +685,7 @@ void tsconf_state::tsconf_port_xxaf_w(offs_t port, u8 data)
 		break;
 
 	case SG_PAGE:
-		m_gfxdecode->gfx(TM_SPRITES)->set_source(m_ram->pointer() + PAGE4K(data & 0xf8));
+		copy_tiles_to_raw(m_ram->pointer() + PAGE4K(data & 0xf8), m_sprites_raw.target());
 		break;
 
 	case SYS_CONFIG:
@@ -828,7 +833,9 @@ IRQ_CALLBACK_MEMBER(tsconf_state::irq_vector)
 {
 	u8 vector = 0xff;
 	if (m_int_mask & 1)
+	{
 		m_int_mask &= ~1;
+	}
 	else if (m_int_mask & 2)
 	{
 		m_int_mask &= ~2;
@@ -841,7 +848,7 @@ IRQ_CALLBACK_MEMBER(tsconf_state::irq_vector)
 	}
 
 	if (!m_int_mask)
-		m_maincpu->set_input_line(0, CLEAR_LINE);
+		m_maincpu->set_input_line(INPUT_LINE_IRQ0, CLEAR_LINE);
 
 	return vector;
 }
@@ -849,8 +856,6 @@ IRQ_CALLBACK_MEMBER(tsconf_state::irq_vector)
 TIMER_CALLBACK_MEMBER(tsconf_state::irq_off)
 {
 	m_int_mask &= ~1;
-	if (!m_int_mask)
-		m_maincpu->set_input_line(0, CLEAR_LINE);
 }
 
 void tsconf_state::update_frame_timer()
@@ -862,10 +867,14 @@ void tsconf_state::update_frame_timer()
 	{
 		next = m_screen->time_until_pos(vpos, hpos << 1);
 		if (next >= m_screen->frame_period())
+		{
 			next = attotime::zero;
+		}
 	}
 	else
+	{
 		next = attotime::never;
+	}
 
 	m_frame_irq_timer->adjust(next);
 }
@@ -881,8 +890,7 @@ void tsconf_state::dma_ready(int line)
 {
 	if (BIT(m_regs[INT_MASK], 2))
 	{
-		if (!m_int_mask)
-			m_maincpu->set_input_line(INPUT_LINE_IRQ0, ASSERT_LINE);
+		m_maincpu->set_input_line(INPUT_LINE_IRQ0, ASSERT_LINE);
 		m_int_mask |= 4;
 	}
 }
@@ -891,8 +899,7 @@ TIMER_CALLBACK_MEMBER(tsconf_state::irq_frame)
 {
 	if (BIT(m_regs[INT_MASK], 0))
 	{
-		if (!m_int_mask)
-			m_maincpu->set_input_line(INPUT_LINE_IRQ0, ASSERT_LINE);
+		m_maincpu->set_input_line(INPUT_LINE_IRQ0, ASSERT_LINE);
 		m_irq_off_timer->adjust(attotime::from_ticks(32, m_maincpu->unscaled_clock()));
 		m_int_mask |= 1;
 	}
@@ -902,8 +909,7 @@ TIMER_CALLBACK_MEMBER(tsconf_state::irq_scanline)
 {
 	if (BIT(m_regs[INT_MASK], 1))
 	{
-		if (!m_int_mask)
-			m_maincpu->set_input_line(INPUT_LINE_IRQ0, ASSERT_LINE);
+		m_maincpu->set_input_line(INPUT_LINE_IRQ0, ASSERT_LINE);
 		m_int_mask |= 2;
 	}
 
@@ -929,12 +935,12 @@ TIMER_CALLBACK_MEMBER(tsconf_state::irq_scanline)
 			break;
 
 		case T0_G_PAGE:
-			m_gfxdecode->gfx(TM_TILES0)->set_source(m_ram->pointer() + PAGE4K(val & 0xf8));
+			copy_tiles_to_raw(m_ram->pointer() + PAGE4K(val & 0xf8), m_tiles_raw[0].target());
 			m_ts_tilemap[TM_TILES0]->mark_all_dirty();
 			break;
 
 		case T1_G_PAGE:
-			m_gfxdecode->gfx(TM_TILES1)->set_source(m_ram->pointer() + PAGE4K(val & 0xf8));
+			copy_tiles_to_raw(m_ram->pointer() + PAGE4K(val & 0xf8), m_tiles_raw[1].target());
 			m_ts_tilemap[TM_TILES1]->mark_all_dirty();
 			break;
 

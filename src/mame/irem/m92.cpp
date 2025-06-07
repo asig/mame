@@ -251,7 +251,6 @@ TIMER_DEVICE_CALLBACK_MEMBER(m92_state::scanline_interrupt)
 		{
 			m_upd71059c->ir0_w(0);
 		}
-
 	}
 }
 
@@ -300,7 +299,7 @@ void m92_state::sound_reset_w(uint16_t data)
 
 void m92_state::m92_base_map(address_map &map)
 {
-	map(0xe0000, 0xeffff).ram(); /* System ram */
+	map(0xe0000, 0xeffff).ram(); // System ram
 	map(0xf8000, 0xf87ff).ram().share("spriteram");
 	map(0xf8800, 0xf8fff).rw(FUNC(m92_state::paletteram_r), FUNC(m92_state::paletteram_w));
 	map(0xf9000, 0xf900f).w(FUNC(m92_state::spritecontrol_w)).share("spritecontrol");
@@ -308,7 +307,7 @@ void m92_state::m92_base_map(address_map &map)
 	map(0xffff0, 0xfffff).rom().region("maincpu", 0x7fff0);
 }
 
-/* appears to be an earlier board */
+// appears to be an earlier board
 void m92_state::lethalth_map(address_map &map)
 {
 	m92_base_map(map);
@@ -320,7 +319,7 @@ void m92_state::m92_map(address_map &map)
 {
 	m92_base_map(map);
 	map(0x00000, 0xbffff).rom();
-	map(0xc0000, 0xcffff).rom().region("maincpu", 0x00000); /* Mirror used by In The Hunt as protection */
+	map(0xc0000, 0xcffff).rom().region("maincpu", 0x00000); // Mirror used by In The Hunt as protection
 	map(0xd0000, 0xdffff).ram().w(FUNC(m92_state::vram_w)).share("vram_data");
 }
 
@@ -329,15 +328,25 @@ void m92_state::m92_banked_map(address_map &map)
 	m92_base_map(map);
 	map(0x00000, 0x9ffff).rom();
 	map(0xa0000, 0xbffff).bankr("mainbank");
-	map(0xc0000, 0xcffff).rom().region("maincpu", 0x00000); /* Mirror used by In The Hunt as protection */
+	map(0xc0000, 0xcffff).rom().region("maincpu", 0x00000); // Mirror used by In The Hunt as protection
 	map(0xd0000, 0xdffff).ram().w(FUNC(m92_state::vram_w)).share("vram_data");
 }
 
-/* This game has an eeprom on the game board */
+// This game has an eeprom on the game board
 void m92_state::majtitl2_map(address_map &map)
 {
 	m92_banked_map(map);
 	map(0xf0000, 0xf3fff).rw("eeprom", FUNC(eeprom_parallel_28xx_device::read), FUNC(eeprom_parallel_28xx_device::write)).umask16(0x00ff);
+}
+
+void m92_state::nbbatman2bl_map(address_map &map)
+{
+	m92_banked_map(map);
+
+	// disable for now, it has different sprite hardware
+	map(0xf8000, 0xf87ff).unmaprw();
+	map(0xf9000, 0xf900f).unmapw();
+	map(0xf9800, 0xf9801).unmapw();
 }
 
 void m92_state::m92_portmap(address_map &map)
@@ -348,7 +357,7 @@ void m92_state::m92_portmap(address_map &map)
 	map(0x02, 0x02).w(FUNC(m92_state::coincounter_w));
 	map(0x04, 0x05).portr("DSW");
 	map(0x06, 0x07).portr("P3_P4");
-	map(0x08, 0x08).r("soundlatch2", FUNC(generic_latch_8_device::read));   // answer from sound CPU
+	map(0x08, 0x08).r("soundlatch2", FUNC(generic_latch_8_device::read)); // answer from sound CPU
 	map(0x40, 0x43).rw(m_upd71059c, FUNC(pic8259_device::read), FUNC(pic8259_device::write)).umask16(0x00ff);
 	map(0x80, 0x87).w(FUNC(m92_state::pf_control_w<0>));
 	map(0x88, 0x8f).w(FUNC(m92_state::pf_control_w<1>));
@@ -412,7 +421,7 @@ static INPUT_PORTS_START( m92_2player )
 	PORT_BIT( 0x0010, IP_ACTIVE_LOW, IPT_SERVICE1 )
 	PORT_BIT( 0x0020, IP_ACTIVE_LOW, IPT_SERVICE )
 	PORT_BIT( 0x0040, IP_ACTIVE_LOW, IPT_UNUSED )
-	PORT_BIT( 0x0080, IP_ACTIVE_HIGH, IPT_CUSTOM ) PORT_READ_LINE_MEMBER(m92_state, sprite_busy_r)
+	PORT_BIT( 0x0080, IP_ACTIVE_HIGH, IPT_CUSTOM ) PORT_READ_LINE_MEMBER(FUNC(m92_state::sprite_busy_r))
 	/* DIP switch bank 3 */
 	PORT_DIPUNKNOWN_DIPLOC( 0x0100, 0x0100, "SW3:1" )
 	PORT_DIPUNKNOWN_DIPLOC( 0x0200, 0x0200, "SW3:2" )
@@ -424,7 +433,7 @@ static INPUT_PORTS_START( m92_2player )
 	PORT_DIPUNKNOWN_DIPLOC( 0x8000, 0x8000, "SW3:8" )
 
 	PORT_START("DSW")
-	/* Dip switch bank 1 */
+	/* DIP switch bank 1 */
 	PORT_DIPUNKNOWN_DIPLOC( 0x0001, 0x0001, "SW1:1" )
 	PORT_DIPUNKNOWN_DIPLOC( 0x0002, 0x0002, "SW1:2" )
 	PORT_DIPUNKNOWN_DIPLOC( 0x0004, 0x0004, "SW1:3" )
@@ -437,7 +446,7 @@ static INPUT_PORTS_START( m92_2player )
 	PORT_DIPSETTING(      0x0040, DEF_STR( Off ) )
 	PORT_DIPSETTING(      0x0000, DEF_STR( On ) )
 	PORT_SERVICE_DIPLOC( 0x0080, IP_ACTIVE_LOW, "SW1:8" )
-	/* Dip switch bank 2 */
+	/* DIP switch bank 2 */
 	PORT_DIPNAME( 0x0100, 0x0100, DEF_STR( Flip_Screen ) ) PORT_DIPLOCATION("SW2:1")
 	PORT_DIPSETTING(      0x0100, DEF_STR( Off ) )
 	PORT_DIPSETTING(      0x0000, DEF_STR( On ) )
@@ -490,10 +499,10 @@ INPUT_PORTS_END
 static INPUT_PORTS_START( bmaster )
 	PORT_INCLUDE(m92_2player)
 
-	/* Game manual specificly mentions dip switch bank 3 is unused */
+	/* Game manual specificly mentions DIP switch bank 3 is unused */
 
 	PORT_MODIFY("DSW")
-	/* Dip switch bank 1 */
+	/* DIP switch bank 1 */
 	PORT_DIPNAME( 0x0003, 0x0003, DEF_STR( Lives ) ) PORT_DIPLOCATION("SW1:1,2")
 	PORT_DIPSETTING(      0x0000, "1" )
 	PORT_DIPSETTING(      0x0003, "2" )
@@ -514,7 +523,7 @@ static INPUT_PORTS_START( gunforce )
 	PORT_INCLUDE(m92_2player)
 
 	PORT_MODIFY("DSW")
-	/* Dip switch bank 1 */
+	/* DIP switch bank 1 */
 	PORT_DIPNAME( 0x0003, 0x0003, DEF_STR( Lives ) ) PORT_DIPLOCATION("SW1:1,2")
 	PORT_DIPSETTING(      0x0002, "2" )
 	PORT_DIPSETTING(      0x0003, "3" )
@@ -535,7 +544,7 @@ static INPUT_PORTS_START( lethalth )
 	PORT_INCLUDE(m92_2player)
 
 	PORT_MODIFY("COINS_DSW3")
-	/* Dip switch bank 3 */
+	/* DIP switch bank 3 */
 	PORT_DIPNAME( 0x0300, 0x0300, DEF_STR( Bonus_Life ) ) PORT_DIPLOCATION("SW3:1,2")
 	PORT_DIPSETTING(      0x0200, "500K & 1M" )
 	PORT_DIPSETTING(      0x0300, "700K & 1.5M" )
@@ -543,7 +552,7 @@ static INPUT_PORTS_START( lethalth )
 	PORT_DIPSETTING(      0x0100, "1M & 2M" )
 
 	PORT_MODIFY("DSW")
-	/* Dip switch bank 1 */
+	/* DIP switch bank 1 */
 	PORT_DIPNAME( 0x0003, 0x0003, DEF_STR( Lives ) ) PORT_DIPLOCATION("SW1:1,2")
 	PORT_DIPSETTING(      0x0002, "2" )
 	PORT_DIPSETTING(      0x0003, "3" )
@@ -564,7 +573,7 @@ static INPUT_PORTS_START( thndblst )
 	PORT_INCLUDE(lethalth)
 
 	PORT_MODIFY("DSW")
-	/* Dip switch bank 1 */
+	/* DIP switch bank 1 */
 	PORT_DIPNAME( 0x0010, 0x0000, "Continuous Play" ) PORT_DIPLOCATION("SW1:5") /* manual says Unused */
 	PORT_DIPSETTING(      0x0000, DEF_STR( On ) )
 	PORT_DIPSETTING(      0x0010, DEF_STR( Off ) )
@@ -575,7 +584,7 @@ static INPUT_PORTS_START( hook )
 	PORT_INCLUDE(m92_4player)
 
 	PORT_MODIFY("DSW")
-	/* Dip switch bank 1 */
+	/* DIP switch bank 1 */
 	PORT_DIPNAME( 0x0003, 0x0003, DEF_STR( Lives ) ) PORT_DIPLOCATION("SW1:1,2")
 	PORT_DIPSETTING(      0x0000, "1" )
 	PORT_DIPSETTING(      0x0003, "2" )
@@ -597,7 +606,7 @@ static INPUT_PORTS_START( majtitl2 )
 	PORT_INCLUDE(m92_4player)
 
 	PORT_MODIFY("COINS_DSW3")
-	/* Dip switch bank 3 */
+	/* DIP switch bank 3 */
 	PORT_DIPNAME( 0x0100, 0x0100, "Ticket Dispenser" ) PORT_DIPLOCATION("SW3:1")
 	PORT_DIPSETTING(      0x0100, DEF_STR( Off ) )  /* "Ticket payout function is not working now" will be shown on screen */
 	PORT_DIPSETTING(      0x0000, DEF_STR( On ) )   /* Stored data is shown on screen with the option to clear data */
@@ -615,12 +624,12 @@ static INPUT_PORTS_START( majtitl2 )
 	PORT_DIPSETTING(      0x0000, "DL 4SS" )
 
 	PORT_MODIFY("DSW")
-	/* Dip switch bank 2 */
+	/* DIP switch bank 2 */
 	PORT_DIPNAME( 0x0200, 0x0200, DEF_STR( Cabinet ) ) PORT_DIPLOCATION("SW2:2")
 	PORT_DIPSETTING(      0x0200, DEF_STR( Upright ) )
 	PORT_DIPSETTING(      0x0000, DEF_STR( Cocktail ) )
 
-	/* Dip switch bank 1 */
+	/* DIP switch bank 1 */
 	PORT_DIPNAME( 0x0001, 0x0001, "Given Holes/Stroke Play" ) PORT_DIPLOCATION("SW1:1")
 	PORT_DIPSETTING(      0x0000, "1" )
 	PORT_DIPSETTING(      0x0001, "2" )
@@ -646,7 +655,7 @@ static INPUT_PORTS_START( mysticri )
 	PORT_INCLUDE(m92_2player)
 
 	PORT_MODIFY("DSW")
-	/* Dip switch bank 1 */
+	/* DIP switch bank 1 */
 	PORT_DIPNAME( 0x0003, 0x0003, DEF_STR( Lives ) ) PORT_DIPLOCATION("SW1:1,2")
 	PORT_DIPSETTING(      0x0002, "2" )
 	PORT_DIPSETTING(      0x0003, "3" )
@@ -667,7 +676,7 @@ static INPUT_PORTS_START( uccops )
 	PORT_INCLUDE(m92_3player)
 
 	PORT_MODIFY("DSW")
-	/* Dip switch bank 1 */
+	/* DIP switch bank 1 */
 	PORT_DIPNAME( 0x0003, 0x0002, DEF_STR( Lives ) ) PORT_DIPLOCATION("SW1:1,2")
 	PORT_DIPSETTING(      0x0000, "1" )
 	PORT_DIPSETTING(      0x0003, "2" )
@@ -690,7 +699,7 @@ static INPUT_PORTS_START( rtypeleo )
 	PORT_INCLUDE(m92_2player)
 
 	PORT_MODIFY("DSW")
-	/* Dip switch bank 1 */
+	/* DIP switch bank 1 */
 	PORT_DIPNAME( 0x0003, 0x0003, DEF_STR( Lives ) ) PORT_DIPLOCATION("SW1:1,2")
 	PORT_DIPSETTING(      0x0002, "2" )
 	PORT_DIPSETTING(      0x0003, "3" )
@@ -708,7 +717,7 @@ static INPUT_PORTS_START( inthunt )
 	PORT_INCLUDE(m92_2player)
 
 	PORT_MODIFY("DSW")
-	/* Dip switch bank 1 */
+	/* DIP switch bank 1 */
 	PORT_DIPNAME( 0x0003, 0x0003, DEF_STR( Lives ) ) PORT_DIPLOCATION("SW1:1,2")
 	PORT_DIPSETTING(      0x0002, "2" )
 	PORT_DIPSETTING(      0x0003, "3" )
@@ -729,7 +738,7 @@ static INPUT_PORTS_START( nbbatman )
 	PORT_INCLUDE(m92_4player)
 
 	PORT_MODIFY("DSW")
-	/* Dip switch bank 1 */
+	/* DIP switch bank 1 */
 	PORT_DIPNAME( 0x0003, 0x0003, DEF_STR( Lives ) ) PORT_DIPLOCATION("SW1:1,2")
 	PORT_DIPSETTING(      0x0000, "1" )
 	PORT_DIPSETTING(      0x0003, "2" )
@@ -753,7 +762,7 @@ static INPUT_PORTS_START( psoldier )
 	IREM_GENERIC_JOYSTICKS_3_BUTTONS(1, 2)
 
 	PORT_MODIFY("DSW")
-	/* Dip switch bank 1 */
+	/* DIP switch bank 1 */
 	PORT_DIPNAME( 0x0020, 0x0000, "Any Button to Start" ) PORT_DIPLOCATION("SW1:6")
 	PORT_DIPSETTING(      0x0020, DEF_STR( No ) )
 	PORT_DIPSETTING(      0x0000, DEF_STR( Yes ) )
@@ -772,10 +781,10 @@ INPUT_PORTS_END
 
 static INPUT_PORTS_START( dsoccr94j )
 	PORT_INCLUDE(m92_4player)
-	/* Dip Switch 2, dip 2 is listed as "Don't Change" and is "OFF" */
+	/* DIP Switch 2, dip 2 is listed as "Don't Change" and is "OFF" */
 
 	PORT_MODIFY("COINS_DSW3")
-	/* Dip switch bank 3 */
+	/* DIP switch bank 3 */
 	PORT_DIPNAME( 0x0300, 0x0300, "Player Power" ) PORT_DIPLOCATION("SW3:1,2")
 	PORT_DIPSETTING(      0x0000, "500" )
 	PORT_DIPSETTING(      0x0300, "1000" )
@@ -783,7 +792,7 @@ static INPUT_PORTS_START( dsoccr94j )
 	PORT_DIPSETTING(      0x0200, "2000" )
 
 	PORT_MODIFY("DSW")
-	/* Dip switch bank 1 */
+	/* DIP switch bank 1 */
 	PORT_DIPNAME( 0x0003, 0x0003, "Time" ) PORT_DIPLOCATION("SW1:1,2")
 	PORT_DIPSETTING(      0x0000, "1:30" )
 	PORT_DIPSETTING(      0x0003, "2:00" )
@@ -798,11 +807,11 @@ static INPUT_PORTS_START( dsoccr94j )
 	PORT_DIPSETTING(      0x0010, "Match Mode" )
 	PORT_DIPSETTING(      0x0000, "Power Mode" )
 /*
-   Match Mode: Winner advances to the next game.  Game Over for the loser
-   Power Mode: The Players can play the game until their respective powers run
-               out, reguardless of whether they win or lose the game.
-               Player 2 can join in any time during the game
-               Player power (time) can be adjusted by dip switch #3
+    Match Mode: Winner advances to the next game.  Game Over for the loser
+    Power Mode: The Players can play the game until their respective powers run
+        out, reguardless of whether they win or lose the game.
+        Player 2 can join in any time during the game
+        Player power (time) can be adjusted by DIP switch #3
 */
 	PORT_DIPNAME( 0x0020, 0x0020, "Starting Button" ) PORT_DIPLOCATION("SW1:6")
 	PORT_DIPSETTING(      0x0000, "Button 1" )
@@ -814,7 +823,7 @@ static INPUT_PORTS_START( gunforc2 )
 	PORT_INCLUDE(m92_2player)
 
 	PORT_MODIFY("DSW")
-	/* Dip switch bank 1 */
+	/* DIP switch bank 1 */
 	PORT_DIPNAME( 0x0003, 0x0003, DEF_STR( Lives ) ) PORT_DIPLOCATION("SW1:1,2")
 	PORT_DIPSETTING(      0x0002, "3" )
 	PORT_DIPSETTING(      0x0003, "2" )
@@ -897,8 +906,8 @@ static const gfx_layout bootleg_spritelayout =
 
 
 static GFXDECODE_START( gfx_bootleg )
-	GFXDECODE_ENTRY( "gfx1", 0, bootleg_charlayout,   0x400, 128 )
-	GFXDECODE_ENTRY( "gfx2", 0, bootleg_spritelayout, 0x400, 128 )
+	GFXDECODE_ENTRY( "gfx1", 0, bootleg_charlayout,   0, 128 )
+	GFXDECODE_ENTRY( "gfx2", 0, bootleg_spritelayout, 0, 128 )
 GFXDECODE_END
 
 
@@ -1070,6 +1079,8 @@ void m92_state::nbbatman2bl(machine_config &config)
 	config.device_remove("soundcpu");
 	config.device_remove("ymsnd");
 	config.device_remove("irem");
+
+	m_maincpu->set_addrmap(AS_PROGRAM, &m92_state::nbbatman2bl_map);
 
 	m_gfxdecode->set_info(gfx_bootleg);
 
@@ -1583,6 +1594,41 @@ ROM_START( kaiteids ) // M92-E-B  05C04238B1 ROM board
 	ROM_REGION( 0x20000, "soundcpu", 0 ) // Irem D8000011A1
 	ROM_LOAD16_BYTE( "ith_-sh0.ic30", 0x00001, 0x10000, CRC(209c8b7f) SHA1(eaf4a6d9222fe181df65cea1f13c3f2ebff2ec5b) )
 	ROM_LOAD16_BYTE( "ith_-sl0.ic31", 0x00000, 0x10000, CRC(18472d65) SHA1(2705e94ee350ffda272c50ea3bf605826aa19978) )
+
+	ROM_REGION( 0x200000, "gfx1", 0 ) // Tiles
+	ROM_LOAD( "ith_-c0-.ic26", 0x000000, 0x080000, CRC(4c1818cf) SHA1(fc8c2ae640bc3504a52736be46febb92c998fd7d) )
+	ROM_LOAD( "ith_-c1-.ic25", 0x080000, 0x080000, CRC(91145bae) SHA1(71b2695575f189a2fc72635831ba408f824d4928) )
+	ROM_LOAD( "ith_-c2-.ic24", 0x100000, 0x080000, CRC(fc03fe3b) SHA1(7e34220b9b21b82e012dcbf3052cccb118e3c382) )
+	ROM_LOAD( "ith_-c3-.ic23", 0x180000, 0x080000, CRC(ee156a0a) SHA1(4a303ed292ce79e3f990139c35b921213eb2711d) )
+
+	ROM_REGION( 0x400000, "gfx2", 0 ) // Sprites
+	ROM_LOAD( "ith_-000-.ic34", 0x000000, 0x100000, CRC(a019766e) SHA1(59012a41d152a471a95f1f86b6b1e0f9dd3f9711) )
+	ROM_LOAD( "ith_-010-.ic35", 0x100000, 0x100000, CRC(3fca3073) SHA1(bdae171cb7705647f28354ca83ecdea3a15f6e22) )
+	ROM_LOAD( "ith_-020-.ic36", 0x200000, 0x100000, CRC(20d1b28b) SHA1(290947d77242e837444766ff5d420bc9b53b5b01) )
+	ROM_LOAD( "ith_-030-.ic37", 0x300000, 0x100000, CRC(90b6fd4b) SHA1(99237ebab7cf4689e06965bd546cd80a825ab024) )
+
+	ROM_REGION( 0x80000, "irem", 0 ) // Samples
+	ROM_LOAD( "ith_-da-.ic9", 0x000000, 0x080000, CRC(318ee71a) SHA1(e6f49a7adf7155ba40c4f33a8fdc9553c00f5e3d) )
+
+	ROM_REGION( 0x0c00, "plds", 0 )
+	ROM_LOAD( "m92_a-3m-.ic11", 0x0000, 0x0117, CRC(fc718efe) SHA1(d554dd74cecd95754a1e6e24c6a207d6d3428253) ) // PAL16L8 - bruteforced
+	ROM_LOAD( "m92_a-7j-.ic41", 0x0200, 0x0117, CRC(5730b25a) SHA1(1877b807f6a94f6d515afc940e1d615a453490fd) ) // PAL16L8 - bruteforced
+	ROM_LOAD( "m92_a-9j-.ic51", 0x0400, 0x0117, CRC(92d477cf) SHA1(6a1e9bfdb367384e8611f46300f378730817514b) ) // PAL16L8 - bruteforced
+	ROM_LOAD( "m92_e-3k-.ic20", 0x0600, 0x0117, CRC(52ecf083) SHA1(1a1819e572f7fdd5aab2caeca8741441ffbea01d) ) // PAL16L8 - bruteforced
+	ROM_LOAD( "m92_e-3p-.ic21", 0x0800, 0x0117, CRC(67a4cc04) SHA1(0cd035852cc0b9f803ade56529645e052a13b752) ) // PAL16L8 - bruteforced
+	ROM_LOAD( "m92_e-4k-.ic29", 0x0a00, 0x0117, CRC(506a0e20) SHA1(f10eaf694667239f7cd5209dfcb12d656c697074) ) // PAL16L8 - bruteforced
+ROM_END
+
+ROM_START( inthuntk ) // M92-E-B  05C04238B1 ROM board
+	ROM_REGION( 0x100000, "maincpu", 0 ) // red blank labels
+	ROM_LOAD16_BYTE( "ic28", 0x000001, 0x040000, CRC(90f82ea3) SHA1(0f42367f5c4ba67254bc4e19d30ebd81a45d9f3c) )
+	ROM_LOAD16_BYTE( "ic39", 0x000000, 0x040000, CRC(4bf419c0) SHA1(1de52b4a69d0f36cc308f9d448b7ab2b32343486) )
+	ROM_LOAD16_BYTE( "ic38", 0x080001, 0x020000, CRC(fc2899df) SHA1(f811ff5fd55655afdb25950d317db85c8091b6d6) )
+	ROM_LOAD16_BYTE( "ic27", 0x080000, 0x020000, CRC(955a605a) SHA1(2515accc2f4a06b07418e45eb62e746d09c81720) )
+
+	ROM_REGION( 0x20000, "soundcpu", 0 ) // Irem D8000011A1, red blank labels
+	ROM_LOAD16_BYTE( "ic30", 0x00001, 0x10000, CRC(209c8b7f) SHA1(eaf4a6d9222fe181df65cea1f13c3f2ebff2ec5b) )
+	ROM_LOAD16_BYTE( "ic31", 0x00000, 0x10000, CRC(18472d65) SHA1(2705e94ee350ffda272c50ea3bf605826aa19978) )
 
 	ROM_REGION( 0x200000, "gfx1", 0 ) // Tiles
 	ROM_LOAD( "ith_-c0-.ic26", 0x000000, 0x080000, CRC(4c1818cf) SHA1(fc8c2ae640bc3504a52736be46febb92c998fd7d) )
@@ -2604,6 +2650,7 @@ GAME( 1992, rtypeleoj,   rtypeleo, rtypeleo,      rtypeleo,  m92_state, empty_in
 GAME( 1993, inthunt,     0,        inthunt,       inthunt,   m92_state, empty_init,    ROT0,   "Irem",         "In The Hunt (World)", MACHINE_SUPPORTS_SAVE | MACHINE_NO_COCKTAIL)
 GAME( 1993, inthuntu,    inthunt,  inthunt,       inthunt,   m92_state, empty_init,    ROT0,   "Irem America", "In The Hunt (US)", MACHINE_SUPPORTS_SAVE | MACHINE_NO_COCKTAIL)
 GAME( 1993, kaiteids,    inthunt,  inthunt,       inthunt,   m92_state, empty_init,    ROT0,   "Irem",         "Kaitei Daisensou (Japan)", MACHINE_SUPPORTS_SAVE | MACHINE_NO_COCKTAIL )
+GAME( 1993, inthuntk,    inthunt,  inthunt,       inthunt,   m92_state, empty_init,    ROT0,   "Irem",         "In The Hunt (Korea?)", MACHINE_SUPPORTS_SAVE | MACHINE_NO_COCKTAIL)
 
 GAME( 1993, nbbatman,    0,        nbbatman,      nbbatman,  m92_state, init_bank,     ROT0,   "Irem",         "Ninja Baseball Bat Man (World)", MACHINE_SUPPORTS_SAVE | MACHINE_IMPERFECT_GRAPHICS | MACHINE_NO_COCKTAIL )
 GAME( 1993, nbbatmanu,   nbbatman, nbbatman,      nbbatman,  m92_state, init_bank,     ROT0,   "Irem America", "Ninja Baseball Bat Man (US)", MACHINE_SUPPORTS_SAVE | MACHINE_IMPERFECT_GRAPHICS | MACHINE_NO_COCKTAIL)

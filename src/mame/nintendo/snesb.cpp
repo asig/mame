@@ -210,16 +210,16 @@ private:
 
 	DECLARE_MACHINE_RESET(ffight2b);
 	DECLARE_MACHINE_RESET(wldgunsb);
-	void snesb_map(address_map &map);
-	void spc_map(address_map &map);
-	void endless_map(address_map &map);
-	void extrainp_map(address_map &map);
-	void kinstb_map(address_map &map);
-	void rushbets_map(address_map &map);
-	void sblast2b_map(address_map &map);
-	void venom_map(address_map &map);
-	void wldgunsb_map(address_map &map);
-	void tmntmwb_map(address_map &map);
+	void snesb_map(address_map &map) ATTR_COLD;
+	void spc_map(address_map &map) ATTR_COLD;
+	void endless_map(address_map &map) ATTR_COLD;
+	void extrainp_map(address_map &map) ATTR_COLD;
+	void kinstb_map(address_map &map) ATTR_COLD;
+	void rushbets_map(address_map &map) ATTR_COLD;
+	void sblast2b_map(address_map &map) ATTR_COLD;
+	void venom_map(address_map &map) ATTR_COLD;
+	void wldgunsb_map(address_map &map) ATTR_COLD;
+	void tmntmwb_map(address_map &map) ATTR_COLD;
 };
 
 
@@ -1016,13 +1016,12 @@ void snesb_state::base(machine_config &config)
 	m_ppu->set_screen("screen");
 
 	// sound hardware
-	SPEAKER(config, "lspeaker").front_left();
-	SPEAKER(config, "rspeaker").front_right();
+	SPEAKER(config, "speaker", 2).front();
 
-	S_DSP(config, m_s_dsp, XTAL(24'576'000) / 12);
+	S_DSP(config, m_s_dsp, XTAL(24'576'000));
 	m_s_dsp->set_addrmap(0, &snesb_state::spc_map);
-	m_s_dsp->add_route(0, "lspeaker", 1.00);
-	m_s_dsp->add_route(1, "rspeaker", 1.00);
+	m_s_dsp->add_route(0, "speaker", 1.00, 0);
+	m_s_dsp->add_route(1, "speaker", 1.00, 1);
 }
 
 void snesb_state::extrainp(machine_config &config)

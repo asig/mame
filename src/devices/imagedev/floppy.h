@@ -6,14 +6,14 @@
 
 *********************************************************************/
 
-#ifndef MAME_DEVICES_IMAGEDEV_FLOPPY_H
-#define MAME_DEVICES_IMAGEDEV_FLOPPY_H
+#ifndef MAME_IMAGEDEV_FLOPPY_H
+#define MAME_IMAGEDEV_FLOPPY_H
 
 #pragma once
 
 #include "sound/samples.h"
-#include "screen.h"
 
+// forward declarations
 class floppy_image;
 class floppy_image_format_t;
 
@@ -166,10 +166,10 @@ protected:
 	floppy_image_device(const machine_config &mconfig, device_type type, const char *tag, device_t *owner, uint32_t clock);
 
 	// device_t implementation
-	virtual void device_start() override;
-	virtual void device_reset() override;
+	virtual void device_start() override ATTR_COLD;
+	virtual void device_reset() override ATTR_COLD;
 	virtual void device_config_complete() override;
-	virtual void device_add_mconfig(machine_config &config) override;
+	virtual void device_add_mconfig(machine_config &config) override ATTR_COLD;
 
 	// device_image_interface implementation
 	virtual const software_list_loader &get_software_list_loader() const override;
@@ -293,6 +293,7 @@ DECLARE_FLOPPY_IMAGE_DEVICE(FLOPPY_3_SSSD,       floppy_3_sssd,       "floppy_3"
 DECLARE_FLOPPY_IMAGE_DEVICE(FLOPPY_3_DSSD,       floppy_3_dssd,       "floppy_3")
 DECLARE_FLOPPY_IMAGE_DEVICE(FLOPPY_3_SSDD,       floppy_3_ssdd,       "floppy_3")
 DECLARE_FLOPPY_IMAGE_DEVICE(FLOPPY_3_DSDD,       floppy_3_dsdd,       "floppy_3")
+DECLARE_FLOPPY_IMAGE_DEVICE(FLOPPY_3_DSQD,       floppy_3_dsqd,       "floppy_3")
 DECLARE_FLOPPY_IMAGE_DEVICE(FLOPPY_35_SSDD,      floppy_35_ssdd,      "floppy_3_5")
 DECLARE_FLOPPY_IMAGE_DEVICE(FLOPPY_35_DD,        floppy_35_dd,        "floppy_3_5")
 DECLARE_FLOPPY_IMAGE_DEVICE(FLOPPY_35_HD,        floppy_35_hd,        "floppy_3_5")
@@ -347,8 +348,8 @@ protected:
 
 	mac_floppy_device(const machine_config &mconfig, device_type type, const char *tag, device_t *owner, uint32_t clock);
 
-	virtual void device_start() override;
-	virtual void device_reset() override;
+	virtual void device_start() override ATTR_COLD;
+	virtual void device_reset() override ATTR_COLD;
 	virtual void track_changed() override;
 
 	virtual bool is_2m() const = 0;
@@ -408,11 +409,11 @@ public:
 	void register_for_save_states();
 
 protected:
-	void device_start() override;
+	void device_start() override ATTR_COLD;
 
 private:
 	// device_sound_interface overrides
-	virtual void sound_stream_update(sound_stream &stream, std::vector<read_stream_view> const &inputs, std::vector<write_stream_view> &outputs) override;
+	virtual void sound_stream_update(sound_stream &stream) override;
 	sound_stream*   m_sound;
 
 	int         m_step_base;
@@ -471,7 +472,7 @@ public:
 	floppy_image_device *get_device();
 
 protected:
-	virtual void device_start() override;
+	virtual void device_start() override ATTR_COLD;
 	virtual void device_config_complete() override;
 
 private:
@@ -487,4 +488,4 @@ DECLARE_DEVICE_TYPE(FLOPPY_CONNECTOR, floppy_connector)
 extern template class device_finder<floppy_connector, false>;
 extern template class device_finder<floppy_connector, true>;
 
-#endif // MAME_DEVICES_IMAGEDEV_FLOPPY_H
+#endif // MAME_IMAGEDEV_FLOPPY_H

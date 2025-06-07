@@ -51,8 +51,8 @@ public:
 private:
 	required_device<h8520_device> m_maincpu;
 	required_device<multipcm_device> m_ymw258;
-	void tg100_map(address_map &map);
-	void ymw258_map(address_map &map);
+	void tg100_map(address_map &map) ATTR_COLD;
+	void ymw258_map(address_map &map) ATTR_COLD;
 };
 
 /* all memory accesses are decoded by the gate array... */
@@ -77,13 +77,12 @@ void tg100_state::tg100(machine_config &config)
 	HD6435208(config, m_maincpu, XTAL(20'000'000));
 	m_maincpu->set_addrmap(AS_PROGRAM, &tg100_state::tg100_map);
 
-	SPEAKER(config, "lspeaker").front_left();
-	SPEAKER(config, "rspeaker").front_right();
+	SPEAKER(config, "speaker", 2).front();
 
 	MULTIPCM(config, m_ymw258, 9400000);
 	m_ymw258->set_addrmap(0, &tg100_state::ymw258_map);
-	m_ymw258->add_route(0, "lspeaker", 1.0);
-	m_ymw258->add_route(1, "rspeaker", 1.0);
+	m_ymw258->add_route(0, "speaker", 1.0, 0);
+	m_ymw258->add_route(1, "speaker", 1.0, 1);
 }
 
 ROM_START( tg100 )

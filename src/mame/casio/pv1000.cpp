@@ -29,10 +29,10 @@ public:
 
 protected:
 	// device-level overrides
-	virtual void device_start() override;
+	virtual void device_start() override ATTR_COLD;
 
 	// sound stream update overrides
-	virtual void sound_stream_update(sound_stream &stream, std::vector<read_stream_view> const &inputs, std::vector<write_stream_view> &outputs) override;
+	virtual void sound_stream_update(sound_stream &stream) override;
 
 private:
 	// internal state
@@ -117,14 +117,12 @@ void pv1000_sound_device::voice_w(offs_t offset, uint8_t data)
   square1 via i/o$F8 is -6dB, square2 via i/o$F9 is -3dB, defining square3 via i/o$FA as 0dB
 */
 
-void pv1000_sound_device::sound_stream_update(sound_stream &stream, std::vector<read_stream_view> const &inputs, std::vector<write_stream_view> &outputs)
+void pv1000_sound_device::sound_stream_update(sound_stream &stream)
 {
-	auto &buffer = outputs[0];
-
 	// Each channel has a different volume via resistor mixing which correspond to -6dB, -3dB, 0dB drops
 	static const int volumes[3] = { 0x1000, 0x1800, 0x2000 };
 
-	for (int index = 0; index < buffer.samples(); index++)
+	for (int index = 0; index < stream.samples(); index++)
 	{
 		s32 sum = 0;
 
@@ -161,7 +159,7 @@ void pv1000_sound_device::sound_stream_update(sound_stream &stream, std::vector<
 			sum += m_voice[2].val * volumes[2];
 		}
 
-		buffer.put_int(index, sum, 32768);
+		stream.put_int(0, index, sum, 32768);
 	}
 }
 
@@ -186,8 +184,8 @@ public:
 	void pv1000(machine_config &config);
 
 protected:
-	virtual void machine_start() override;
-	virtual void machine_reset() override;
+	virtual void machine_start() override ATTR_COLD;
+	virtual void machine_reset() override ATTR_COLD;
 
 private:
 	void io_w(offs_t offset, uint8_t data);
@@ -224,8 +222,8 @@ private:
 	TIMER_CALLBACK_MEMBER(d65010_busrq_off_cb);
 	DECLARE_DEVICE_IMAGE_LOAD_MEMBER(cart_load);
 
-	void pv1000_mem(address_map &map);
-	void pv1000_io(address_map &map);
+	void pv1000_mem(address_map &map) ATTR_COLD;
+	void pv1000_io(address_map &map) ATTR_COLD;
 };
 
 

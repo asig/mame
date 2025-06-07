@@ -43,7 +43,7 @@ FM Towns II UX10/20/40          | All-in-one  | 386SX-16   | 2 MB               
 FM Towns II HG20/40/100         | Desktop     | 386DX-20   | 2 MB                         | 26 MB   | 2                      | No (HG20), 40 or 80 MB
 FM Towns II HR20/100/200        | Desktop     | 486SX-20   | 4 MB                         | 28 MB   | 2                      | No (HR20) 100 or 200 MB
 FM Towns II UG10/20/40/80       | All-in-one  | 386SX-20   | 2 MB                         | 10 MB   | 1 (UG10) or 2 (others) | No (UG10/20), 40 or 80 MB
-FM Towns II UR20/40/80          | All-in-one  | 486SX-20   | 2 MB                         | 10 MB   | 2                      | No (UG20), 40 or 80 MB
+FM Towns II UR20/40/80          | All-in-one  | 486SX-20   | 2 MB                         | 10 MB   | 2                      | No (UR20), 40 or 80 MB
 FM Towns II ME20/170            | Desktop     | 486SX-25   | 2 MB                         | 66 MB   | 2                      | No (ME20) or 170 MB
 FM Towns II MA170/340           | Desktop     | 486SX-33   | 4 MB                         | 100 MB  | 2                      | 170 or 340 MB
 FM Towns II MX20/170/340        | Desktop     | 486DX2-66  | 4 MB                         | 100 MB  | 2                      | No (MX20), 170 or 340 MB
@@ -2382,7 +2382,7 @@ void towns_state::driver_start()
 	save_item(NAME(m_towns_ram_enable));
 	save_pointer(NAME(m_towns_vram), 0x20000);
 	save_pointer(NAME(m_towns_gfxvram), 0x80000);
-	save_pointer(NAME(m_towns_txtvram), 0x20000);;
+	save_pointer(NAME(m_towns_txtvram), 0x20000);
 	save_item(NAME(m_towns_selected_drive));
 	save_item(NAME(m_towns_fdc_irq6mask));
 	save_pointer(NAME(m_towns_serial_rom), 256/8);
@@ -2607,34 +2607,33 @@ void towns_state::towns_base(machine_config &config)
 	PALETTE(config, m_palette16[1]).set_entries(16);
 
 	/* sound hardware */
-	SPEAKER(config, "lspeaker").front_left();
-	SPEAKER(config, "rspeaker").front_right();
+	SPEAKER(config, "speaker", 2).front();
 
 	ym3438_device &fm(YM3438(config, "fm", 16000000 / 2)); // actual clock speed unknown
 	fm.irq_handler().set(FUNC(towns_state::towns_fm_irq));
-	fm.add_route(0, "lspeaker", 1.00);
-	fm.add_route(1, "rspeaker", 1.00);
+	fm.add_route(0, "speaker", 1.00, 0);
+	fm.add_route(1, "speaker", 1.00, 1);
 
 /*
     // Later model uses YMF276 for FM
     ymf276_device &fm(YMF276(config, "fm", 16000000 / 2)); // actual clock speed unknown
     fm.irq_handler().set(FUNC(towns_state::towns_fm_irq));
-    fm.add_route(0, "lspeaker", 1.00);
-    fm.add_route(1, "rspeaker", 1.00);
+    fm.add_route(0, "speaker", 1.00);
+    fm.add_route(1, "speaker", 1.00);
 */
 
 	rf5c68_device &pcm(RF5C68(config, "pcm", 16000000 / 2));  // actual clock speed unknown
 	pcm.set_end_callback(FUNC(towns_state::towns_pcm_irq));
 	pcm.set_addrmap(0, &towns_state::pcm_mem);
-	pcm.add_route(0, "lspeaker", 1.00);
-	pcm.add_route(1, "rspeaker", 1.00);
+	pcm.add_route(0, "speaker", 1.00, 0);
+	pcm.add_route(1, "speaker", 1.00, 1);
 
 	CDDA(config, m_cdda);
-	m_cdda->add_route(0, "lspeaker", 0.30);
-	m_cdda->add_route(1, "rspeaker", 0.30);
+	m_cdda->add_route(0, "speaker", 0.30, 0);
+	m_cdda->add_route(1, "speaker", 0.30, 1);
 	SPEAKER_SOUND(config, m_speaker);
-	m_speaker->add_route(ALL_OUTPUTS, "lspeaker", 0.50);
-	m_speaker->add_route(ALL_OUTPUTS, "rspeaker", 0.50);
+	m_speaker->add_route(ALL_OUTPUTS, "speaker", 0.50, 0);
+	m_speaker->add_route(ALL_OUTPUTS, "speaker", 0.50, 1);
 
 	PIT8253(config, m_pit, 0);
 	m_pit->set_clk<0>(307200);
@@ -2668,7 +2667,7 @@ void towns_state::towns_base(machine_config &config)
 	SOFTWARE_LIST(config, "fd_list_cracked").set_original("fmtowns_flop_cracked");
 	SOFTWARE_LIST(config, "fd_list_misc").set_original("fmtowns_flop_misc");
 
-	CDROM(config, m_cdrom, 0).set_interface("fmt_cdrom");
+	CDROM(config, m_cdrom).set_interface("cdrom");
 	m_cdda->set_cdrom_tag(m_cdrom);
 	SOFTWARE_LIST(config, "cd_list").set_original("fmtowns_cd");
 

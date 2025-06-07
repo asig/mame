@@ -70,8 +70,8 @@ public:
 	void ajax(machine_config &config);
 
 protected:
-	virtual void machine_start() override;
-	virtual void machine_reset() override;
+	virtual void machine_start() override ATTR_COLD;
+	virtual void machine_reset() override ATTR_COLD;
 
 private:
 	// devices
@@ -114,9 +114,9 @@ private:
 	K052109_CB_MEMBER(tile_callback);
 	K051960_CB_MEMBER(sprite_callback);
 
-	void main_map(address_map &map);
-	void sound_map(address_map &map);
-	void sub_map(address_map &map);
+	void main_map(address_map &map) ATTR_COLD;
+	void sound_map(address_map &map) ATTR_COLD;
+	void sub_map(address_map &map) ATTR_COLD;
 };
 
 
@@ -592,24 +592,23 @@ void ajax_state::ajax(machine_config &config)
 	m_k051316->set_zoom_callback(FUNC(ajax_state::zoom_callback));
 
 	// sound hardware
-	SPEAKER(config, "lspeaker").front_left();
-	SPEAKER(config, "rspeaker").front_right();
+	SPEAKER(config, "speaker", 2).front();
 
 	GENERIC_LATCH_8(config, m_soundlatch);
 
-	YM2151(config, "ymsnd", 3579545).add_route(0, "lspeaker", 1.0).add_route(1, "rspeaker", 1.0);
+	YM2151(config, "ymsnd", 3579545).add_route(0, "speaker", 1.0, 0).add_route(1, "speaker", 1.0, 1);
 
 	K007232(config, m_k007232[0], 3579545);
 	m_k007232[0]->port_write().set(FUNC(ajax_state::volume_callback0));
-	m_k007232[0]->add_route(0, "lspeaker", 0.20);
-	m_k007232[0]->add_route(0, "rspeaker", 0.20);
-	m_k007232[0]->add_route(1, "lspeaker", 0.20);
-	m_k007232[0]->add_route(1, "rspeaker", 0.20);
+	m_k007232[0]->add_route(0, "speaker", 0.20, 0);
+	m_k007232[0]->add_route(0, "speaker", 0.20, 1);
+	m_k007232[0]->add_route(1, "speaker", 0.20, 0);
+	m_k007232[0]->add_route(1, "speaker", 0.20, 1);
 
 	K007232(config, m_k007232[1], 3579545);
 	m_k007232[1]->port_write().set(FUNC(ajax_state::volume_callback1));
-	m_k007232[1]->add_route(0, "lspeaker", 0.50);
-	m_k007232[1]->add_route(1, "rspeaker", 0.50);
+	m_k007232[1]->add_route(0, "speaker", 0.50, 0);
+	m_k007232[1]->add_route(1, "speaker", 0.50, 1);
 }
 
 

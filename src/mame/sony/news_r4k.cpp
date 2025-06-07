@@ -304,16 +304,16 @@ protected:
 	};
 
 	// driver_device overrides
-	virtual void machine_start() override;
-	virtual void machine_reset() override;
+	virtual void machine_start() override ATTR_COLD;
+	virtual void machine_reset() override ATTR_COLD;
 
 	void machine_common(machine_config &config);
 
 	// address maps
-	void cpu_map(address_map &map);
-	void sonic3_map(address_map &map);
-	void cpu_map_main_memory(address_map &map);
-	void cpu_map_debug(address_map &map);
+	void cpu_map(address_map &map) ATTR_COLD;
+	void sonic3_map(address_map &map) ATTR_COLD;
+	void cpu_map_main_memory(address_map &map) ATTR_COLD;
+	void cpu_map_debug(address_map &map) ATTR_COLD;
 
 	// Interrupts
 	// See news5000 section of https://github.com/NetBSD/src/blob/trunk/sys/arch/newsmips/include/adrsmap.h
@@ -452,10 +452,6 @@ void news_r4k_state::machine_common(machine_config &config)
 	DP83932C(config, m_sonic, 20'000'000);
 	m_sonic->out_int_cb().set(m_sonic3, FUNC(cxd8452aq_device::irq_w));
 	m_sonic->set_bus(m_sonic3, 1);
-
-	// Use promiscuous mode to force network driver to accept all packets, since SONIC has its own filter (CAM table)
-	// Not sure if needing to use this means something else isn't set up correctly.
-	m_sonic->set_promisc(true);
 
 	// Unlike 68k and R3000 NEWS machines, the keyboard and mouse seem to share an interrupt
 	// See https://github.com/NetBSD/src/blob/trunk/sys/arch/newsmips/apbus/ms_ap.c#L103

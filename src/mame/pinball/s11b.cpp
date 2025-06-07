@@ -145,8 +145,8 @@ static INPUT_PORTS_START( s11b )
 	PORT_BIT( 0x80, IP_ACTIVE_HIGH, IPT_KEYPAD ) PORT_CODE(KEYCODE_PLUS_PAD) PORT_NAME("INP64")
 
 	PORT_START("DIAGS")
-	PORT_BIT( 0x01, IP_ACTIVE_LOW, IPT_KEYPAD) PORT_NAME("Audio Diag") PORT_CODE(KEYCODE_9_PAD) PORT_CHANGED_MEMBER(DEVICE_SELF, s11b_state, audio_nmi, 1)
-	PORT_BIT( 0x02, IP_ACTIVE_LOW, IPT_KEYPAD) PORT_NAME("Main Diag") PORT_CODE(KEYCODE_0_PAD) PORT_CHANGED_MEMBER(DEVICE_SELF, s11b_state, main_nmi, 1)
+	PORT_BIT( 0x01, IP_ACTIVE_LOW, IPT_KEYPAD) PORT_NAME("Audio Diag") PORT_CODE(KEYCODE_9_PAD) PORT_CHANGED_MEMBER(DEVICE_SELF, FUNC(s11b_state::audio_nmi), 1)
+	PORT_BIT( 0x02, IP_ACTIVE_LOW, IPT_KEYPAD) PORT_NAME("Main Diag") PORT_CODE(KEYCODE_0_PAD) PORT_CHANGED_MEMBER(DEVICE_SELF, FUNC(s11b_state::main_nmi), 1)
 	PORT_BIT( 0x04, IP_ACTIVE_LOW, IPT_KEYPAD) PORT_NAME("Advance") PORT_CODE(KEYCODE_1_PAD)
 	PORT_BIT( 0x08, IP_ACTIVE_LOW, IPT_KEYPAD) PORT_NAME("Up/Down") PORT_CODE(KEYCODE_2_PAD) PORT_TOGGLE
 	PORT_CONFNAME( 0x10, 0x10, "Language" )
@@ -388,10 +388,10 @@ void s11b_state::s11b_jokerz(machine_config &config)
 	PINSND88(config, m_ps88);
 	// the dac and cvsd volumes should be equally mixed on the s11 board send to the audio board, whatever type it is
 	// the 4 gain values in the add_route statements are actually irrelevant, the ps88 device will override them
-	m_dac->add_route(ALL_OUTPUTS, m_ps88, 0.29, AUTO_ALLOC_INPUT, 0);
-	m_dac->add_route(ALL_OUTPUTS, m_ps88, 0.25, AUTO_ALLOC_INPUT, 1);
-	m_cvsd_filter2->add_route(ALL_OUTPUTS, m_ps88, (0.29*4.0), AUTO_ALLOC_INPUT, 0);
-	m_cvsd_filter2->add_route(ALL_OUTPUTS, m_ps88, (0.25*4.0), AUTO_ALLOC_INPUT, 1);
+	m_dac->add_route(ALL_OUTPUTS, m_ps88, 0.29, 0);
+	m_dac->add_route(ALL_OUTPUTS, m_ps88, 0.25, 1);
+	m_cvsd_filter2->add_route(ALL_OUTPUTS, m_ps88, (0.29*4.0), 0);
+	m_cvsd_filter2->add_route(ALL_OUTPUTS, m_ps88, (0.25*4.0), 1);
 	m_pia34->ca2_handler().set(m_ps88, FUNC(pinsnd88_device::resetq_w));
 	m_ps88->syncq_cb().set(m_pia34, FUNC(pia6821_device::ca1_w)); // the sync connection comes from sound connector pin 16 to MCA1, not the usual pin 12 to MCB1
 	SPEAKER(config, "cabinet").front_floor(); // the cabinet speaker is aimed down underneath the pinball table itself
@@ -1709,14 +1709,14 @@ GAME(1987,  bguns_l8,       0,          s11b,   s11b, s11b_state, init_s11bnn, R
 GAME(1987,  bguns_l7,       bguns_l8,   s11b,   s11b, s11b_state, init_s11bnn, ROT0, "Williams", "Big Guns (L-7)",                               MACHINE_MECHANICAL | MACHINE_SUPPORTS_SAVE )
 GAME(1987,  bguns_la,       bguns_l8,   s11b,   s11b, s11b_state, init_s11bnn, ROT0, "Williams", "Big Guns (L-A)",                               MACHINE_MECHANICAL | MACHINE_SUPPORTS_SAVE )
 GAME(1987,  bguns_p1,       bguns_l8,   s11b,   s11b, s11b_state, init_s11bnn, ROT0, "Williams", "Big Guns (P-1)",                               MACHINE_MECHANICAL | MACHINE_SUPPORTS_SAVE )
-GAME(1989,  bk2k_l4,        0,          s11b,   s11b, s11b_state, init_s11bin, ROT0, "Williams", "Black Knight 2000 (L-4)",                      MACHINE_IS_SKELETON_MECHANICAL | MACHINE_SUPPORTS_SAVE )
-GAME(1989,  bk2k_lg1,       bk2k_l4,    s11b,   s11b, s11b_state, init_s11bin, ROT0, "Williams", "Black Knight 2000 (LG-1)",                     MACHINE_IS_SKELETON_MECHANICAL | MACHINE_SUPPORTS_SAVE )
-GAME(1989,  bk2k_lg3,       bk2k_l4,    s11b,   s11b, s11b_state, init_s11bin, ROT0, "Williams", "Black Knight 2000 (LG-3)",                     MACHINE_IS_SKELETON_MECHANICAL | MACHINE_SUPPORTS_SAVE )
-GAME(1989,  bk2k_pu1,       bk2k_l4,    s11b,   s11b, s11b_state, init_s11bin, ROT0, "Williams", "Black Knight 2000 (PU-1)",                     MACHINE_IS_SKELETON_MECHANICAL | MACHINE_SUPPORTS_SAVE )
-GAME(1989,  bk2k_pf1,       bk2k_l4,    s11b,   s11b, s11b_state, init_s11bin, ROT0, "Williams", "Black Knight 2000 (PF-1)",                     MACHINE_IS_SKELETON_MECHANICAL | MACHINE_SUPPORTS_SAVE )
-GAME(1989,  bk2k_la2,       bk2k_l4,    s11b,   s11b, s11b_state, init_s11bin, ROT0, "Williams", "Black Knight 2000 (LA-2)",                     MACHINE_IS_SKELETON_MECHANICAL | MACHINE_SUPPORTS_SAVE )
-GAME(1989,  bk2k_pa7,       bk2k_l4,    s11b,   s11b, s11b_state, init_s11bin, ROT0, "Williams", "Black Knight 2000 (PA-7)",                     MACHINE_IS_SKELETON_MECHANICAL | MACHINE_SUPPORTS_SAVE )
-GAME(1989,  bk2k_pa5,       bk2k_l4,    s11b,   s11b, s11b_state, init_s11bin, ROT0, "Williams", "Black Knight 2000 (PA-5)",                     MACHINE_IS_SKELETON_MECHANICAL | MACHINE_SUPPORTS_SAVE )
+GAME(1989,  bk2k_l4,        0,          s11b,   s11b, s11b_state, init_s11bin, ROT0, "Williams", "Black Knight 2000 (L-4)",                      MACHINE_NO_SOUND | MACHINE_NOT_WORKING | MACHINE_MECHANICAL | MACHINE_REQUIRES_ARTWORK | MACHINE_SUPPORTS_SAVE )
+GAME(1989,  bk2k_lg1,       bk2k_l4,    s11b,   s11b, s11b_state, init_s11bin, ROT0, "Williams", "Black Knight 2000 (LG-1)",                     MACHINE_NO_SOUND | MACHINE_NOT_WORKING | MACHINE_MECHANICAL | MACHINE_REQUIRES_ARTWORK | MACHINE_SUPPORTS_SAVE )
+GAME(1989,  bk2k_lg3,       bk2k_l4,    s11b,   s11b, s11b_state, init_s11bin, ROT0, "Williams", "Black Knight 2000 (LG-3)",                     MACHINE_NO_SOUND | MACHINE_NOT_WORKING | MACHINE_MECHANICAL | MACHINE_REQUIRES_ARTWORK | MACHINE_SUPPORTS_SAVE )
+GAME(1989,  bk2k_pu1,       bk2k_l4,    s11b,   s11b, s11b_state, init_s11bin, ROT0, "Williams", "Black Knight 2000 (PU-1)",                     MACHINE_NO_SOUND | MACHINE_NOT_WORKING | MACHINE_MECHANICAL | MACHINE_REQUIRES_ARTWORK | MACHINE_SUPPORTS_SAVE )
+GAME(1989,  bk2k_pf1,       bk2k_l4,    s11b,   s11b, s11b_state, init_s11bin, ROT0, "Williams", "Black Knight 2000 (PF-1)",                     MACHINE_NO_SOUND | MACHINE_NOT_WORKING | MACHINE_MECHANICAL | MACHINE_REQUIRES_ARTWORK | MACHINE_SUPPORTS_SAVE )
+GAME(1989,  bk2k_la2,       bk2k_l4,    s11b,   s11b, s11b_state, init_s11bin, ROT0, "Williams", "Black Knight 2000 (LA-2)",                     MACHINE_NO_SOUND | MACHINE_NOT_WORKING | MACHINE_MECHANICAL | MACHINE_REQUIRES_ARTWORK | MACHINE_SUPPORTS_SAVE )
+GAME(1989,  bk2k_pa7,       bk2k_l4,    s11b,   s11b, s11b_state, init_s11bin, ROT0, "Williams", "Black Knight 2000 (PA-7)",                     MACHINE_NO_SOUND | MACHINE_NOT_WORKING | MACHINE_MECHANICAL | MACHINE_REQUIRES_ARTWORK | MACHINE_SUPPORTS_SAVE )
+GAME(1989,  bk2k_pa5,       bk2k_l4,    s11b,   s11b, s11b_state, init_s11bin, ROT0, "Williams", "Black Knight 2000 (PA-5)",                     MACHINE_NO_SOUND | MACHINE_NOT_WORKING | MACHINE_MECHANICAL | MACHINE_REQUIRES_ARTWORK | MACHINE_SUPPORTS_SAVE )
 GAME(1988,  cycln_l5,       0,          s11b,   s11b, s11b_state, init_s11bnn, ROT0, "Williams", "Cyclone (L-5)",                                MACHINE_MECHANICAL | MACHINE_SUPPORTS_SAVE )
 GAME(1988,  cycln_l4,       cycln_l5,   s11b,   s11b, s11b_state, init_s11bnn, ROT0, "Williams", "Cyclone (L-4)",                                MACHINE_MECHANICAL | MACHINE_SUPPORTS_SAVE )
 GAME(1988,  cycln_l1,       cycln_l5,   s11b,   s11b, s11b_state, init_s11bnn, ROT0, "Williams", "Cyclone (L-1)",                                MACHINE_MECHANICAL | MACHINE_SUPPORTS_SAVE )

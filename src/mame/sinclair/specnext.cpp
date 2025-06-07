@@ -107,16 +107,16 @@ protected:
 	virtual void machine_start() override ATTR_COLD;
 	virtual void machine_reset() override ATTR_COLD;
 	void reset_hard();
-	virtual void video_start() override;
+	virtual void video_start() override ATTR_COLD;
 	virtual void spectrum_128_update_memory() override {}
 
 	u8 do_m1(offs_t offset);
 	void do_mf_nmi();
 	void leave_nmi(int status);
-	void map_fetch(address_map &map);
-	void map_mem(address_map &map);
-	void map_io(address_map &map);
-	void map_regs(address_map &map);
+	void map_fetch(address_map &map) ATTR_COLD;
+	void map_mem(address_map &map) ATTR_COLD;
+	void map_io(address_map &map) ATTR_COLD;
+	void map_regs(address_map &map) ATTR_COLD;
 	u8 reg_r(offs_t reg);
 	void reg_w(offs_t reg, u8 data);
 	void mmu_w(offs_t bank, u8 data);
@@ -287,8 +287,6 @@ private:
 	void port_e7_reg_w(u8 data);
 
 	memory_access<8, 0, 0, ENDIANNESS_LITTLE>::specific m_next_regs;
-	memory_access<16, 0, 0, ENDIANNESS_LITTLE>::specific m_program;
-	memory_access<16, 0, 0, ENDIANNESS_LITTLE>::specific m_io;
 	memory_bank_creator m_bank_boot_rom;
 	memory_bank_array_creator<8> m_bank_ram;
 	memory_view m_view0, m_view1, m_view2, m_view3, m_view4, m_view5, m_view6, m_view7;
@@ -296,7 +294,7 @@ private:
 	required_device<specnext_ctc_device> m_ctc;
 	required_device<specnext_dma_device> m_dma;
 	required_device<i2cmem_device> m_i2cmem;
-	required_device<spi_sdcard_sdhc_device> m_sdcard;
+	required_device<spi_sdcard_device> m_sdcard;
 	required_device_array<ym2149_device, 3> m_ay;
 	required_device_array<dac_byte_interface, 4> m_dac;
 	required_device<device_palette_interface> m_palette;
@@ -1454,7 +1452,7 @@ u8 specnext_state::reg_r(offs_t nr_register)
 		break;
 	case 0x8e:
 		port_253b_dat = (BIT(m_port_dffd_data, 0) << 7) | (BIT(m_port_7ffd_data, 0, 3) << 4) | (1 << 3) | (BIT(m_port_1ffd_data, 0) << 2)
-			| (BIT(m_port_1ffd_data, 2) << 1) | ((BIT(m_port_7ffd_data, 4) && !BIT(m_port_1ffd_data, 0)) || (BIT(m_port_1ffd_data, 1) && BIT(m_port_1ffd_data, 0)));;
+			| (BIT(m_port_1ffd_data, 2) << 1) | ((BIT(m_port_7ffd_data, 4) && !BIT(m_port_1ffd_data, 0)) || (BIT(m_port_1ffd_data, 1) && BIT(m_port_1ffd_data, 0)));
 		break;
 	case 0x8f:
 		port_253b_dat = (0b000000 << 2) | m_nr_8f_mapping_mode;
@@ -2609,7 +2607,8 @@ void specnext_state::map_io(address_map &map)
 		return /*m_nr_d8_io_trap_fdc_en ? ... :*/ 0x00;
 	}), NAME([this](u8 data) {
 		if (m_nr_d8_io_trap_fdc_en)
-			;
+		{
+		}
 	}));
 
 
@@ -2783,8 +2782,8 @@ INPUT_PORTS_START(specnext)
 	PORT_BIT(0x04, IP_ACTIVE_LOW, IPT_BUTTON6) PORT_NAME("Middle mouse button") PORT_CODE(MOUSECODE_BUTTON3)
 
 	PORT_MODIFY("NMI")
-	PORT_BIT(0x01, IP_ACTIVE_HIGH, IPT_OTHER) PORT_NAME("NMI MF") PORT_CODE(KEYCODE_F12) PORT_CHANGED_MEMBER(DEVICE_SELF, specnext_state, on_mf_nmi, 0)
-	PORT_BIT(0x02, IP_ACTIVE_HIGH, IPT_OTHER) PORT_NAME("NMI DivMMC") PORT_CODE(KEYCODE_F11) PORT_CHANGED_MEMBER(DEVICE_SELF, specnext_state, on_divmmc_nmi, 0)
+	PORT_BIT(0x01, IP_ACTIVE_HIGH, IPT_OTHER) PORT_NAME("NMI MF") PORT_CODE(KEYCODE_F12) PORT_CHANGED_MEMBER(DEVICE_SELF, FUNC(specnext_state::on_mf_nmi), 0)
+	PORT_BIT(0x02, IP_ACTIVE_HIGH, IPT_OTHER) PORT_NAME("NMI DivMMC") PORT_CODE(KEYCODE_F11) PORT_CHANGED_MEMBER(DEVICE_SELF, FUNC(specnext_state::on_divmmc_nmi), 0)
 INPUT_PORTS_END
 
 void specnext_state::machine_start()
@@ -2795,8 +2794,6 @@ void specnext_state::machine_start()
 	m_spi_clock = timer_alloc(FUNC(specnext_state::spi_clock), this);
 
 	m_regs_map->space(AS_PROGRAM).specific(m_next_regs);
-	m_maincpu->space(AS_PROGRAM).specific(m_program);
-	m_maincpu->space(AS_IO).specific(m_io);
 
 	for (auto i = 0; i < 8; i++)
 		m_bank_ram[i]->configure_entries(0, m_ram->size() / 0x2000, m_ram->pointer(), 0x2000);
@@ -3448,7 +3445,6 @@ void specnext_state::tbblue(machine_config &config)
 	m_maincpu->out_nextreg_cb().set(FUNC(specnext_state::reg_w));
 	m_maincpu->in_nextreg_cb().set(FUNC(specnext_state::reg_r));
 	m_maincpu->out_retn_seen_cb().set(FUNC(specnext_state::leave_nmi));
-	m_maincpu->nomreq_cb().set_nop();
 	m_maincpu->busack_cb().set(m_dma, FUNC(specnext_dma_device::bai_w));
 
 	SPECNEXT_CTC(config, m_ctc, 28_MHz_XTAL / 8);
@@ -3467,24 +3463,24 @@ void specnext_state::tbblue(machine_config &config)
 	I2C_24C01(config, m_i2cmem).set_address(0xd0); // RTC + DEFAULT_ALL_0; confitm size
 
 	SPI_SDCARD(config, m_sdcard, 0);
+	m_sdcard->set_prefer_sdhc();
 	m_sdcard->spi_miso_callback().set(FUNC(specnext_state::spi_miso_w));
 
-	SPEAKER(config, "lspeaker").front_left();
-	SPEAKER(config, "rspeaker").front_right();
+	SPEAKER(config, "speakers", 2).front();
 
-	DAC_8BIT_R2R(config, m_dac[0], 0).add_route(ALL_OUTPUTS, "lspeaker", 0.75);
-	DAC_8BIT_R2R(config, m_dac[1], 0).add_route(ALL_OUTPUTS, "lspeaker", 0.75);
-	DAC_8BIT_R2R(config, m_dac[2], 0).add_route(ALL_OUTPUTS, "rspeaker", 0.75);
-	DAC_8BIT_R2R(config, m_dac[3], 0).add_route(ALL_OUTPUTS, "rspeaker", 0.75);
+	DAC_8BIT_R2R(config, m_dac[0], 0).add_route(ALL_OUTPUTS, "speakers", 0.75, 0);
+	DAC_8BIT_R2R(config, m_dac[1], 0).add_route(ALL_OUTPUTS, "speakers", 0.75, 0);
+	DAC_8BIT_R2R(config, m_dac[2], 0).add_route(ALL_OUTPUTS, "speakers", 0.75, 1);
+	DAC_8BIT_R2R(config, m_dac[3], 0).add_route(ALL_OUTPUTS, "speakers", 0.75, 1);
 
 	config.device_remove("ay8912");
 	for (auto i = 0; i < 3; ++i)
 	{
 		YM2149(config, m_ay[i], 14_MHz_XTAL / 8)
-			.add_route(0, "lspeaker", 0.50)
-			.add_route(1, "lspeaker", 0.25)
-			.add_route(1, "rspeaker", 0.25)
-			.add_route(2, "rspeaker", 0.50);
+			.add_route(0, "speakers", 0.50, 0)
+			.add_route(1, "speakers", 0.25, 0)
+			.add_route(1, "speakers", 0.25, 1)
+			.add_route(2, "speakers", 0.50, 1);
 	}
 
 	SPECNEXT_MULTIFACE(config, m_mf, 0);
@@ -3531,4 +3527,4 @@ ROM_END
 } // Anonymous namespace
 
 /*    YEAR   NAME     PARENT    COMPAT  MACHINE  INPUT      CLASS            INIT         COMPANY                                            FULLNAME                     FLAGS */
-COMP( 2017,  tbblue,  spec128,  0,      tbblue,  specnext,  specnext_state,  empty_init,  "SpecNext Ltd., Victor Trucco, Fabio Belavenuto",  "ZX Spectrum Next: TBBlue",  MACHINE_IMPERFECT_GRAPHICS | MACHINE_SUPPORTS_SAVE )
+COMP( 2017,  tbblue,  spec128,  0,      tbblue,  specnext,  specnext_state,  empty_init,  "SpecNext Ltd., Victor Trucco, Fabio Belavenuto",  "ZX Spectrum Next: TBBlue",  MACHINE_SUPPORTS_SAVE )

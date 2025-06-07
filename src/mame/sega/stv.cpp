@@ -43,11 +43,12 @@
 #include "emu.h"
 #include "stv.h"
 
+#include "stvcd.h"
+
 #include "cpu/m68000/m68000.h"
 #include "cpu/scudsp/scudsp.h"
 #include "cpu/sh/sh7604.h"
 #include "machine/smpc.h"
-#include "machine/stvcd.h"
 #include "sound/scsp.h"
 
 #include "softlist.h"
@@ -1159,15 +1160,14 @@ void stv_state::stv(machine_config &config)
 
 	MCFG_VIDEO_START_OVERRIDE(stv_state,stv_vdp2)
 
-	SPEAKER(config, "lspeaker").front_left();
-	SPEAKER(config, "rspeaker").front_right();
+	SPEAKER(config, "speaker", 2).front();
 
 	SCSP(config, m_scsp, 22579200); // TODO : Unknown clock, divider
 	m_scsp->set_addrmap(0, &stv_state::scsp_mem);
 	m_scsp->irq_cb().set(FUNC(saturn_state::scsp_irq));
 	m_scsp->main_irq_cb().set(m_scu, FUNC(sega_scu_device::sound_req_w));
-	m_scsp->add_route(0, "lspeaker", 1.0);
-	m_scsp->add_route(1, "rspeaker", 1.0);
+	m_scsp->add_route(0, "speaker", 1.0, 0);
+	m_scsp->add_route(1, "speaker", 1.0, 1);
 
 	SEGA_BILLBOARD(config, m_billboard, 0);
 
@@ -1252,8 +1252,8 @@ void stv_state::batmanfr(machine_config &config)
 	stv(config);
 	ACCLAIM_RAX(config, m_rax, 0);
 	// TODO: RAX output connected to SCSP?
-	m_rax->add_route(0, "lspeaker", 1.0);
-	m_rax->add_route(1, "rspeaker", 1.0);
+	m_rax->add_route(0, "speaker", 1.0, 0);
+	m_rax->add_route(1, "speaker", 1.0, 1);
 }
 
 void stv_state::shienryu(machine_config &config)
@@ -1284,7 +1284,7 @@ void stv_state::stv_slot(machine_config &config)
 void stv_state::hopper(machine_config &config)
 {
 	stv(config);
-	HOPPER(config, m_hopper, attotime::from_msec(100), hopper_device::MOTOR_ACTIVE_HIGH, hopper_device::STATUS_ACTIVE_HIGH);
+	HOPPER(config, m_hopper, attotime::from_msec(100));
 
 	m_maincpu->set_addrmap(AS_PROGRAM, &stv_state::hopper_mem);
 	m_slave->set_addrmap(AS_PROGRAM, &stv_state::hopper_mem);
@@ -1814,7 +1814,7 @@ static INPUT_PORTS_START( patocar )
 
 	PORT_MODIFY("PORTA")
 	PORT_BIT( 0x01, IP_ACTIVE_HIGH, IPT_BUTTON2 )   // hopper ?
-	PORT_BIT( 0x02, IP_ACTIVE_HIGH, IPT_CUSTOM ) PORT_READ_LINE_DEVICE_MEMBER("hopper", ticket_dispenser_device, line_r)
+	PORT_BIT( 0x02, IP_ACTIVE_HIGH, IPT_CUSTOM ) PORT_READ_LINE_DEVICE_MEMBER("hopper", FUNC(ticket_dispenser_device::line_r))
 	PORT_BIT( 0xfc, IP_ACTIVE_LOW,  IPT_UNUSED )
 
 	PORT_MODIFY("PORTB")
@@ -3175,6 +3175,20 @@ ROM_START( micrombc ) // set to 1p
 	ROM_LOAD( "micrombc.nv", 0x0000, 0x0080, CRC(6e89815f) SHA1(4478f614fb61859f4ee7bf55462f737387887e6f) )
 ROM_END
 
+ROM_START( chalgolf ) // set to 1p
+	STV_BIOS
+
+	ROM_REGION32_BE( 0x3000000, "cart", ROMREGION_ERASE00 ) /* SH2 code */
+	ROM_LOAD16_WORD_SWAP( "ic22.bin",     0x0200000, 0x200000, CRC(1d887acc) SHA1(11a35c22c5ac71fc15470e0792f426c8735b854d) )
+	ROM_LOAD16_WORD_SWAP( "ic24.bin",     0x0400000, 0x200000, CRC(6091ee88) SHA1(ef26245a30196bccbc472aa377611e855ded76d0) )
+	ROM_LOAD16_WORD_SWAP( "ic26.bin",     0x0600000, 0x200000, CRC(aff38d56) SHA1(0b4429d8940d0b84af06f24b051ad667ec389fb9) )
+	ROM_LOAD16_WORD_SWAP( "ic28.bin",     0x0800000, 0x200000, CRC(571cc8da) SHA1(cf469c8ed15f7e760519a6e4c15cd76644ff253b) )
+	ROM_LOAD16_WORD_SWAP( "ic30.bin",     0x0a00000, 0x200000, CRC(a67eabb0) SHA1(80d93b18779c7ab46917f5947838817a38ddb1c2) )
+
+	ROM_REGION16_BE( 0x80, "eeprom", ROMREGION_ERASE00 ) // preconfigured to 1 player
+	ROM_LOAD( "chalgolf.nv", 0x0000, 0x0080, CRC(6e89815f) SHA1(4478f614fb61859f4ee7bf55462f737387887e6f) )
+ROM_END
+
 ROM_START( choroqhr ) // set to 1p
 	STV_BIOS
 
@@ -3788,6 +3802,20 @@ ROM_START( wasafari )
 	ROM_LOAD( "wasafari.nv", 0x0000, 0x0080, CRC(50861c5a) SHA1(c431703d7b56185f20af1aec04cabb5f49e2d4ba) )
 ROM_END
 
+ROM_START( wwshin ) // 171-7410A PCB with 14284R sticker
+	STV_BIOS
+
+	ROM_REGION32_BE( 0x3000000, "cart", ROMREGION_ERASE00 ) // SH2 code
+	ROM_LOAD16_WORD_SWAP( "ic22", 0x0200000, 0x200000, CRC(43f7cafc) SHA1(ac8f8efb752d6357d48090b3152e77fedea90a6f) )
+	ROM_LOAD16_WORD_SWAP( "ic24", 0x0400000, 0x200000, CRC(db560e59) SHA1(edaabef7a165a4c309b4a6bac0f6de6bf8fedb34) )
+	ROM_LOAD16_WORD_SWAP( "ic26", 0x0600000, 0x200000, CRC(2f411ff1) SHA1(e7bfb6570c0e5b5b64c4291bdc13fe8a62a69382) )
+	ROM_LOAD16_WORD_SWAP( "ic28", 0x0800000, 0x200000, CRC(ca5e0446) SHA1(8e1c5c5c35f617129aaf40a1096f409cf7c96dce) )
+	ROM_LOAD16_WORD_SWAP( "ic30", 0x0a00000, 0x200000, CRC(2653f758) SHA1(606dcdfe4e1b0fef495a5f62b2414c80405ebeeb) )
+	ROM_LOAD16_WORD_SWAP( "ic32", 0x0c00000, 0x200000, CRC(8ebfd947) SHA1(db12bb43aadeb7ca48434286e7ecf2a7c8680e44) )
+	ROM_LOAD16_WORD_SWAP( "ic34", 0x0e00000, 0x200000, CRC(22b7180f) SHA1(56aae3c4a9db9dd7443e2f0aa30052fc50b2ab70) )
+	ROM_LOAD16_WORD_SWAP( "ic36", 0x1000000, 0x200000, CRC(5b83914c) SHA1(3d0f96345cdf22116d34eb67d51c1000a417889d) )
+ROM_END
+
 ROM_START( dfeverg )
 	STV_BIOS
 
@@ -3973,10 +4001,11 @@ GAME( 1998, supgoal,   stvbios, hopper,   patocar,  stv_state,   init_stv,      
 GAME( 1997, techbowl,  stvbios, hopper,   patocar,  stv_state,   init_stv,        ROT0,   "Sega",                         "Technical Bowling (J 971212 V1.000)", MACHINE_IMPERFECT_SOUND | MACHINE_IMPERFECT_GRAPHICS )
 GAME( 1996, vfkids,    stvbios, stv,      stv,      stv_state,   init_stv,        ROT0,   "Sega",                         "Virtua Fighter Kids (JUET 960319 V0.000)", MACHINE_IMPERFECT_SOUND | MACHINE_IMPERFECT_GRAPHICS )
 GAME( 1997, vmahjong,  stvbios, stvmp,    vmahjong, stv_state,   init_stv,        ROT0,   "Micronet",                     "Virtual Mahjong (J 961214 V1.000)", MACHINE_IMPERFECT_SOUND | MACHINE_IMPERFECT_GRAPHICS )
+GAME( 1997, wwshin,    stvbios, stv,      wasafari, stv_state,   init_stv,        ROT0,   "Sega",                         "Waku Waku Shinkansen (J 971031 V0.002)", MACHINE_NOT_WORKING | MACHINE_NO_SOUND | MACHINE_IMPERFECT_GRAPHICS ) // needs inputs
 GAME( 1998, wasafari,  stvbios, stv,      wasafari, stv_state,   init_stv,        ROT0,   "Sega",                         "Wanpaku Safari (J 981109 V1.000)", MACHINE_IMPERFECT_SOUND | MACHINE_IMPERFECT_GRAPHICS )
 GAME( 1997, winterht,  stvbios, stv,      stv,      stv_state,   init_winterht,   ROT0,   "Sega",                         "Winter Heat (JUET 971012 V1.000)", MACHINE_IMPERFECT_SOUND | MACHINE_IMPERFECT_GRAPHICS )
-GAME( 1997, znpwfv,    stvbios, stv,      stv,      stv_state,   init_znpwfv,     ROT0,   "Sega",                         "Zen Nippon Pro-Wrestling Featuring Virtua (J 971123 V1.000)", MACHINE_IMPERFECT_SOUND | MACHINE_IMPERFECT_GRAPHICS )
-GAME( 1997, znpwfvt,   znpwfv,  stv,      stv,      stv_state,   init_znpwfv,     ROT0,   "Sega",                         "Zen Nippon Pro-Wrestling Featuring Virtua (T 971123 V1.000)", MACHINE_IMPERFECT_SOUND | MACHINE_IMPERFECT_GRAPHICS )
+GAME( 1997, znpwfv,    stvbios, stv,      stv,      stv_state,   init_znpwfv,     ROT0,   "Sega",                         "Zen Nippon Pro-Wres Featuring Virtua (J 971123 V1.000)", MACHINE_IMPERFECT_SOUND | MACHINE_IMPERFECT_GRAPHICS )
+GAME( 1997, znpwfvt,   znpwfv,  stv,      stv,      stv_state,   init_znpwfv,     ROT0,   "Sega",                         "All Japan Pro-Wrestling Featuring Virtua (T 971123 V1.000)", MACHINE_IMPERFECT_SOUND | MACHINE_IMPERFECT_GRAPHICS )
 
 /* Unemulated printer / camera devices */
 // USA sets
@@ -4034,6 +4063,7 @@ GAME( 1998, twsoc98,   twcup98, stv_5881, stv,      stv_state,   init_twcup98,  
 GAME( 1996, magzun,    stvbios, magzun,   stv,      stv_state,   init_magzun,     ROT0,   "Sega",                         "Magical Zunou Power (J 961031 V1.000)", MACHINE_NOT_WORKING | MACHINE_NODEVICE_MICROPHONE )
 GAME( 1998, yattrmnp,  stvbios, stv,      stv,      stv_state,   init_stv,        ROT0,   "Sega",                         "Yatterman Plus (J 981006 V1.000)", MACHINE_NOT_WORKING | MACHINE_IMPERFECT_SOUND | MACHINE_IMPERFECT_GRAPHICS ) // needs emulation of the medal specific hardware
 GAME( 1998, choroqhr,  stvbios, stv,      stv,      stv_state,   init_stv,        ROT0,   "Sega / Takara",                "Choro Q Hyper Racing 5 (J 981230 V1.000)", MACHINE_NOT_WORKING | MACHINE_IMPERFECT_SOUND | MACHINE_IMPERFECT_GRAPHICS )
+GAME( 1999, chalgolf,  stvbios, stv,      stv,      stv_state,   init_stv,        ROT0,   "Sega",                         "Challenge Golf (J 990326 V1.000)", MACHINE_NOT_WORKING | MACHINE_IMPERFECT_SOUND | MACHINE_IMPERFECT_GRAPHICS )
 GAME( 1999, fanzonem,  stvbios, stv,      stv,      stv_state,   init_stv,        ROT0,   "Sega",                         "Fantasy Zone (medal game, REV.A) (J 990202 V1.000)", MACHINE_NOT_WORKING ) // require SH2's SCI serial port emulated, to communicate with coin/medal-related I/O board
 GAME( 2000, sackids,   stvbios, stv,      stv,      stv_state,   init_stv,        ROT0,   "Sega",                         "Soreyuke Anpanman Crayon Kids (J 001026 V1.000)", MACHINE_NOT_WORKING | MACHINE_IMPERFECT_SOUND | MACHINE_IMPERFECT_GRAPHICS )
 GAME( 2001, dfeverg,   stvbios, stv,      stv,      stv_state,   init_stv,        ROT0,   "Sega",                         "Dancing Fever Gold (J 000821 V2.001)", MACHINE_NOT_WORKING | MACHINE_IMPERFECT_SOUND | MACHINE_IMPERFECT_GRAPHICS )

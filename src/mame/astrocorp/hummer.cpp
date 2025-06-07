@@ -41,7 +41,7 @@ private:
 
 	uint32_t screen_update(screen_device &screen, bitmap_ind16 &bitmap, const rectangle &cliprect);
 
-	void program_map(address_map &map);
+	void program_map(address_map &map) ATTR_COLD;
 };
 
 
@@ -138,5 +138,5 @@ ROM_END
 
 } // anonymous namespace
 
-GAME ( 2009,  pengprty, 0, hummer, hummer, hummer_state, empty_init, ROT0, "Astro Corp.", "Penguin Party",                  MACHINE_IS_SKELETON )
-GAME ( 2012,  jackvent, 0, hummer, hummer, hummer_state, empty_init, ROT0, "Astro Corp.", "Jack's Venture - Inca Treasure", MACHINE_IS_SKELETON )
+GAME ( 2009,  pengprty, 0, hummer, hummer, hummer_state, empty_init, ROT0, "Astro Corp.", "Penguin Party",                  MACHINE_NO_SOUND | MACHINE_NOT_WORKING )
+GAME ( 2012,  jackvent, 0, hummer, hummer, hummer_state, empty_init, ROT0, "Astro Corp.", "Jack's Venture - Inca Treasure", MACHINE_NO_SOUND | MACHINE_NOT_WORKING )

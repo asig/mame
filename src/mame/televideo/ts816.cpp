@@ -51,15 +51,15 @@ private:
 	void porte0_w(uint8_t data);
 	void portf0_w(uint8_t data);
 
-	void ts816_io(address_map &map);
-	void ts816_mem(address_map &map);
+	void ts816_io(address_map &map) ATTR_COLD;
+	void ts816_mem(address_map &map) ATTR_COLD;
 
 	uint8_t m_term_data = 0;
 	uint8_t m_status = 0;
 	bool m_2ndbank = false;
 	bool m_endram = false;
 	void set_banks();
-	virtual void machine_reset() override;
+	virtual void machine_reset() override ATTR_COLD;
 	required_device<z80_device> m_maincpu;
 	required_device<generic_terminal_device> m_terminal;
 };
@@ -331,4 +331,4 @@ ROM_END
 /* Driver */
 
 //    YEAR  NAME   PARENT  COMPAT  MACHINE  INPUT  STATE        INIT        COMPANY      FULLNAME  FLAGS
-COMP( 1980, ts816, 0,      0,      ts816,   ts816, ts816_state, init_ts816, "Televideo", "TS816",  MACHINE_IS_SKELETON )
+COMP( 1980, ts816, 0,      0,      ts816,   ts816, ts816_state, init_ts816, "Televideo", "TS816",  MACHINE_NO_SOUND | MACHINE_NOT_WORKING )

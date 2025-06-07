@@ -9,6 +9,7 @@ The u3 ROM contains the following message (it's David Kittinger's company):
 Copyright (c) 1985, Intelligent Heuristic Programming, Inc
 
 Hardware notes:
+- PCB label: 100045
 - R65C02P4 @ 5MHz (10MHz XTAL)
 - 2*2KB RAM(NEC D449C-3), 2*32KB ROM
 - 64+8 leds, magnet sensors chessboard
@@ -16,8 +17,10 @@ Hardware notes:
 
 I/O is again similar to supercon
 
-The first version was on a modified Super Constellation PCB. 4MHz CPU speed,
-and 4 TMM27128 with identical ROM contents as the newer version.
+The 1st version had a R65C02P3 @ 4MHz (8MHz XTAL). IRQ and beeper via the XTAL
+instead of 555 timer, but nearly the same frequency. The 4MHz version was also
+seen on a modified Super Constellation PCB, with 4 TMM27128 and identical ROM
+contents as the newer version.
 
 *******************************************************************************/
 
@@ -55,7 +58,7 @@ public:
 	DECLARE_INPUT_CHANGED_MEMBER(change_cpu_freq);
 
 protected:
-	virtual void machine_start() override;
+	virtual void machine_start() override ATTR_COLD;
 
 private:
 	// devices/pointers
@@ -67,7 +70,7 @@ private:
 
 	u8 m_inp_mux = 0;
 
-	void main_map(address_map &map);
+	void main_map(address_map &map) ATTR_COLD;
 
 	// I/O handlers
 	void mux_w(u8 data);
@@ -193,7 +196,7 @@ static INPUT_PORTS_START( cexpert )
 	PORT_BIT(0x02, IP_ACTIVE_HIGH, IPT_KEYPAD) PORT_CODE(KEYCODE_1) PORT_NAME("Take Back / Restore")
 
 	PORT_START("CPU")
-	PORT_CONFNAME( 0x01, 0x01, "CPU Frequency" ) PORT_CHANGED_MEMBER(DEVICE_SELF, cexpert_state, change_cpu_freq, 0) // factory set
+	PORT_CONFNAME( 0x01, 0x01, "CPU Frequency" ) PORT_CHANGED_MEMBER(DEVICE_SELF, FUNC(cexpert_state::change_cpu_freq), 0) // factory set
 	PORT_CONFSETTING(    0x00, "4MHz" )
 	PORT_CONFSETTING(    0x01, "5MHz" )
 INPUT_PORTS_END
@@ -252,4 +255,4 @@ ROM_END
 *******************************************************************************/
 
 //    YEAR  NAME     PARENT  COMPAT  MACHINE  INPUT    CLASS          INIT        COMPANY, FULLNAME, FLAGS
-SYST( 1985, cexpert, 0,      0,      cexpert, cexpert, cexpert_state, empty_init, "Novag Industries", "Constellation Expert", MACHINE_SUPPORTS_SAVE )
+SYST( 1985, cexpert, 0,      0,      cexpert, cexpert, cexpert_state, empty_init, "Novag Industries / Intelligent Heuristic Programming", "Constellation Expert", MACHINE_SUPPORTS_SAVE )

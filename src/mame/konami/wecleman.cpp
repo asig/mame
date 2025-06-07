@@ -752,7 +752,7 @@ static INPUT_PORTS_START( wecleman )
 	PORT_BIT( 0x01, IP_ACTIVE_LOW, IPT_SERVICE2 ) PORT_NAME("Right SW")  // right sw
 	PORT_BIT( 0x02, IP_ACTIVE_LOW, IPT_SERVICE3 ) PORT_NAME("Left SW")  // left sw
 	PORT_BIT( 0x04, IP_ACTIVE_LOW, IPT_SERVICE4 ) PORT_NAME("Thermo SW")  // thermo
-	PORT_BIT( 0x08, IP_ACTIVE_HIGH, IPT_CUSTOM ) PORT_READ_LINE_DEVICE_MEMBER("adc", adc0804_device, intr_r)
+	PORT_BIT( 0x08, IP_ACTIVE_HIGH, IPT_CUSTOM ) PORT_READ_LINE_DEVICE_MEMBER("adc", FUNC(adc0804_device::intr_r))
 	PORT_BIT( 0xf0, IP_ACTIVE_LOW, IPT_UNKNOWN )
 
 	PORT_START("DSWA")  /* $140015.b */
@@ -849,8 +849,8 @@ static INPUT_PORTS_START( hotchase )
 	PORT_BIT( 0x01, IP_ACTIVE_LOW, IPT_SERVICE2 ) PORT_NAME("Right SW")   // right sw
 	PORT_BIT( 0x02, IP_ACTIVE_LOW, IPT_SERVICE3 ) PORT_NAME("Left SW")  // left sw
 	PORT_BIT( 0x04, IP_ACTIVE_LOW, IPT_SERVICE4 ) PORT_NAME("Thermo SW")  // thermo
-	PORT_BIT( 0x08, IP_ACTIVE_HIGH, IPT_CUSTOM ) PORT_READ_LINE_DEVICE_MEMBER("adc", adc0804_device, intr_r)
-	PORT_BIT( 0x10, IP_ACTIVE_HIGH, IPT_CUSTOM ) PORT_READ_LINE_MEMBER(wecleman_state, hotchase_sound_status_r)
+	PORT_BIT( 0x08, IP_ACTIVE_HIGH, IPT_CUSTOM ) PORT_READ_LINE_DEVICE_MEMBER("adc", FUNC(adc0804_device::intr_r))
+	PORT_BIT( 0x10, IP_ACTIVE_HIGH, IPT_CUSTOM ) PORT_READ_LINE_MEMBER(FUNC(wecleman_state::hotchase_sound_status_r))
 	PORT_BIT( 0xe0, IP_ACTIVE_LOW, IPT_UNKNOWN )
 
 	// dips and defaults verified with US manual
@@ -1073,17 +1073,16 @@ void wecleman_state::wecleman(machine_config &config)
 	PALETTE(config, m_palette).set_entries(2048);
 
 	/* sound hardware */
-	SPEAKER(config, "lspeaker").front_left();
-	SPEAKER(config, "rspeaker").front_right();
+	SPEAKER(config, "speaker", 2).front();
 
 	GENERIC_LATCH_8(config, "soundlatch");
 
-	YM2151(config, "ymsnd", 3579545).add_route(0, "lspeaker", 0.85).add_route(1, "rspeaker", 0.85);
+	YM2151(config, "ymsnd", 3579545).add_route(0, "speaker", 0.85, 0).add_route(1, "speaker", 0.85, 1);
 
 	K007232(config, m_k007232[0], 3579545);
 	m_k007232[0]->port_write().set(FUNC(wecleman_state::wecleman_volume_callback));
-	m_k007232[0]->add_route(ALL_OUTPUTS, "lspeaker", 0.20);
-	m_k007232[0]->add_route(ALL_OUTPUTS, "rspeaker", 0.20);
+	m_k007232[0]->add_route(ALL_OUTPUTS, "speaker", 0.20, 0);
+	m_k007232[0]->add_route(ALL_OUTPUTS, "speaker", 0.20, 1);
 }
 
 
@@ -1153,25 +1152,24 @@ void hotchase_state::hotchase(machine_config &config)
 	m_k051316[1]->set_zoom_callback(FUNC(hotchase_state::hotchase_zoom_callback_2));
 
 	/* sound hardware */
-	SPEAKER(config, "lspeaker").front_left();
-	SPEAKER(config, "rspeaker").front_right();
+	SPEAKER(config, "speaker", 2).front();
 
 	GENERIC_LATCH_8(config, "soundlatch");
 
 	K007232(config, m_k007232[0], 3579545);
 	// SLEV not used, volume control is elsewhere
-	m_k007232[0]->add_route(0, "lspeaker", 0.20);
-	m_k007232[0]->add_route(1, "rspeaker", 0.20);
+	m_k007232[0]->add_route(0, "speaker", 0.20, 0);
+	m_k007232[0]->add_route(1, "speaker", 0.20, 1);
 
 	K007232(config, m_k007232[1], 3579545);
 	// SLEV not used, volume control is elsewhere
-	m_k007232[1]->add_route(0, "lspeaker", 0.20);
-	m_k007232[1]->add_route(1, "rspeaker", 0.20);
+	m_k007232[1]->add_route(0, "speaker", 0.20, 0);
+	m_k007232[1]->add_route(1, "speaker", 0.20, 1);
 
 	K007232(config, m_k007232[2], 3579545);
 	// SLEV not used, volume control is elsewhere
-	m_k007232[2]->add_route(0, "lspeaker", 0.20);
-	m_k007232[2]->add_route(1, "rspeaker", 0.20);
+	m_k007232[2]->add_route(0, "speaker", 0.20, 0);
+	m_k007232[2]->add_route(1, "speaker", 0.20, 1);
 }
 
 

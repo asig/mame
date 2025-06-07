@@ -206,6 +206,7 @@ enum ioport_type : osd::u32
 		IPT_SLOT_STOP2,
 		IPT_SLOT_STOP3,
 		IPT_SLOT_STOP4,
+		IPT_SLOT_STOP5,
 		IPT_SLOT_STOP_ALL,
 
 	IPT_GAMBLING_LAST,
@@ -299,6 +300,8 @@ enum ioport_type : osd::u32
 		IPT_UI_FAVORITES,
 		IPT_UI_EXPORT,
 		IPT_UI_AUDIT,
+		IPT_UI_MIXER_ADD_FULL,
+		IPT_UI_MIXER_ADD_CHANNEL,
 
 		// additional OSD-specified UI port types (up to 16)
 		IPT_OSD_1,

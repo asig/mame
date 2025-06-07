@@ -72,7 +72,7 @@ public:
 	int spriteram_bit_r();
 
 protected:
-	virtual void video_start() override;
+	virtual void video_start() override ATTR_COLD;
 
 private:
 	required_device<cpu_device> m_maincpu;
@@ -126,10 +126,10 @@ private:
 	void draw_sprites();
 	void copy_sprites(bitmap_ind16 &bitmap, bitmap_ind16 &sprites_bitmap, bitmap_ind8 &priority_bitmap, const rectangle &cliprect);
 
-	void limenko_io_map(address_map &map);
-	void limenko_map(address_map &map);
-	void spotty_io_map(address_map &map);
-	void spotty_map(address_map &map);
+	void limenko_io_map(address_map &map) ATTR_COLD;
+	void limenko_map(address_map &map) ATTR_COLD;
+	void spotty_io_map(address_map &map) ATTR_COLD;
+	void spotty_map(address_map &map) ATTR_COLD;
 
 	// spotty audiocpu
 	uint8_t audiocpu_p1_r();
@@ -270,12 +270,12 @@ void limenko_state::limenko_map(address_map &map)
 
 void limenko_state::limenko_io_map(address_map &map)
 {
-	map(0x0000, 0x0003).portr("IN0");
-	map(0x0800, 0x0803).portr("IN1");
-	map(0x1000, 0x1003).portr("IN2");
-	map(0x4000, 0x4003).w(FUNC(limenko_state::coincounter_w));
-	map(0x4800, 0x4803).portw("EEPROMOUT");
-	map(0x5000, 0x5003).w(m_soundlatch, FUNC(generic_latch_8_device::write)).umask32(0x00ff0000).cswidth(32);
+	map(0x0000, 0x0000).portr("IN0");
+	map(0x0200, 0x0200).portr("IN1");
+	map(0x0400, 0x0400).portr("IN2");
+	map(0x1000, 0x1000).w(FUNC(limenko_state::coincounter_w));
+	map(0x1200, 0x1200).portw("EEPROMOUT");
+	map(0x1400, 0x1400).umask32(0x00ff0000).w(m_soundlatch, FUNC(generic_latch_8_device::write));
 }
 
 
@@ -298,12 +298,12 @@ void limenko_state::spotty_map(address_map &map)
 
 void limenko_state::spotty_io_map(address_map &map)
 {
-	map(0x0000, 0x0003).portr("IN0");
-	map(0x0800, 0x0803).portr("IN1");
-	map(0x0800, 0x0803).nopw(); // hopper related
-	map(0x1000, 0x1003).portr("IN2");
-	map(0x4800, 0x4803).portw("EEPROMOUT");
-	map(0x5000, 0x5003).w(m_soundlatch, FUNC(generic_latch_8_device::write)).umask32(0x00ff0000).cswidth(32);
+	map(0x0000, 0x0000).portr("IN0");
+	map(0x0200, 0x0200).portr("IN1");
+	map(0x0200, 0x0200).nopw(); // hopper related
+	map(0x0400, 0x0400).portr("IN2");
+	map(0x1200, 0x1200).portw("EEPROMOUT");
+	map(0x1400, 0x1400).umask32(0x00ff0000).w(m_soundlatch, FUNC(generic_latch_8_device::write));
 }
 
 
@@ -568,7 +568,7 @@ static INPUT_PORTS_START(legendoh)
 	PORT_BIT(0x00100000, IP_ACTIVE_LOW, IPT_SERVICE1)
 	PORT_SERVICE_NO_TOGGLE(0x00200000, IP_ACTIVE_LOW)
 	PORT_BIT(0x00400000, IP_ACTIVE_HIGH, IPT_CUSTOM) //security bit
-	PORT_BIT(0x00800000, IP_ACTIVE_HIGH, IPT_CUSTOM) PORT_READ_LINE_DEVICE_MEMBER("eeprom", eeprom_serial_93cxx_device, do_read)
+	PORT_BIT(0x00800000, IP_ACTIVE_HIGH, IPT_CUSTOM) PORT_READ_LINE_DEVICE_MEMBER("eeprom", FUNC(eeprom_serial_93cxx_device::do_read))
 	PORT_BIT(0x01000000, IP_ACTIVE_LOW, IPT_START3)
 	PORT_BIT(0x02000000, IP_ACTIVE_LOW, IPT_START4)
 	PORT_BIT(0x04000000, IP_ACTIVE_LOW, IPT_COIN3)
@@ -577,13 +577,13 @@ static INPUT_PORTS_START(legendoh)
 	PORT_DIPNAME(0x20000000, 0x00000000, "Sound Enable")
 	PORT_DIPSETTING(         0x20000000, DEF_STR(Off))
 	PORT_DIPSETTING(         0x00000000, DEF_STR(On))
-	PORT_BIT(0x80000000, IP_ACTIVE_HIGH, IPT_CUSTOM) PORT_READ_LINE_MEMBER(limenko_state, spriteram_bit_r) //changes spriteram location
+	PORT_BIT(0x80000000, IP_ACTIVE_HIGH, IPT_CUSTOM) PORT_READ_LINE_MEMBER(FUNC(limenko_state::spriteram_bit_r)) //changes spriteram location
 	PORT_BIT(0x4000ffff, IP_ACTIVE_LOW, IPT_UNUSED)
 
 	PORT_START("EEPROMOUT")
-	PORT_BIT(0x00010000, IP_ACTIVE_HIGH, IPT_OUTPUT) PORT_WRITE_LINE_DEVICE_MEMBER("eeprom", eeprom_serial_93cxx_device, cs_write)
-	PORT_BIT(0x00020000, IP_ACTIVE_HIGH, IPT_OUTPUT) PORT_WRITE_LINE_DEVICE_MEMBER("eeprom", eeprom_serial_93cxx_device, clk_write)
-	PORT_BIT(0x00040000, IP_ACTIVE_HIGH, IPT_OUTPUT) PORT_WRITE_LINE_DEVICE_MEMBER("eeprom", eeprom_serial_93cxx_device, di_write)
+	PORT_BIT(0x00010000, IP_ACTIVE_HIGH, IPT_OUTPUT) PORT_WRITE_LINE_DEVICE_MEMBER("eeprom", FUNC(eeprom_serial_93cxx_device::cs_write))
+	PORT_BIT(0x00020000, IP_ACTIVE_HIGH, IPT_OUTPUT) PORT_WRITE_LINE_DEVICE_MEMBER("eeprom", FUNC(eeprom_serial_93cxx_device::clk_write))
+	PORT_BIT(0x00040000, IP_ACTIVE_HIGH, IPT_OUTPUT) PORT_WRITE_LINE_DEVICE_MEMBER("eeprom", FUNC(eeprom_serial_93cxx_device::di_write))
 //  PORT_BIT(0x00080000, IP_ACTIVE_HIGH, IPT_UNKNOWN) // 0x80000 -> video disabled?
 INPUT_PORTS_END
 
@@ -617,30 +617,30 @@ static INPUT_PORTS_START(sb2003)
 	PORT_BIT(0x00080000, IP_ACTIVE_LOW, IPT_COIN2)
 	PORT_SERVICE_NO_TOGGLE(0x00200000, IP_ACTIVE_LOW)
 	PORT_BIT(0x00400000, IP_ACTIVE_LOW, IPT_CUSTOM) //security bit
-	PORT_BIT(0x00800000, IP_ACTIVE_HIGH, IPT_CUSTOM) PORT_READ_LINE_DEVICE_MEMBER("eeprom", eeprom_serial_93cxx_device, do_read)
+	PORT_BIT(0x00800000, IP_ACTIVE_HIGH, IPT_CUSTOM) PORT_READ_LINE_DEVICE_MEMBER("eeprom", FUNC(eeprom_serial_93cxx_device::do_read))
 	PORT_DIPNAME(0x20000000, 0x00000000, "Sound Enable")
 	PORT_DIPSETTING(         0x20000000, DEF_STR(Off))
 	PORT_DIPSETTING(         0x00000000, DEF_STR(On))
-	PORT_BIT(0x80000000, IP_ACTIVE_HIGH, IPT_CUSTOM) PORT_READ_LINE_MEMBER(limenko_state, spriteram_bit_r) //changes spriteram location
+	PORT_BIT(0x80000000, IP_ACTIVE_HIGH, IPT_CUSTOM) PORT_READ_LINE_MEMBER(FUNC(limenko_state::spriteram_bit_r)) //changes spriteram location
 	PORT_BIT(0x00100000, IP_ACTIVE_LOW, IPT_SERVICE1) // checked in dynabomb I/O test, but doesn't work in game
 	PORT_BIT(0x5f00ffff, IP_ACTIVE_LOW, IPT_UNUSED)
 
 	PORT_START("EEPROMOUT")
-	PORT_BIT(0x00010000, IP_ACTIVE_HIGH, IPT_OUTPUT) PORT_WRITE_LINE_DEVICE_MEMBER("eeprom", eeprom_serial_93cxx_device, cs_write)
-	PORT_BIT(0x00020000, IP_ACTIVE_HIGH, IPT_OUTPUT) PORT_WRITE_LINE_DEVICE_MEMBER("eeprom", eeprom_serial_93cxx_device, clk_write)
-	PORT_BIT(0x00040000, IP_ACTIVE_HIGH, IPT_OUTPUT) PORT_WRITE_LINE_DEVICE_MEMBER("eeprom", eeprom_serial_93cxx_device, di_write)
+	PORT_BIT(0x00010000, IP_ACTIVE_HIGH, IPT_OUTPUT) PORT_WRITE_LINE_DEVICE_MEMBER("eeprom", FUNC(eeprom_serial_93cxx_device::cs_write))
+	PORT_BIT(0x00020000, IP_ACTIVE_HIGH, IPT_OUTPUT) PORT_WRITE_LINE_DEVICE_MEMBER("eeprom", FUNC(eeprom_serial_93cxx_device::clk_write))
+	PORT_BIT(0x00040000, IP_ACTIVE_HIGH, IPT_OUTPUT) PORT_WRITE_LINE_DEVICE_MEMBER("eeprom", FUNC(eeprom_serial_93cxx_device::di_write))
 //  PORT_BIT(0x00080000, IP_ACTIVE_HIGH, IPT_UNKNOWN) // 0x80000 -> video disabled?
 INPUT_PORTS_END
 
 static INPUT_PORTS_START(spotty)
 	PORT_START("IN0")
-	PORT_BIT(0x00010000, IP_ACTIVE_LOW, IPT_JOYSTICK_UP)    PORT_NAME("Hold 1")
-	PORT_BIT(0x00020000, IP_ACTIVE_LOW, IPT_JOYSTICK_DOWN)  PORT_NAME("Hold 2")
-	PORT_BIT(0x00040000, IP_ACTIVE_LOW, IPT_JOYSTICK_LEFT)  PORT_NAME("Hold 3")
-	PORT_BIT(0x00080000, IP_ACTIVE_LOW, IPT_JOYSTICK_RIGHT) PORT_NAME("Hold 4")
-	PORT_BIT(0x00100000, IP_ACTIVE_LOW, IPT_BUTTON1) PORT_NAME("Bet")
-	PORT_BIT(0x00200000, IP_ACTIVE_LOW, IPT_BUTTON2) PORT_NAME("Stop")
-	PORT_BIT(0x00400000, IP_ACTIVE_LOW, IPT_BUTTON3) PORT_NAME("Change")
+	PORT_BIT(0x00010000, IP_ACTIVE_LOW, IPT_POKER_HOLD1)
+	PORT_BIT(0x00020000, IP_ACTIVE_LOW, IPT_POKER_HOLD2)
+	PORT_BIT(0x00040000, IP_ACTIVE_LOW, IPT_POKER_HOLD3)
+	PORT_BIT(0x00080000, IP_ACTIVE_LOW, IPT_POKER_HOLD4)
+	PORT_BIT(0x00100000, IP_ACTIVE_LOW, IPT_GAMBLE_BET)
+	PORT_BIT(0x00200000, IP_ACTIVE_LOW, IPT_GAMBLE_TAKE) PORT_NAME("Stop")
+	PORT_BIT(0x00400000, IP_ACTIVE_LOW, IPT_GAMBLE_DEAL) PORT_NAME("Change")
 	PORT_BIT(0x00800000, IP_ACTIVE_LOW, IPT_UNUSED)
 	PORT_BIT(0xff00ffff, IP_ACTIVE_LOW, IPT_UNUSED)
 
@@ -649,9 +649,9 @@ static INPUT_PORTS_START(spotty)
 	PORT_BIT(0x00020000, IP_ACTIVE_LOW, IPT_UNUSED)
 	PORT_BIT(0x00040000, IP_ACTIVE_LOW, IPT_UNUSED)
 	PORT_BIT(0x00080000, IP_ACTIVE_LOW, IPT_UNUSED)
-	PORT_BIT(0x00100000, IP_ACTIVE_LOW, IPT_BUTTON4) PORT_NAME("Prize Hopper 1")
-	PORT_BIT(0x00200000, IP_ACTIVE_LOW, IPT_BUTTON5) PORT_NAME("Prize Hopper 2")
-	PORT_BIT(0x00400000, IP_ACTIVE_LOW, IPT_BUTTON6) PORT_NAME("Prize Hopper 3")
+	PORT_BIT(0x00100000, IP_ACTIVE_LOW, IPT_BUTTON1) PORT_NAME("Prize Hopper 1")
+	PORT_BIT(0x00200000, IP_ACTIVE_LOW, IPT_BUTTON2) PORT_NAME("Prize Hopper 2")
+	PORT_BIT(0x00400000, IP_ACTIVE_LOW, IPT_BUTTON3) PORT_NAME("Prize Hopper 3")
 	PORT_BIT(0x00800000, IP_ACTIVE_LOW, IPT_UNUSED)
 	PORT_BIT(0xff00ffff, IP_ACTIVE_LOW, IPT_UNUSED)
 
@@ -659,10 +659,10 @@ static INPUT_PORTS_START(spotty)
 	PORT_BIT(0x00010000, IP_ACTIVE_LOW, IPT_START1)
 	PORT_BIT(0x00020000, IP_ACTIVE_LOW, IPT_UNUSED)
 	PORT_BIT(0x00040000, IP_ACTIVE_LOW, IPT_COIN1)
-	PORT_BIT(0x00080000, IP_ACTIVE_HIGH, IPT_CUSTOM) PORT_READ_LINE_MEMBER(limenko_state, spriteram_bit_r) //changes spriteram location
+	PORT_BIT(0x00080000, IP_ACTIVE_HIGH, IPT_CUSTOM) PORT_READ_LINE_MEMBER(FUNC(limenko_state::spriteram_bit_r)) //changes spriteram location
 	PORT_SERVICE_NO_TOGGLE(0x00200000, IP_ACTIVE_LOW)
 	PORT_BIT(0x00400000, IP_ACTIVE_LOW, IPT_CUSTOM) //security bit
-	PORT_BIT(0x00800000, IP_ACTIVE_HIGH, IPT_CUSTOM) PORT_READ_LINE_DEVICE_MEMBER("eeprom", eeprom_serial_93cxx_device, do_read)
+	PORT_BIT(0x00800000, IP_ACTIVE_HIGH, IPT_CUSTOM) PORT_READ_LINE_DEVICE_MEMBER("eeprom", FUNC(eeprom_serial_93cxx_device::do_read))
 	PORT_DIPNAME(0x20000000, 0x20000000, DEF_STR(Demo_Sounds))
 	PORT_DIPSETTING(         0x00000000, DEF_STR(Off))
 	PORT_DIPSETTING(         0x20000000, DEF_STR(On))
@@ -670,9 +670,9 @@ static INPUT_PORTS_START(spotty)
 	PORT_BIT(0x5f10ffff, IP_ACTIVE_LOW, IPT_UNUSED)
 
 	PORT_START("EEPROMOUT")
-	PORT_BIT(0x00010000, IP_ACTIVE_HIGH, IPT_OUTPUT) PORT_WRITE_LINE_DEVICE_MEMBER("eeprom", eeprom_serial_93cxx_device, cs_write)
-	PORT_BIT(0x00020000, IP_ACTIVE_HIGH, IPT_OUTPUT) PORT_WRITE_LINE_DEVICE_MEMBER("eeprom", eeprom_serial_93cxx_device, clk_write)
-	PORT_BIT(0x00040000, IP_ACTIVE_HIGH, IPT_OUTPUT) PORT_WRITE_LINE_DEVICE_MEMBER("eeprom", eeprom_serial_93cxx_device, di_write)
+	PORT_BIT(0x00010000, IP_ACTIVE_HIGH, IPT_OUTPUT) PORT_WRITE_LINE_DEVICE_MEMBER("eeprom", FUNC(eeprom_serial_93cxx_device::cs_write))
+	PORT_BIT(0x00020000, IP_ACTIVE_HIGH, IPT_OUTPUT) PORT_WRITE_LINE_DEVICE_MEMBER("eeprom", FUNC(eeprom_serial_93cxx_device::clk_write))
+	PORT_BIT(0x00040000, IP_ACTIVE_HIGH, IPT_OUTPUT) PORT_WRITE_LINE_DEVICE_MEMBER("eeprom", FUNC(eeprom_serial_93cxx_device::di_write))
 //  PORT_BIT(0x00080000, IP_ACTIVE_HIGH, IPT_UNKNOWN) // 0x80000 -> video disabled?
 INPUT_PORTS_END
 
@@ -692,7 +692,7 @@ GFXDECODE_END
 
 void limenko_state::limenko(machine_config &config)
 {
-	E132XN(config, m_maincpu, 20000000*4); /* 4x internal multiplier */
+	E132X(config, m_maincpu, 20'000'000*4); // E1-32XN (PQFP), 4x internal multiplier
 	m_maincpu->set_addrmap(AS_PROGRAM, &limenko_state::limenko_map);
 	m_maincpu->set_addrmap(AS_IO, &limenko_state::limenko_io_map);
 	m_maincpu->set_vblank_int("screen", FUNC(limenko_state::irq0_line_hold));
@@ -712,8 +712,7 @@ void limenko_state::limenko(machine_config &config)
 	PALETTE(config, m_palette).set_format(palette_device::xBGR_555, 0x1000);
 
 	/* sound hardware */
-	SPEAKER(config, "lspeaker").front_left();
-	SPEAKER(config, "rspeaker").front_right();
+	SPEAKER(config, "speaker", 2).front();
 
 	GENERIC_LATCH_8(config, m_soundlatch);
 	m_soundlatch->data_pending_callback().set(m_qs1000, FUNC(qs1000_device::set_irq));
@@ -725,18 +724,18 @@ void limenko_state::limenko(machine_config &config)
 	m_qs1000->p1_out().set(FUNC(limenko_state::qs1000_p1_w));
 	m_qs1000->p2_out().set(FUNC(limenko_state::qs1000_p2_w));
 	m_qs1000->p3_out().set(FUNC(limenko_state::qs1000_p3_w));
-	m_qs1000->add_route(0, "lspeaker", 1.0);
-	m_qs1000->add_route(1, "rspeaker", 1.0);
+	m_qs1000->add_route(0, "speaker", 1.0, 0);
+	m_qs1000->add_route(1, "speaker", 1.0, 1);
 }
 
 void limenko_state::spotty(machine_config &config)
 {
-	GMS30C2232(config, m_maincpu, 20000000);   /* 20 MHz, no internal multiplier */
+	GMS30C2232(config, m_maincpu, 20'000'000*4);   // 20 MHz, 4x internal multiplier
 	m_maincpu->set_addrmap(AS_PROGRAM, &limenko_state::spotty_map);
 	m_maincpu->set_addrmap(AS_IO, &limenko_state::spotty_io_map);
 	m_maincpu->set_vblank_int("screen", FUNC(limenko_state::irq0_line_hold));
 
-	at89c4051_device &audiocpu(AT89C4051(config, "audiocpu", 4000000));
+	at89c4051_device &audiocpu(AT89C4051(config, "audiocpu", 4'000'000));
 	audiocpu.port_in_cb<1>().set(FUNC(limenko_state::audiocpu_p1_r));
 	audiocpu.port_out_cb<1>().set(FUNC(limenko_state::audiocpu_p1_w));
 	audiocpu.port_in_cb<3>().set(FUNC(limenko_state::audiocpu_p3_r));
@@ -1001,7 +1000,7 @@ Spotty
 | SW1 SW2         32MHz CG_ROM3   |
 +---------------------------------+
 
-Hyundia GMS30C2232 (Hyperstone core)
+Hyundai GMS30C2232 (Hyperstone core)
 Atmel AT89C4051 (8051 MCU with internal code)
 SYS L2D HYP Ver 1.0 ASIC Express
 EEPROM 93C46

@@ -55,9 +55,9 @@ public:
 	void flkatck(machine_config &config);
 
 protected:
-	virtual void machine_start() override;
-	virtual void machine_reset() override;
-	virtual void video_start() override;
+	virtual void machine_start() override ATTR_COLD;
+	virtual void machine_reset() override ATTR_COLD;
+	virtual void video_start() override ATTR_COLD;
 
 private:
 	// memory pointers
@@ -93,8 +93,8 @@ private:
 	uint32_t screen_update(screen_device &screen, bitmap_ind16 &bitmap, const rectangle &cliprect);
 	INTERRUPT_GEN_MEMBER(interrupt);
 	void volume_callback(uint8_t data);
-	void main_map(address_map &map);
-	void sound_map(address_map &map);
+	void main_map(address_map &map) ATTR_COLD;
+	void sound_map(address_map &map) ATTR_COLD;
 };
 
 
@@ -242,7 +242,7 @@ uint32_t flkatck_state::screen_update(screen_device &screen, bitmap_ind16 &bitma
 
 	// draw the graphics
 	m_k007121_tilemap[0]->draw(screen, bitmap, clip[0], 0, 0);
-	m_k007121->sprites_draw(bitmap, cliprect, &m_spriteram[sprite_buffer], 0, 40, 0, screen.priority(), (uint32_t)-1, true);
+	m_k007121->sprites_draw(bitmap, cliprect, &m_spriteram[sprite_buffer], 0, 40, 0, screen.priority(), (uint32_t)-1);
 	m_k007121_tilemap[1]->draw(screen, bitmap, clip[1], 0, 0);
 	return 0;
 }
@@ -437,19 +437,18 @@ void flkatck_state::flkatck(machine_config &config)
 	K007121(config, m_k007121, 0, "palette", gfx_flkatck);
 
 	// sound hardware
-	SPEAKER(config, "lspeaker").front_left();
-	SPEAKER(config, "rspeaker").front_right();
+	SPEAKER(config, "speaker", 2).front();
 
 	GENERIC_LATCH_8(config, m_soundlatch);
 
-	YM2151(config, "ymsnd", 3.579545_MHz_XTAL).add_route(0, "lspeaker", 1.0).add_route(0, "rspeaker", 1.0);
+	YM2151(config, "ymsnd", 3.579545_MHz_XTAL).add_route(0, "speaker", 1.0, 0).add_route(0, "speaker", 1.0, 1);
 
 	K007232(config, m_k007232, 3.579545_MHz_XTAL);
 	m_k007232->port_write().set(FUNC(flkatck_state::volume_callback));
-	m_k007232->add_route(0, "lspeaker", 0.50);
-	m_k007232->add_route(0, "rspeaker", 0.50);
-	m_k007232->add_route(1, "lspeaker", 0.50);
-	m_k007232->add_route(1, "rspeaker", 0.50);
+	m_k007232->add_route(0, "speaker", 0.50, 0);
+	m_k007232->add_route(0, "speaker", 0.50, 1);
+	m_k007232->add_route(1, "speaker", 0.50, 0);
+	m_k007232->add_route(1, "speaker", 0.50, 1);
 }
 
 

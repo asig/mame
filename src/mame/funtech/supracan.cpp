@@ -65,10 +65,10 @@ STATUS:
 
 #include "emu.h"
 
-#include "bus/generic/slot.h"
-#include "bus/generic/carts.h"
+#include "bus/supracan/rom.h"
+#include "bus/supracan/slot.h"
 #include "cpu/m68000/m68000.h"
-#include "cpu/m6502/m65c02.h"
+#include "cpu/m6502/w65c02.h"
 
 #include "emupal.h"
 #include "screen.h"
@@ -96,7 +96,7 @@ STATUS:
 #define LOG_ALL         (LOG_UNKNOWNS | LOG_HFUNKNOWNS | LOG_DMA | LOG_VIDEO | LOG_HFVIDEO | LOG_IRQS | LOG_SOUND | LOG_68K_SOUND | LOG_CONTROLS)
 #define LOG_DEFAULT     (LOG_ALL & ~(LOG_HFVIDEO | LOG_HFUNKNOWNS))
 
-#define VERBOSE         (LOG_UNKNOWNS | LOG_DMA)
+#define VERBOSE         (LOG_GENERAL | LOG_UNKNOWNS | LOG_DMA | LOG_HFUNKNOWNS)
 #include "logmacro.h"
 
 
@@ -138,13 +138,13 @@ public:
 	void supracan(machine_config &config);
 
 protected:
-	virtual void machine_start() override;
-	virtual void machine_reset() override;
-	virtual void video_start() override;
+	virtual void machine_start() override ATTR_COLD;
+	virtual void machine_reset() override ATTR_COLD;
+	virtual void video_start() override ATTR_COLD;
 
 private:
-	void main_map(address_map &map);
-	void sound_map(address_map &map);
+	void main_map(address_map &map) ATTR_COLD;
+	void sound_map(address_map &map) ATTR_COLD;
 
 	uint16_t _68k_soundram_r(offs_t offset, uint16_t mem_mask = ~0);
 	void _68k_soundram_w(offs_t offset, uint16_t data, uint16_t mem_mask = ~0);
@@ -179,7 +179,7 @@ private:
 
 	required_device<cpu_device> m_maincpu;
 	required_device<cpu_device> m_soundcpu;
-	required_device<generic_slot_device> m_cart;
+	required_device<superacan_cart_slot_device> m_cart;
 	required_device<umc6650_device> m_lockout;
 	required_region_ptr<uint16_t> m_internal68;
 	memory_view m_main_loview;
@@ -193,9 +193,6 @@ private:
 	required_device<screen_device> m_screen;
 
 	required_ioport_array<2> m_pad;
-
-	dma_regs_t m_dma_regs;
-	sprdma_regs_t m_sprdma_regs;
 
 	uint16_t m_sound_cpu_ctrl = 0;
 	uint8_t m_soundcpu_irq_enable = 0;
@@ -212,21 +209,28 @@ private:
 
 	std::vector<uint8_t> m_vram_addr_swapped{};
 
-#if 0
-	uint16_t *m_pram = nullptr;
-#endif
-
 	uint16_t m_sprite_count = 0;
 	uint32_t m_sprite_base_addr = 0;
+	uint8_t m_sprite_mono_color = 0;
 	uint8_t m_sprite_flags = 0;
 
+	dma_regs_t m_dma_regs;
+	sprdma_regs_t m_sprdma_regs;
+
+	uint16_t m_video_flags = 0;
 	uint32_t m_tilemap_base_addr[3]{};
 	int m_tilemap_scrollx[3]{};
 	int m_tilemap_scrolly[3]{};
-	uint16_t m_video_flags = 0;
 	uint16_t m_tilemap_flags[3]{};
 	uint16_t m_tilemap_mode[3]{};
 	uint16_t m_tilemap_tile_mode[3]{};
+	uint16_t m_tilemap_linescrollx_addr[3]{};
+	uint16_t m_tilemap_lineselect_addr[3]{};
+
+	uint16_t m_window_control[2]{};
+	uint16_t m_window_start_addr[2]{};
+	uint16_t m_window_scrollx[2]{};
+	uint16_t m_window_scrolly[2]{};
 
 	uint32_t m_roz_base_addr = 0;
 	uint16_t m_roz_mode = 0;
@@ -242,13 +246,12 @@ private:
 	uint16_t m_roz_coeffc = 0;
 	uint16_t m_roz_coeffd = 0;
 	int32_t m_roz_changed = 0;
-	uint16_t m_unk_1d0 = 0;
 	u8 m_pixel_mode = 0;
 	u8 m_gfx_mode = 0;
 
 	uint16_t m_video_regs[256]{};
 
-	tilemap_t *m_tilemap_sizes[4][4]{};
+	tilemap_t *m_tilemap_sizes[4][5]{};
 	bitmap_ind16 m_sprite_final_bitmap;
 	bitmap_ind8 m_sprite_mask_bitmap;
 	bitmap_ind8 m_prio_bitmap;
@@ -265,7 +268,6 @@ private:
 	TIMER_CALLBACK_MEMBER(line_on_cb);
 	TIMER_CALLBACK_MEMBER(line_off_cb);
 	TIMER_CALLBACK_MEMBER(scanline_cb);
-	DECLARE_DEVICE_IMAGE_LOAD_MEMBER(cart_load);
 	int get_tilemap_region(int layer);
 	void get_tilemap_info_common(int layer, tile_data &tileinfo, int count);
 	void get_roz_tilemap_info(int layer, tile_data &tileinfo, int count);
@@ -280,7 +282,7 @@ private:
 
 	void set_sound_irq(uint8_t bit, uint8_t state);
 
-	void host_um6619_map(address_map &map);
+	void host_um6619_map(address_map &map) ATTR_COLD;
 	u8 m_irq_mask = 0;
 	u16 m_frc_control = 0;
 	u16 m_frc_frequency = 0;
@@ -291,24 +293,34 @@ private:
 
 int supracan_state::get_tilemap_region(int layer)
 {
-	switch(layer)
+	// TODO: anything that refers to 2bpp region (2) can actually be layer 1bpp selectable too
+	// From layer mode bit 7?
+	switch (layer)
 	{
-		case 0:
-			static const int layer0_mode[8] = { 2, 1, 0, 1, 0, 0, 0, 0 };
-			return layer0_mode[m_gfx_mode & 7];
-		case 1:
-			static const int layer1_mode[8] = { 2, 1, 1, 1, 2, 2, 2, 2 };
-			return layer1_mode[m_gfx_mode & 7];
-		// HACK: can be 2bpp or 1bpp
-		case 2:
-			return 2;
-		case 3:
-			static const int s_roz_mode_lut[4] = { 4, 2, 1, 0 };
-			return s_roz_mode_lut[m_roz_mode & 3];
+	case 0:
+	{
+		static const int layer0_mode[8] = { 2, 1, 0, 1, 0, 0, 0, 0 };
+		return layer0_mode[m_gfx_mode & 7];
+	}
+
+	case 1:
+	{
+		static const int layer1_mode[8] = { 2, 1, 1, 1, 2, 2, 2, 2 };
+		return layer1_mode[m_gfx_mode & 7];
+	}
+
+	case 2:
+		return 2;
+
+	case 3:
+	{
+		static const int s_roz_mode_lut[4] = { 4, 2, 1, 0 };
+		return s_roz_mode_lut[m_roz_mode & 3];
+	}
 	}
 
 	// TODO: 4th layer at $f00160 (gfx mode 0 only, ignored for everything else)
-	throw new emu_fatalerror("Error: layer = %d not defined", layer);
+	throw emu_fatalerror("Error: layer = %d not defined", layer);
 }
 
 void supracan_state::get_tilemap_info_common(int layer, tile_data &tileinfo, int count)
@@ -321,49 +333,9 @@ void supracan_state::get_tilemap_info_common(int layer, tile_data &tileinfo, int
 
 	count += base;
 
-	uint16_t tile_bank = 0;
-	uint16_t palette_shift = 0;
-	switch (gfx_mode)
-	{
-	case 7:
-		tile_bank = 0x1c00;
-		break;
-
-	case 6: // gambling lord
-		tile_bank = 0x0c00;
-		break;
-
-	case 4:
-		tile_bank = 0x800;
-		break;
-
-	case 2:
-		tile_bank = 0x400;
-		break;
-
-	case 1:
-		// formduel gameplay (for layer 2 -> 0x1400)
-		tile_bank = 0x200;
-		break;
-
-	case 0:
-		tile_bank = 0;
-		break;
-
-	default:
-		LOGMASKED(LOG_UNKNOWNS, "Unsupported tilemap mode: %d\n", (m_tilemap_mode[layer] & 0x7000) >> 12);
-		break;
-	}
-
-	if (region == 0)
-		tile_bank >>= 1;
-
+	const u16 tile_bank = gfx_mode << (8 + region);
 	// speedyd and slghtsag hints that text layer color offsets in steps of 4
-	if (region == 2)
-		palette_shift = 2;
-
-	if (layer == 2)
-		tile_bank = (0x1000 | (tile_bank << 1)) & 0x1c00;
+	const u16 palette_shift = (region == 2) ? 2 : 0;
 
 	u8 palette_base = ((vram[count] & 0xf000) >> 12);
 
@@ -477,21 +449,25 @@ void supracan_state::video_start()
 	m_tilemap_sizes[0][1] = &machine().tilemap().create(*m_gfxdecode, tilemap_get_info_delegate(*this, FUNC(supracan_state::get_tilemap0_tile_info)), TILEMAP_SCAN_ROWS, 8, 8, 64, 32);
 	m_tilemap_sizes[0][2] = &machine().tilemap().create(*m_gfxdecode, tilemap_get_info_delegate(*this, FUNC(supracan_state::get_tilemap0_tile_info)), TILEMAP_SCAN_ROWS, 8, 8, 128, 32);
 	m_tilemap_sizes[0][3] = &machine().tilemap().create(*m_gfxdecode, tilemap_get_info_delegate(*this, FUNC(supracan_state::get_tilemap0_tile_info)), TILEMAP_SCAN_ROWS, 8, 8, 64, 64);
+	m_tilemap_sizes[0][4] = &machine().tilemap().create(*m_gfxdecode, tilemap_get_info_delegate(*this, FUNC(supracan_state::get_tilemap0_tile_info)), TILEMAP_SCAN_ROWS, 8, 8, 16, 16);
 
 	m_tilemap_sizes[1][0] = &machine().tilemap().create(*m_gfxdecode, tilemap_get_info_delegate(*this, FUNC(supracan_state::get_tilemap1_tile_info)), TILEMAP_SCAN_ROWS, 8, 8, 32, 32);
 	m_tilemap_sizes[1][1] = &machine().tilemap().create(*m_gfxdecode, tilemap_get_info_delegate(*this, FUNC(supracan_state::get_tilemap1_tile_info)), TILEMAP_SCAN_ROWS, 8, 8, 64, 32);
 	m_tilemap_sizes[1][2] = &machine().tilemap().create(*m_gfxdecode, tilemap_get_info_delegate(*this, FUNC(supracan_state::get_tilemap1_tile_info)), TILEMAP_SCAN_ROWS, 8, 8, 128, 32);
 	m_tilemap_sizes[1][3] = &machine().tilemap().create(*m_gfxdecode, tilemap_get_info_delegate(*this, FUNC(supracan_state::get_tilemap1_tile_info)), TILEMAP_SCAN_ROWS, 8, 8, 64, 64);
+	m_tilemap_sizes[1][4] = &machine().tilemap().create(*m_gfxdecode, tilemap_get_info_delegate(*this, FUNC(supracan_state::get_tilemap1_tile_info)), TILEMAP_SCAN_ROWS, 8, 8, 16, 16);
 
 	m_tilemap_sizes[2][0] = &machine().tilemap().create(*m_gfxdecode, tilemap_get_info_delegate(*this, FUNC(supracan_state::get_tilemap2_tile_info)), TILEMAP_SCAN_ROWS, 8, 8, 32, 32);
 	m_tilemap_sizes[2][1] = &machine().tilemap().create(*m_gfxdecode, tilemap_get_info_delegate(*this, FUNC(supracan_state::get_tilemap2_tile_info)), TILEMAP_SCAN_ROWS, 8, 8, 64, 32);
 	m_tilemap_sizes[2][2] = &machine().tilemap().create(*m_gfxdecode, tilemap_get_info_delegate(*this, FUNC(supracan_state::get_tilemap2_tile_info)), TILEMAP_SCAN_ROWS, 8, 8, 128, 32);
 	m_tilemap_sizes[2][3] = &machine().tilemap().create(*m_gfxdecode, tilemap_get_info_delegate(*this, FUNC(supracan_state::get_tilemap2_tile_info)), TILEMAP_SCAN_ROWS, 8, 8, 64, 64);
+	m_tilemap_sizes[2][4] = &machine().tilemap().create(*m_gfxdecode, tilemap_get_info_delegate(*this, FUNC(supracan_state::get_tilemap2_tile_info)), TILEMAP_SCAN_ROWS, 8, 8, 16, 16);
 
 	m_tilemap_sizes[3][0] = &machine().tilemap().create(*m_gfxdecode, tilemap_get_info_delegate(*this, FUNC(supracan_state::get_roz_tile_info)), TILEMAP_SCAN_ROWS, 8, 8, 32, 32);
 	m_tilemap_sizes[3][1] = &machine().tilemap().create(*m_gfxdecode, tilemap_get_info_delegate(*this, FUNC(supracan_state::get_roz_tile_info)), TILEMAP_SCAN_ROWS, 8, 8, 64, 32);
 	m_tilemap_sizes[3][2] = &machine().tilemap().create(*m_gfxdecode, tilemap_get_info_delegate(*this, FUNC(supracan_state::get_roz_tile_info)), TILEMAP_SCAN_ROWS, 8, 8, 128, 32);
 	m_tilemap_sizes[3][3] = &machine().tilemap().create(*m_gfxdecode, tilemap_get_info_delegate(*this, FUNC(supracan_state::get_roz_tile_info)), TILEMAP_SCAN_ROWS, 8, 8, 64, 64);
+	m_tilemap_sizes[3][4] = &machine().tilemap().create(*m_gfxdecode, tilemap_get_info_delegate(*this, FUNC(supracan_state::get_roz_tile_info)), TILEMAP_SCAN_ROWS, 8, 8, 16, 16);
 }
 
 int supracan_state::get_tilemap_dimensions(int &xsize, int &ysize, int layer)
@@ -507,6 +483,18 @@ int supracan_state::get_tilemap_dimensions(int &xsize, int &ysize, int layer)
 
 	switch (select)
 	{
+	// formduel rain layer on game over
+	// sonevil title screen
+	case 0x200:
+		xsize = 16;
+		ysize = 16;
+		return 4;
+
+	case 0x400:
+		xsize = 32;
+		ysize = 32;
+		return 0;
+
 	case 0x600:
 		xsize = 64;
 		ysize = 32;
@@ -523,7 +511,10 @@ int supracan_state::get_tilemap_dimensions(int &xsize, int &ysize, int layer)
 		return 3;
 
 	default:
-		LOGMASKED(LOG_HFUNKNOWNS, "Unsupported tilemap size for layer %d: %04x\n", layer, select);
+		// TODO: setting 0 is already tested by A'Can logo (in bitmap mode)
+		// select & 0x100 is 16x16 tiles
+		if (select != 0)
+			LOGMASKED(LOG_HFUNKNOWNS, "Unsupported tilemap size for layer %d: %04x\n", layer, select);
 		return 0;
 	}
 }
@@ -753,6 +744,9 @@ void supracan_state::draw_sprite_tile_masked(bitmap_ind16 &dst, bitmap_ind8 &mas
 			const uint32_t srcdata = *srcp;
 			if (srcdata != 0 && *maskp != 0)
 			{
+				// TODO: this is really color mix
+				// rebelst select attack screens draws with this path with no "*maskp" set,
+				// and expect *dstp to add up not just set.
 				*dstp = (uint16_t)(srcdata + color);
 				*priop = (*priop & 0xf0) | (uint8_t)prio;
 			}
@@ -787,10 +781,35 @@ void supracan_state::draw_sprites(bitmap_ind16 &bitmap, bitmap_ind8 &maskmap, bi
 {
 	uint16_t *vram = m_vram;
 
+	// ysizes are normally setting +1, except on higher ranges where values are higher
+	// TODO: check on real HW
+	static const int ysizes_table[16] =
+	{
+		1, 2, 3, 4, 5, 6, 7, 8, 9,
+		// 0x9: speedyd intro dash frame, speedyd bonus stages, boomzoo intro
+		// 11 would be more logical for former, except it will break latter and
+		// is confirmed to "cut" feet anyway.
+		10,
+		// 0xa: A'Can logo
+		12,
+		// 0xb/0xc: jttlaugh stage 1-3 (particularly on the web scrolling jump platforms)
+		16,
+		20,
+		// 0xd: slghtsag character select
+		22,
+		// 0xe/0xf: <unknown>, check me
+		24,
+		26
+	};
+
 	uint32_t skip_count = 0;
 	uint32_t start_word = (m_sprite_base_addr >> 1) + skip_count * 4;
 	uint32_t end_word = start_word + (m_sprite_count - skip_count) * 4;
 	int region = (m_sprite_flags & 1) ? 0 : 1; // 8bpp : 4bpp
+	// As per tilemaps banking is halved with 8bpp sprites
+	// - rebelst during gameplay
+	// - A'Can logo and slghtsag don't set any bank number.
+	const u16 bank_size = 0x100 << region;
 
 	static const uint16_t VRAM_MASK = 0xffff;
 
@@ -812,17 +831,17 @@ void supracan_state::draw_sprites(bitmap_ind16 &bitmap, bitmap_ind8 &maskmap, bi
 		if (y >= 0x180) y -= 0x200;
 		if (x >= 0x180) x -= 0x200;
 
-		if ((vram[i + 0] & 0x4000))
+		if ((vram[i + 0] & 0x4000) && sprite_ptr)
 		{
 			int xsize = 1 << (vram[i + 1] & 7);
-			int ysize = ((vram[i + 0] & 0x1e00) >> 9) + 1;
+			int ysize = ysizes_table[(vram[i + 0] & 0x1e00) >> 9];
 
-			// HACK: sonevil sets 1x1 tiles, and expecting to take this path.
+			// HACK: sonevil sets 1x1 tiles in game, and expecting to take this path.
 			// Most likely former condition is wrong, and it just "direct sprite" when latter occurs.
 			// magipool also wants latter, for the shot markers to work.
 			if (sprite_ptr & 0x8000 || (xsize == 1 && ysize == 1))
 			{
-				int tile = (bank * 0x200) + (sprite_ptr & 0x03ff);
+				int tile = (bank * bank_size) + (sprite_ptr & 0x03ff);
 
 				int palette = (sprite_ptr & 0xf000) >> 12; // this might not be correct, due to the & 0x8000 condition above this would force all single tile sprites to be using palette >= 0x8 only
 
@@ -841,17 +860,26 @@ void supracan_state::draw_sprites(bitmap_ind16 &bitmap, bitmap_ind8 &maskmap, bi
 			{
 				// I think the xsize must influence the ysize somehow, there are too many conflicting cases otherwise
 				// there don't appear to be any special markers in the actual looked up tile data to indicate skip / end of list
-
 				for (int ytile = 0; ytile < ysize; ytile++)
 				{
 					for (int xtile = 0; xtile < xsize; xtile++)
 					{
 						uint16_t data = vram[((sprite_ptr << 1) + ytile * xsize + xtile) & VRAM_MASK];
-						int tile = (bank * 0x200) + (data & 0x03ff);
+						// magipool will draw garbage during gameplay if we don't skip empty entries.
+						// NOTE: sets up both main table pointer and sub entries
+						if (data == 0)
+							continue;
+						int tile = (bank * bank_size) + (data & 0x03ff);
 						int palette = (data & 0xf000) >> 12;
 
 						int xpos = sprite_xflip ? (x - (xtile + 1) * 8 + xsize * 8) : (x + xtile * 8);
 						int ypos = sprite_yflip ? (y - (ytile + 1) * 8 + ysize * 8) : (y + ytile * 8);
+
+						// magipool rolls back at 512 edge for the shot power menu
+						// TODO: should also control clip inside the functions
+						// (which should be merged as well)
+						// TODO: verify ypos, likely same.
+						xpos &= 0x1ff;
 
 						int tile_xflip = sprite_xflip ^ ((data & 0x0800) >> 11);
 						int tile_yflip = sprite_yflip ^ ((data & 0x0400) >> 10);
@@ -866,7 +894,7 @@ void supracan_state::draw_sprites(bitmap_ind16 &bitmap, bitmap_ind8 &maskmap, bi
 				}
 			}
 
-			// TODO: scaling
+			// TODO: scaling, find places where it occurs
 #if 0
 			if (xscale == 0) continue;
 			uint32_t delta = (1 << 17) / xscale;
@@ -895,7 +923,7 @@ void supracan_state::mark_active_tilemap_all_dirty(int layer)
 	int ysize = 0;
 
 	int which_tilemap_size = get_tilemap_dimensions(xsize, ysize, layer);
-//  for (int i=0;i<4;i++)
+//  for (int i = 0; i < 4; i++)
 //    tilemap_mark_all_tiles_dirty(m_tilemap_sizes[layer][i]);
 	m_tilemap_sizes[layer][which_tilemap_size]->mark_all_dirty();
 }
@@ -932,6 +960,7 @@ void supracan_state::draw_roz_layer(bitmap_ind16 &bitmap, const rectangle &clipr
 
 			/* get dest and priority pointers */
 			uint16_t *dest = &bitmap.pix(sy, sx);
+			// TODO: somebody ate the priority pointer here ...
 
 			/* loop over columns */
 			while (x <= ex)
@@ -1007,7 +1036,7 @@ uint32_t supracan_state::screen_update(screen_device &screen, bitmap_ind16 &bitm
 	// - boomzoo (title) wants 0x00
 	// - sangofgt (1st fighter stage) wants 0x00
 	// - sonevil (intro) wants 0x00
-	// TODO: layer overlay happens from mixing registers (A'Can BIOS sets 0x02 there)
+	// - back layer overlay happens from mixing registers (A'Can BIOS sets 0x02 there)
 	bitmap.fill(0x00, cliprect);
 
 	draw_sprites(m_sprite_final_bitmap, m_sprite_mask_bitmap, m_prio_bitmap, cliprect);
@@ -1015,7 +1044,6 @@ uint32_t supracan_state::screen_update(screen_device &screen, bitmap_ind16 &bitm
 	// mix screen
 	int xsize = 0, ysize = 0;
 //  int tilemap_num;
-	int priority = 0;
 
 	for (int pri = 7; pri >= 0; pri--)
 	{
@@ -1023,6 +1051,7 @@ uint32_t supracan_state::screen_update(screen_device &screen, bitmap_ind16 &bitm
 		for (int layer = 0; layer < ROZ_LAYER_NUMBER + 1; layer ++)
 		{
 			int enabled = 0;
+			int layer_priority = 0;
 
 			// ROZ
 			if (layer == ROZ_LAYER_NUMBER)
@@ -1030,20 +1059,21 @@ uint32_t supracan_state::screen_update(screen_device &screen, bitmap_ind16 &bitm
 				enabled = BIT(m_video_flags, 2);
 				if (!enabled)
 					continue;
-				priority = ((m_roz_mode >> 13) & 7);
+				layer_priority = ((m_roz_mode >> 13) & 7);
 			}
 			else
 			{
 				enabled = BIT(m_video_flags, 7 - layer);
 				if (!enabled)
 					continue;
-				priority = ((m_tilemap_flags[layer] >> 13) & 7);
+				layer_priority = ((m_tilemap_flags[layer] >> 13) & 7);
 			}
 
-			if (priority == pri)
+			if (layer_priority == pri)
 			{
 				int which_tilemap_size = get_tilemap_dimensions(xsize, ysize, layer);
 				bitmap_ind16 &src_bitmap = m_tilemap_sizes[layer][which_tilemap_size]->pixmap();
+				// TODO: per-tile priority, thru ->flagsmap()
 				int gfx_region = get_tilemap_region(layer);
 				int transmask = 0xff;
 
@@ -1092,24 +1122,40 @@ uint32_t supracan_state::screen_update(screen_device &screen, bitmap_ind16 &bitm
 							if (scrolly + y < 0 || scrolly + y > ((ysize * 8) - 1))
 								continue;
 
+						// slghtsag enables lineselect on load game
+						if (BIT(m_tilemap_tile_mode[layer], 11))
+						{
+							int16_t lineselect = (int16_t)m_vram[((m_tilemap_lineselect_addr[layer] << 1) + y ) & 0xffff];
+							realy = (lineselect + scrolly) & ((ysize * 8) - 1);
+						}
+
 						uint16_t *src = &src_bitmap.pix(realy & ((ysize * 8) - 1));
 						uint8_t *priop = &m_prio_bitmap.pix(y);
+						int line_scroll_x = scrollx;
+
+						// formduel main menu
+						if (BIT(m_tilemap_tile_mode[layer], 14))
+						{
+							int16_t linescrollx = (int16_t)m_vram[((m_tilemap_linescrollx_addr[layer] << 1) + y) & 0xffff];
+							line_scroll_x += linescrollx;
+						}
+
 
 						for (int x = cliprect.min_x; x <= cliprect.max_x; x++)
 						{
 							int actualx = x & mosaic_mask;
-							int realx = actualx + scrollx;
+							int realx = actualx + line_scroll_x;
 
 							if (!wrap)
-								if (scrollx + x < 0 || scrollx + x > ((xsize * 8) - 1))
+								if (line_scroll_x + x < 0 || line_scroll_x + x > ((xsize * 8) - 1))
 									continue;
 
 							uint16_t srcpix = src[realx & ((xsize * 8) - 1)];
 
-							if ((srcpix & transmask) != 0 && priority < (priop[x] >> 4))
+							if ((srcpix & transmask) != 0 && layer_priority < (priop[x] >> 4))
 							{
 								screen[x] = srcpix;
-								priop[x] = (priop[x] & 0x0f) | (priority << 4);
+								priop[x] = (priop[x] & 0x0f) | (layer_priority << 4);
 							}
 						}
 					}
@@ -1176,6 +1222,49 @@ uint32_t supracan_state::screen_update(screen_device &screen, bitmap_ind16 &bitm
 					}
 				}
 
+			}
+		}
+
+		// TODO: secondary window control at $1d8-$1df (no SW sets it up so far)
+		if (BIT(m_video_flags, 1))
+		{
+			// bit 15: enabled by magipool at circular intro, will show sprites above it if checked with.
+			int layer_priority = ((m_window_control[0] >> 13) & 3);
+			if (pri != layer_priority)
+				continue;
+			const u8 reverse_clip = BIT(m_window_control[0], 11);
+			// magipool enables this on title screen
+			// (for the white "overlay", revealing Funtech copyright progressively)
+			// TODO: confirm implementation
+			int window_scrollx = m_window_scrollx[0] & 0x3ff;
+			// TODO: window_scrolly
+
+			if (window_scrollx & 0x200)
+				window_scrollx -= 0x400;
+
+			const u8 window_pen = m_window_control[0] & 0xff;
+
+			for (int y = cliprect.min_y; y <= cliprect.max_y; y++)
+			{
+				// bit 8 is unset by sangofgt, where it uses only two entries of the table on transitions.
+				const int ybase = BIT(m_window_control[0], 8) ? (y * 2) : 0;
+				const u32 clip_base = ((m_window_start_addr[0] << 1) + ybase) & 0xffff;
+
+				const int16_t clip_min_x = (m_vram[clip_base + 0] + window_scrollx);
+				const int16_t clip_max_x = (m_vram[clip_base + 1] + window_scrollx);
+				uint8_t *priop = &m_prio_bitmap.pix(y);
+
+				for (int x = cliprect.min_x; x <= cliprect.max_x; x++)
+				{
+					if (layer_priority >= (priop[x] >> 4))
+						continue;
+
+					if ((x >= clip_min_x && x < clip_max_x) ^ reverse_clip)
+					{
+						bitmap.pix(y, x) = window_pen;
+						priop[x] = (priop[x] & 0x0f) | (layer_priority << 4);
+					}
+				}
 			}
 		}
 	}
@@ -1263,7 +1352,7 @@ template <unsigned ch> void supracan_state::dma_w(offs_t offset, uint16_t data, 
 			for (int i = 0; i <= m_dma_regs.count[ch]; i++)
 			{
 				// staiwbbl wants to fill both VRAM and work RAM at startup,
-				// and expects to transfer word for VRAM, byte for work RAM.
+				// and expects to transfer full count size for VRAM, half for work RAM.
 				// Not providing this will cause all kinds of video and logic glitches.
 				// TODO: pinpoint DMA modes here (at least upper bits 14-13 should do)
 				if (data == 0xa800)
@@ -1275,7 +1364,9 @@ template <unsigned ch> void supracan_state::dma_w(offs_t offset, uint16_t data, 
 					}
 					else
 					{
-						mem.write_byte(m_dma_regs.dest[ch], mem.read_byte(m_dma_regs.source[ch]));
+						// rebelst expects D8-D15 to be transfered for the ROZ layer hex grids.
+						const u8 src_byte = m_dma_regs.dest[ch] & 1;
+						mem.write_byte(m_dma_regs.dest[ch], mem.read_byte(m_dma_regs.source[ch] + src_byte));
 						m_dma_regs.dest[ch]   += dest_dec ? -1 : 1;
 					}
 				}
@@ -1287,6 +1378,9 @@ template <unsigned ch> void supracan_state::dma_w(offs_t offset, uint16_t data, 
 					if (data & 0x0100)
 					{
 						// staiwbbl, indirect transfers towards port $f00010-$1f
+						// TODO: also used by sangofgt
+						// will glitch on some super moves because it tries to transfer
+						// multiple times to the VRAM port (normally size is set to 8x2 bytes)
 						if ((m_dma_regs.dest[ch] & 0xf) == 0)
 							m_dma_regs.dest[ch] -= 0x10;
 					}
@@ -1313,14 +1407,6 @@ template <unsigned ch> void supracan_state::dma_w(offs_t offset, uint16_t data, 
 		break;
 	}
 }
-
-#if 0
-void supracan_state::supracan_pram_w(offs_t offset, uint16_t data, uint16_t mem_mask)
-{
-	m_pram[offset] &= ~mem_mask;
-	m_pram[offset] |= data & mem_mask;
-}
-#endif
 
 // swap address around so that 64x64 tile can be decoded as 8x8 tiles..
 void supracan_state::write_swapped_byte(int offset, uint8_t byte)
@@ -1349,9 +1435,9 @@ void supracan_state::vram_w(offs_t offset, uint16_t data, uint16_t mem_mask)
 void supracan_state::main_map(address_map &map)
 {
 	map(0x000000, 0x3fffff).view(m_main_loview);
-	m_main_loview[0](0x000000, 0x3fffff).r(m_cart, FUNC(generic_slot_device::read16_rom));
+	m_main_loview[0](0x000000, 0x3fffff).r(m_cart, FUNC(superacan_cart_slot_device::rom_r)),
 	m_main_loview[0](0x000000, 0x000fff).rom().region(m_internal68, 0);
-	m_main_loview[1](0x000000, 0x3fffff).r(m_cart, FUNC(generic_slot_device::read16_rom));
+	m_main_loview[1](0x000000, 0x3fffff).r(m_cart, FUNC(superacan_cart_slot_device::rom_r));
 	map(0xe80000, 0xe8ffff).rw(FUNC(supracan_state::_68k_soundram_r), FUNC(supracan_state::_68k_soundram_w));
 	map(0xe90000, 0xe9001f).m(*this, FUNC(supracan_state::host_um6619_map));
 	map(0xe90020, 0xe9002f).w(FUNC(supracan_state::dma_w<0>));
@@ -1361,15 +1447,15 @@ void supracan_state::main_map(address_map &map)
 
 	map(0xeb0d00, 0xeb0d03).rw(m_lockout, FUNC(umc6650_device::read), FUNC(umc6650_device::write)).umask16(0x00ff);
 
-//  map(0xec0000, 0xec*fff) Cart NVRAM, 8-bit interface
+	map(0xec0000, 0xecffff).rw(m_cart, FUNC(superacan_cart_slot_device::nvram_r), FUNC(superacan_cart_slot_device::nvram_w)).umask16(0x00ff);
 
 	map(0xf00000, 0xf001ff).rw(FUNC(supracan_state::video_r), FUNC(supracan_state::video_w));
 	map(0xf00200, 0xf003ff).ram().w("palette", FUNC(palette_device::write16)).share("palette");
 	map(0xf40000, 0xf5ffff).ram().w(FUNC(supracan_state::vram_w)).share("vram");
 	map(0xf80000, 0xfbffff).view(m_main_hiview);
-	m_main_hiview[0](0xf80000, 0xfbffff).r(m_cart, FUNC(generic_slot_device::read16_rom));
+	m_main_hiview[0](0xf80000, 0xfbffff).r(m_cart, FUNC(superacan_cart_slot_device::rom_r));
 	m_main_hiview[0](0xf80000, 0xf80fff).rom().region(m_internal68, 0);
-	m_main_hiview[1](0xf80000, 0xfbffff).r(m_cart, FUNC(generic_slot_device::read16_rom));
+	m_main_hiview[1](0xf80000, 0xfbffff).r(m_cart, FUNC(superacan_cart_slot_device::rom_r));
 	map(0xfc0000, 0xfcffff).mirror(0x30000).ram(); /* System work ram */
 }
 
@@ -1411,6 +1497,10 @@ uint8_t supracan_state::_6502_soundmem_r(offs_t offset)
 		}
 		break;
 	}
+	case 0x406:
+		// staiwbbl: pad +5V presence?
+		// Will flip and pass bits 1-0 to 0x407 writes
+		return 0x00;
 	case 0x410:
 		data = m_soundcpu_irq_enable;
 		if (!machine().side_effects_disabled())
@@ -1427,6 +1517,9 @@ uint8_t supracan_state::_6502_soundmem_r(offs_t offset)
 			LOGMASKED(LOG_SOUND, "%s: %s: 6502_soundmem_r: Sound IRQ source read + clear: %02x\n", machine().describe_context(), machine().time().to_string(), data);
 			m_soundcpu->set_input_line(0, CLEAR_LINE);
 		}
+		break;
+	case 0x412:
+		// NMI acknowledge
 		break;
 	case 0x420:
 		if (!machine().side_effects_disabled())
@@ -1494,11 +1587,16 @@ void supracan_state::_6502_soundmem_w(offs_t offset, uint8_t data)
 		}
 		break;
 	}
+	// written with 0x06 at game startups, prior to enabling sound irqs
+	// (NMI + master irq enable?)
+	//case 0x409:
+	//break;
 	case 0x40a:
 		// speedyd/magipool uses this to request main to kickoff a sound DMA.
 		// gamblord/formduel just sets this just to poll a sound command
 		// all sets up 0x40c/0x40d as a buffer, and 0x40a to check if the irq is valid
-		// (does reading from 68k side acknowledges?)
+		// TODO: staiwbbl writes here from 68k side
+		// which raises a nopped irq service for now, may just acknowledge instead
 		m_maincpu->set_input_line(6, HOLD_LINE);
 		m_soundram[0x40a] = data;
 		break;
@@ -1598,33 +1696,33 @@ void supracan_state::update_frc_state()
 
 		// HACK: handle case by case until we resolve the equation
 		// (particularly with variable frequencies)
-		switch(m_frc_control & 0xf)
+		switch (m_frc_control & 0xf)
 		{
-			// speedyd: sets this up to 0xa0d6 / 0x0000 at boot, then goes 0xa200 0x013a
-			// - dictates a very slow timer (pinpoint for what);
-			// - would give massive slowdowns during gameplay if too many fires;
-			case 0:
-				m_frc_timer->adjust(attotime::from_hz(1));
-				break;
+		// speedyd: sets this up to 0xa0d6 / 0x0000 at boot, then goes 0xa200 0x013a
+		// - dictates a very slow timer (pinpoint for what);
+		// - would give massive slowdowns during gameplay if too many fires;
+		case 0:
+			m_frc_timer->adjust(attotime::from_hz(1));
+			break;
 
-			// magipool: sets 0xa201 / 0x0104 at startup, sometimes flips frequency to 0x0046
-			// - causes a crash at boot if too fast;
-			// - takes roughly 6 seconds for a title screen individual kanji to move right-to-left;
-			case 1:
-				m_frc_timer->adjust(m_maincpu->cycles_to_attotime(1024 * period), 0);
-				break;
+		// magipool: sets 0xa201 / 0x0104 at startup, sometimes flips frequency to 0x0046
+		// - causes a crash at boot if too fast;
+		// - takes roughly 6 seconds for a title screen individual kanji to move right-to-left;
+		case 1:
+			m_frc_timer->adjust(m_maincpu->cycles_to_attotime(1024 * period), 0);
+			break;
 
-			// gamblord: sets 0xa20f normally, plays with frequency register a lot.
-			// - takes ~13 seconds for title screen to complete animation;
-			// - takes ~1 second for character screen to switch;
-			// - during gameplay sometimes switches to 0xa200 / 0xffff;
-			case 0xf:
-				m_frc_timer->adjust(m_maincpu->cycles_to_attotime(8192 * period), 0);
-				break;
+		// gamblord: sets 0xa20f normally, plays with frequency register a lot.
+		// - takes ~13 seconds for title screen to complete animation;
+		// - takes ~1 second for character screen to switch;
+		// - during gameplay sometimes switches to 0xa200 / 0xffff;
+		case 0xf:
+			m_frc_timer->adjust(m_maincpu->cycles_to_attotime(8192 * period), 0);
+			break;
 
-			default:
-				popmessage("Attempt to fire up FRC with %04x %04x", m_frc_control, m_frc_frequency);
-				break;
+		default:
+			popmessage("Attempt to fire up FRC with %04x %04x", m_frc_control, m_frc_frequency);
+			break;
 		}
 	}
 	else
@@ -1647,7 +1745,9 @@ void supracan_state::host_um6619_map(address_map &map)
 			set_sound_irq(5, 1);
 		})
 	);
-	// TODO: verify $d access
+	// TODO: verify $d access reads
+	// noisy in staiwbbl, expects an 0xff value just after clearing $e8040a
+	// Playing with it makes BGM and samples to be initialized properly in gameplay.
 	map(0x0c, 0x0d).lr8(
 		NAME([this] (offs_t offset) {
 			const u8 res = m_soundram[0x40a];
@@ -1685,6 +1785,15 @@ void supracan_state::host_um6619_map(address_map &map)
 			COMBINE_DATA(&m_frc_frequency);
 			logerror("FRC frequency %04x & %04x\n", data, mem_mask);
 			update_frc_state();
+		})
+	);
+	map(0x18, 0x19).lr16(
+		NAME([this] (offs_t offset) {
+			// formduel uses this to scroll the game over rain layer, in both X & Y directions.
+			// TODO: details, obviously.
+			if (!machine().side_effects_disabled())
+				logerror("$e90018: RNG read?\n");
+			return m_soundcpu->total_cycles() % (0xffff);
 		})
 	);
 	/**
@@ -1830,6 +1939,12 @@ TIMER_CALLBACK_MEMBER(supracan_state::scanline_cb)
 			m_soundcpu->pulse_input_line(INPUT_LINE_NMI, attotime::zero);
 		}
 		break;
+	default:
+		// Effectively used by sangofgt only for clipping effects
+		// gamblord, monopoly, magipool also enables this but service is rte for all.
+		if (vpos < 240 && BIT(m_irq_mask, 4))
+			m_maincpu->set_input_line(4, HOLD_LINE);
+		break;
 	}
 
 	m_video_timer->adjust(m_screen->time_until_pos((vpos + 1) % 262, 0));
@@ -1882,18 +1997,6 @@ void supracan_state::video_w(offs_t offset, uint16_t data, uint16_t mem_mask)
 	case 0x1e/2:
 		LOGMASKED(LOG_SPRDMA, "video_w: Kicking off a DMA from %08x to %08x, %d bytes (%04x)\n", m_sprdma_regs.src, m_sprdma_regs.dst, m_sprdma_regs.count, data);
 
-		// HACK: staiwbbl trashes memory at boot
-		// - it will indirect transfer from DMA #1, from $ff637c with count 0x24f (max sprite size?)
-		// - it writes 0xffff to count port, possibly locking the port?
-		// - these are extremely illegal transfers, possibly ignored by the HW for multiple reasons.
-		// - src == 0xffff'xxxx is actually used by sonevil, breaking title screen if ignored here.
-		// if (m_sprite_count == 0x10000)
-		if (m_sprdma_regs.dst & 0xff00'0000)
-		{
-			logerror("Attempt to transfer from src %08x to dst %08x size %04x (ignored)\n", m_sprdma_regs.src,m_sprdma_regs.dst, m_sprdma_regs.count);
-			return;
-		}
-
 		/* TODO: what's 0x2000 and 0x4000 for? */
 		if (data & 0x8000)
 		{
@@ -1933,17 +2036,26 @@ void supracan_state::video_w(offs_t offset, uint16_t data, uint16_t mem_mask)
 		{
 			LOGMASKED(LOG_VIDEO, "video_flags = %04x\n", data);
 
-			const int h320_mode = BIT(data, 8);
+			if (data & 0xc00)
+				popmessage("Interlace enable %04x", data & 0xc00);
 
 			// TODO: verify if this support midframe switching
-			if (h320_mode != BIT(m_video_flags, 8))
+			if ((data & 0x300) != (m_video_flags & 0x300))
 			{
 				rectangle visarea = m_screen->visible_area();
+				const int h320_mode = BIT(data, 8);
+				// enabled by sangofgt (224 + 16 borders), magipool wants (240)
+				const int overscan_mode = BIT(data, 9);
+
 				const int htotal = h320_mode ? 455 : 342;
 				const int divider = h320_mode ? 8 : 10;
 
-				visarea.set(0, (h320_mode ? 320 : 256) - 1, 8, 232 - 1);
+				const int vdisplay_start = overscan_mode ? 8 : 0;
+				const int vdisplay_end = overscan_mode ? 232 : 240;
+
+				visarea.set(0, (h320_mode ? 320 : 256) - 1, vdisplay_start, vdisplay_end - 1);
 				m_screen->configure(htotal, 262, visarea, attotime::from_ticks(htotal * 262, U13_CLOCK / divider).as_attoseconds());
+				//m_screen->reset_origin(0, 0);
 			}
 
 			m_video_flags = data;
@@ -1978,10 +2090,12 @@ void supracan_state::video_w(offs_t offset, uint16_t data, uint16_t mem_mask)
 	/* Sprites */
 	case 0x20/2: m_sprite_base_addr = data << 2; LOGMASKED(LOG_SPRITES, "sprite_base_addr = %04x\n", data); break;
 	case 0x22/2: m_sprite_count = data + 1; LOGMASKED(LOG_SPRITES, "sprite_count = %d\n", data + 1); break;
+	case 0x24/2: m_sprite_mono_color = data & 0xff; break;
 	case 0x26/2: m_sprite_flags = data; LOGMASKED(LOG_SPRITES, "sprite_flags = %04x\n", data); break;
 
 	/* Tilemap 0 */
-	case 0x100/2: {
+	case 0x100/2:
+	{
 		m_tilemap_flags[0] = data;
 		LOGMASKED(LOG_TILEMAP0, "tilemap_flags[0] = %04x\n", data);
 		update_tilemap_flags(0);
@@ -1992,9 +2106,12 @@ void supracan_state::video_w(offs_t offset, uint16_t data, uint16_t mem_mask)
 	case 0x106/2: m_tilemap_scrolly[0] = data; LOGMASKED(LOG_TILEMAP0, "tilemap_scrolly[0] = %04x\n", data); break;
 	case 0x108/2: m_tilemap_base_addr[0] = data << 1; LOGMASKED(LOG_TILEMAP0, "tilemap_base_addr[0] = %05x\n", data << 2); break;
 	case 0x10a/2: m_tilemap_mode[0] = data; LOGMASKED(LOG_TILEMAP0, "tilemap_mode[0] = %04x\n", data); break;
+	case 0x10c/2: m_tilemap_linescrollx_addr[0] = data; break;
+	case 0x10e/2: m_tilemap_lineselect_addr[0] = data; break;
 
 	/* Tilemap 1 */
-	case 0x120/2: {
+	case 0x120/2:
+	{
 		m_tilemap_flags[1] = data;
 		LOGMASKED(LOG_TILEMAP1, "tilemap_flags[1] = %04x\n", data);
 		update_tilemap_flags(1);
@@ -2005,9 +2122,12 @@ void supracan_state::video_w(offs_t offset, uint16_t data, uint16_t mem_mask)
 	case 0x126/2: m_tilemap_scrolly[1] = data; LOGMASKED(LOG_TILEMAP1, "tilemap_scrolly[1] = %04x\n", data); break;
 	case 0x128/2: m_tilemap_base_addr[1] = data << 1; LOGMASKED(LOG_TILEMAP1, "tilemap_base_addr[1] = %05x\n", data << 2); break;
 	case 0x12a/2: m_tilemap_mode[1] = data; LOGMASKED(LOG_TILEMAP1, "tilemap_mode[1] = %04x\n", data); break;
+	case 0x12c/2: m_tilemap_linescrollx_addr[1] = data; break;
+	case 0x12e/2: m_tilemap_lineselect_addr[1] = data; break;
 
 	/* Tilemap 2 */
-	case 0x140/2: {
+	case 0x140/2:
+	{
 		m_tilemap_flags[2] = data;
 		LOGMASKED(LOG_TILEMAP2, "tilemap_flags[2] = %04x\n", data);
 		update_tilemap_flags(2);
@@ -2018,9 +2138,12 @@ void supracan_state::video_w(offs_t offset, uint16_t data, uint16_t mem_mask)
 	case 0x146/2: m_tilemap_scrolly[2] = data; LOGMASKED(LOG_TILEMAP2, "tilemap_scrolly[2] = %04x\n", data); break;
 	case 0x148/2: m_tilemap_base_addr[2] = data << 1; LOGMASKED(LOG_TILEMAP2, "tilemap_base_addr[2] = %05x\n", data << 2); break;
 	case 0x14a/2: m_tilemap_mode[2] = data; LOGMASKED(LOG_TILEMAP2, "tilemap_mode[2] = %04x\n", data); break;
+	case 0x14c/2: m_tilemap_linescrollx_addr[2] = data; break;
+	case 0x14e/2: m_tilemap_lineselect_addr[2] = data; break;
 
 	/* ROZ */
-	case 0x180/2: {
+	case 0x180/2:
+	{
 		m_roz_mode = data;
 		LOGMASKED(LOG_ROZ, "roz_mode = %04x\n", data);
 		//update_tilemap_flags(ROZ_LAYER_NUMBER);
@@ -2042,7 +2165,14 @@ void supracan_state::video_w(offs_t offset, uint16_t data, uint16_t mem_mask)
 	case 0x19e/2: m_roz_unk_base2 = data << 2; LOGMASKED(LOG_ROZ, "roz_unk_base2 = %05x\n", data << 2); break;
 
 	// color mixing stuff goes here
-	case 0x1d0/2: m_unk_1d0 = data; LOGMASKED(LOG_UNKNOWNS, "unk_1d0 = %04x\n", data); break;
+	case 0x1d0/2: COMBINE_DATA(&m_window_control[0]); break;
+	case 0x1d2/2: COMBINE_DATA(&m_window_start_addr[0]); break;
+	case 0x1d4/2: COMBINE_DATA(&m_window_scrollx[0]); break;
+	case 0x1d6/2: COMBINE_DATA(&m_window_scrolly[0]); break;
+	case 0x1d8/2: COMBINE_DATA(&m_window_control[1]); break;
+	case 0x1da/2: COMBINE_DATA(&m_window_start_addr[1]); break;
+	case 0x1dc/2: COMBINE_DATA(&m_window_scrollx[1]); break;
+	case 0x1de/2: COMBINE_DATA(&m_window_scrolly[1]); break;
 
 	case 0x1f0/2:
 		m_pixel_mode = data & 0x18;
@@ -2060,50 +2190,36 @@ void supracan_state::video_w(offs_t offset, uint16_t data, uint16_t mem_mask)
 //  m_video_regs[offset] = data;
 }
 
-
-DEVICE_IMAGE_LOAD_MEMBER(supracan_state::cart_load)
-{
-	uint32_t size = m_cart->common_get_size("rom");
-
-	if (size > 0x40'0000)
-		return std::make_pair(image_error::INVALIDLENGTH, "Unsupported cartridge size (must be no larger than 4M)");
-
-	m_cart->rom_alloc(size, GENERIC_ROM16_WIDTH, ENDIANNESS_BIG);
-	m_cart->common_load_rom(m_cart->get_rom_base(), size, "rom");
-
-	return std::make_pair(std::error_condition(), std::string());
-}
-
 static INPUT_PORTS_START( supracan )
 	PORT_START("P1")
-	PORT_BIT(0x000f, IP_ACTIVE_LOW, IPT_UNUSED)
-	PORT_BIT(0x0010, IP_ACTIVE_LOW, IPT_BUTTON6) PORT_PLAYER(1) PORT_NAME("P1 Button R")
-	PORT_BIT(0x0020, IP_ACTIVE_LOW, IPT_BUTTON5) PORT_PLAYER(1) PORT_NAME("P1 Button L")
-	PORT_BIT(0x0040, IP_ACTIVE_LOW, IPT_BUTTON4) PORT_PLAYER(1) PORT_NAME("P1 Button Y")
-	PORT_BIT(0x0080, IP_ACTIVE_LOW, IPT_BUTTON2) PORT_PLAYER(1) PORT_NAME("P1 Button X")
-	PORT_BIT(0x0100, IP_ACTIVE_LOW, IPT_JOYSTICK_RIGHT) PORT_PLAYER(1) PORT_NAME("P1 Joypad Right")
-	PORT_BIT(0x0200, IP_ACTIVE_LOW, IPT_JOYSTICK_LEFT) PORT_PLAYER(1) PORT_NAME("P1 Joypad Left")
-	PORT_BIT(0x0400, IP_ACTIVE_LOW, IPT_JOYSTICK_DOWN) PORT_PLAYER(1) PORT_NAME("P1 Joypad Down")
-	PORT_BIT(0x0800, IP_ACTIVE_LOW, IPT_JOYSTICK_UP) PORT_PLAYER(1) PORT_NAME("P1 Joypad Up")
-	PORT_BIT(0x1000, IP_ACTIVE_LOW, IPT_UNUSED)
-	PORT_BIT(0x2000, IP_ACTIVE_LOW, IPT_START1)
-	PORT_BIT(0x4000, IP_ACTIVE_LOW, IPT_BUTTON3) PORT_PLAYER(1) PORT_NAME("P1 Button B")
-	PORT_BIT(0x8000, IP_ACTIVE_LOW, IPT_BUTTON1) PORT_PLAYER(1) PORT_NAME("P1 Button A")
+	PORT_BIT(0x000f, IP_ACTIVE_LOW, IPT_UNUSED )
+	PORT_BIT(0x0010, IP_ACTIVE_LOW, IPT_BUTTON6 ) PORT_PLAYER(1) PORT_NAME("P1 Button R")
+	PORT_BIT(0x0020, IP_ACTIVE_LOW, IPT_BUTTON5 ) PORT_PLAYER(1) PORT_NAME("P1 Button L")
+	PORT_BIT(0x0040, IP_ACTIVE_LOW, IPT_BUTTON4 ) PORT_PLAYER(1) PORT_NAME("P1 Button Y")
+	PORT_BIT(0x0080, IP_ACTIVE_LOW, IPT_BUTTON2 ) PORT_PLAYER(1) PORT_NAME("P1 Button X")
+	PORT_BIT(0x0100, IP_ACTIVE_LOW, IPT_JOYSTICK_RIGHT ) PORT_PLAYER(1) PORT_NAME("P1 Joypad Right")
+	PORT_BIT(0x0200, IP_ACTIVE_LOW, IPT_JOYSTICK_LEFT ) PORT_PLAYER(1) PORT_NAME("P1 Joypad Left")
+	PORT_BIT(0x0400, IP_ACTIVE_LOW, IPT_JOYSTICK_DOWN ) PORT_PLAYER(1) PORT_NAME("P1 Joypad Down")
+	PORT_BIT(0x0800, IP_ACTIVE_LOW, IPT_JOYSTICK_UP ) PORT_PLAYER(1) PORT_NAME("P1 Joypad Up")
+	PORT_BIT(0x1000, IP_ACTIVE_LOW, IPT_SELECT ) PORT_PLAYER(1)
+	PORT_BIT(0x2000, IP_ACTIVE_LOW, IPT_START1 )
+	PORT_BIT(0x4000, IP_ACTIVE_LOW, IPT_BUTTON3 ) PORT_PLAYER(1) PORT_NAME("P1 Button B")
+	PORT_BIT(0x8000, IP_ACTIVE_LOW, IPT_BUTTON1 ) PORT_PLAYER(1) PORT_NAME("P1 Button A")
 
 	PORT_START("P2")
-	PORT_BIT(0x000f, IP_ACTIVE_LOW, IPT_UNUSED)
-	PORT_BIT(0x0010, IP_ACTIVE_LOW, IPT_BUTTON6) PORT_PLAYER(2) PORT_NAME("P2 Button R")
-	PORT_BIT(0x0020, IP_ACTIVE_LOW, IPT_BUTTON5) PORT_PLAYER(2) PORT_NAME("P2 Button L")
-	PORT_BIT(0x0040, IP_ACTIVE_LOW, IPT_BUTTON4) PORT_PLAYER(2) PORT_NAME("P2 Button Y")
-	PORT_BIT(0x0080, IP_ACTIVE_LOW, IPT_BUTTON2) PORT_PLAYER(2) PORT_NAME("P2 Button X")
-	PORT_BIT(0x0100, IP_ACTIVE_LOW, IPT_JOYSTICK_RIGHT) PORT_PLAYER(2) PORT_NAME("P2 Joypad Right")
-	PORT_BIT(0x0200, IP_ACTIVE_LOW, IPT_JOYSTICK_LEFT) PORT_PLAYER(2) PORT_NAME("P2 Joypad Left")
-	PORT_BIT(0x0400, IP_ACTIVE_LOW, IPT_JOYSTICK_DOWN) PORT_PLAYER(2) PORT_NAME("P2 Joypad Down")
-	PORT_BIT(0x0800, IP_ACTIVE_LOW, IPT_JOYSTICK_UP) PORT_PLAYER(2) PORT_NAME("P2 Joypad Up")
-	PORT_BIT(0x1000, IP_ACTIVE_LOW, IPT_UNUSED)
-	PORT_BIT(0x2000, IP_ACTIVE_LOW, IPT_START2)
-	PORT_BIT(0x4000, IP_ACTIVE_LOW, IPT_BUTTON3) PORT_PLAYER(2) PORT_NAME("P2 Button B")
-	PORT_BIT(0x8000, IP_ACTIVE_LOW, IPT_BUTTON1) PORT_PLAYER(2) PORT_NAME("P2 Button A")
+	PORT_BIT(0x000f, IP_ACTIVE_LOW, IPT_UNUSED )
+	PORT_BIT(0x0010, IP_ACTIVE_LOW, IPT_BUTTON6 ) PORT_PLAYER(2) PORT_NAME("P2 Button R")
+	PORT_BIT(0x0020, IP_ACTIVE_LOW, IPT_BUTTON5 ) PORT_PLAYER(2) PORT_NAME("P2 Button L")
+	PORT_BIT(0x0040, IP_ACTIVE_LOW, IPT_BUTTON4 ) PORT_PLAYER(2) PORT_NAME("P2 Button Y")
+	PORT_BIT(0x0080, IP_ACTIVE_LOW, IPT_BUTTON2 ) PORT_PLAYER(2) PORT_NAME("P2 Button X")
+	PORT_BIT(0x0100, IP_ACTIVE_LOW, IPT_JOYSTICK_RIGHT ) PORT_PLAYER(2) PORT_NAME("P2 Joypad Right")
+	PORT_BIT(0x0200, IP_ACTIVE_LOW, IPT_JOYSTICK_LEFT ) PORT_PLAYER(2) PORT_NAME("P2 Joypad Left")
+	PORT_BIT(0x0400, IP_ACTIVE_LOW, IPT_JOYSTICK_DOWN ) PORT_PLAYER(2) PORT_NAME("P2 Joypad Down")
+	PORT_BIT(0x0800, IP_ACTIVE_LOW, IPT_JOYSTICK_UP ) PORT_PLAYER(2) PORT_NAME("P2 Joypad Up")
+	PORT_BIT(0x1000, IP_ACTIVE_LOW, IPT_SELECT ) PORT_PLAYER(2)
+	PORT_BIT(0x2000, IP_ACTIVE_LOW, IPT_START2 )
+	PORT_BIT(0x4000, IP_ACTIVE_LOW, IPT_BUTTON3 ) PORT_PLAYER(2) PORT_NAME("P2 Button B")
+	PORT_BIT(0x8000, IP_ACTIVE_LOW, IPT_BUTTON1 ) PORT_PLAYER(2) PORT_NAME("P2 Button A")
 INPUT_PORTS_END
 
 
@@ -2155,7 +2271,10 @@ void supracan_state::machine_start()
 	save_item(NAME(m_roz_coeffc));
 	save_item(NAME(m_roz_coeffd));
 	save_item(NAME(m_roz_changed));
-	save_item(NAME(m_unk_1d0));
+	save_item(NAME(m_window_control));
+	save_item(NAME(m_window_start_addr));
+	save_item(NAME(m_window_scrollx));
+	save_item(NAME(m_window_scrolly));
 
 	save_item(NAME(m_video_regs));
 
@@ -2229,18 +2348,24 @@ static const gfx_layout supracan_gfx2bpp =
 	8*16
 };
 
-static const uint32_t xtexlayout_xoffset[64] = { 0,1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18,19,20,21,22,23,
-												24,25,26,27,28,29,30,31,32,33,34,35,36,37,38,39,40,41,42,43,44,
-												45,46,47,48,49,50,51,52,53,54,55,56,57,58,59,60,61,62,63 };
+static const uint32_t xtexlayout_xoffset[64] =
+{
+	0,1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18,19,20,21,22,23,
+	24,25,26,27,28,29,30,31,32,33,34,35,36,37,38,39,40,41,42,43,
+	44,45,46,47,48,49,50,51,52,53,54,55,56,57,58,59,60,61,62,63
+};
 
-static const uint32_t xtexlayout_yoffset[64] = {  0*64,1*64,2*64,3*64,4*64,5*64,6*64,7*64,8*64,
-												9*64,10*64,11*64,12*64,13*64,14*64,15*64,
-												16*64,17*64,18*64,19*64,20*64,21*64,22*64,23*64,
-												24*64,25*64,26*64,27*64,28*64,29*64,30*64,31*64,
-												32*64,33*64,34*64,35*64,36*64,37*64,38*64,39*64,
-												40*64,41*64,42*64,43*64,44*64,45*64,46*64,47*64,
-												48*64,49*64,50*64,51*64,52*64,53*64,54*64,55*64,
-												56*64,57*64,58*64,59*64,60*64,61*64,62*64,63*64 };
+static const uint32_t xtexlayout_yoffset[64] =
+{
+	0*64,1*64,2*64,3*64,4*64,5*64,6*64,7*64,
+	8*64,9*64,10*64,11*64,12*64,13*64,14*64,15*64,
+	16*64,17*64,18*64,19*64,20*64,21*64,22*64,23*64,
+	24*64,25*64,26*64,27*64,28*64,29*64,30*64,31*64,
+	32*64,33*64,34*64,35*64,36*64,37*64,38*64,39*64,
+	40*64,41*64,42*64,43*64,44*64,45*64,46*64,47*64,
+	48*64,49*64,50*64,51*64,52*64,53*64,54*64,55*64,
+	56*64,57*64,58*64,59*64,60*64,61*64,62*64,63*64
+};
 
 static const gfx_layout supracan_gfx1bpp =
 {
@@ -2275,6 +2400,12 @@ static GFXDECODE_START( gfx_supracan )
 	GFXDECODE_RAM( "vram", 0, supracan_gfx1bpp_alt, 0, 0x80 )
 GFXDECODE_END
 
+static void superacan_cart_types(device_slot_interface &device)
+{
+	device.option_add_internal("std",      SUPERACAN_ROM_STD);
+}
+
+
 void supracan_state::supracan(machine_config &config)
 {
 	// M68000P10
@@ -2283,7 +2414,7 @@ void supracan_state::supracan(machine_config &config)
 
 	// TODO: Verify type and actual clock
 	// /4 makes speedyd to fail booting
-	M65C02(config, m_soundcpu, U13_CLOCK / 6 / 2);
+	W65C02(config, m_soundcpu, U13_CLOCK / 6 / 2);
 	m_soundcpu->set_addrmap(AS_PROGRAM, &supracan_state::sound_map);
 
 	config.set_perfect_quantum(m_soundcpu);
@@ -2300,22 +2431,18 @@ void supracan_state::supracan(machine_config &config)
 
 	GFXDECODE(config, m_gfxdecode, "palette", gfx_supracan);
 
-	SPEAKER(config, "lspeaker").front_left();
-	SPEAKER(config, "rspeaker").front_right();
+	SPEAKER(config, "speaker", 2).front();
 
 	// TODO: derive and verify from U13_CLOCK
 	UMC6619_SOUND(config, m_sound, XTAL(3'579'545));
 	m_sound->ram_read().set(FUNC(supracan_state::sound_ram_read));
 	m_sound->timer_irq_handler().set(FUNC(supracan_state::sound_timer_irq));
 	m_sound->dma_irq_handler().set(FUNC(supracan_state::sound_dma_irq));
-	m_sound->add_route(0, "lspeaker", 1.0);
-	m_sound->add_route(1, "rspeaker", 1.0);
+	m_sound->add_route(0, "speaker", 1.0, 0);
+	m_sound->add_route(1, "speaker", 1.0, 1);
 
-	generic_cartslot_device &cartslot(GENERIC_CARTSLOT(config, "cartslot", generic_plain_slot, "supracan_cart"));
-	cartslot.set_must_be_loaded(true);
-	cartslot.set_width(GENERIC_ROM16_WIDTH);
-	cartslot.set_endian(ENDIANNESS_BIG);
-	cartslot.set_device_load(FUNC(supracan_state::cart_load));
+	// TODO: clock for cart is (again) unconfirmed
+	SUPERACAN_CART_SLOT(config, m_cart, U13_CLOCK / 6, superacan_cart_types, nullptr).set_must_be_loaded(true);
 
 	SOFTWARE_LIST(config, "cart_list").set_original("supracan");
 }

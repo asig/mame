@@ -99,9 +99,9 @@ public:
 	void init_dbz2();
 
 protected:
-	virtual void machine_start() override;
-	virtual void machine_reset() override;
-	virtual void video_start() override;
+	virtual void machine_start() override ATTR_COLD;
+	virtual void machine_reset() override ATTR_COLD;
+	virtual void video_start() override ATTR_COLD;
 
 private:
 	/* memory pointers */
@@ -142,10 +142,10 @@ private:
 	TIMER_DEVICE_CALLBACK_MEMBER(dbz_scanline);
 	K056832_CB_MEMBER(tile_callback);
 	K053246_CB_MEMBER(sprite_callback);
-	void dbz_map(address_map &map);
-	void dbz2bl_map(address_map &map);
-	void dbz_sound_io_map(address_map &map);
-	void dbz_sound_map(address_map &map);
+	void dbz_map(address_map &map) ATTR_COLD;
+	void dbz2bl_map(address_map &map) ATTR_COLD;
+	void dbz_sound_io_map(address_map &map) ATTR_COLD;
+	void dbz_sound_map(address_map &map) ATTR_COLD;
 };
 
 
@@ -600,19 +600,18 @@ void dbz_state::dbz(machine_config &config)
 	m_k053252->int1_ack().set(FUNC(dbz_state::dbz_irq2_ack_w));
 
 	/* sound hardware */
-	SPEAKER(config, "lspeaker").front_left();
-	SPEAKER(config, "rspeaker").front_right();
+	SPEAKER(config, "speaker", 2).front();
 
 	GENERIC_LATCH_8(config, "soundlatch");
 
 	ym2151_device &ymsnd(YM2151(config, "ymsnd", 4000000));
 	ymsnd.irq_handler().set_inputline(m_audiocpu, 0);
-	ymsnd.add_route(0, "lspeaker", 1.0);
-	ymsnd.add_route(1, "rspeaker", 1.0);
+	ymsnd.add_route(0, "speaker", 1.0, 0);
+	ymsnd.add_route(1, "speaker", 1.0, 1);
 
 	okim6295_device &oki(OKIM6295(config, "oki", 1056000, okim6295_device::PIN7_HIGH));
-	oki.add_route(ALL_OUTPUTS, "lspeaker", 1.0);
-	oki.add_route(ALL_OUTPUTS, "rspeaker", 1.0);
+	oki.add_route(ALL_OUTPUTS, "speaker", 1.0, 0);
+	oki.add_route(ALL_OUTPUTS, "speaker", 1.0, 1);
 }
 
 void dbz_state::dbz2bl(machine_config &config)

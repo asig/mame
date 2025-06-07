@@ -52,10 +52,10 @@ public:
 
 	void palette_init(palette_device &palette) const;
 	void cesclassic(machine_config &config);
-	void main_map(address_map &map);
+	void main_map(address_map &map) ATTR_COLD;
 protected:
-	virtual void video_start() override;
-	virtual void video_reset() override;
+	virtual void video_start() override ATTR_COLD;
+	virtual void video_reset() override ATTR_COLD;
 
 private:
 	required_device<cpu_device> m_maincpu;
@@ -273,7 +273,7 @@ static INPUT_PORTS_START( cesclassic )
 	PORT_DIPSETTING(    0x0000, DEF_STR( On ) )
 
 	PORT_START("VBLANK")
-	PORT_BIT( 0x08, IP_ACTIVE_LOW, IPT_CUSTOM ) PORT_VBLANK("l_lcd") // TODO: most likely tied to "DONE" from FPGA
+	PORT_BIT( 0x08, IP_ACTIVE_LOW, IPT_CUSTOM ) PORT_READ_LINE_DEVICE_MEMBER("l_lcd", FUNC(screen_device::vblank)) // TODO: most likely tied to "DONE" from FPGA
 INPUT_PORTS_END
 
 void cesclassic_state::palette_init(palette_device &palette) const

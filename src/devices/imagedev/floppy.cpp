@@ -20,6 +20,7 @@
 #include "formats/dsk_dsk.h"
 #include "formats/pc_dsk.h"
 #include "formats/ipf_dsk.h"
+#include "formats/86f_dsk.h"
 
 #include "formats/fs_unformatted.h"
 #include "formats/fsblk_vec.h"
@@ -55,6 +56,7 @@ DEFINE_DEVICE_TYPE(FLOPPY_3_SSSD, floppy_3_sssd, "floppy_3_sssd", "3\" single-si
 DEFINE_DEVICE_TYPE(FLOPPY_3_DSSD, floppy_3_dssd, "floppy_3_dssd", "3\" double-sided single density floppy drive")
 DEFINE_DEVICE_TYPE(FLOPPY_3_SSDD, floppy_3_ssdd, "floppy_3_ssdd", "3\" single-sided double density floppy drive")
 DEFINE_DEVICE_TYPE(FLOPPY_3_DSDD, floppy_3_dsdd, "floppy_3_dsdd", "3\" double-sided double density floppy drive")
+DEFINE_DEVICE_TYPE(FLOPPY_3_DSQD, floppy_3_dsqd, "floppy_3_dsqd", "3\" double-sided quad density floppy drive")
 
 // generic 3.5" drives
 DEFINE_DEVICE_TYPE(FLOPPY_35_SSDD, floppy_35_ssdd, "floppy_35_ssdd", "3.5\" single-sided double density floppy drive")
@@ -163,6 +165,7 @@ void format_registration::add_fm_containers()
 	add(FLOPPY_MFM_FORMAT);
 	add(FLOPPY_TD0_FORMAT);
 	add(FLOPPY_IMD_FORMAT);
+	add(FLOPPY_86F_FORMAT);
 }
 
 void format_registration::add_mfm_containers()
@@ -607,7 +610,10 @@ std::pair<std::error_condition, const floppy_image_format_t *> floppy_image_devi
 		}
 	}
 
-	return{ std::error_condition(), best_format };
+	if(best_format)
+		return{ std::error_condition(), best_format };
+	else
+		return{ image_error::INVALIDIMAGE, nullptr };
 }
 
 void floppy_image_device::init_floppy_load(bool write_supported)
@@ -629,6 +635,8 @@ void floppy_image_device::init_floppy_load(bool write_supported)
 	if (m_motor_always_on) {
 		// When disk is inserted, start motor
 		mon_w(0);
+		m_ready_counter = 2;
+
 	} else if(!m_mon)
 		m_ready_counter = 2;
 
@@ -889,18 +897,16 @@ bool floppy_image_device::floppy_is_hd()
 {
 	if (!m_image)
 		return false;
-	u32 variant = m_image->get_variant();
+	u32 const variant = m_image->get_variant();
 	return variant == floppy_image::DSHD;
-	
 }
 
 bool floppy_image_device::floppy_is_ed()
 {
 	if (!m_image)
 		return false;
-	u32 variant = m_image->get_variant();
+	u32 const variant = m_image->get_variant();
 	return variant == floppy_image::DSED;
-	
 }
 
 void floppy_image_device::track_changed()
@@ -1589,18 +1595,17 @@ void floppy_sound_device::step(int zone)
 //  sound_stream_update - update the sound stream
 //-------------------------------------------------
 
-void floppy_sound_device::sound_stream_update(sound_stream &stream, std::vector<read_stream_view> const &inputs, std::vector<write_stream_view> &outputs)
+void floppy_sound_device::sound_stream_update(sound_stream &stream)
 {
 	// We are using only one stream, unlike the parent class
 	// Also, there is no need for interpolation, as we only expect
 	// one sample rate of 44100 for all samples
 
 	int16_t out;
-	auto &samplebuffer = outputs[0];
 	int m_idx = 0;
 	int sampleend = 0;
 
-	for (int sampindex = 0; sampindex < samplebuffer.samples(); sampindex++)
+	for (int sampindex = 0; sampindex < stream.samples(); sampindex++)
 	{
 		out = 0;
 
@@ -1694,7 +1699,7 @@ void floppy_sound_device::sound_stream_update(sound_stream &stream, std::vector<
 		}
 
 		// Write to the stream buffer
-		samplebuffer.put_int(sampindex, out, 32768);
+		stream.put_int(0, sampindex, out, 32768);
 	}
 }
 
@@ -1809,6 +1814,33 @@ void floppy_3_dsdd::setup_characteristics()
 	add_variant(floppy_image::DSSD);
 	add_variant(floppy_image::SSDD);
 	add_variant(floppy_image::DSDD);
+}
+
+//-------------------------------------------------
+//  3" double-sided quad density
+//-------------------------------------------------
+
+floppy_3_dsqd::floppy_3_dsqd(const machine_config &mconfig, const char *tag, device_t *owner, uint32_t clock) :
+	floppy_image_device(mconfig, FLOPPY_3_DSQD, tag, owner, clock)
+{
+}
+
+floppy_3_dsqd::~floppy_3_dsqd()
+{
+}
+
+void floppy_3_dsqd::setup_characteristics()
+{
+	m_form_factor = floppy_image::FF_3;
+	m_tracks = 84;
+	m_sides = 2;
+	set_rpm(300);
+
+	add_variant(floppy_image::SSSD);
+	add_variant(floppy_image::DSSD);
+	add_variant(floppy_image::SSDD);
+	add_variant(floppy_image::DSDD);
+	add_variant(floppy_image::DSQD);
 }
 
 //-------------------------------------------------

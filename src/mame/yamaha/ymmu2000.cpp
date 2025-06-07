@@ -119,11 +119,11 @@ protected:
 	u16 m_pe;
 	u8 m_ledsw1, m_ledsw2;
 
-	void map_500(address_map &map);
-	void swp30_map(address_map &map);
+	void map_500(address_map &map) ATTR_COLD;
+	void swp30_map(address_map &map) ATTR_COLD;
 
-	virtual void machine_start() override;
-	virtual void machine_reset() override;
+	virtual void machine_start() override ATTR_COLD;
+	virtual void machine_reset() override ATTR_COLD;
 
 	u16 adc_ar_r();
 	u16 adc_al_r();
@@ -153,7 +153,7 @@ public:
 
 protected:
 	required_device<swp30_device> m_swp30s;
-	void map_1000(address_map &map);
+	void map_1000(address_map &map) ATTR_COLD;
 };
 
 class mu2000_state : public mu1000_state
@@ -166,7 +166,7 @@ public:
 	void mu2000(machine_config &config);
 
 protected:
-	void map_2000(address_map &map);
+	void map_2000(address_map &map) ATTR_COLD;
 };
 
 
@@ -348,13 +348,12 @@ void mu500_state::mu500(machine_config &config)
 
 	MULCD(config, m_lcd);
 
-	SPEAKER(config, "lspeaker").front_left();
-	SPEAKER(config, "rspeaker").front_right();
+	SPEAKER(config, "speaker", 2).front();
 
 	SWP30(config, m_swp30m);
 	m_swp30m->set_addrmap(AS_DATA, &mu500_state::swp30_map);
-	m_swp30m->add_route(0, "lspeaker", 1.0);
-	m_swp30m->add_route(1, "rspeaker", 1.0);
+	m_swp30m->add_route(0, "speaker", 1.0, 0);
+	m_swp30m->add_route(1, "speaker", 1.0, 1);
 
 	auto &mdin_a(MIDI_PORT(config, "mdin_a"));
 	midiin_slot(mdin_a);
@@ -390,8 +389,8 @@ void mu1000_state::mu1000(machine_config &config)
 
 	SWP30(config, m_swp30s);
 	m_swp30s->set_addrmap(AS_DATA, &mu1000_state::swp30_map);
-	m_swp30s->add_route(0, "lspeaker", 1.0);
-	m_swp30s->add_route(1, "rspeaker", 1.0);
+	m_swp30s->add_route(0, "speaker", 1.0, 0);
+	m_swp30s->add_route(1, "speaker", 1.0, 1);
 }
 
 void mu2000_state::mu2000(machine_config &config)
