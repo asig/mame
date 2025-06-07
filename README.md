@@ -15,7 +15,11 @@ sudo apt install --no-install-recommends \
     libsdl2-ttf-dev \
     libfontconfig1-dev \
     libxinerama-dev \
-    qt5-default
+    qtbase5-dev \
+    qt5-qmake \
+    qt5-qmake-bin \
+    qtbase5-dev-tools \
+    qtchooser
 ```
 
 # MAME
