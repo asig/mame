@@ -213,7 +213,10 @@ TIMER_CALLBACK_MEMBER(ef9345_device::blink_tick)
 void ef9345_device::set_busy_flag(int period)
 {
 	m_bf = 1;
-	m_busy_timer->adjust(attotime::from_nsec(period));
+	if (period < 0)
+		m_busy_timer->reset();
+	else
+		m_busy_timer->adjust(attotime::from_nsec(period));
 }
 
 // draw a char in 40 char line mode
@@ -223,8 +226,8 @@ void ef9345_device::draw_char_40(uint8_t *c, uint16_t x, uint16_t y)
 	const int scan_xsize = std::min( screen().width() - (x * 8), 8);
 	const int scan_ysize = std::min( screen().height() - (y * 10), 10);
 
-	for(int i = 0; i < scan_ysize; i++)
-		for(int j = 0; j < scan_xsize; j++)
+	for (int i = 0; i < scan_ysize; i++)
+		for (int j = 0; j < scan_xsize; j++)
 			m_screen_out.pix(y * 10 + i, x * 8 + j) = palette[c[8 * i + j] & 0x07];
 }
 
@@ -235,8 +238,8 @@ void ef9345_device::draw_char_80(uint8_t *c, uint16_t x, uint16_t y)
 	const int scan_xsize = std::min( screen().width() - (x * 6), 6);
 	const int scan_ysize = std::min( screen().height() - (y * 10), 10);
 
-	for(int i = 0; i < scan_ysize; i++)
-		for(int j = 0; j < scan_xsize; j++)
+	for (int i = 0; i < scan_ysize; i++)
+		for (int j = 0; j < scan_xsize; j++)
 			m_screen_out.pix(y * 10 + i, x * 6 + j) = palette[c[6 * i + j] & 0x07];
 }
 
@@ -282,12 +285,13 @@ void ef9345_device::set_video_mode(void)
 void ef9345_device::init_accented_chars(void)
 {
 	uint16_t i, j;
-	for(j = 0; j < 0x10; j++)
-		for(i = 0; i < 0x200; i++)
+	for (j = 0; j < 0x10; j++)
+		for (i = 0; i < 0x200; i++)
 			m_acc_char[(j << 9) + i] = m_charset[0x0600 + i];
 
-	for(j = 0; j < 0x200; j += 0x40)
-		for(i = 0; i < 4; i++)
+	for (j = 0; j < 0x200; j += 0x40)
+	{
+		for (i = 0; i < 4; i++)
 		{
 			m_acc_char[0x0200 + j + i +  4] |= 0x1c; //tilde
 			m_acc_char[0x0400 + j + i +  4] |= 0x10; //acute
@@ -311,6 +315,7 @@ void ef9345_device::init_accented_chars(void)
 			m_acc_char[0x1e00 + j + i + 32] |= 0x08; //cedilla
 			m_acc_char[0x1e00 + j + i + 36] |= 0x04; //cedilla
 		}
+	}
 }
 
 // read a char in charset or in m_videoram
@@ -356,24 +361,29 @@ void ef9345_device::zoom(uint8_t *pix, uint16_t n)
 {
 	uint8_t i, j;
 	if ((n & 0x0a) == 0) // n = 1, 4, 5 (left side)
-		for(i = 0; i < 80; i += 8)
-			for(j = 7; j > 0; j--)
+	{
+		for (i = 0; i < 80; i += 8)
+			for (j = 7; j > 0; j--)
 				pix[i + j] = pix[i + j / 2];
-
+	}
 	if ((n & 0x05) == 0) // n = 2, 8, 10 (right side)
-		for(i = 0; i < 80; i += 8)
-			for(j =0 ; j < 7; j++)
+	{
+		for (i = 0; i < 80; i += 8)
+			for (j =0 ; j < 7; j++)
 				pix[i + j] = pix[i + 4 + j / 2];
-
+	}
 	if ((n & 0x0c) == 0) // n = 1, 2, 3 (top side)
-		for(i = 0; i < 8; i++)
-			for(j = 9; j > 0; j--)
+	{
+		for (i = 0; i < 8; i++)
+			for (j = 9; j > 0; j--)
 				pix[i + 8 * j] = pix[i + 8 * ((j-1) / 2)];
-
+	}
 	if ((n & 0x03) == 0) // n = 4, 8, 12 (bottom side)
-		for(i = 0; i < 8; i++)
-			for(j = 0; j < 9; j++)
+	{
+		for (i = 0; i < 8; i++)
+			for (j = 0; j < 9; j++)
 				pix[i + 8 * j] = pix[i + 32 + 8 * ((j+1) / 2)];
+	}
 }
 
 
@@ -473,7 +483,7 @@ std::tuple<uint8_t, uint8_t, bool> ef9345_device::makecolors(uint8_t c0, uint8_t
 
 	// Note: flashing characters blink on the opposite phase if negative.
 	if ((flash && (m_pat & 0x40) && negative == !!(m_blink_phase & 0x2)) ||
-	    (conceal && (m_pat & 0x08)))
+		(conceal && (m_pat & 0x08)))
 	{
 		c1 = c0; // make foreground same as background
 	}
@@ -501,7 +511,7 @@ void ef9345_device::bichrome40(uint8_t type, uint16_t address, uint8_t dial, uin
 		underline |= cursor_underline;
 
 	// generate the pixel table
-	for(i = 0; i < 40; i+=4)
+	for (i = 0; i < 40; i+=4)
 	{
 		uint8_t ch = read_char(type, address + i);
 
@@ -547,7 +557,7 @@ void ef9345_device::quadrichrome40(uint8_t c, uint8_t b, uint8_t a, uint16_t x, 
 	m_last_dial[x] = 0;
 
 	//initialize the color table
-	for(j = 1, n = 0, i = 0; i < 8; i++)
+	for (j = 1, n = 0, i = 0; i < 8; i++)
 	{
 		col[i] = 7;
 
@@ -570,7 +580,7 @@ void ef9345_device::quadrichrome40(uint8_t c, uint8_t b, uint8_t a, uint16_t x, 
 	if (lowresolution) ramindex += 5 * (b & 0x04);
 
 	//fill pixel table
-	for(i = 0, j = 0; i < 10; i++)
+	for (i = 0, j = 0; i < 10; i++)
 	{
 		uint8_t ch = read_char(0x0c, ramindex + 4 * (i >> lowresolution));
 		pix[j] = pix[j + 1] = col[(ch & 0x03) >> 0]; j += 2;
@@ -611,7 +621,7 @@ void ef9345_device::bichrome80(uint8_t c, uint8_t a, uint16_t x, uint16_t y, boo
 
 		d = ((c & 0x7f) >> 2) * 0x40 + (c & 0x03);  //char position
 
-		for(i=0, j=0; i < 10; i++)
+		for (i=0, j=0; i < 10; i++)
 		{
 			uint8_t ch = read_char(0, d + 4 * i);
 			for (uint8_t b=0; b<6; b++)
@@ -643,13 +653,13 @@ void ef9345_device::bichrome80(uint8_t c, uint8_t a, uint16_t x, uint16_t y, boo
 		pix[48] = (a & 0x04) ? c1 : c0;
 		pix[51] = (a & 0x08) ? c1 : c0;
 
-		for(i = 0; i < 60; i += 12)
+		for (i = 0; i < 60; i += 12)
 		{
 			pix[i + 6] = pix[i];
 			pix[i + 9] = pix[i + 3];
 		}
 
-		for(i = 0; i < 60; i += 3)
+		for (i = 0; i < 60; i += 3)
 			pix[i + 2] = pix[i + 1] = pix[i];
 
 		//draw the underline
@@ -766,11 +776,15 @@ void ef9345_device::makechar_12x80(uint16_t x, uint16_t y)
 void ef9345_device::draw_border(uint16_t line)
 {
 	if (m_char_mode == MODE12x80 || m_char_mode == MODE8x80)
-		for(int i = 0; i < 82; i++)
+	{
+		for (int i = 0; i < 82; i++)
 			draw_char_80(m_border, i, line);
+	}
 	else
-		for(int i = 0; i < 42; i++)
+	{
+		for (int i = 0; i < 42; i++)
 			draw_char_40(m_border, i, line);
+	}
 }
 
 void ef9345_device::makechar(uint16_t x, uint16_t y)
@@ -834,6 +848,21 @@ void ef9345_device::ef9345_exec(uint8_t cmd)
 			m_videoram->write_byte(a, m_registers[1]);
 			m_videoram->write_byte(a + 0x0800, m_registers[2]);
 			if (cmd&1) inc_x(7);
+			break;
+		case 0x05:  //CLF: Clear page 24 bits
+		case 0x07:  //CLG: Clear page 16 bits
+			set_busy_flag(-1);
+			for (int i = 0; i < 32 * 40; i++)
+			{
+				a = indexram(7);
+				m_videoram->write_byte(a, m_registers[1]);
+				m_videoram->write_byte(a + 0x0800, m_registers[2]);
+				if (cmd == 0x05)
+					m_videoram->write_byte(a + 0x1000, m_registers[3]);
+				inc_x(7);
+				if ((m_registers[7] & 0x3f) == 0)
+					inc_y(6);
+			}
 			break;
 		case 0x08:  //KRF: ram->R1,R2,R3
 		case 0x09:  //KRF: ram->R1,R2,R3 + increment
@@ -982,6 +1011,7 @@ void ef9345_device::ef9345_exec(uint8_t cmd)
 		case 0x91:  //NOP: no operation
 		case 0x95:  //VRM: vertical sync mask reset
 		case 0x99:  //VSM: vertical sync mask set
+			set_busy_flag(1000);
 			break;
 		case 0xb0:  //INY: increment Y
 			set_busy_flag(2000);
@@ -1007,7 +1037,7 @@ void ef9345_device::ef9345_exec(uint8_t cmd)
 			uint8_t r2 = (cmd&0x04) ? 5 : 7;
 			int busy = 2000;
 
-			for(i = 0; i < 1280; i++)
+			for (i = 0; i < 32 * 40; i++)
 			{
 				a1 = indexram(r1); a2 = indexram(r2);
 				m_videoram->write_byte(a2, m_videoram->read_byte(a1));
@@ -1034,8 +1064,6 @@ void ef9345_device::ef9345_exec(uint8_t cmd)
 			set_busy_flag(busy);
 		}
 		break;
-		case 0x05:  //CLF: Clear page 24 bits
-		case 0x07:  //CLG: Clear page 16 bits
 		case 0x40:  //KRC: R1 -> ram
 		case 0x41:  //KRC: R1 -> ram + inc
 		case 0x48:  //KRC: 80 characters - 8 bits
@@ -1063,7 +1091,9 @@ void ef9345_device::update_scanline(uint16_t scanline)
 	if (scanline == 250)
 		m_state &= 0xfb;
 
-	set_busy_flag(104000);
+	// If we are interrupting a running command, delay its completion.
+	if (m_busy_timer->enabled())
+		m_busy_timer->adjust(m_busy_timer->remaining() + attotime::from_nsec(104000));
 
 	if (m_char_mode == MODE12x80 || m_char_mode == MODE8x80)
 	{
@@ -1081,35 +1111,46 @@ void ef9345_device::update_scanline(uint16_t scanline)
 		m_state |= 0x04;
 		draw_border(0);
 		if (m_pat & 1)
-			for(i = 0; i < 40; i++)
+		{
+			for (i = 0; i < 40; i++)
 				makechar(i, (scanline / 10));
+		}
 		else
-			for(i = 0; i < 42; i++)
+		{
+			for (i = 0; i < 42; i++)
 				draw_char_40(m_border, i, 1);
+		}
 	}
 	else if (scanline < 120)
 	{
 		if (m_pat & 2)
-			for(i = 0; i < 40; i++)
+		{
+			for (i = 0; i < 40; i++)
 				makechar(i, (scanline / 10));
+		}
 		else
+		{
 			draw_border(scanline / 10);
+		}
 	}
 	else if (scanline < 250)
 	{
 		if (m_variant == EF9345_MODE::TYPE_TS9347)
 		{
-			for(i = 0; i < 40; i++)
+			for (i = 0; i < 40; i++)
 				makechar(i, (scanline / 10));
 		}
 		else
 		{
 			if (m_pat & 4) // Lower bulk enable
-				for(i = 0; i < 40; i++)
+			{
+				for (i = 0; i < 40; i++)
 					makechar(i, (scanline / 10));
+			}
 			else
+			{
 				draw_border(scanline / 10);
-
+			}
 			if (scanline == 240)
 				draw_border(26);
 		}

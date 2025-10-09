@@ -26,6 +26,7 @@ TODO:
 #include "z80dasm.h"
 
 #include "z80.inc"
+
 #include <cstdio>
 
 #define LOG_INT   (1U << 1) // z80.lst
@@ -762,14 +763,17 @@ void z80_device::device_reset()
 	leave_halt();
 
 	m_ref = 0xffff00;
-	PC = 0x0000;
+	PC = 0;
 	WZ = PC;
 	m_i = 0;
 	m_r = 0;
 	m_r2 = 0;
 	m_iff1 = 0;
 	m_iff2 = 0;
-	m_service_attention = 0;
+
+	set_service_attention<SA_NMI_PENDING, 0>();
+	set_service_attention<SA_AFTER_EI, 0>();
+	set_service_attention<SA_AFTER_LDAIR, 0>();
 }
 
 /****************************************************************************
@@ -795,9 +799,7 @@ void z80_device::execute_set_input(int inputnum, int state)
 	case INPUT_LINE_NMI:
 		// mark an NMI pending on the rising edge
 		if (m_nmi_state == CLEAR_LINE && state != CLEAR_LINE)
-		{
 			set_service_attention<SA_NMI_PENDING, 1>();
-		}
 		m_nmi_state = state;
 		break;
 

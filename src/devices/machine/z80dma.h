@@ -66,6 +66,7 @@ public:
 	void iei_w(int state) { m_iei = state; interrupt_check(); }
 	void rdy_w(int state);
 	void wait_w(int state) { m_wait = state; }
+	void adjust_wait(int count) { m_waits_extra += count; }
 	void bai_w(int state);
 
 protected:
@@ -97,16 +98,19 @@ protected:
 	virtual void device_reset() override ATTR_COLD;
 
 	// internal helpers
+	void set_busrq(int state);
+	void update_bao();
 	void enable();
 	void disable();
 	u8 num_follow() const noexcept { return m_num_follow; }
 	virtual int is_ready();
 	void interrupt_check();
 	void trigger_interrupt(int level);
-	void do_read();
-	virtual void do_write();
+	virtual void do_read();
+	void do_write();
 	void do_transfer_write();
 	void do_search();
+	void setup_next_read(int rr);
 
 	u16 &REG(unsigned m, unsigned s) noexcept { return m_regs[REGNUM(m, s)]; }
 
@@ -116,6 +120,10 @@ protected:
 	u16 m_addressB;
 	u16 m_count;
 	u16 m_byte_counter;
+
+	u8  m_num_follow;
+	u8  m_cur_follow;
+	u8  m_regs_follow[5];
 
 private:
 	// device_z80daisy_interface implementation
@@ -139,12 +147,7 @@ private:
 	emu_timer *m_timer;
 
 	u16  m_regs[(6 << 3) + 1 + 1];
-	u8   m_num_follow;
-	u8   m_cur_follow;
-	u8   m_regs_follow[5];
-	u8   m_read_num_follow;
 	u8   m_read_cur_follow;
-	u8   m_read_regs_follow[7];
 	u8   m_status;
 	int  m_dma_seq;
 
@@ -153,6 +156,8 @@ private:
 	u8  m_reset_pointer;
 
 	int  m_wait;
+	int  m_waits_extra;
+	int  m_busrq;
 	int  m_busrq_ack;
 	bool m_is_pulse;
 	u8   m_latch;
@@ -164,8 +169,19 @@ private:
 	u8  m_vector;               // interrupt vector
 };
 
+// ======================> ua858d_device
+
+class ua858d_device : public z80dma_device
+{
+public:
+	ua858d_device(const machine_config &mconfig, const char *tag, device_t *owner, u32 clock);
+
+	virtual void write(u8 data) override;
+};
+
 
 // device type definition
 DECLARE_DEVICE_TYPE(Z80DMA, z80dma_device)
+DECLARE_DEVICE_TYPE(UA858D, ua858d_device)
 
 #endif // MAME_MACHINE_Z80DMA_H

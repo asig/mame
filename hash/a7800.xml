@@ -1973,7 +1973,7 @@ almost nothing like the prototype.
 		<sharedfeat name="compatibility" value="PAL"/>
 		<part name="cart" interface="a7800_cart">
 			<feature name="slot" value="a78_rom" />
-			<dataarea name="rom" size="0xc000"> <!-- Actually two ROMs, 32kB and 16kB -->
+			<dataarea name="rom" size="0xc000"> <!-- likely 64kB ROM with 0xFF padding -->
 				<rom name="1on1.bin" size="0xc000" crc="7a628295" sha1="01dfc5e4e615cf20ee4f07245285f85684ee445d"/>
 			</dataarea>
 		</part>
@@ -2669,8 +2669,8 @@ almost nothing like the prototype.
 		</part>
 	</software>
 
-<!-- This is unplayable. After the game starts it shows the first intro screen and starts again. Emulation issue or bad dump? -->
-	<software name="towertopu" cloneof="towertop" supported="no">
+<!--  right difficulty set to "B - LEFT POSITION" cycles through levels, not a bug -->
+	<software name="towertopu" cloneof="towertop">
 		<description>Tower Toppler (NTSC)</description>
 		<year>1988</year>
 		<publisher>Atari / U.S. Gold</publisher>
@@ -2687,6 +2687,7 @@ almost nothing like the prototype.
 		</part>
 	</software>
 
+<!--  right difficulty set to "B - LEFT POSITION" cycles through levels, not a bug -->
 	<software name="towertop">
 		<description>Tower Toppler (PAL)</description>
 		<year>1988</year>

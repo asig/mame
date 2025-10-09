@@ -1354,7 +1354,7 @@ Core Search Path Options
 
     Specifies the default path from which to load loose software image files.
 
-    The default is ``sofware`` (that is, a directory ``software`` in the current
+    The default is ``software`` (that is, a directory ``software`` in the current
     working directory).
 
     Example:
@@ -1811,7 +1811,7 @@ Core State/Playback Options
             All save states will be stored inside sta\c64\robby\
 
 .. Tip:: Note that even on Microsoft Windows, you should use ``/`` as your
-         path seperator for **-statename**
+         path separator for **-statename**
 
 
 .. _mame-commandline-noburnin:
@@ -2984,7 +2984,7 @@ Core Sound Options
     depend on the operating system.  On Windows, it may be necessary to set
     ``SDL_AUDIODRIVER=directsound`` if no sound output is produced by default.
 
-    The default is ``wasapi`` on Windows. On Mac, ``coreaudio`` is the default.
+    The default is ``wasapi`` on Windows.  On Mac, ``coreaudio`` is the default.
     On all other platforms, ``sdl`` is the default.
 
     Example:
@@ -3036,7 +3036,7 @@ Core Sound Options
       - All [#SoundWinSDL]_
       - No
       - No
-      - Yes
+      - Yes [#SoundSDLMultiChannel]_
       - No
     * - ``portaudio``
       - All
@@ -3055,6 +3055,9 @@ Core Sound Options
 
 ..  [#SoundWinSDL] While SDL is not a supported option on official MAME builds
     for Windows, you can compile MAME with SDL support on Windows.
+
+..  [#SoundSDLMultiChannel] MAME requires SDL 2.0.16 or later for multi-channel
+    sound support.
 
 ..  [#SoundPortAudioMonitoring] PortAudio support for output monitoring depends
     on the platform and sound API.
@@ -3844,7 +3847,7 @@ Core Communication Options
     Local port to bind to. This can be any traditional communications port as
     an unsigned 16-bit integer (0-65535).
 
-    The default value is ``15122``.
+    The default value is ``15112``.
 
     Example:
         .. code-block:: bash
@@ -3873,7 +3876,7 @@ Core Communication Options
     Remote port to connect to. This can be any traditional communications port
     as an unsigned 16-bit integer (0-65535).
 
-    The default value is "``15122``".
+    The default value is "``15112``".
 
     Example:
         .. code-block:: bash

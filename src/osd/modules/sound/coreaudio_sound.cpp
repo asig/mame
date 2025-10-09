@@ -25,7 +25,7 @@
 #include <new>
 #include <cstring>
 
-#if defined(__MAC_OS_X_VERSION_MIN_REQUIRED) && __MAC_OS_X_VERSION_MIN_REQUIRED >= 1200
+#if defined(__MAC_OS_X_VERSION_MIN_REQUIRED) && __MAC_OS_X_VERSION_MIN_REQUIRED >= 120000
 #define PROPERTY_ELEMENT_MASTER kAudioObjectPropertyElementMain
 #else
 #define PROPERTY_ELEMENT_MASTER kAudioObjectPropertyElementMaster
@@ -100,64 +100,64 @@ static const char *sMacChannelLabels[sMacChannelCount] =
 // Copying the core's convention, left is X = -0.2, center is X = 0.0, and right is X = 0.2.
 // Front Z is 1.0, back Z is -0.5, top Y is 0.5, and bottom Y is -0.5.
 // "Surround" channels are at X = -0.4 (left) and 0.4 (right).
-static const std::array<double,3> sChannelPositions[sMacChannelCount] =
+static const osd::channel_position sChannelPositions[sMacChannelCount] =
 {
-	{  0.0,  0.0,  0.0 }, // unused
-	{ -0.2,  0.0,  1.0 }, // Front Left
-	{  0.2,  0.0,  1.0 }, // Front Right
-	{  0.0,  0.0,  1.0 }, // Front Center
-	{  0.0, -0.5,  0.0 }, // Low Frequency Effects
-	{ -0.2,  0.0, -0.5 }, // Rear Left
-	{  0.2,  0.0, -0.5 }, // Rear Right
-	{ -0.1,  0.0,  1.0 }, // Front Left of Center
-	{  0.1,  0.0,  1.0 }, // Front Right of Center
-	{  0.0,  0.0, -1.0 }, // Rear Center
-	{ -0.2,  0.0,  0.5 }, // Side Left
-	{  0.2,  0.0,  0.5 }, // Side Right
-	{  0.0,  0.5, -0.1 }, // Top Center
-	{ -0.2,  0.5,  1.0 }, // Top Front Left
-	{  0.0,  0.5,  1.0 }, // Top Front Center
-	{  0.2,  0.5,  1.0 }, // Top Front Right
-	{ -0.2,  0.5, -0.5 }, // Top Rear Left
-	{  0.2,  0.5, -0.5 }, // Top Rear Center
-	{  0.2,  0.5, -0.5 }, // Top Rear Right
-	{  0.0,  0.0,  0.0 }, {  0.0,  0.0,  0.0 },
-	{  0.0,  0.0,  0.0 }, {  0.0,  0.0,  0.0 }, {  0.0,  0.0,  0.0 }, {  0.0,  0.0,  0.0 }, {  0.0,  0.0,  0.0 }, {  0.0,  0.0,  0.0 }, {  0.0,  0.0,  0.0 }, {  0.0,  0.0,  0.0 }, {  0.0,  0.0,  0.0 }, {  0.0,  0.0,  0.0 },
-	{  0.0,  0.0,  0.0 }, {  0.0,  0.0,  0.0 },
-	{ -0.4,  0.0, -0.5 }, // Rear Surround Left
-	{  0.4,  0.0, -0.5 }, // Rear Surround Right
-	{ -0.4,  0.0,  1.0 }, // Left Wide
-	{  0.4,  0.0,  1.0 }, // Right Wide
-	{  0.0, -0.5,  0.0 }, // Low Frequency Effects 2
-	{ -0.1,  0.0, -0.1 }, // Left Total
-	{  0.1,  0.0, -0.1 }, // Right Total
-	{  0.0,  0.0,  1.0 }, // Hearing Impaired
-	{  0.0,  0.0,  1.0 }, // Narration
-	{  0.0,  0.0,  1.0 }, // Mono
-	{  0.0,  0.0,  1.0 }, // Dialog Centric Mix
-	{  0.0,  0.0, -0.1 }, // Center Surround Direct
-	{  0.0,  0.0,  0.0 }, // Haptic
-	{  0.0,  0.0,  0.0 }, // unused
-	{  0.0,  0.0,  0.0 }, // unused
-	{  0.0,  0.0,  0.0 }, // unused
-	{ -0.2,  0.5,  0.0 }, // Left Top Middle
-	{  0.0,  0.0,  0.0 }, // unused
-	{  0.2,  0.5,  0.0 }, // Right Top Middle
-	{ -0.2,  0.5, -0.5 }, // Left Top Rear
-	{  0.0,  0.5, -0.5 }, // Center Top Rear
-	{  0.2,  0.5, -0.5 }, // Right Top Rear
-	{ -0.4,  0.0, -0.1 }, // Left Side Surround
-	{  0.4,  0.0, -0.1 }, // Right Side Surround
-	{ -0.2, -0.5,  0.0 }, // Left Bottom
-	{  0.2, -0.5,  0.0 }, // Right Bottom
-	{  0.0, -0.5,  0.0 }, // Center Bottom
-	{ -0.4,  0.5, -0.1 }, // Left Top Surround
-	{  0.4,  0.5, -0.1 }, // Right Top Surround
-	{  0.0,  0.0,  0.0 }, // Low Frequency Effects 3
-	{ -0.4,  0.0, -0.5 }, // Left Rear Surround
-	{  0.4,  0.0, -0.5 }, // Right Rear Surround
-	{ -0.1,  0.0,  1.0 }, // Left Edge of Screen
-	{  0.1,  0.0,  1.0 }  // Right Edge of Screen
+	osd::channel_position::UNKNOWN(), // unused
+	osd::channel_position::FL(), // Front Left
+	osd::channel_position::FR(), // Front Right
+	osd::channel_position::FC(), // Front Center
+	osd::channel_position::LFE(), // Low Frequency Effects
+	osd::channel_position::RL(), // Rear Left
+	osd::channel_position::RR(), // Rear Right
+	osd::channel_position( -0.1,  0.0,  1.0 ), // Front Left of Center
+	osd::channel_position(  0.1,  0.0,  1.0 ), // Front Right of Center
+	osd::channel_position::RC(), // Rear Center
+	osd::channel_position( -0.2,  0.0,  0.5 ), // Side Left
+	osd::channel_position(  0.2,  0.0,  0.5 ), // Side Right
+	osd::channel_position(  0.0,  0.5, -0.1 ), // Top Center
+	osd::channel_position( -0.2,  0.5,  1.0 ), // Top Front Left
+	osd::channel_position(  0.0,  0.5,  1.0 ), // Top Front Center
+	osd::channel_position(  0.2,  0.5,  1.0 ), // Top Front Right
+	osd::channel_position( -0.2,  0.5, -0.5 ), // Top Rear Left
+	osd::channel_position(  0.2,  0.5, -0.5 ), // Top Rear Center
+	osd::channel_position(  0.2,  0.5, -0.5 ), // Top Rear Right
+	osd::channel_position::UNKNOWN(), osd::channel_position::UNKNOWN(),
+	osd::channel_position::UNKNOWN(), osd::channel_position::UNKNOWN(), osd::channel_position::UNKNOWN(), osd::channel_position::UNKNOWN(), osd::channel_position::UNKNOWN(), osd::channel_position::UNKNOWN(), osd::channel_position::UNKNOWN(), osd::channel_position::UNKNOWN(), osd::channel_position::UNKNOWN(), osd::channel_position::UNKNOWN(),
+	osd::channel_position::UNKNOWN(), osd::channel_position::UNKNOWN(),
+	osd::channel_position( -0.4,  0.0, -0.5 ), // Rear Surround Left
+	osd::channel_position(  0.4,  0.0, -0.5 ), // Rear Surround Right
+	osd::channel_position( -0.4,  0.0,  1.0 ), // Left Wide
+	osd::channel_position(  0.4,  0.0,  1.0 ), // Right Wide
+	osd::channel_position::LFE(), // Low Frequency Effects 2
+	osd::channel_position::HL(), // Left Total
+	osd::channel_position::HR(), // Right Total
+	osd::channel_position::FC(), // Hearing Impaired
+	osd::channel_position::FC(), // Narration
+	osd::channel_position::FC(), // Mono
+	osd::channel_position::FC(), // Dialog Centric Mix
+	osd::channel_position::HC(), // Center Surround Direct
+	osd::channel_position::UNKNOWN(), // Haptic
+	osd::channel_position::UNKNOWN(), // unused
+	osd::channel_position::UNKNOWN(), // unused
+	osd::channel_position::UNKNOWN(), // unused
+	osd::channel_position( -0.2,  0.5,  0.0 ), // Left Top Middle
+	osd::channel_position::UNKNOWN(), // unused
+	osd::channel_position(  0.2,  0.5,  0.0 ), // Right Top Middle
+	osd::channel_position( -0.2,  0.5, -0.5 ), // Left Top Rear
+	osd::channel_position(  0.0,  0.5, -0.5 ), // Center Top Rear
+	osd::channel_position(  0.2,  0.5, -0.5 ), // Right Top Rear
+	osd::channel_position( -0.4,  0.0, -0.1 ), // Left Side Surround
+	osd::channel_position(  0.4,  0.0, -0.1 ), // Right Side Surround
+	osd::channel_position( -0.2, -0.5,  0.0 ), // Left Bottom
+	osd::channel_position(  0.2, -0.5,  0.0 ), // Right Bottom
+	osd::channel_position(  0.0, -0.5,  0.0 ), // Center Bottom
+	osd::channel_position( -0.4,  0.5, -0.1 ), // Left Top Surround
+	osd::channel_position(  0.4,  0.5, -0.1 ), // Right Top Surround
+	osd::channel_position::UNKNOWN(), // Low Frequency Effects 3
+	osd::channel_position( -0.4,  0.0, -0.5 ), // Left Rear Surround
+	osd::channel_position(  0.4,  0.0, -0.5 ), // Right Rear Surround
+	osd::channel_position( -0.1,  0.0,  1.0 ), // Left Edge of Screen
+	osd::channel_position(  0.1,  0.0,  1.0 )  // Right Edge of Screen
 };
 
 struct coreaudio_device
@@ -199,8 +199,12 @@ public:
 	virtual uint32_t stream_sink_open(uint32_t node, std::string name, uint32_t rate) override;
 	virtual uint32_t stream_source_open(uint32_t node, std::string name, uint32_t rate) override;
 	virtual void stream_source_update(uint32_t id, int16_t *buffer, int samples_this_frame) override;
+	virtual void stream_set_volumes(uint32_t id, const std::vector<float> &db) override;
 	virtual void stream_close(uint32_t id) override;
 	virtual void stream_sink_update(uint32_t stream_id, int16_t const *buffer, int samples_this_frame) override;
+
+	virtual bool external_per_channel_volume() override { return false; }
+	virtual bool split_streams_per_source() override { return true; }
 
 private:
 	bool set_property_listener(AudioDeviceID device, AudioObjectPropertyElement element, AudioObjectPropertyScope scope);
@@ -386,6 +390,7 @@ private:
 		std::string m_name;
 		AudioDeviceID m_id;
 		std::shared_ptr<coreaudio_stream> m_stream;
+		std::vector<float> m_volumes;
 
 		coreaudio_stream_info(sound_coreaudio *parent, int channels)
 		{
@@ -493,13 +498,7 @@ void sound_coreaudio::rebuild_stream_info()
 	m_deviceinfo.m_streams.clear();
 	for (const auto &[key, stream] : m_stream_list)
 	{
-		std::vector<float> volumes;
-		volumes.clear();
-		for (int i = 0; i < 2; i++)
-		{
-			volumes.push_back(0.0f);
-		}
-		m_deviceinfo.m_streams.emplace_back(osd::audio_info::stream_info{key, stream.m_id, volumes});
+		m_deviceinfo.m_streams.emplace_back(osd::audio_info::stream_info{key, stream.m_id, stream.m_volumes});
 	}
 }
 
@@ -613,6 +612,22 @@ void sound_coreaudio::stream_sink_update(uint32_t stream_id, int16_t const *buff
 	{
 		std::lock_guard<std::mutex> stream_guard(our_stream->second.m_stream->m_stream_mutex);
 		our_stream->second.m_stream->sink_update(buffer, samples_this_frame);
+	}
+}
+
+void sound_coreaudio::stream_set_volumes(uint32_t id, const std::vector<float> &db)
+{
+	std::lock_guard<std::mutex> list_guard(m_stream_list_mutex);
+
+	auto our_stream = m_stream_list.find(id);
+	if (our_stream != m_stream_list.end())
+	{
+		our_stream->second.m_volumes.clear();
+		our_stream->second.m_volumes.reserve(db.size());
+		for (const auto &volume : db)
+		{
+			our_stream->second.m_volumes.push_back(volume);
+		}
 	}
 }
 
@@ -1049,7 +1064,7 @@ void sound_coreaudio::build_device_list()
 						{
 							std::string chLabel = "Channel " + std::to_string(desc + 1);
 							node.m_port_names.push_back(chLabel);
-							node.m_port_positions.emplace_back(std::array<double, 3>({0.0, 0.0, 1.0}));
+							node.m_port_positions.emplace_back(osd::channel_position::FC());
 						}
 						else
 						{
