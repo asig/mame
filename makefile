@@ -62,6 +62,7 @@ PROFILER =
 # OPTIMIZE = 3
 # SYMBOLS = 1
 # SYMLEVEL = 2
+# PDB_SYMBOLS = 1
 # MAP = 1
 # PROFILE = 1
 # ARCHOPTS =
@@ -404,6 +405,10 @@ ifeq ($(findstring aarch64,$(UNAME)),aarch64)
 ARCHITECTURE :=
 endif
 
+ifeq ($(findstring riscv64,$(UNAME)),riscv64)
+ARCHITECTURE :=
+endif
+
 # Autodetect BIGENDIAN
 # MacOSX
 ifndef BIGENDIAN
@@ -466,7 +471,7 @@ OSD := sdl
 else ifeq ($(TARGETOS),solaris)
 OSD := sdl
 else ifeq ($(TARGETOS),macosx)
-OSD := sdl
+OSD := sdl3
 else ifeq ($(TARGETOS),asmjs)
 OSD := sdl
 endif # TARGETOS
@@ -570,15 +575,6 @@ ifdef SANITIZE
 SYMBOLS = 1
 endif
 
-# profiler defaults to on for DEBUG builds
-ifdef DEBUG
-ifneq '$(DEBUG)' '0'
-ifndef PROFILER
-PROFILER = 1
-endif
-endif
-endif
-
 # allow gprof profiling as well, which overrides the internal PROFILER
 # also enable symbols as it is useless without them
 ifdef PROFILE
@@ -633,6 +629,10 @@ endif
 
 ifdef SYMLEVEL
 PARAMS += --SYMLEVEL='$(SYMLEVEL)'
+endif
+
+ifdef PDB_SYMBOLS
+PARAMS += --PDB_SYMBOLS='$(PDB_SYMBOLS)'
 endif
 
 ifdef PROFILER
@@ -1017,6 +1017,10 @@ $(info Clang $(CLANG_VERSION) detected)
 ifneq ($(TARGETOS),asmjs)
 ifeq ($(ARCHITECTURE),_x64)
 ARCHITECTURE := _x64_clang
+else ifneq ($(filter aarch64%,$(UNAME_M)),)
+ARCHITECTURE := _arm64_clang
+else ifneq ($(filter aarch64%,$(UNAME_P)),)
+ARCHITECTURE := _arm64_clang
 else ifneq ($(filter arm64%,$(UNAME_M)),)
 ARCHITECTURE := _arm64_clang
 else
@@ -1266,6 +1270,11 @@ $(PROJECTDIR)/$(MAKETYPE)-linux-clang/Makefile: makefile $(SCRIPTS) $(GENIE)
 
 .PHONY: linux_x64_clang
 linux_x64_clang: generate $(PROJECTDIR)/$(MAKETYPE)-linux-clang/Makefile
+	$(SILENT) $(MAKE) $(MAKEPARAMS) -C $(PROJECTDIR)/$(MAKETYPE)-linux-clang config=$(CONFIG)64 precompile
+	$(SILENT) $(MAKE) $(MAKEPARAMS) -C $(PROJECTDIR)/$(MAKETYPE)-linux-clang config=$(CONFIG)64
+
+.PHONY: linux_arm64_clang
+linux_arm64_clang: generate $(PROJECTDIR)/$(MAKETYPE)-linux-clang/Makefile
 	$(SILENT) $(MAKE) $(MAKEPARAMS) -C $(PROJECTDIR)/$(MAKETYPE)-linux-clang config=$(CONFIG)64 precompile
 	$(SILENT) $(MAKE) $(MAKEPARAMS) -C $(PROJECTDIR)/$(MAKETYPE)-linux-clang config=$(CONFIG)64
 
@@ -1536,7 +1545,7 @@ endif
 
 ifeq (posix,$(SHELLTYPE))
 $(GENDIR)/version.cpp: makefile $(GENDIR)/git_desc | $(GEN_FOLDERS)
-	@echo '#define BARE_BUILD_VERSION "0.281"' > $@
+	@echo '#define BARE_BUILD_VERSION "0.286"' > $@
 	@echo '#define BARE_VCS_REVISION "$(NEW_GIT_VERSION)"' >> $@
 	@echo 'extern const char bare_build_version[];' >> $@
 	@echo 'extern const char bare_vcs_revision[];' >> $@
@@ -1546,7 +1555,7 @@ $(GENDIR)/version.cpp: makefile $(GENDIR)/git_desc | $(GEN_FOLDERS)
 	@echo 'const char build_version[] = BARE_BUILD_VERSION " (" BARE_VCS_REVISION ")";' >> $@
 else
 $(GENDIR)/version.cpp: makefile $(GENDIR)/git_desc | $(GEN_FOLDERS)
-	@echo #define BARE_BUILD_VERSION "0.281" > $@
+	@echo #define BARE_BUILD_VERSION "0.286" > $@
 	@echo #define BARE_VCS_REVISION "$(NEW_GIT_VERSION)" >> $@
 	@echo extern const char bare_build_version[]; >> $@
 	@echo extern const char bare_vcs_revision[]; >> $@

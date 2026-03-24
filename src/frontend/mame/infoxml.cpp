@@ -207,6 +207,7 @@ constexpr char f_dtd_string[] =
 		"\t\t\t<!ATTLIST disk status (baddump|nodump|good) \"good\">\n"
 		"\t\t\t<!ATTLIST disk optional (yes|no) \"no\">\n"
 		"\t\t<!ELEMENT device_ref EMPTY>\n"
+		"\t\t\t<!ATTLIST device_ref tag CDATA #REQUIRED>\n"
 		"\t\t\t<!ATTLIST device_ref name CDATA #REQUIRED>\n"
 		"\t\t<!ELEMENT sample EMPTY>\n"
 		"\t\t\t<!ATTLIST sample name CDATA #REQUIRED>\n"
@@ -1010,7 +1011,7 @@ void output_device_refs(std::ostream &out, device_t &root)
 {
 	for (device_t &device : device_enumerator(root))
 		if (&device != &root)
-			util::stream_format(out, "\t\t<device_ref name=\"%s\"/>\n", util::xml::normalize_string(device.shortname()));
+			util::stream_format(out, "\t\t<device_ref tag=\"%s\" name=\"%s\"/>\n", util::xml::normalize_string(device.tag()), util::xml::normalize_string(device.shortname()));
 }
 
 
@@ -2172,7 +2173,7 @@ void output_slots(std::ostream &out, machine_config &config, device_t &device, c
 					{
 						util::stream_format(out, "\t\t\t<slotoption name=\"%s\"", normalize_string(option.second->name()));
 						util::stream_format(out, " devname=\"%s\"", normalize_string(dev->shortname()));
-						if (slot.default_option() && !strcmp(slot.default_option(), option.second->name()))
+						if (slot.default_option() && (slot.default_option() == option.second->name()))
 							out << " default=\"yes\"";
 						out << "/>\n";
 					}
