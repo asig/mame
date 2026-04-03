@@ -708,7 +708,6 @@ void mame_ui_manager::display_startup_screens(bool first_time)
 	// asigner: Don't show game info or warnings
 	show_gameinfo = false;
 	show_warnings = false;
-	show_mandatory_fileman = false;
 
 	// loop over states
 	for (int state = 0; state < maxstate && !machine().scheduled_event_pending() && !ui::menu::stack_has_special_main_menu(*this); state++)
