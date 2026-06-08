@@ -165,7 +165,7 @@ Are the following undumped or mistranslated (check also if available in TOSEC)?
  - ザイオン (198506xx) by Victor Music Industry
  - パックマン SR版 (198506xx) by Dempa [4th ghost is orange here instead of green as in 1983 version]
  - 探検隊 (198410xx) by Data West
- - 探検隊2 〜 魔境アマゾンの奥地に黄金伝説を見た (198506xx) by Data West
+ - 探検隊2 〜 魔境アマゾンの奥地に黄金伝説を見た！ (198506xx) by Data West (available in smc777.xml)
  - またろう君 (198505xx) by Colpax
  - 労働狂 (198505xx) by FreePort
  - 今日子PARTⅠ (198505xx) by Softhouse Carroll
@@ -631,11 +631,13 @@ INVESTIGATE
 		</part>
 	</software>
 
-	<!-- Gameplay speed is erratic (especially noticeable on vanilla PC8801) -->
 	<software name="177" supported="partial">
 		<description>177</description>
 		<year>1986</year>
 		<publisher>マカダミアソフト (Macadamia Soft)</publisher>
+		<notes><![CDATA[
+Gameplay speed is erratic (especially noticeable on vanilla PC8801)
+]]></notes>
 		<!-- PC8801 -->
 		<info name="release" value="198609xx"/>
 		<part name="flop1" interface="floppy_5_25">
@@ -645,11 +647,14 @@ INVESTIGATE
 		</part>
 	</software>
 
-	<!-- Gameplay speed is erratic (especially noticeable on vanilla PC8801) -->
 	<software name="177a" cloneof="177" supported="partial">
 		<description>177 (alt)</description>
 		<year>1986</year>
 		<publisher>マカダミアソフト (Macadamia Soft)</publisher>
+		<notes><![CDATA[
+(same as parent)
+]]></notes>
+
 		<!-- PC8801 -->
 		<info name="release" value="198609xx"/>
 		<part name="flop1" interface="floppy_5_25">
@@ -659,11 +664,14 @@ INVESTIGATE
 		</part>
 	</software>
 
-	<!-- Gameplay speed is erratic (especially noticeable on vanilla PC8801) -->
 	<software name="177b" cloneof="177" supported="partial">
 		<description>177 (alt 2)</description>
 		<year>1986</year>
 		<publisher>マカダミアソフト (Macadamia Soft)</publisher>
+		<notes><![CDATA[
+(same as parent)
+]]></notes>
+
 		<!-- PC8801 -->
 		<info name="release" value="198609xx"/>
 		<part name="flop1" interface="floppy_5_25">
@@ -673,11 +681,14 @@ INVESTIGATE
 		</part>
 	</software>
 
-	<!-- Gameplay speed is erratic (especially noticeable on vanilla PC8801) -->
 	<software name="177c" cloneof="177" supported="partial">
 		<description>177 (alt 3)</description>
 		<year>1986</year>
 		<publisher>マカダミアソフト (Macadamia Soft)</publisher>
+		<notes><![CDATA[
+(same as parent)
+]]></notes>
+
 		<!-- PC8801 -->
 		<info name="release" value="198609xx"/>
 		<part name="flop1" interface="floppy_5_25">
@@ -687,11 +698,14 @@ INVESTIGATE
 		</part>
 	</software>
 
-	<!-- Gameplay speed is erratic (especially noticeable on vanilla PC8801) -->
 	<software name="177d" cloneof="177" supported="partial">
 		<description>177 (alt 4)</description>
 		<year>1986</year>
 		<publisher>マカダミアソフト (Macadamia Soft)</publisher>
+		<notes><![CDATA[
+(same as parent)
+]]></notes>
+
 		<!-- PC8801 -->
 		<info name="release" value="198609xx"/>
 		<part name="flop1" interface="floppy_5_25">
@@ -836,6 +850,7 @@ INVESTIGATE
 		<year>1984</year>
 		<publisher>コンプティーク (Comptiq)</publisher>
 		<!-- PC8801 -->
+		<info name="alt_title" value="エー・イー"/>
 		<info name="release" value="198404xx"/>
 		<info name="usage" value="Needs BASIC V1"/>
 
@@ -1579,12 +1594,14 @@ ExtractDisk  [02]"SAGA#1          " -> "adventure land_02.d88"
 		</part>
 	</software>
 
-	<!-- Opening movie hangs at the title screen, FDC stalls [Missing CHRN=(00 00 01 03)] -->
-	<!-- TODO: Game is otherwise working if you skip that, may have further stalls -->
-	<software name="agnishi" supported="partial">
+	<software name="agnishi" supported="no">
 		<description>Agni no Ishi - The Stone of Agni</description>
 		<year>1988</year>
 		<publisher>ハミングバード (HummingBird)</publisher>
+		<notes><![CDATA[
+Opening movie hangs at the title screen, FDC stalls [Missing CHRN=(00 00 01 03)]
+TODO: Game is otherwise working if you skip that, may have further stalls
+]]></notes>
 		<!-- PC8801mk2SR -->
 		<info name="release" value="198803xx"/>
 		<info name="alt_title" value="アグニの石"/>
@@ -1614,12 +1631,13 @@ ExtractDisk  [02]"SAGA#1          " -> "adventure land_02.d88"
 		</part>
 	</software>
 
-	<!-- Opening movie hangs at the title screen, FDC stalls [Missing CHRN=(00 00 01 03)] -->
-	<!-- TODO: Game is otherwise working if you skip that, may have further stalls -->
-	<software name="agnishia" cloneof="agnishi" supported="partial">
+	<software name="agnishia" cloneof="agnishi" supported="no">
 		<description>Agni no Ishi - The Stone of Agni (Mad?)</description>
 		<year>1988</year>
 		<publisher>ハミングバード (HummingBird)</publisher>
+		<notes><![CDATA[
+(same as parent)
+]]></notes>
 		<!-- PC8801mk2SR -->
 		<info name="release" value="198803xx"/>
 		<info name="alt_title" value="アグニの石"/>
@@ -2506,11 +2524,13 @@ Fails boot [underlying data is corrupt, error reading in HxC / winimage etc.]
 		</part>
 	</software>
 
-	<!-- reads the light pen? -->
-	<software name="amerisuc" supported="partial">
+	<software name="amerisuc" supported="yes">
 		<description>American Success</description>
 		<year>1988</year>
 		<publisher>ウィンキーソフト (Winky Soft)</publisher>
+		<notes><![CDATA[
+[7220] reads the light pen? TODO: add steps to reproduce
+]]></notes>
 		<!-- PC8801mk2SR -->
 		<info name="release" value="198811xx"/>
 		<info name="alt_title" value="アメリカン・サクセス"/>
@@ -2521,11 +2541,13 @@ Fails boot [underlying data is corrupt, error reading in HxC / winimage etc.]
 		</part>
 	</software>
 
-	<!-- reads the light pen? -->
-	<software name="amerisuca" cloneof="amerisuc" supported="partial">
+	<software name="amerisuca" cloneof="amerisuc" supported="yes">
 		<description>American Success (alt)</description>
 		<year>1988</year>
 		<publisher>ウィンキーソフト (Winky Soft)</publisher>
+		<notes><![CDATA[
+[7220] reads the light pen? TODO: add steps to reproduce
+]]></notes>
 		<!-- PC8801mk2SR -->
 		<info name="release" value="198811xx"/>
 		<info name="alt_title" value="アメリカン・サクセス"/>
@@ -3396,11 +3418,13 @@ ExtractDisk  [11]"#10 危険な年頃  " -> "Apple Club 11.d88" [a9f8422b]
 		</part>
 	</software>
 
-	<!-- Gameplay speed is erratic (especially noticeable on vanilla PC8801) -->
 	<software name="apploon" supported="partial">
 		<description>Apploon</description>
 		<year>1984</year>
 		<publisher>タカラ (Takara)</publisher>
+		<notes><![CDATA[
+Runs too fast, wants [V1S]
+]]></notes>
 		<!-- PC8801 -->
 		<info name="release" value="198402xx"/>
 		<info name="alt_title" value="アップルーン"/>
@@ -3413,11 +3437,13 @@ ExtractDisk  [11]"#10 危険な年頃  " -> "Apple Club 11.d88" [a9f8422b]
 		</part>
 	</software>
 
-	<!-- Uses BG Pal color -->
 	<software name="archon" supported="partial">
 		<description>Archon</description>
 		<year>1986</year>
 		<publisher>B·P·S (Bullet-Proof Software)</publisher>
+		<notes><![CDATA[
+Runs too fast, requires [V1S]
+]]></notes>
 		<!-- PC8801 -->
 		<info name="release" value="198606xx"/>
 		<info name="alt_title" value="アーコン"/>
@@ -4164,16 +4190,20 @@ A few kanji drawings in gameplay are odd to look at (cfr. signs, sports as full 
 		</part>
 	</software>
 
-	<!-- TODO: investigate over [SIO] usage -->
-	<!-- Requires floppies to not be write protected -->
 	<software name="balpower" supported="partial">
 		<description>Balance of Power</description>
 		<year>1989</year>
 		<publisher>アスキー (ASCII)</publisher>
+		<notes><![CDATA[
+TODO: investigate over [SIO] usage
+]]></notes>
 		<!-- PC8801mk2SR -->
 		<info name="release" value="198907xx"/>
 		<info name="alt_title" value="バランスオブパワー"/>
 		<info name="usage" value="Set 8MHz mode on a PC8801MA+"/>
+		<sharedfeat name="mouseport_default" value="mouse" />
+		<!-- will throw an "error -4" otherwise -->
+		<sharedfeat name="write_protected" value="false" />
 		<!--combined image-->
 		<!--rom name="ballance of power.d88" size="762128" crc="09d9686f" sha1="0d54291a8d835cdd63d7351d68c1be7cb20a4f4f"/-->
 
@@ -4227,11 +4257,13 @@ Should be supported by [PC8001mkIISR] too
 		</part>
 	</software>
 
-	<!-- TODO: flaky disk swaps (investigate) -->
 	<software name="barbatus" supported="partial">
 		<description>Barbatus no Majo</description>
 		<year>1990</year>
 		<publisher>アーテック (Artec)</publisher>
+		<notes><![CDATA[
+TODO: flaky disk swaps (investigate)
+]]></notes>
 		<!-- PC8801mk2SR -->
 		<info name="release" value="19900309"/>
 		<info name="alt_title" value="バルバドゥスの魔女"/>
@@ -4509,11 +4541,13 @@ All weapons GFX displays are garbled in this version, is the dump right?
 		</part>
 	</software>
 
-	<!-- Not extensively tested -->
 	<software name="bellonch" supported="partial">
 		<description>Belloncho Series 1 - Belloncho Shintai Kensa</description>
 		<year>1990</year>
 		<publisher>ハード (Hard)</publisher>
+		<notes><![CDATA[
+Not extensively tested
+]]></notes>
 		<!-- PC8801mk2SR -->
 		<info name="release" value="19900329"/>
 		<info name="alt_title" value="べろんちょ身体検査"/>
@@ -4573,11 +4607,13 @@ All weapons GFX displays are garbled in this version, is the dump right?
 		</part>
 	</software>
 
-	<!-- Not extensively tested -->
 	<software name="bishojbg" supported="partial">
 		<description>Bishoujo Baseball Gakuen</description>
 		<year>1989</year>
 		<publisher>パソケット (Pasoket)</publisher>
+		<notes><![CDATA[
+Not extensively tested
+]]></notes>
 		<!-- PC8801mk2SR -->
 		<info name="release" value="198910xx"/>
 		<info name="alt_title" value="美少女ベースボール学園"/>
@@ -4949,12 +4985,14 @@ Note: cannot mix party from disk 1 and 2
 		</part>
 	</software>
 
-	<!-- Not extensively tested -->
-	<!-- Tests [Sound Board 2] -->
 	<software name="blassty" supported="partial">
 		<description>Cruise Chaser - Blassty</description>
 		<year>1986</year>
 		<publisher>スクウェア (Square)</publisher>
+		<notes><![CDATA[
+Not extensively tested
+Tests [Sound Board 2]
+]]></notes>
 		<!-- PC8801 -->
 		<info name="release" value="198604xx"/>
 		<info name="alt_title" value="ブラスティ"/>
@@ -5170,7 +5208,7 @@ ExtractDisk  [02]"ｹﾝｼﾞｬﾉﾕｲｺﾞﾝ B   " -> "Bokensha-tachi - K
 		</part>
 	</software>
 
-	<software name="bugattac">
+	<software name="bugatk">
 		<description>Bug Attack</description>
 		<year>1984</year>
 		<publisher>コンプティーク (Comptiq)</publisher>
@@ -6162,7 +6200,7 @@ erratic sound tempo during gameplay, [OPN] regression (runs on system timer irq)
 		<publisher>システムソフト (System Soft)</publisher>
 		<!-- PC8801 -->
 		<info name="release" value="198510xx"/>
-		<info name="alt_title" value="チャンピオンシップ・ロードランナー"/>
+		<info name="alt_title" value="チャンピオンシップロードランナー"/>
 		<!-- same content as disk with CRC 1daf195c, only difference in the header -->
 		<part name="flop1" interface="floppy_5_25">
 			<dataarea name="flop" size="352048">    <!-- Data CRC16: 2401 -->
@@ -6177,7 +6215,7 @@ erratic sound tempo during gameplay, [OPN] regression (runs on system timer irq)
 		<publisher>システムソフト (System Soft)</publisher>
 		<!-- PC8801 -->
 		<info name="release" value="198510xx"/>
-		<info name="alt_title" value="チャンピオンシップ・ロードランナー"/>
+		<info name="alt_title" value="チャンピオンシップロードランナー"/>
 		<part name="flop1" interface="floppy_5_25">
 			<dataarea name="flop" size="352048">    <!-- Data CRC16: 50509 -->
 				<rom name="championship lode-runner (fixed).d88" size="352048" crc="31c3233d" sha1="a4e941efe14fc366a7c7ab6049f34248858ece92"/>
@@ -16913,7 +16951,7 @@ Not extensively tested
 	</software>
 
 	<software name="inindo" supported="no">
-		<description>Inindo</description>
+		<description>Inindou: Datou Nobunaga</description>
 		<year>1991</year>
 		<publisher>光栄 (Koei)</publisher>
 		<notes><![CDATA[
@@ -16921,7 +16959,7 @@ Not extensively tested
 ]]></notes>
 		<!-- PC8801mk2SR -->
 		<info name="release" value="19910719"/>
-		<info name="alt_title" value="伊忍道"/>
+		<info name="alt_title" value="伊忍道 打倒信長"/>
 		<!--combined image-->
 		<!--rom name="inindo.d88" size="1978192" crc="bfebfab5" sha1="c947f2e7bb82e0b0b421af4a409a26fc351d36b8"/-->
 
@@ -16962,7 +17000,7 @@ Not extensively tested
 	</software>
 
 	<software name="inindoa" cloneof="inindo" supported="no">
-		<description>Inindo (alt?)</description>
+		<description>Inindou: Datou Nobunaga (alt?)</description>
 		<year>1991</year>
 		<publisher>光栄 (Koei)</publisher>
 		<notes><![CDATA[
@@ -16970,7 +17008,7 @@ Not extensively tested
 ]]></notes>
 		<!-- PC8801mk2SR -->
 		<info name="release" value="19910719"/>
-		<info name="alt_title" value="伊忍道"/>
+		<info name="alt_title" value="伊忍道 打倒信長"/>
 		<!--combined image-->
 		<!--rom name="inindo.d88" size="1930272" crc="2237c01b" sha1="02f13c7d481ece86919944e9a91b11c551a91c36"/-->
 
@@ -29334,7 +29372,7 @@ Start and Program Disks OK, the remaining part is damaged (missing d88 headers?)
 	</software>
 
 	<software name="tomathim" supported="yes">
-		<description>Salad no Kuni no Tomato Hime</description>
+		<description>Salad no Kuni no Tomato-hime</description>
 		<year>1984</year>
 		<publisher>ハドソン (Hudson Soft)</publisher>
 		<!-- PC8801 -->
@@ -33148,15 +33186,19 @@ Not extensively tested
 		</part>
 	</software>
 
-	<!-- Hangs after Cross Media Soft animation -->
-	<!-- FDC stalls [Tries to read a missing CHRN=(01 01 00 01)] -->
 	<software name="starsymp" supported="no">
 		<description>Star Symphony</description>
 		<year>1986</year>
 		<publisher>クロスメディアソフト (Cross Media Soft)</publisher>
+		<notes><![CDATA[
+FDC stalls [Tries to read a missing CHRN=(01 01 00 01)] (fixed?)
+Fails to load on PC-8801, needs OPN range to return open bus
+Not extensively tested
+]]></notes>
 		<!-- PC8801 -->
 		<info name="release" value="198609xx"/>
 		<info name="alt_title" value="スターシンフォニー"/>
+		<info name="usage" value="Copy disk B as a .mfi container, then mount it in second drive with r/w permissions then follow English instructions."/>
 		<!--combined image-->
 		<!--rom name="star symphony.d88" size="698512" crc="d79e7454" sha1="515f5acfb2f8c8939fdc42b031f4027785c25206"/-->
 
@@ -33176,6 +33218,7 @@ Not extensively tested
 		</part>
 	</software>
 
+	<!-- TODO: probably same as above -->
 	<!-- Hangs after Cross Media Soft animation -->
 	<!-- FDC stalls [Tries to read a missing CHRN=(01 01 00 01)] -->
 	<software name="starsympa" cloneof="starsymp" supported="no">
@@ -33396,7 +33439,7 @@ Not extensively tested
 	</software>
 
 	<software name="storm">
-		<description>Storm</description>
+		<description>Storm: Neo Strategic Simulation</description>
 		<year>1988</year>
 		<publisher>マイクロネット (Micronet)</publisher>
 		<!-- PC8801 -->
@@ -33776,7 +33819,7 @@ ExtractDisk  [03]"ﾃﾞｰﾀﾃﾞｨｽｸ      " -> "super daisenryaku_03.d8
 		<year>1985?</year>
 		<publisher>ハドソン (Hudson Soft)</publisher>
 		<!-- PC8801 -->
-		<info name="alt_title" value="スーパーマリオブラザーズスペシャル"/>
+		<info name="alt_title" value="スーパーマリオブラザーズ スペシャル"/>
 		<part name="flop1" interface="floppy_5_25">
 			<dataarea name="flop" size="348288">
 				<rom name="super_mario_bros._special.d88" size="348288" crc="5ad4fd2e" sha1="3aa5d748f55436ac7fa76f5403c49e9fcd09e6f4"/>
@@ -33789,7 +33832,7 @@ ExtractDisk  [03]"ﾃﾞｰﾀﾃﾞｨｽｸ      " -> "super daisenryaku_03.d8
 		<year>1985?</year>
 		<publisher>ハドソン (Hudson Soft)</publisher>
 		<!-- PC8801 -->
-		<info name="alt_title" value="スーパーマリオブラザーズスペシャル"/>
+		<info name="alt_title" value="スーパーマリオブラザーズ スペシャル"/>
 		<part name="flop1" interface="floppy_5_25">
 			<dataarea name="flop" size="348304">
 				<rom name="super mario brothers special (1985)(hudson).d88" size="348304" crc="90a2072d" sha1="f0c2ea7ec64bcd12963ef718ee335d4da29f7a4c"/>
@@ -33802,7 +33845,7 @@ ExtractDisk  [03]"ﾃﾞｰﾀﾃﾞｨｽｸ      " -> "super daisenryaku_03.d8
 		<year>1985?</year>
 		<publisher>ハドソン (Hudson Soft)</publisher>
 		<!-- PC8801 -->
-		<info name="alt_title" value="スーパーマリオブラザーズスペシャル"/>
+		<info name="alt_title" value="スーパーマリオブラザーズ スペシャル"/>
 		<part name="flop1" interface="floppy_5_25">
 			<dataarea name="flop" size="348848">
 				<rom name="super mario brothers special (1985)(hudson)[a].d88" size="348848" crc="eda544bb" sha1="9e89fe17bf75216e5b4f1d6d2d9d5f3f0c0872c1"/>
@@ -33815,7 +33858,7 @@ ExtractDisk  [03]"ﾃﾞｰﾀﾃﾞｨｽｸ      " -> "super daisenryaku_03.d8
 		<year>1985?</year>
 		<publisher>ハドソン (Hudson Soft)</publisher>
 		<!-- PC8801 -->
-		<info name="alt_title" value="スーパーマリオブラザーズスペシャル"/>
+		<info name="alt_title" value="スーパーマリオブラザーズ スペシャル"/>
 		<part name="flop1" interface="floppy_5_25">
 			<dataarea name="flop" size="348848">
 				<rom name="super mario brothers special (1985)(hudson)[a2].d88" size="348848" crc="ec5c23ee" sha1="2a6a797d17ed3068dc463b1909d653666a0de0a8"/>
@@ -33828,7 +33871,7 @@ ExtractDisk  [03]"ﾃﾞｰﾀﾃﾞｨｽｸ      " -> "super daisenryaku_03.d8
 		<year>1985?</year>
 		<publisher>ハドソン (Hudson Soft)</publisher>
 		<!-- PC8801 -->
-		<info name="alt_title" value="スーパーマリオブラザーズスペシャル"/>
+		<info name="alt_title" value="スーパーマリオブラザーズ スペシャル"/>
 		<part name="flop1" interface="floppy_5_25">
 			<dataarea name="flop" size="348288">
 				<rom name="super mario brothers special.d88" size="348288" crc="e9ebd287" sha1="63265de01cda7f02e56f2ffdf0bc3a569012676c"/>
@@ -39886,7 +39929,7 @@ ExtractDisk  [05]"DISK D          " -> "yajiuma pennant race 2_05.d88"
 -->
 	<software name="yajiuma2">
 		<description>Yajiuma Pennant Race 2</description>
-		<year>1991</year>
+		<year>1990</year>
 		<publisher>ビクター音楽産業 (Victor Music Industry)</publisher>
 		<!-- PC8801mk2SR -->
 		<info name="release" value="199102xx"/>

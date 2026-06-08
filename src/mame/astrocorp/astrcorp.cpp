@@ -235,7 +235,7 @@ winbingo: Win Win Bingo
 class astro_cpucode_device : public device_t
 {
 public:
-	astro_cpucode_device(const machine_config &mconfig, const char *tag, device_t *owner, u32 clock);
+	astro_cpucode_device(const machine_config &mconfig, const char *tag, device_t *owner, u32 clock = 0);
 
 	// read handlers
 	int do_read();              // DO
@@ -1681,7 +1681,6 @@ GFXDECODE_END
 
 void astrocorp_state::machine_start()
 {
-	m_lamps.resolve();
 	m_screen_enable = 0;
 }
 
@@ -1832,7 +1831,7 @@ void zoo_state::zoo(machine_config &config)
 
 	m_screen->set_raw(26.824_MHz_XTAL / 4, 437, 0, 320, 261, 0, 240); // ??? ~15.345kHz Hsync, ??? ~58.795Hz Vsync
 
-	ASTRO_CPUCODE(config, m_cpucode, 0);
+	ASTRO_CPUCODE(config, m_cpucode);
 }
 
 void zoo_state::zulu(machine_config &config)
@@ -1996,7 +1995,7 @@ void astoneag_state::astoneag(machine_config &config)
 
 	// Adds RAMDAC
 	PALETTE(config.replace(), m_palette).set_entries(256);
-	RAMDAC(config, m_ramdac, 0, m_palette);
+	RAMDAC(config, m_ramdac, m_palette);
 	m_ramdac->set_addrmap(0, &astoneag_state::ramdac_map);
 
 	// Tiles are double size vertically
@@ -2181,9 +2180,7 @@ RAM1 are SEC KM681000BLG-7L RAM chips
 ***************************************************************************/
 
 ROM_START( skilldrp )
-	ROM_REGION16_BE( 0x40000, "maincpu", ROMREGION_ERASEFF )
-
-	ROM_REGION16_BE( 0x40000, "encrypted_rom", 0 )
+	ROM_REGION( 0x40000, "maincpu", ROMREGION_ERASEFF )
 	ROM_LOAD16_WORD_SWAP( "7-skill_drop_g1.01s.u100", 0x00000, 0x40000, CRC(8867df18) SHA1(19ad0104647b6f5c8b6c06749c24defdcacfd54d) )
 
 	ROM_REGION( 0x200000, "sprites", 0 )
@@ -2197,9 +2194,7 @@ ROM_START( skilldrp )
 ROM_END
 
 ROM_START( skilldrp_g10s )
-	ROM_REGION16_BE( 0x40000, "maincpu", ROMREGION_ERASEFF )
-
-	ROM_REGION16_BE( 0x40000, "encrypted_rom", 0 )
+	ROM_REGION( 0x40000, "maincpu", ROMREGION_ERASEFF )
 	ROM_LOAD16_WORD_SWAP( "7-skill_drop_g1.0s.u100", 0x00000, 0x40000, CRC(f968b783) SHA1(1d693b1d460e659ca94aae8625ea26e120053f84) )
 
 	ROM_REGION( 0x200000, "sprites", 0 )
@@ -2213,9 +2208,7 @@ ROM_START( skilldrp_g10s )
 ROM_END
 
 ROM_START( luckycoin )
-	ROM_REGION16_BE( 0x40000, "maincpu", ROMREGION_ERASEFF )
-
-	ROM_REGION16_BE( 0x40000, "encrypted_rom", 0 )
+	ROM_REGION( 0x40000, "maincpu", ROMREGION_ERASEFF )
 	ROM_LOAD16_WORD_SWAP( "u100", 0x00000, 0x40000, CRC(77bbeebc) SHA1(45f5a18694e2a93d9c299dc1f405df32c9773ce6) ) // label was peeled off
 
 	ROM_REGION( 0x200000, "sprites", 0 )
@@ -4619,7 +4612,7 @@ void astoneag_state::interleave_sprites_16x32()
 //     YEAR   NAME             PARENT    MACHINE          INPUTS          STATE            INIT            ROT   COMPANY                         FULLNAME                                        FLAGS                                                                               LAYOUT
 
 // unencrypted
-GAME(  1999,  luckys99,        0,        luckys99,        luckys99,       astrocorp_state, init_showhand,  ROT0, "Astro Corp.",                  "Lucky Spin 1999 (Ver. A.1)",                   MACHINE_SUPPORTS_SAVE )
+GAME(  1999,  luckys99,        0,        luckys99,        luckys99,       astrocorp_state, init_showhand,  ROT0, "Astro Corp.",                  "Lucky Spin 1999 (Ver. A.1)",                   MACHINE_SUPPORTS_SAVE | MACHINE_NOT_WORKING )
 GAMEL( 2000,  showhand,        0,        showhand,        showhand,       astrocorp_state, init_showhand,  ROT0, "Astro Corp.",                  "Show Hand (Italy)",                            MACHINE_SUPPORTS_SAVE,                                                              layout_showhand  )
 GAMEL( 2000,  showhandc,       showhand, showhandc,       showhandc,      astrocorp_state, init_showhandc, ROT0, "Astro Corp.",                  "Wangpai Duijue (China)",                       MACHINE_SUPPORTS_SAVE,                                                              layout_showhandc  )
 GAMEL( 2002,  skilldrp,        0,        skilldrp,        skilldrp,       astrocorp_state, empty_init,     ROT0, "Astro Corp.",                  "Skill Drop Georgia (Ver. G1.01S, Oct 1 2002)", MACHINE_SUPPORTS_SAVE,                                                              layout_skilldrp  ) // Oct  1 2002 09:42:32

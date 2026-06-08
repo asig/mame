@@ -27,7 +27,7 @@ TODO:
    - C:\Neomania\Neofend.dat (as a key result for the protection?)
 - For making neoemu.exe to work, requires following things:
 \- wss (emulator) to be connected (workaround by connecting on ISA bus);
-\- m_data in PC LPT to be 0xff (NOTE: Windows will drive it low again after ppm.exe);
+\- A parallel port in SPP PS/2 bidirectional mode;
 \- a tight loop hang patch at game startup (neofend.exe dependency?);
 \- at least a Pentium II (so ga6vx);
 
@@ -99,7 +99,7 @@ void neomania_state::neomania(machine_config &config)
 	m_maincpu->set_addrmap(AS_PROGRAM, &neomania_state::neomania_map);
 	m_maincpu->set_disable();
 
-	PCI_ROOT(config, "pci", 0);
+	PCI_ROOT(config, "pci");
 	// ...
 }
 

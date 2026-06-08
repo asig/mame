@@ -12,8 +12,12 @@ VT82C586B PCIC ISA section
 #include "bus/pc_kbd/keyboards.h"
 #include "speaker.h"
 
+#define LOG_IRQ      (1U << 1) // log line state
+
 #define VERBOSE (LOG_GENERAL)
 //#define LOG_OUTPUT_FUNC osd_printf_info
+
+#define LOGIRQ(...)    LOGMASKED(LOG_IRQ, __VA_ARGS__)
 
 #include "logmacro.h"
 
@@ -129,7 +133,7 @@ void vt82c586b_isa_device::device_add_mconfig(machine_config &config)
 	m_aux_con->out_clock_cb().set(m_keybc, FUNC(ps2_keyboard_controller_device::aux_clk_w));
 	m_aux_con->out_data_cb().set(m_keybc, FUNC(ps2_keyboard_controller_device::aux_data_w));
 
-	ISA16(config, m_isabus, 0);
+	ISA16(config, m_isabus);
 	m_isabus->irq3_callback().set(FUNC(vt82c586b_isa_device::pc_irq3_w));
 	m_isabus->irq4_callback().set(FUNC(vt82c586b_isa_device::pc_irq4_w));
 	m_isabus->irq5_callback().set(FUNC(vt82c586b_isa_device::pc_irq5_w));
@@ -908,7 +912,7 @@ void vt82c586b_isa_device::irq_handler(int line, int state)
 	if(line < 0 || line >= 16)
 		return;
 
-	logerror("irq_handler %d %d\n", line, state);
+	LOGIRQ("irq_handler %d %d\n", line, state);
 	redirect_irq(line, state);
 }
 

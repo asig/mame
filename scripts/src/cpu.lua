@@ -13,7 +13,7 @@
 -- Dynamic recompiler objects
 --------------------------------------------------
 
-DRC_CPUS = { "E1", "SH", "MIPS3", "POWERPC", "ADSP21062", "MB86235", "DSP16", "UNSP", "SWP30", "DSPP" }
+DRC_CPUS = { "ADSP21062", "DSP16", "DSPP", "E1", "MB86235", "MIPS3", "POWERPC", "SH", "SWP30", "UNSP" }
 CPU_INCLUDE_DRC = false
 for i, v in ipairs(DRC_CPUS) do
 	if (CPUS[v]~=null) then
@@ -49,8 +49,6 @@ if CPU_INCLUDE_DRC_NATIVE then
 		MAME_DIR .. "src/devices/cpu/drcbearm64.h",
 		MAME_DIR .. "src/devices/cpu/drcbex64.cpp",
 		MAME_DIR .. "src/devices/cpu/drcbex64.h",
-		MAME_DIR .. "src/devices/cpu/drcbex86.cpp",
-		MAME_DIR .. "src/devices/cpu/drcbex86.h",
 	}
 end
 
@@ -690,6 +688,7 @@ if CPUS["H8"] then
 		MAME_DIR .. "src/devices/cpu/h8/c77.h",
 		MAME_DIR .. "src/devices/cpu/h8/h8.cpp",
 		MAME_DIR .. "src/devices/cpu/h8/h8.h",
+		MAME_DIR .. "src/devices/cpu/h8/h8_cpu_base.h",
 		MAME_DIR .. "src/devices/cpu/h8/h8h.cpp",
 		MAME_DIR .. "src/devices/cpu/h8/h8h.h",
 		MAME_DIR .. "src/devices/cpu/h8/h8s2000.cpp",
@@ -734,6 +733,7 @@ if CPUS["H8"] then
 		MAME_DIR .. "src/devices/cpu/h8/h8_dtc.h",
 		MAME_DIR .. "src/devices/cpu/h8/h8_intc.cpp",
 		MAME_DIR .. "src/devices/cpu/h8/h8_intc.h",
+		MAME_DIR .. "src/devices/cpu/h8/h8_intc_base.h",
 		MAME_DIR .. "src/devices/cpu/h8/h8_port.cpp",
 		MAME_DIR .. "src/devices/cpu/h8/h8_port.h",
 		MAME_DIR .. "src/devices/cpu/h8/h8_timer8.cpp",
